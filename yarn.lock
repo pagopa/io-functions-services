@@ -1384,10 +1384,10 @@ isstream@~0.1.2:
   resolved "https://registry.yarnpkg.com/isstream/-/isstream-0.1.2.tgz#47e63f7af55afa6f92e1500e690eb8b8529c099a"
   integrity sha1-R+Y/evVa+m+S4VAOaQ64uFKcCZo=
 
-italia-ts-commons@^5.0.0:
-  version "5.1.4"
-  resolved "https://registry.yarnpkg.com/italia-ts-commons/-/italia-ts-commons-5.1.4.tgz#f31fc55dc7133553b73d36dfbae0f393936ecd55"
-  integrity sha512-VxLTNuivUdIyLiHeJBdPxn7Fui2uE1X7LCzj1ye6QMnR3G2y3688f86tlJrbnzcl/sTM9vfDxgacnJrsf8NTcQ==
+italia-ts-commons@^5.1.5:
+  version "5.1.5"
+  resolved "https://registry.yarnpkg.com/italia-ts-commons/-/italia-ts-commons-5.1.5.tgz#062d70e91ad35e413405cb0c679f8210c97cc47d"
+  integrity sha512-uAUe3Q8EXPCI8Iy6El8ff0PmUM+CG3X7iscjLr90+7sXCpyucMl6Mwz0TREKtQ0tKc/uAP/1yWw7QgaLCvDflg==
   dependencies:
     fp-ts "1.12.0"
     io-ts "1.8.5"
