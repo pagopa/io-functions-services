@@ -10,9 +10,11 @@
  */
 
 import { AzureFunction } from "@azure/functions";
+
 import { DocumentClient as DocumentDBClient } from "documentdb";
 
-import { HttpsUrl } from "io-functions-commons/dist/generated/definitions/HttpsUrl";
+import * as NodeMailer from "nodemailer";
+
 import {
   NOTIFICATION_COLLECTION_NAME,
   NotificationModel
@@ -23,8 +25,9 @@ import {
 } from "io-functions-commons/dist/src/models/sender_service";
 import * as documentDbUtils from "io-functions-commons/dist/src/utils/documentdb";
 import { getRequiredStringEnv } from "io-functions-commons/dist/src/utils/env";
+import { MailUpTransport } from "io-functions-commons/dist/src/utils/mailup";
 
-import { getCreateNotificationActivityHandler } from "./handler";
+import { getEmailNotificationActivityHandler } from "./handler";
 
 // Setup DocumentDB
 const cosmosDbUri = getRequiredStringEnv("CUSTOMCONNSTR_COSMOSDB_URI");
@@ -53,23 +56,42 @@ const senderServicesCollectionUrl = documentDbUtils.getCollectionUri(
   documentDbDatabaseUrl,
   SENDER_SERVICE_COLLECTION_NAME
 );
-const senderServiceModel = new SenderServiceModel(
-  documentClient,
-  senderServicesCollectionUrl
+
+//
+// setup NodeMailer
+//
+const mailupUsername = getRequiredStringEnv("MAILUP_USERNAME");
+const mailupSecret = getRequiredStringEnv("MAILUP_SECRET");
+
+//
+// options used when converting an HTML message to pure text
+// see https://www.npmjs.com/package/html-to-text#options
+//
+
+const HTML_TO_TEXT_OPTIONS: HtmlToTextOptions = {
+  ignoreImage: true, // ignore all document images
+  tables: true
+};
+
+// default sender for email
+const MAIL_FROM = getRequiredStringEnv("MAIL_FROM_DEFAULT");
+
+const mailerTransporter = NodeMailer.createTransport(
+  MailUpTransport({
+    creds: {
+      Secret: mailupSecret,
+      Username: mailupUsername
+    }
+  })
 );
 
-const defaultWebhookUrl = HttpsUrl.decode(
-  getRequiredStringEnv("WEBHOOK_CHANNEL_URL")
-).getOrElseL(_ => {
-  throw new Error(
-    `Check that the environment variable WEBHOOK_CHANNEL_URL is set to a valid URL`
-  );
-});
-
-const activityFunctionHandler: AzureFunction = getCreateNotificationActivityHandler(
-  senderServiceModel,
+const activityFunction: AzureFunction = getEmailNotificationActivityHandler(
+  mailerTransporter,
   notificationModel,
-  defaultWebhookUrl
+  {
+    HTML_TO_TEXT_OPTIONS,
+    MAIL_FROM
+  }
 );
 
-export default activityFunctionHandler;
+export default activityFunction;

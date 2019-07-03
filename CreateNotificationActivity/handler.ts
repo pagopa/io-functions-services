@@ -30,10 +30,7 @@ import {
 } from "io-functions-commons/dist/src/models/sender_service";
 import { ulidGenerator } from "io-functions-commons/dist/src/utils/strings";
 
-import {
-  getStoreMessageContentActivityHandler,
-  ISuccessfulStoreMessageContentActivityResult
-} from "../StoreMessageContentActivity/handler";
+import { ISuccessfulStoreMessageContentActivityResult } from "../StoreMessageContentActivity/handler";
 
 /**
  * Attempt to resolve an email address from
@@ -95,7 +92,7 @@ type ICreateNotificationActivityResult =
   | ICreateNotificationActivityNoneResult;
 
 /**
- * Returns a function for handling emailNotificationActivity
+ * Returns a function for handling createNotificationActivity
  */
 export const getCreateNotificationActivityHandler = (
   lSenderServiceModel: SenderServiceModel,
