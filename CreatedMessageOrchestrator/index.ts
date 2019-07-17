@@ -93,6 +93,8 @@ function* handler(context: IFunctionContext): IterableIterator<unknown> {
     if (storeMessageContentActivityResult.kind !== "SUCCESS") {
       // StoreMessageContentActivity failed permanently, we can't proceed with
       // delivering the notifications
+      // TODO: messageStatusUpdater(MessageStatusValueEnum.REJECTED); ?
+
       return [];
     }
 
@@ -167,6 +169,8 @@ function* handler(context: IFunctionContext): IterableIterator<unknown> {
             `CreatedMessageOrchestrator|NotificationStatusUpdaterActivity failed too many times|MESSAGE_ID=${createdMessageEvent.message.id}|CHANNEL=email|ERROR=${e}`
           );
         }
+
+        // TODO: add webhook channel
       } catch (e) {
         // too many failures
         context.log.error(
@@ -174,11 +178,14 @@ function* handler(context: IFunctionContext): IterableIterator<unknown> {
         );
       }
     }
+
+    // TODO: messageStatusUpdater(MessageStatusValueEnum.PROCESSED);
   } catch (e) {
     // too many retries
     context.log.error(
       `CreatedMessageOrchestrator|Fatal error, StoreMessageContentActivity or CreateNotificationActivity exceeded the max retries|MESSAGE_ID=${createdMessageEvent.message.id}|ERROR=${e}`
     );
+    // TODO: messageStatusUpdater(MessageStatusValueEnum.FAILED);
   }
 
   return [];

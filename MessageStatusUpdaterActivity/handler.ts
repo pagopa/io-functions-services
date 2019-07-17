@@ -1,0 +1,57 @@
+import { Context } from "@azure/functions";
+
+import * as t from "io-ts";
+
+import { NonEmptyString } from "italia-ts-commons/lib/strings";
+
+import { MessageStatusValue } from "io-functions-commons/dist/generated/definitions/MessageStatusValue";
+import {
+  getMessageStatusUpdater,
+  MessageStatusModel
+} from "io-functions-commons/dist/src/models/message_status";
+import { ReadableReporter } from "italia-ts-commons/lib/reporters";
+
+const Input = t.interface({
+  messageId: NonEmptyString,
+  status: MessageStatusValue
+});
+
+interface IResponse {
+  kind: "FAILURE" | "SUCCESS";
+}
+
+export const getMessageStatusUpdaterActivityHandler = (
+  messageStatusModel: MessageStatusModel
+) => async (context: Context, input: unknown): Promise<IResponse> => {
+  const decodedInput = Input.decode(input);
+  if (decodedInput.isLeft()) {
+    context.log.error(
+      `MessageStatusUpdaterActivity|Cannot decode input|ERROR=${ReadableReporter.report(
+        decodedInput
+      ).join(" / ")}`
+    );
+    return { kind: "FAILURE" };
+  }
+
+  const { messageId, status } = decodedInput.value;
+
+  const messageStatusUpdater = getMessageStatusUpdater(
+    messageStatusModel,
+    messageId
+  );
+
+  const result = await messageStatusUpdater(status);
+
+  if (result.isLeft()) {
+    context.log.error(
+      `MessageStatusUpdaterActivity|Error while updating message status|MESSAGE_ID=${messageId}|STATUS=${status}|ERROR=${result.value.message}`
+    );
+    throw new Error(result.value.message);
+  }
+
+  context.log.verbose(
+    `MessageStatusUpdaterActivity|Message status updated|MESSAGE_ID=${messageId}|STATUS=${status}`
+  );
+
+  return { kind: "SUCCESS" };
+};
