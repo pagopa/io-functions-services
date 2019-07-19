@@ -2,7 +2,6 @@
 
 import * as cors from "cors";
 import * as express from "express";
-import * as logform from "logform";
 import * as winston from "winston";
 
 import { DocumentClient as DocumentDBClient } from "documentdb";

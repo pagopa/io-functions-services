@@ -10,7 +10,6 @@ import {
   ProfileModel,
   RetrievedProfile
 } from "io-functions-commons/dist/src/models/profile";
-import { ReadableReporter } from "italia-ts-commons/lib/reporters";
 
 export interface ISuccessfulStoreMessageContentActivityResult {
   kind: "SUCCESS";

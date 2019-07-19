@@ -72,8 +72,7 @@ import {
   ResponseErrorForbiddenNotAuthorizedForRecipient,
   ResponseErrorFromValidationErrors,
   ResponseErrorValidation,
-  ResponseSuccessRedirectToResource,
-  ResponseSuccessJson
+  ResponseSuccessRedirectToResource
 } from "italia-ts-commons/lib/responses";
 import { withoutUndefinedValues } from "italia-ts-commons/lib/types";
 

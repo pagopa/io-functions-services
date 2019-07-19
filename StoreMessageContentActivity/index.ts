@@ -1,4 +1,4 @@
-﻿import { AzureFunction, Context } from "@azure/functions";
+﻿import { AzureFunction } from "@azure/functions";
 import { createBlobService } from "azure-storage";
 import { DocumentClient as DocumentDBClient } from "documentdb";
 

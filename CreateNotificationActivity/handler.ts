@@ -9,15 +9,10 @@ import { MessageContent } from "io-functions-commons/dist/generated/definitions/
 import { NotificationChannelEnum } from "io-functions-commons/dist/generated/definitions/NotificationChannel";
 import { CreatedMessageEvent } from "io-functions-commons/dist/src/models/created_message_event";
 import { CreatedMessageEventSenderMetadata } from "io-functions-commons/dist/src/models/created_message_sender_metadata";
-import {
-  MESSAGE_COLLECTION_NAME,
-  MessageModel,
-  NewMessageWithoutContent
-} from "io-functions-commons/dist/src/models/message";
+import { NewMessageWithoutContent } from "io-functions-commons/dist/src/models/message";
 import {
   createNewNotification,
   NewNotification,
-  NOTIFICATION_COLLECTION_NAME,
   NotificationAddressSourceEnum,
   NotificationChannelEmail,
   NotificationModel
