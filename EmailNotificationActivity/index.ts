@@ -19,10 +19,6 @@ import {
   NOTIFICATION_COLLECTION_NAME,
   NotificationModel
 } from "io-functions-commons/dist/src/models/notification";
-import {
-  SENDER_SERVICE_COLLECTION_NAME,
-  SenderServiceModel
-} from "io-functions-commons/dist/src/models/sender_service";
 import * as documentDbUtils from "io-functions-commons/dist/src/utils/documentdb";
 import { getRequiredStringEnv } from "io-functions-commons/dist/src/utils/env";
 import { MailUpTransport } from "io-functions-commons/dist/src/utils/mailup";
@@ -50,11 +46,6 @@ const notificationsCollectionUrl = documentDbUtils.getCollectionUri(
 const notificationModel = new NotificationModel(
   documentClient,
   notificationsCollectionUrl
-);
-
-const senderServicesCollectionUrl = documentDbUtils.getCollectionUri(
-  documentDbDatabaseUrl,
-  SENDER_SERVICE_COLLECTION_NAME
 );
 
 //
