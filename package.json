@@ -26,7 +26,9 @@
     "prettier": "^1.18.2",
     "tslint": "^5.17.0",
     "typescript": "^3.3.3",
-    "nodemailer": "^4.6.7"
+    "nodemailer": "^4.6.7",
+    "danger": "^4.0.2",
+    "danger-plugin-digitalcitizenship": "^0.3.1"
   },
   "dependencies": {
     "cors": "^2.8.4",
