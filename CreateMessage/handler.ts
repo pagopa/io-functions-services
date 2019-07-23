@@ -8,7 +8,7 @@ import * as express from "express";
 import * as df from "durable-functions";
 
 import { Either, isLeft, left, right } from "fp-ts/lib/Either";
-import { identity } from "fp-ts/lib/function";
+import { identity, Lazy } from "fp-ts/lib/function";
 import { fromEither, TaskEither, tryCatch } from "fp-ts/lib/TaskEither";
 
 import * as t from "io-ts";
@@ -75,10 +75,7 @@ import {
   ResponseSuccessRedirectToResource
 } from "italia-ts-commons/lib/responses";
 import { NonEmptyString } from "italia-ts-commons/lib/strings";
-import {
-  PromiseType,
-  withoutUndefinedValues
-} from "italia-ts-commons/lib/types";
+import { PromiseType } from "italia-ts-commons/lib/types";
 
 const ApiNewMessageWithDefaults = t.intersection([
   ApiNewMessage,
@@ -137,7 +134,7 @@ type CreateMessageHandlerResponse = PromiseType<
 /**
  * Checks whether the client service can create a new message for the recipient
  */
-const canWriteMessage = (
+export const canWriteMessage = (
   authGroups: IAzureApiAuthorization["groups"],
   authorizedRecipients: IAzureUserAttributes["service"]["authorizedRecipients"],
   fiscalCode: FiscalCode
@@ -168,8 +165,8 @@ const canWriteMessage = (
  * Note that this feature is deprecated and the handler will always respond with
  * a Forbidden response if default addresses are provided.
  */
-const canDefaultAddresses = (
-  messagePayload: ApiNewMessageWithDefaults
+export const canDefaultAddresses = (
+  messagePayload: ApiNewMessage
 ): Either<IResponseErrorForbiddenNotAuthorizedForDefaultAddresses, true> => {
   // check whether the user is authorized to provide default addresses
   if (messagePayload.default_addresses) {
@@ -184,23 +181,23 @@ const canDefaultAddresses = (
  * Checks whether the client service is allowed to request a payment to the
  * user and whether the amount is below the allowed limit.
  */
-const canPaymentAmount = (
-  messageContent: ApiNewMessageWithDefaults["content"],
-  service: IAzureUserAttributes["service"]
+export const canPaymentAmount = (
+  messageContent: ApiNewMessage["content"],
+  maxAllowedPaymentAmount: IAzureUserAttributes["service"]["maxAllowedPaymentAmount"]
 ): Either<IResponseErrorValidation, true> => {
   const requestedAmount = messageContent.payment_data
     ? messageContent.payment_data.amount
     : undefined;
 
   const hasExceededAmount =
-    requestedAmount && requestedAmount > service.maxAllowedPaymentAmount;
+    requestedAmount && requestedAmount > maxAllowedPaymentAmount;
 
   // check if the service wants to charge a valid amount to the user
   if (hasExceededAmount) {
     return left(
       ResponseErrorValidation(
         "Error while sending payment metadata",
-        `The requested amount (${requestedAmount} cents) exceeds the maximum allowed for this service (${service.maxAllowedPaymentAmount} cents)`
+        `The requested amount (${requestedAmount} cents) exceeds the maximum allowed for this service (${maxAllowedPaymentAmount} cents)`
       )
     );
   }
@@ -213,7 +210,7 @@ const canPaymentAmount = (
  * Note that this function only creates the metadata document, the content of
  * the message is stored in a blob by an async activity.
  */
-const createMessageDocument = (
+export const createMessageDocument = (
   messageId: NonEmptyString,
   messageModel: MessageModel,
   senderUserId: IAzureApiAuthorization["userId"],
@@ -267,8 +264,8 @@ const createMessageDocument = (
  * Forks the durable function orchestrator that will further process the message
  * asynchronously (storing the content into a blob, delivering notifications).
  */
-const forkOrchestrator = (
-  context: Context,
+export const forkOrchestrator = (
+  getDfClient: Lazy<ReturnType<typeof df.getClient>>,
   messageContent: ApiNewMessageWithDefaults["content"],
   service: IAzureUserAttributes["service"],
   newMessageWithoutContent: NewMessageWithoutContent
@@ -280,20 +277,18 @@ const forkOrchestrator = (
   // prepare the created message event
   // we filter out undefined values as they are
   // deserialized to null(s) when enqueued
-  const createdMessageEventOrError = CreatedMessageEvent.decode(
-    withoutUndefinedValues({
-      content: messageContent,
-      defaultAddresses: {}, // deprecated feature
-      message: newMessageWithoutContent,
-      senderMetadata: {
-        departmentName: service.departmentName,
-        organizationFiscalCode: service.organizationFiscalCode,
-        organizationName: service.organizationName,
-        serviceName: service.serviceName
-      },
-      serviceVersion: service.version
-    })
-  );
+  const createdMessageEventOrError = CreatedMessageEvent.decode({
+    content: messageContent,
+    defaultAddresses: {}, // deprecated feature
+    message: newMessageWithoutContent,
+    senderMetadata: {
+      departmentName: service.departmentName,
+      organizationFiscalCode: service.organizationFiscalCode,
+      organizationName: service.organizationName,
+      serviceName: service.serviceName
+    },
+    serviceVersion: service.version
+  });
 
   if (isLeft(createdMessageEventOrError)) {
     return fromEither(
@@ -310,7 +305,7 @@ const forkOrchestrator = (
   // the message to the output binding of this function
   // tslint:disable-next-line:no-object-mutation
   // context.bindings.createdMessage = createdMessageEventOrError.value;
-  const dfClient = df.getClient(context);
+  const dfClient = getDfClient();
   return tryCatch(
     () =>
       dfClient.startNew(
@@ -420,7 +415,12 @@ export function CreateMessageHandler(
         )
         .chainSecond(
           // check whether the client can ask for payment
-          fromEither(canPaymentAmount(messagePayload.content, service))
+          fromEither(
+            canPaymentAmount(
+              messagePayload.content,
+              service.maxAllowedPaymentAmount
+            )
+          )
         )
         .chainSecond(
           // create a Message document in the database
@@ -437,7 +437,7 @@ export function CreateMessageHandler(
           // fork the durable function orchestrator that will complete
           // processing the message asynchrnously
           forkOrchestrator(
-            context,
+            () => df.getClient(context),
             messagePayload.content,
             service,
             newMessageWithoutContent
