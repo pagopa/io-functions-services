@@ -40,7 +40,7 @@ jobs:
       - checkout
       - *restore_node_cache
       - *install_node_modules
-      - run: yarn test
+      - run: yarn test:coverage
       - run: 'bash <(curl -s https://codecov.io/bash)'
 
   lint:
