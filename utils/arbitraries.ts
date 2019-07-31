@@ -1,7 +1,13 @@
 import * as assert from "assert";
-
 import * as fc from "fast-check";
-
+import { some } from "fp-ts/lib/Option";
+import { BlockedInboxOrChannelEnum } from "io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
+import { NewMessage } from "io-functions-commons/dist/generated/definitions/NewMessage";
+import { PreferredLanguageEnum } from "io-functions-commons/dist/generated/definitions/PreferredLanguage";
+import { NewMessageWithoutContent } from "io-functions-commons/dist/src/models/message";
+import { Profile } from "io-functions-commons/dist/src/models/profile";
+import { Service } from "io-functions-commons/dist/src/models/service";
+import { ClientIp } from "io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
 import {
   NonNegativeNumber,
   WithinRangeInteger
@@ -12,10 +18,6 @@ import {
   NonEmptyString,
   PatternString
 } from "italia-ts-commons/lib/strings";
-
-import { NewMessage } from "io-functions-commons/dist/generated/definitions/NewMessage";
-import { NewMessageWithoutContent } from "io-functions-commons/dist/src/models/message";
-import { Service } from "io-functions-commons/dist/src/models/service";
 
 //
 // custom fastcheck arbitraries
@@ -64,6 +66,8 @@ export const fiscalCodeArb = fc
 export const fiscalCodeArrayArb = fc.array(fiscalCodeArb);
 
 export const fiscalCodeSetArb = fiscalCodeArrayArb.map(_ => new Set(_));
+
+export const clientIpArb = fc.ipV4().map(_ => some(_) as ClientIp);
 
 const messageContentSubject = fc.string(10, 120);
 const messageContentMarkdown = fc.string(80, 10000);
@@ -206,3 +210,15 @@ export const versionedServiceArb = fc
     ...service,
     version: version as NonNegativeNumber
   }));
+
+export const profileArb = fc.tuple(fiscalCodeArb, fc.emailAddress()).map(
+  ([fiscalCode, email]) =>
+    ({
+      blockedInboxOrChannels: {
+        "01234567890": new Set([BlockedInboxOrChannelEnum.INBOX])
+      },
+      email: email as EmailString,
+      fiscalCode,
+      preferredLanguages: [PreferredLanguageEnum.en_GB]
+    } as Profile)
+);
