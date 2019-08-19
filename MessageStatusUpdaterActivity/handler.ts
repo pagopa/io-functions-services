@@ -26,7 +26,7 @@ export const getMessageStatusUpdaterActivityHandler = (
   const decodedInput = Input.decode(input);
   if (decodedInput.isLeft()) {
     context.log.error(
-      `MessageStatusUpdaterActivity|Cannot decode input|ERROR=${ReadableReporter.report(
+      `MessageStatusUpdaterActivity|ERROR=${ReadableReporter.report(
         decodedInput
       ).join(" / ")}`
     );
@@ -44,13 +44,13 @@ export const getMessageStatusUpdaterActivityHandler = (
 
   if (result.isLeft()) {
     context.log.error(
-      `MessageStatusUpdaterActivity|Error while updating message status|MESSAGE_ID=${messageId}|STATUS=${status}|ERROR=${result.value.message}`
+      `MessageStatusUpdaterActivity|MESSAGE_ID=${messageId}|STATUS=${status}|ERROR=${result.value.message}`
     );
     throw new Error(result.value.message);
   }
 
   context.log.verbose(
-    `MessageStatusUpdaterActivity|Message status updated|MESSAGE_ID=${messageId}|STATUS=${status}`
+    `MessageStatusUpdaterActivity|MESSAGE_ID=${messageId}|STATUS=${status}|RESULT=SUCCESS`
   );
 
   return { kind: "SUCCESS" };

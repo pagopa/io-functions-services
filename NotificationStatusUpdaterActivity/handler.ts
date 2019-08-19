@@ -58,13 +58,13 @@ export const getNotificationStatusUpdaterActivityHandler = (
 
   if (errorOrUpdatedNotificationStatus.isLeft()) {
     context.log.warn(
-      `NotificationStatusUpdaterActivity|Error while updating|MESSAGE_ID=${messageId}|NOTIFICATION_ID=${notificationId}|CHANNEL=${channel}|STATUS=${status}|ERROR=${errorOrUpdatedNotificationStatus.value}`
+      `NotificationStatusUpdaterActivity|MESSAGE_ID=${messageId}|NOTIFICATION_ID=${notificationId}|CHANNEL=${channel}|STATUS=${status}|ERROR=${errorOrUpdatedNotificationStatus.value}`
     );
     throw new Error(errorOrUpdatedNotificationStatus.value.message);
   }
 
   context.log.verbose(
-    `NotificationStatusUpdaterActivity|Notification status updated|MESSAGE_ID=${messageId}|NOTIFICATION_ID=${notificationId}|CHANNEL=${channel}|STATUS=${status}`
+    `NotificationStatusUpdaterActivity|MESSAGE_ID=${messageId}|NOTIFICATION_ID=${notificationId}|CHANNEL=${channel}|STATUS=${status}|RESULT=SUCCESS`
   );
 
   return { kind: "SUCCESS" };

@@ -31,14 +31,13 @@ import { ISuccessfulStoreMessageContentActivityResult } from "../StoreMessageCon
  * Attempt to resolve an email address from
  * the recipient profile.
  */
-function getEmailAddressFromProfile(
+const getEmailAddressFromProfile = (
   profile: RetrievedProfile
-): Option<NotificationChannelEmail> {
-  return fromNullable(profile.email).map(email => ({
+): Option<NotificationChannelEmail> =>
+  fromNullable(profile.email).map(email => ({
     addressSource: NotificationAddressSourceEnum.PROFILE_ADDRESS,
     toAddress: email
   }));
-}
 
 /**
  * Try to create (save) a new notification
@@ -102,6 +101,10 @@ export const getCreateNotificationActivityHandler = (
 ): Promise<ICreateNotificationActivityResult> => {
   const { createdMessageEvent, storeMessageContentActivityResult } = input;
 
+  const logPrefix = `CreateNotificationActivity|MESSAGE_ID=${createdMessageEvent.message.id}|RECIPIENT=${createdMessageEvent.message.fiscalCode}`;
+
+  context.log.verbose(`${logPrefix}|STARTING`);
+
   const {
     senderMetadata,
     message: newMessageWithoutContent
@@ -118,14 +121,15 @@ export const getCreateNotificationActivityHandler = (
   const isEmailBlockedForService =
     blockedInboxOrChannels.indexOf(BlockedInboxOrChannelEnum.EMAIL) >= 0;
 
+  const emailFromProfile = getEmailAddressFromProfile(profile);
+
   const maybeAllowedEmailNotification = isEmailBlockedForService
     ? none
-    : getEmailAddressFromProfile(profile).orElse(() => {
-        context.log.verbose(
-          `CreateNotificationActivity|User profile has no email address set|${profile.fiscalCode}`
-        );
-        return none;
-      });
+    : emailFromProfile;
+
+  context.log.verbose(
+    `${logPrefix}|CHANNEL=EMAIL|SERVICE_BLOCKED=${isEmailBlockedForService}|PROFILE_EMAIL=${emailFromProfile.isSome()}|WILL_NOTIFY=${maybeAllowedEmailNotification.isSome()}`
+  );
 
   //
   //  Webhook notification
@@ -136,16 +140,20 @@ export const getCreateNotificationActivityHandler = (
     blockedInboxOrChannels.indexOf(BlockedInboxOrChannelEnum.WEBHOOK) >= 0;
 
   // whether the recipient wants us to send notifications to the app backend
-  const isWebhookBlockedInProfile = profile.isWebhookEnabled === true;
+  const isWebhookEnabledInProfile = profile.isWebhookEnabled === true;
 
   const isWebhookEnabled =
-    !isWebhookBlockedForService && isWebhookBlockedInProfile;
+    !isWebhookBlockedForService && isWebhookEnabledInProfile;
 
   const maybeAllowedWebhookNotification = isWebhookEnabled
     ? some({
         url: lDefaultWebhookUrl
       })
     : none;
+
+  context.log.verbose(
+    `${logPrefix}|CHANNEL=WEBHOOK|CHANNEL_ENABLED=${isWebhookEnabledInProfile}|SERVICE_BLOCKED=${isWebhookBlockedForService}|WILL_NOTIFY=${maybeAllowedWebhookNotification.isSome()}`
+  );
 
   // store fiscalCode -> serviceId
   const errorOrSenderService = await lSenderServiceModel.createOrUpdate(
@@ -159,6 +167,7 @@ export const getCreateNotificationActivityHandler = (
   );
 
   if (isLeft(errorOrSenderService)) {
+    context.log.error(`${logPrefix}|ERROR=${errorOrSenderService.value.body}`);
     throw new Error(
       `Cannot save sender service id: ${errorOrSenderService.value.body}`
     );
@@ -170,9 +179,7 @@ export const getCreateNotificationActivityHandler = (
   ].every(_ => _.isNone());
 
   if (noChannelsConfigured) {
-    context.log.verbose(
-      `CreateNotificationActivity|No channels configured for the user ${newMessageWithoutContent.fiscalCode} and no default address provided`
-    );
+    context.log.warn(`${logPrefix}|RESULT=NO_CHANNELS_ENABLED`);
     // return no notifications
     return { kind: "none" };
   }
@@ -197,6 +204,8 @@ export const getCreateNotificationActivityHandler = (
     createdMessageEvent.content,
     newNotification
   );
+
+  context.log.verbose(`${logPrefix}|RESULT=SUCCESS`);
 
   // output notification events (one for each channel)
   return {
