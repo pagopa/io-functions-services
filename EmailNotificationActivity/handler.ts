@@ -72,6 +72,8 @@ export const getEmailNotificationActivityHandler = (
 
   const emailNotificationEvent = decodedEmailNotification.value;
 
+  const logPrefix = `EmailNotificationActivity|MESSAGE_ID=${emailNotificationEvent.message.id}|RECIPIENT=${emailNotificationEvent.message.fiscalCode}|NOTIFICATION_ID=${emailNotificationEvent.notificationId}`;
+
   const {
     message,
     content,
@@ -102,9 +104,7 @@ export const getEmailNotificationActivityHandler = (
     message.timeToLiveSeconds * 1000
   ) {
     // if the message is expired no more processing is necessary
-    context.log.verbose(
-      `EmailNotificationActivity|Message expired|MESSAGE_ID=${message.id}`
-    );
+    context.log.warn(`${logPrefix}|RESULT=TTL_EXPIRED`);
     return { kind: "SUCCESS", result: "EXPIRED" };
   }
 
@@ -116,18 +116,16 @@ export const getEmailNotificationActivityHandler = (
   if (isLeft(errorOrMaybeNotification)) {
     const error = errorOrMaybeNotification.value;
     // we got an error while fetching the notification
-    throw new Error(
-      `EmailNotificationActivity|Error while fetching the notification|NOTIFICATION_ID=${notificationId}|MESSAGE_ID=${message.id}|ERROR=${error.code}`
-    );
+    context.log.warn(`${logPrefix}|ERROR=${error.body}`);
+    throw new Error(`Error while fetching the notification: ${error.body}`);
   }
   const maybeEmailNotification = errorOrMaybeNotification.value;
   if (isNone(maybeEmailNotification)) {
     // it may happen that the object is not yet visible to this function due to latency
     // as the notification object is retrieved from database and we may be hitting a
     // replica that is not yet in sync
-    throw new Error(
-      `EmailNotificationActivity|Notification not found|NOTIFICATION_ID=${notificationId}|MESSAGE_ID=${message.id}`
-    );
+    context.log.warn(`${logPrefix}|RESULT=NOTIFICATION_NOT_FOUND`);
+    throw new Error(`Notification not found`);
   }
   const errorOrEmailNotification = EmailNotification.decode(
     maybeEmailNotification.value
@@ -135,9 +133,7 @@ export const getEmailNotificationActivityHandler = (
   if (isLeft(errorOrEmailNotification)) {
     // The notification object is not compatible with this code
     const error = readableReport(errorOrEmailNotification.value);
-    context.log.error(
-      `EmailNotificationActivity|Wrong format for email notification|NOTIFICATION_ID=${notificationId}|MESSAGE_ID=${message.id}|ERROR=${error}`
-    );
+    context.log.error(`${logPrefix}|ERROR=${error}`);
     return { kind: "FAILURE", reason: "WRONG_FORMAT" };
   }
   const emailNotification = errorOrEmailNotification.value.channels.EMAIL;
@@ -189,9 +185,7 @@ export const getEmailNotificationActivityHandler = (
       resultCode: error.name,
       success: false
     });
-    context.log.error(
-      `EmailNotificationActivity|Error while sending email|NOTIFICATION_ID=${notificationId}|MESSAGE_ID=${message.id}|ERROR=${error.message}`
-    );
+    context.log.error(`${logPrefix}|ERROR=${error.message}`);
     throw new Error("Error while sending email");
   }
 
@@ -212,6 +206,8 @@ export const getEmailNotificationActivityHandler = (
       success: "true"
     }
   });
+
+  context.log.verbose(`${logPrefix}|RESULT=SUCCESS`);
 
   // TODO: handling bounces and delivery updates
   // see https://nodemailer.com/usage/#sending-mail

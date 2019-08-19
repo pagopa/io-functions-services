@@ -43,9 +43,9 @@ export const getStoreMessageContentActivityHandler = (
 ): Promise<StoreMessageContentActivityResult> => {
   const newMessageWithoutContent = createdMessageEvent.message;
 
-  context.log.verbose(
-    `StoreMessageContentActivity|Received createdMessageEvent|MESSAGE_ID=${newMessageWithoutContent.id}|RECIPIENT=${newMessageWithoutContent.fiscalCode}`
-  );
+  const logPrefix = `StoreMessageContentActivity|MESSAGE_ID=${newMessageWithoutContent.id}|RECIPIENT=${newMessageWithoutContent.fiscalCode}`;
+
+  context.log.verbose(`${logPrefix}|STARTING`);
 
   // fetch user's profile associated to the fiscal code
   // of the recipient of the message
@@ -54,9 +54,10 @@ export const getStoreMessageContentActivityHandler = (
   );
 
   if (isLeft(errorOrMaybeProfile)) {
-    // The query has failed, we consider this as a trainsient error.
+    // The query has failed, we consider this as a transient error.
     // It's *critical* to trigger a retry here, otherwise no message
     // content will be saved.
+    context.log.error(`${logPrefix}|ERROR=${errorOrMaybeProfile.value.body}`);
     throw Error("Error while fetching profile");
   }
 
@@ -64,6 +65,7 @@ export const getStoreMessageContentActivityHandler = (
 
   if (isNone(maybeProfile)) {
     // the recipient doesn't have any profile yet
+    context.log.warn(`${logPrefix}|RESULT=PROFILE_NOT_FOUND`);
     return { kind: "FAILURE", reason: "PROFILE_NOT_FOUND" };
   }
 
@@ -77,9 +79,7 @@ export const getStoreMessageContentActivityHandler = (
     .getOrElse(new Set());
 
   context.log.verbose(
-    "StoreMessageContentActivityHandler|Blocked Channels(%s): %s",
-    newMessageWithoutContent.fiscalCode,
-    JSON.stringify(blockedInboxOrChannels)
+    `${logPrefix}|BLOCKED_CHANNELS=${JSON.stringify(blockedInboxOrChannels)}`
   );
 
   //
@@ -91,6 +91,7 @@ export const getStoreMessageContentActivityHandler = (
 
   if (!isInboxEnabled) {
     // the recipient's inbox is disabled
+    context.log.warn(`${logPrefix}|RESULT=MASTER_INBOX_DISABLED`);
     return { kind: "FAILURE", reason: "MASTER_INBOX_DISABLED" };
   }
 
@@ -101,6 +102,7 @@ export const getStoreMessageContentActivityHandler = (
 
   if (isMessageStorageBlockedForService) {
     // the recipient's inbox is disabled
+    context.log.warn(`${logPrefix}|RESULT=SENDER_BLOCKED`);
     return { kind: "FAILURE", reason: "SENDER_BLOCKED" };
   }
 
@@ -115,6 +117,7 @@ export const getStoreMessageContentActivityHandler = (
   );
 
   if (isLeft(errorOrAttachment)) {
+    context.log.error(`${logPrefix}|ERROR=${errorOrAttachment.value}`);
     throw new Error("Error while storing message content");
   }
 
@@ -129,8 +132,11 @@ export const getStoreMessageContentActivityHandler = (
   );
 
   if (isLeft(updatedMessageOrError)) {
+    context.log.error(`${logPrefix}|ERROR=${updatedMessageOrError.value.body}`);
     throw new Error("Error while updating message pending status");
   }
+
+  context.log.verbose(`${logPrefix}|RESULT=SUCCESS`);
 
   return {
     // being blockedInboxOrChannels a Set, we explicitly convert it to an array
