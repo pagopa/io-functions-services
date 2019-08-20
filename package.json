@@ -42,7 +42,7 @@
     "express": "^4.15.3",
     "fp-ts": "1.12.0",
     "html-to-text": "^4.0.0",
-    "io-functions-commons": "^0.3.7",
+    "io-functions-commons": "^0.4.0",
     "io-functions-express": "^0.1.0",
     "io-ts": "1.8.5",
     "italia-ts-commons": "^5.1.5",
