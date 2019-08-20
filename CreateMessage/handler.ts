@@ -13,6 +13,7 @@ import { fromEither, TaskEither, tryCatch } from "fp-ts/lib/TaskEither";
 
 import * as t from "io-ts";
 
+import { ChannelPrivacyLevel } from "io-functions-commons/dist/generated/definitions/ChannelPrivacyLevel";
 import { FiscalCode } from "io-functions-commons/dist/generated/definitions/FiscalCode";
 import { NewMessage as ApiNewMessage } from "io-functions-commons/dist/generated/definitions/NewMessage";
 import { TimeToLiveSeconds } from "io-functions-commons/dist/generated/definitions/TimeToLiveSeconds";
@@ -79,7 +80,10 @@ import { PromiseType } from "italia-ts-commons/lib/types";
 
 const ApiNewMessageWithDefaults = t.intersection([
   ApiNewMessage,
-  t.interface({ time_to_live: TimeToLiveSeconds })
+  t.interface({
+    required_channel_privacy_level: ChannelPrivacyLevel,
+    time_to_live: TimeToLiveSeconds
+  })
 ]);
 export type ApiNewMessageWithDefaults = t.TypeOf<
   typeof ApiNewMessageWithDefaults
@@ -216,6 +220,7 @@ export const createMessageDocument = (
   senderUserId: IAzureApiAuthorization["userId"],
   recipientFiscalCode: FiscalCode,
   timeToLiveSeconds: ApiNewMessageWithDefaults["time_to_live"],
+  requiredChannelPrivacyLevel: ApiNewMessageWithDefaults["required_channel_privacy_level"],
   serviceId: IAzureUserAttributes["service"]["serviceId"]
 ): TaskEither<
   IResponseErrorInternal | IResponseErrorQuery,
@@ -231,6 +236,7 @@ export const createMessageDocument = (
     indexedId: messageId,
     isPending: true,
     kind: "INewMessageWithoutContent",
+    requiredChannelPrivacyLevel,
     senderServiceId: serviceId,
     senderUserId,
     timeToLiveSeconds
@@ -430,6 +436,7 @@ export function CreateMessageHandler(
             auth.userId,
             fiscalCode,
             messagePayload.time_to_live,
+            messagePayload.required_channel_privacy_level,
             serviceId
           )
         )

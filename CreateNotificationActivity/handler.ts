@@ -4,6 +4,7 @@ import { isLeft } from "fp-ts/lib/Either";
 import { fromNullable, none, Option, some } from "fp-ts/lib/Option";
 
 import { BlockedInboxOrChannelEnum } from "io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
+import { ChannelPrivacyLevelEnum } from "io-functions-commons/dist/generated/definitions/ChannelPrivacyLevel";
 import { HttpsUrl } from "io-functions-commons/dist/generated/definitions/HttpsUrl";
 import { MessageContent } from "io-functions-commons/dist/generated/definitions/MessageContent";
 import { NotificationChannelEnum } from "io-functions-commons/dist/generated/definitions/NotificationChannel";
@@ -26,6 +27,17 @@ import {
 import { ulidGenerator } from "io-functions-commons/dist/src/utils/strings";
 
 import { ISuccessfulStoreMessageContentActivityResult } from "../StoreMessageContentActivity/handler";
+
+type ChannelsByPrivacyLevel = {
+  [key in ChannelPrivacyLevelEnum]: ReadonlyArray<NotificationChannelEnum>;
+};
+const channelsByPrivacyLevel: ChannelsByPrivacyLevel = {
+  [ChannelPrivacyLevelEnum.NONE]: [
+    NotificationChannelEnum.EMAIL,
+    NotificationChannelEnum.WEBHOOK
+  ],
+  [ChannelPrivacyLevelEnum.FULL]: [NotificationChannelEnum.WEBHOOK]
+};
 
 /**
  * Attempt to resolve an email address from
@@ -108,6 +120,11 @@ export const getCreateNotificationActivityHandler = (
   } = createdMessageEvent;
   const { blockedInboxOrChannels, profile } = storeMessageContentActivityResult;
 
+  const channelsForRequiredPrivacyLevel =
+    channelsByPrivacyLevel[
+      newMessageWithoutContent.requiredChannelPrivacyLevel
+    ];
+
   //
   //  Email notification
   //
@@ -118,34 +135,42 @@ export const getCreateNotificationActivityHandler = (
   const isEmailBlockedForService =
     blockedInboxOrChannels.indexOf(BlockedInboxOrChannelEnum.EMAIL) >= 0;
 
-  const maybeAllowedEmailNotification = isEmailBlockedForService
-    ? none
-    : getEmailAddressFromProfile(profile).orElse(() => {
+  const isEmailEnabled =
+    channelsForRequiredPrivacyLevel.includes(NotificationChannelEnum.EMAIL) &&
+    !isEmailBlockedForService;
+
+  const maybeAllowedEmailNotification = isEmailEnabled
+    ? getEmailAddressFromProfile(profile).orElse(() => {
         context.log.verbose(
           `CreateNotificationActivity|User profile has no email address set|${profile.fiscalCode}`
         );
         return none;
-      });
+      })
+    : none;
 
   //
   //  Webhook notification
   //
 
+  // whether the recipient wants us to send notifications to the app backend
+  const isWebhookEnabledInProfile = profile.isWebhookEnabled === true;
+
   // check if the user has blocked webhook notifications sent from this service
   const isWebhookBlockedForService =
     blockedInboxOrChannels.indexOf(BlockedInboxOrChannelEnum.WEBHOOK) >= 0;
 
-  // whether the recipient wants us to send notifications to the app backend
-  const isWebhookBlockedInProfile = profile.isWebhookEnabled === true;
-
   const isWebhookEnabled =
-    !isWebhookBlockedForService && isWebhookBlockedInProfile;
+    channelsForRequiredPrivacyLevel.includes(NotificationChannelEnum.EMAIL) &&
+    isWebhookEnabledInProfile &&
+    !isWebhookBlockedForService;
 
-  const maybeAllowedWebhookNotification = isWebhookEnabled
-    ? some({
-        url: lDefaultWebhookUrl
-      })
-    : none;
+  const maybeAllowedWebhookNotification =
+    channelsForRequiredPrivacyLevel.includes(NotificationChannelEnum.WEBHOOK) &&
+    isWebhookEnabled
+      ? some({
+          url: lDefaultWebhookUrl
+        })
+      : none;
 
   // store fiscalCode -> serviceId
   const errorOrSenderService = await lSenderServiceModel.createOrUpdate(
