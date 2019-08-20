@@ -15,6 +15,8 @@ The project is structured as follows:
     * `EmailNotificationActivity`: sends an email notification if needed
     * `WebhookNotificationActivity`: triggers a webhook call if needed
     * `NotificationStatusUpdaterActivity`: updates the `Notification` document with the results of the email or webhook notifications.
+* `GetMessage`: handles the `getMessage` API for services
+* `GetLimitedProfile`: handles the `getProfile` API for services
 
 ## Contributing
 
