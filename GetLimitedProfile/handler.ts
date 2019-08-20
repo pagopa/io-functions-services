@@ -62,7 +62,7 @@ type IGetLimitedProfileHandler = (
 
 /**
  * Whether the sender service is allowed to send
- * notififications to the user identified by this profile
+ * messages to the user identified by this profile
  */
 export function isSenderAllowed(
   blockedInboxOrChannels: IProfileBlockedInboxOrChannels | undefined,
@@ -76,7 +76,7 @@ export function isSenderAllowed(
 }
 
 /**
- * Converts the Profile model to LimetedProfile type.
+ * Converts the Profile model to LimitedProfile type.
  */
 export function toLimitedProfile(
   profile: Profile,
@@ -138,9 +138,7 @@ export function GetLimitedProfile(
   const handler = GetLimitedProfileHandler(profileModel);
 
   const middlewaresWrap = withRequestMiddlewares(
-    AzureApiAuthMiddleware(
-      new Set([UserGroup.ApiLimitedProfileRead, UserGroup.ApiFullProfileRead])
-    ),
+    AzureApiAuthMiddleware(new Set([UserGroup.ApiLimitedProfileRead])),
     ClientIpMiddleware,
     AzureUserAttributesMiddleware(serviceModel),
     FiscalCodeMiddleware

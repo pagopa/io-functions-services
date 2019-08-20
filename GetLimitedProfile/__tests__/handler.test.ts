@@ -22,7 +22,7 @@ import {
 } from "../handler";
 
 describe("isSenderAllowed", () => {
-  it("should return false is the service is not allowed to send notifications to the user", () => {
+  it("should return false if the service is not allowed to send notifications to the user", () => {
     const blockedInboxOrChannels: IProfileBlockedInboxOrChannels = {
       "01234567890": new Set([BlockedInboxOrChannelEnum.INBOX])
     };
@@ -35,7 +35,7 @@ describe("isSenderAllowed", () => {
     expect(isAllowed).toBe(false);
   });
 
-  it("should return true is the service is allowed to send notifications to the user", () => {
+  it("should return true if the service is allowed to send notifications to the user", () => {
     const blockedInboxOrChannels: IProfileBlockedInboxOrChannels = {};
 
     const isAllowed = isSenderAllowed(
