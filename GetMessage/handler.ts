@@ -50,10 +50,7 @@ import { ServiceModel } from "io-functions-commons/dist/src/models/service";
 
 import { BlobService } from "azure-storage";
 
-import {
-  MessageModel,
-  RetrievedMessage
-} from "io-functions-commons/dist/src/models/message";
+import { MessageModel } from "io-functions-commons/dist/src/models/message";
 
 import { isLeft } from "fp-ts/lib/Either";
 import { isNone } from "fp-ts/lib/Option";
@@ -61,7 +58,10 @@ import { isNone } from "fp-ts/lib/Option";
 import { MessageStatusModel } from "io-functions-commons/dist/src/models/message_status";
 import { NotificationStatusModel } from "io-functions-commons/dist/src/models/notification_status";
 
-import { getMessageNotificationStatuses } from "io-functions-commons/dist/src/utils/messages";
+import {
+  getMessageNotificationStatuses,
+  retrievedMessageToPublic
+} from "io-functions-commons/dist/src/utils/messages";
 
 import { MessageResponseWithContent } from "io-functions-commons/dist/generated/definitions/MessageResponseWithContent";
 import { MessageResponseWithoutContent } from "io-functions-commons/dist/generated/definitions/MessageResponseWithoutContent";
@@ -91,16 +91,6 @@ type IGetMessageHandler = (
   | IResponseErrorForbiddenNotAuthorized
   | IResponseErrorInternal
 >;
-
-/**
- * Converts a retrieved message to a message that can be shared via API
- */
-const retrievedMessageToPublic = (retrievedMessage: RetrievedMessage) => ({
-  created_at: retrievedMessage.createdAt,
-  fiscal_code: retrievedMessage.fiscalCode,
-  id: retrievedMessage.id,
-  sender_service_id: retrievedMessage.senderServiceId
-});
 
 /**
  * Handles requests for getting a single message for a recipient.
