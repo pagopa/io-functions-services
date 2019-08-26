@@ -112,50 +112,70 @@ export const getCreateNotificationActivityHandler = (
   const { blockedInboxOrChannels, profile } = storeMessageContentActivityResult;
 
   //
-  //  Email notification
+  // Decide whether to send an email notification
   //
 
-  // check if the user has blocked emails sent from this service
-  // 'some(true)' in case we must send the notification by email
-  // 'none' in case the user has blocked the email channel
+  // whether email notifications are enabled in this user profile - this is
+  // true by default, it's false only for users that have isEmailEnabled = false
+  // in their profile
+  const isEmailEnabledInProfile = profile.isEmailEnabled;
+
+  // first we check whether the user has blocked emails notifications for the
+  // service that is sending the message
   const isEmailBlockedForService =
     blockedInboxOrChannels.indexOf(BlockedInboxOrChannelEnum.EMAIL) >= 0;
 
-  const emailFromProfile = getEmailAddressFromProfile(profile);
+  // then we retrieve the optional email from the user profile
+  const maybeEmailFromProfile = getEmailAddressFromProfile(profile);
 
-  const maybeAllowedEmailNotification = isEmailBlockedForService
-    ? none
-    : emailFromProfile;
+  // finally we decide whether we should send the email notification or not -
+  // we send an email notification when all the following conditions are met:
+  //
+  // * email notifications are enabled in the user profile (isEmailEnabledInProfile)
+  // * email notifications are not blocked for the sender service (!isEmailBlockedForService)
+  // * a destination email address is configured (maybeEmailFromProfile)
+  //
+  const maybeEmailNotificationAddress =
+    isEmailEnabledInProfile && !isEmailBlockedForService
+      ? maybeEmailFromProfile
+      : none;
 
   context.log.verbose(
-    `${logPrefix}|CHANNEL=EMAIL|SERVICE_BLOCKED=${isEmailBlockedForService}|PROFILE_EMAIL=${emailFromProfile.isSome()}|WILL_NOTIFY=${maybeAllowedEmailNotification.isSome()}`
+    `${logPrefix}|CHANNEL=EMAIL|PROFILE_ENABLED=${isEmailEnabledInProfile}|SERVICE_BLOCKED=${isEmailBlockedForService}|PROFILE_EMAIL=${maybeEmailFromProfile.isSome()}|WILL_NOTIFY=${maybeEmailNotificationAddress.isSome()}`
   );
 
   //
-  //  Webhook notification
+  //  Decide whether to send a webhook notification
   //
+
+  // whether the recipient wants us to send notifications to the app backend
+  const isWebhookEnabledInProfile = profile.isWebhookEnabled === true;
 
   // check if the user has blocked webhook notifications sent from this service
   const isWebhookBlockedForService =
     blockedInboxOrChannels.indexOf(BlockedInboxOrChannelEnum.WEBHOOK) >= 0;
 
-  // whether the recipient wants us to send notifications to the app backend
-  const isWebhookEnabledInProfile = profile.isWebhookEnabled === true;
-
-  const isWebhookEnabled =
-    !isWebhookBlockedForService && isWebhookEnabledInProfile;
-
-  const maybeAllowedWebhookNotification = isWebhookEnabled
-    ? some({
-        url: lDefaultWebhookUrl
-      })
-    : none;
+  // finally we decide whether we should send the webhook notification or not -
+  // we send a webhook notification when all the following conditions are met:
+  //
+  // * webhook notifications are enabled in the user profile (isWebhookEnabledInProfile)
+  // * webhook notifications are not blocked for the sender service (!isWebhookBlockedForService)
+  //
+  const maybeWebhookNotificationUrl =
+    isWebhookEnabledInProfile && !isWebhookBlockedForService
+      ? some({
+          url: lDefaultWebhookUrl
+        })
+      : none;
 
   context.log.verbose(
-    `${logPrefix}|CHANNEL=WEBHOOK|CHANNEL_ENABLED=${isWebhookEnabledInProfile}|SERVICE_BLOCKED=${isWebhookBlockedForService}|WILL_NOTIFY=${maybeAllowedWebhookNotification.isSome()}`
+    `${logPrefix}|CHANNEL=WEBHOOK|CHANNEL_ENABLED=${isWebhookEnabledInProfile}|SERVICE_BLOCKED=${isWebhookBlockedForService}|WILL_NOTIFY=${maybeWebhookNotificationUrl.isSome()}`
   );
 
-  // store fiscalCode -> serviceId
+  //
+  // Record that the sender service has sent a message to the user
+  //
+
   const errorOrSenderService = await lSenderServiceModel.createOrUpdate(
     newSenderService(
       newMessageWithoutContent.fiscalCode,
@@ -173,10 +193,14 @@ export const getCreateNotificationActivityHandler = (
     );
   }
 
-  const noChannelsConfigured = [
-    maybeAllowedEmailNotification,
-    maybeAllowedWebhookNotification
-  ].every(_ => _.isNone());
+  //
+  // If we can't send any notification there's not point in creating a
+  // Notification object
+  //
+
+  const noChannelsConfigured =
+    maybeEmailNotificationAddress.isNone() &&
+    maybeWebhookNotificationUrl.isNone();
 
   if (noChannelsConfigured) {
     context.log.warn(`${logPrefix}|RESULT=NO_CHANNELS_ENABLED`);
@@ -184,7 +208,10 @@ export const getCreateNotificationActivityHandler = (
     return { kind: "none" };
   }
 
-  // create and save notification object
+  //
+  // Create a Notification object to track the status of each notification
+  //
+
   const newNotification: NewNotification = {
     ...createNewNotification(
       ulidGenerator,
@@ -192,8 +219,8 @@ export const getCreateNotificationActivityHandler = (
       newMessageWithoutContent.id
     ),
     channels: {
-      [NotificationChannelEnum.EMAIL]: maybeAllowedEmailNotification.toUndefined(),
-      [NotificationChannelEnum.WEBHOOK]: maybeAllowedWebhookNotification.toUndefined()
+      [NotificationChannelEnum.EMAIL]: maybeEmailNotificationAddress.toUndefined(),
+      [NotificationChannelEnum.WEBHOOK]: maybeWebhookNotificationUrl.toUndefined()
     }
   };
 
@@ -207,10 +234,11 @@ export const getCreateNotificationActivityHandler = (
 
   context.log.verbose(`${logPrefix}|RESULT=SUCCESS`);
 
-  // output notification events (one for each channel)
+  // Return the notification event to the orchestrator
+  // The orchestrato will then run the actual notification activities
   return {
-    hasEmail: maybeAllowedEmailNotification.isSome(),
-    hasWebhook: maybeAllowedWebhookNotification.isSome(),
+    hasEmail: maybeEmailNotificationAddress.isSome(),
+    hasWebhook: maybeWebhookNotificationUrl.isSome(),
     kind: "some",
     notificationEvent
   };
