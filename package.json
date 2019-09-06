@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "license": "MIT",
   "scripts": {
-    "build": "tsc",
+    "build": "yarn generate:definitions && tsc",
     "build:production": "npm run prestart && npm prune --production",
     "watch": "tsc --w",
     "prestart": "npm run build && func extensions install",
@@ -12,7 +12,8 @@
     "test": "jest",
     "test:coverage": "jest --coverage",
     "lint": "tslint -p .",
-    "deploy": "npm run build && func azure functionapp publish agid-functions-services-test"
+    "deploy": "npm run build && func azure functionapp publish agid-functions-services-test",
+    "generate:definitions": "rimraf ./generated/definitions && mkdir -p ./generated/definitions && gen-api-models --api-spec ./openapi/index.yaml --out-dir ./generated/definitions"
   },
   "description": "",
   "devDependencies": {
@@ -28,6 +29,7 @@
     "danger-plugin-digitalcitizenship": "^0.3.1",
     "fast-check": "^1.16.0",
     "italia-tslint-rules": "^1.1.3",
+    "italia-utils": "^4.1.0",
     "jest": "^24.8.0",
     "npm-run-all": "^4.1.5",
     "prettier": "^1.18.2",
