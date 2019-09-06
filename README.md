@@ -17,6 +17,7 @@ The project is structured as follows:
     * `NotificationStatusUpdaterActivity`: updates the `Notification` document with the results of the email or webhook notifications.
 * `GetMessage`: handles the `getMessage` API for services
 * `GetLimitedProfile`: handles the `getProfile` API for services
+* `GetSubscriptionsFeed`: handles the `getSubscriptionsFeedForDay` API for services
 
 ## Contributing
 
@@ -49,7 +50,8 @@ following contents:
     "MAILUP_USERNAME": "<MAILUP_USERNAME>",
     "MAILUP_SECRET": "<MAILUP_PASSWORD>",
     "MAIL_FROM_DEFAULT": "IO - l’app dei servizi pubblici <no-reply@io.italia.it>",
-    "QueueStorageConnection": "<QUEUES_STORAGE_CONNECTION_STRING>"
+    "QueueStorageConnection": "<QUEUES_STORAGE_CONNECTION_STRING>",
+    "SUBSCRIPTIONS_FEED_TABLE": "SubscriptionsFeedByDay"
   },
   "ConnectionStrings": {}
 }

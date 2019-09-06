@@ -2688,10 +2688,10 @@ invert-kv@^2.0.0:
   resolved "https://registry.yarnpkg.com/invert-kv/-/invert-kv-2.0.0.tgz#7393f5afa59ec9ff5f67a27620d11c226e3eec02"
   integrity sha512-wPVv/y/QQ/Uiirj/vh3oP+1Ww+AWehmi1g5fFWGPF6IpCBCDVrhgHRMvrLfdYcwDh3QJbGXDW4JAuzxElLSqKA==
 
-io-functions-commons@^0.5.0:
-  version "0.5.0"
-  resolved "https://registry.yarnpkg.com/io-functions-commons/-/io-functions-commons-0.5.0.tgz#dd41dea7e532750646eccc235a80a5340a5ccf56"
-  integrity sha512-ZBhO7WXOEwq/tYtW8fMrL2s0sYx6y1bjO2USVEKyTjFABfvaqplcH8NRCdJy3FTwBQsgISbfLhgDSPrBkW6UAA==
+io-functions-commons@^0.5.1:
+  version "0.5.1"
+  resolved "https://registry.yarnpkg.com/io-functions-commons/-/io-functions-commons-0.5.1.tgz#4d98709723965eef33a27aee513c0dd3a1858bc9"
+  integrity sha512-zbreDDrLHfvnKipze2vp7goE6NoNGH4leMDbzg/ivMTB+iL+uGYY3pCeNxCcVj/gIe3CF8v+rMoE5UYOGRPOVA==
   dependencies:
     applicationinsights "^1.0.3"
     azure-storage "^2.10.3"
