@@ -12,18 +12,22 @@
 import * as df from "durable-functions";
 import { IFunctionContext } from "durable-functions/lib/src/classes";
 
-import { ReadableReporter } from "italia-ts-commons/lib/reporters";
+import { readableReport } from "italia-ts-commons/lib/reporters";
 import { PromiseType } from "italia-ts-commons/lib/types";
 
 import { NotificationChannelEnum } from "io-functions-commons/dist/generated/definitions/NotificationChannel";
 import { NotificationChannelStatusValueEnum } from "io-functions-commons/dist/generated/definitions/NotificationChannelStatusValue";
 import { CreatedMessageEvent } from "io-functions-commons/dist/src/models/created_message_event";
 
-import { getCreateNotificationActivityHandler } from "../CreateNotificationActivity/handler";
+import {
+  CreateNotificationActivityResult,
+  getCreateNotificationActivityHandler
+} from "../CreateNotificationActivity/handler";
 import { getEmailNotificationActivityHandler } from "../EmailNotificationActivity/handler";
 import { NotificationStatusUpdaterActivityInput } from "../NotificationStatusUpdaterActivity/handler";
 import { getStoreMessageContentActivityHandler } from "../StoreMessageContentActivity/handler";
 
+import { NotificationEvent } from "io-functions-commons/dist/src/models/notification_event";
 import { HandlerInputType } from "./utils";
 
 /**
@@ -33,6 +37,7 @@ import { HandlerInputType } from "./utils";
  * See https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-checkpointing-and-replay
  *
  */
+// tslint:disable-next-line: cognitive-complexity
 function* handler(context: IFunctionContext): IterableIterator<unknown> {
   const input = context.df.getInput();
 
@@ -42,9 +47,7 @@ function* handler(context: IFunctionContext): IterableIterator<unknown> {
     context.log.error(
       `CreatedMessageOrchestrator|Invalid CreatedMessageEvent received|ORCHESTRATOR_ID=${
         context.df.instanceId
-      }|ERRORS=${ReadableReporter.report(errorOrCreatedMessageEvent).join(
-        " / "
-      )}`
+      }|ERRORS=${readableReport(errorOrCreatedMessageEvent.value)}`
     );
     // we will never be able to recover from this, so don't trigger a retry
     return [];
@@ -53,10 +56,10 @@ function* handler(context: IFunctionContext): IterableIterator<unknown> {
   const createdMessageEvent = errorOrCreatedMessageEvent.value;
   const newMessageWithContent = createdMessageEvent.message;
 
+  const logPrefix = `CreatedMessageOrchestrator|ORCHESTRATOR_ID=${context.df.instanceId}|MESSAGE_ID=${newMessageWithContent.id}|RECIPIENT=${newMessageWithContent.fiscalCode}`;
+
   if (!context.df.isReplaying) {
-    context.log.verbose(
-      `CreatedMessageOrchestrator|CreatedMessageEvent received|ORCHESTRATOR_ID=${context.df.instanceId}|MESSAGE_ID=${newMessageWithContent.id}|RECIPIENT=${newMessageWithContent.fiscalCode}`
-    );
+    context.log.verbose(`${logPrefix}|Starting`);
   }
 
   // TODO: customize + backoff
@@ -80,9 +83,7 @@ function* handler(context: IFunctionContext): IterableIterator<unknown> {
 
     if (!context.df.isReplaying) {
       context.log.verbose(
-        `CreatedMessageOrchestrator|StoreMessageContentActivity completed|ORCHESTRATOR_ID=${
-          context.df.instanceId
-        }|MESSAGE_ID=${newMessageWithContent.id}|RESULT=${
+        `${logPrefix}|StoreMessageContentActivity completed|RESULT=${
           storeMessageContentActivityResult.kind === "SUCCESS"
             ? "SUCCESS"
             : "FAILURE/" + storeMessageContentActivityResult.reason
@@ -100,7 +101,7 @@ function* handler(context: IFunctionContext): IterableIterator<unknown> {
 
     // then we create a NotificationActivity in the database that will store
     // the status of the notification on each channel
-    const createNotificationActivityResult: PromiseType<
+    const createNotificationActivityResultJson: PromiseType<
       ReturnType<ReturnType<typeof getCreateNotificationActivityHandler>>
     > = yield context.df.callActivityWithRetry(
       "CreateNotificationActivity",
@@ -113,11 +114,25 @@ function* handler(context: IFunctionContext): IterableIterator<unknown> {
       >
     );
 
+    const createNotificationActivityResultOrError = CreateNotificationActivityResult.decode(
+      createNotificationActivityResultJson
+    );
+
+    if (createNotificationActivityResultOrError.isLeft()) {
+      context.log.error(
+        `${logPrefix}|Unable to parse CreateNotificationActivityResult|ERROR=${readableReport(
+          createNotificationActivityResultOrError.value
+        )}`
+      );
+      return [];
+    }
+
+    const createNotificationActivityResult =
+      createNotificationActivityResultOrError.value;
+
     if (createNotificationActivityResult.kind === "none") {
       // no channel configured, no notifications need to be delivered
-      context.log.verbose(
-        `CreatedMessageOrchestrator|No notifications will be delivered|MESSAGE_ID=${newMessageWithContent.id}`
-      );
+      context.log.verbose(`${logPrefix}|No notifications will be delivered`);
       return [];
     }
 
@@ -132,8 +147,9 @@ function* handler(context: IFunctionContext): IterableIterator<unknown> {
           "EmailNotificationActivity",
           retryOptions,
           {
-            emailNotificationEventJson:
+            emailNotificationEventJson: NotificationEvent.encode(
               createNotificationActivityResult.notificationEvent
+            )
           } as HandlerInputType<
             ReturnType<typeof getEmailNotificationActivityHandler>
           >
@@ -141,7 +157,7 @@ function* handler(context: IFunctionContext): IterableIterator<unknown> {
 
         if (!context.df.isReplaying) {
           context.log.verbose(
-            `CreatedMessageOrchestrator|EmailNotificationActivity result: ${JSON.stringify(
+            `${logPrefix}|EmailNotificationActivity result: ${JSON.stringify(
               emailNotificationActivityResult
             )}`
           );
@@ -166,7 +182,7 @@ function* handler(context: IFunctionContext): IterableIterator<unknown> {
         } catch (e) {
           // too many failures
           context.log.error(
-            `CreatedMessageOrchestrator|NotificationStatusUpdaterActivity failed too many times|MESSAGE_ID=${createdMessageEvent.message.id}|CHANNEL=email|ERROR=${e}`
+            `${logPrefix}|NotificationStatusUpdaterActivity failed too many times|CHANNEL=email|ERROR=${e}`
           );
         }
 
@@ -174,7 +190,7 @@ function* handler(context: IFunctionContext): IterableIterator<unknown> {
       } catch (e) {
         // too many failures
         context.log.error(
-          `CreatedMessageOrchestrator|EmailNotificationActivity failed too many times|MESSAGE_ID=${createdMessageEvent.message.id}|ERROR=${e}`
+          `${logPrefix}|EmailNotificationActivity failed too many times|MESSAGE_ID=${createdMessageEvent.message.id}|ERROR=${e}`
         );
       }
     }

@@ -1,5 +1,7 @@
 import { Context } from "@azure/functions";
 
+import * as t from "io-ts";
+
 import { isLeft } from "fp-ts/lib/Either";
 import { fromNullable, none, Option, some } from "fp-ts/lib/Option";
 
@@ -70,20 +72,33 @@ async function createNotification(
   };
 }
 
-interface ICreateNotificationActivitySomeResult {
-  kind: "some";
-  notificationEvent: NotificationEvent;
-  hasEmail: boolean;
-  hasWebhook: boolean;
-}
+const CreateNotificationActivitySomeResult = t.interface({
+  hasEmail: t.boolean,
+  hasWebhook: t.boolean,
+  kind: t.literal("some"),
+  notificationEvent: NotificationEvent
+});
 
-interface ICreateNotificationActivityNoneResult {
-  kind: "none";
-}
+type CreateNotificationActivitySomeResult = t.TypeOf<
+  typeof CreateNotificationActivitySomeResult
+>;
 
-type ICreateNotificationActivityResult =
-  | ICreateNotificationActivitySomeResult
-  | ICreateNotificationActivityNoneResult;
+const CreateNotificationActivityNoneResult = t.interface({
+  kind: t.literal("none")
+});
+
+type CreateNotificationActivityNoneResult = t.TypeOf<
+  typeof CreateNotificationActivityNoneResult
+>;
+
+export const CreateNotificationActivityResult = t.union([
+  CreateNotificationActivitySomeResult,
+  CreateNotificationActivityNoneResult
+]);
+
+export type CreateNotificationActivityResult = t.TypeOf<
+  typeof CreateNotificationActivityResult
+>;
 
 /**
  * Returns a function for handling createNotificationActivity
@@ -98,7 +113,7 @@ export const getCreateNotificationActivityHandler = (
     createdMessageEvent: CreatedMessageEvent;
     storeMessageContentActivityResult: ISuccessfulStoreMessageContentActivityResult;
   }
-): Promise<ICreateNotificationActivityResult> => {
+): Promise<unknown> => {
   const { createdMessageEvent, storeMessageContentActivityResult } = input;
 
   const logPrefix = `CreateNotificationActivity|MESSAGE_ID=${createdMessageEvent.message.id}|RECIPIENT=${createdMessageEvent.message.fiscalCode}`;
@@ -236,10 +251,10 @@ export const getCreateNotificationActivityHandler = (
 
   // Return the notification event to the orchestrator
   // The orchestrato will then run the actual notification activities
-  return {
+  return CreateNotificationActivityResult.encode({
     hasEmail: maybeEmailNotificationAddress.isSome(),
     hasWebhook: maybeWebhookNotificationUrl.isSome(),
     kind: "some",
     notificationEvent
-  };
+  });
 };
