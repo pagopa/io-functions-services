@@ -1,27 +1,23 @@
 import { Context } from "@azure/functions";
 
-import { isLeft } from "fp-ts/lib/Either";
-import { isNone } from "fp-ts/lib/Option";
-
 import * as HtmlToText from "html-to-text";
 import * as NodeMailer from "nodemailer";
 
-import {
-  readableReport,
-  ReadableReporter
-} from "italia-ts-commons/lib/reporters";
+import { readableReport } from "italia-ts-commons/lib/reporters";
 import { NonEmptyString } from "italia-ts-commons/lib/strings";
 
+import { ActiveMessage } from "io-functions-commons/dist/src/models/message";
 import {
   EmailNotification,
   NotificationModel
 } from "io-functions-commons/dist/src/models/notification";
 import { NotificationEvent } from "io-functions-commons/dist/src/models/notification_event";
+
 import {
+  diffInMilliseconds,
   TelemetryClient,
   wrapCustomTelemetryClient
 } from "io-functions-commons/dist/src/utils/application_insights";
-import { diffInMilliseconds } from "io-functions-commons/dist/src/utils/application_insights";
 
 import { generateDocumentHtml, sendMail } from "./utils";
 
@@ -63,16 +59,14 @@ export const getEmailNotificationActivityHandler = (
 
   if (decodedEmailNotification.isLeft()) {
     context.log.error(
-      `EmailNotificationActivity|Cannot decode EmailNotification|ERROR=${ReadableReporter.report(
-        decodedEmailNotification
-      ).join(" / ")}`
+      `EmailNotificationActivity|Cannot decode NotificationEvent|ERROR=${readableReport(
+        decodedEmailNotification.value
+      )}`
     );
     return { kind: "FAILURE", reason: "WRONG_FORMAT" };
   }
 
   const emailNotificationEvent = decodedEmailNotification.value;
-
-  const logPrefix = `EmailNotificationActivity|MESSAGE_ID=${emailNotificationEvent.message.id}|RECIPIENT=${emailNotificationEvent.message.fiscalCode}|NOTIFICATION_ID=${emailNotificationEvent.notificationId}`;
 
   const {
     message,
@@ -81,28 +75,28 @@ export const getEmailNotificationActivityHandler = (
     senderMetadata
   } = emailNotificationEvent;
 
+  const logPrefix = `EmailNotificationActivity|MESSAGE_ID=${message.id}|RECIPIENT=${message.fiscalCode}|NOTIFICATION_ID=${notificationId}`;
+
   const serviceId = message.senderServiceId;
 
   const eventName = "handler.notification.email";
 
   const appInsightsClient = getCustomTelemetryClient(
     {
-      operationId: emailNotificationEvent.notificationId,
-      operationParentId: emailNotificationEvent.message.id,
+      operationId: notificationId,
+      operationParentId: message.id,
       serviceId: NonEmptyString.is(serviceId) ? serviceId : undefined
     },
     {
-      messageId: emailNotificationEvent.message.id,
-      notificationId: emailNotificationEvent.notificationId
+      messageId: message.id,
+      notificationId
     }
   );
 
-  // If the message is expired we will not send any notification
-  // FIXME: shouldn't TTL be optional?
-  if (
-    Date.now() - message.createdAt.getTime() >
-    message.timeToLiveSeconds * 1000
-  ) {
+  // Check whether the message is expired
+  const errorOrActiveMessage = ActiveMessage.decode(message);
+
+  if (errorOrActiveMessage.isLeft()) {
     // if the message is expired no more processing is necessary
     context.log.warn(`${logPrefix}|RESULT=TTL_EXPIRED`);
     return { kind: "SUCCESS", result: "EXPIRED" };
@@ -113,41 +107,51 @@ export const getEmailNotificationActivityHandler = (
     notificationId,
     message.id
   );
-  if (isLeft(errorOrMaybeNotification)) {
+
+  if (errorOrMaybeNotification.isLeft()) {
     const error = errorOrMaybeNotification.value;
     // we got an error while fetching the notification
     context.log.warn(`${logPrefix}|ERROR=${error.body}`);
     throw new Error(`Error while fetching the notification: ${error.body}`);
   }
+
   const maybeEmailNotification = errorOrMaybeNotification.value;
-  if (isNone(maybeEmailNotification)) {
+
+  if (maybeEmailNotification.isNone()) {
     // it may happen that the object is not yet visible to this function due to latency
     // as the notification object is retrieved from database and we may be hitting a
-    // replica that is not yet in sync
+    // replica that is not yet in sync - throwing an error will trigger a retry
     context.log.warn(`${logPrefix}|RESULT=NOTIFICATION_NOT_FOUND`);
     throw new Error(`Notification not found`);
   }
+
   const errorOrEmailNotification = EmailNotification.decode(
     maybeEmailNotification.value
   );
-  if (isLeft(errorOrEmailNotification)) {
+
+  if (errorOrEmailNotification.isLeft()) {
     // The notification object is not compatible with this code
     const error = readableReport(errorOrEmailNotification.value);
     context.log.error(`${logPrefix}|ERROR=${error}`);
     return { kind: "FAILURE", reason: "WRONG_FORMAT" };
   }
+
   const emailNotification = errorOrEmailNotification.value.channels.EMAIL;
+
   const documentHtml = await generateDocumentHtml(
     content.subject,
     content.markdown,
     senderMetadata
   );
+
   // converts the HTML to pure text to generate the text version of the message
   const bodyText = HtmlToText.fromString(
     documentHtml,
     notificationDefaultParams.HTML_TO_TEXT_OPTIONS
   );
+
   const startSendMailCallTime = process.hrtime();
+
   // trigger email delivery
   // see https://nodemailer.com/message/
   const sendResult = await sendMail(lMailerTransporter, {
@@ -165,7 +169,9 @@ export const getEmailNotificationActivityHandler = (
     // disableFileAccess: true,
     // disableUrlAccess: true,
   });
+
   const sendMailCallDurationMs = diffInMilliseconds(startSendMailCallTime);
+
   const eventContent = {
     dependencyTypeName: "HTTP",
     duration: sendMailCallDurationMs,
@@ -176,7 +182,7 @@ export const getEmailNotificationActivityHandler = (
     }
   };
 
-  if (isLeft(sendResult)) {
+  if (sendResult.isLeft()) {
     const error = sendResult.value;
     // track the event of failed delivery
     appInsightsClient.trackDependency({
