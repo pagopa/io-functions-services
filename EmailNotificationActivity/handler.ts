@@ -1,3 +1,5 @@
+import * as t from "io-ts";
+
 import { Context } from "@azure/functions";
 
 import * as HtmlToText from "html-to-text";
@@ -26,9 +28,28 @@ export interface INotificationDefaults {
   readonly MAIL_FROM: NonEmptyString;
 }
 
-type IEmailNotificationActivityResult =
-  | { kind: "SUCCESS"; result: "OK" | "EXPIRED" }
-  | { kind: "FAILURE"; reason: "WRONG_FORMAT" };
+export const EmailNotificationActivityInput = t.interface({
+  notificationEvent: NotificationEvent
+});
+
+export type EmailNotificationActivityInput = t.TypeOf<
+  typeof EmailNotificationActivityInput
+>;
+
+export const EmailNotificationActivityResult = t.taggedUnion("kind", [
+  t.interface({
+    kind: t.literal("SUCCESS"),
+    result: t.keyof({ OK: null, EXPIRED: null })
+  }),
+  t.interface({
+    kind: t.literal("FAILURE"),
+    reason: t.keyof({ DECODE_ERROR: null })
+  })
+]);
+
+export type EmailNotificationActivityResult = t.TypeOf<
+  typeof EmailNotificationActivityResult
+>;
 
 // Whether we're in a production environment
 const isProduction = process.env.NODE_ENV === "production";
@@ -45,35 +66,29 @@ export const getEmailNotificationActivityHandler = (
   lMailerTransporter: NodeMailer.Transporter,
   lNotificationModel: NotificationModel,
   notificationDefaultParams: INotificationDefaults
-) => async (
-  context: Context,
-  input: {
-    emailNotificationEventJson: unknown;
-  }
-): Promise<IEmailNotificationActivityResult> => {
-  const { emailNotificationEventJson } = input;
+) => async (context: Context, input: unknown): Promise<unknown> => {
+  const inputOrError = EmailNotificationActivityInput.decode(input);
 
-  const decodedEmailNotification = NotificationEvent.decode(
-    emailNotificationEventJson
-  );
-
-  if (decodedEmailNotification.isLeft()) {
+  if (inputOrError.isLeft()) {
     context.log.error(
-      `EmailNotificationActivity|Cannot decode NotificationEvent|ERROR=${readableReport(
-        decodedEmailNotification.value
+      `EmailNotificationActivity|Cannot decode input|ERROR=${readableReport(
+        inputOrError.value
       )}`
     );
-    return { kind: "FAILURE", reason: "WRONG_FORMAT" };
+    return EmailNotificationActivityResult.encode({
+      kind: "FAILURE",
+      reason: "DECODE_ERROR"
+    });
   }
 
-  const emailNotificationEvent = decodedEmailNotification.value;
+  const { notificationEvent } = inputOrError.value;
 
   const {
     message,
     content,
     notificationId,
     senderMetadata
-  } = emailNotificationEvent;
+  } = notificationEvent;
 
   const logPrefix = `EmailNotificationActivity|MESSAGE_ID=${message.id}|RECIPIENT=${message.fiscalCode}|NOTIFICATION_ID=${notificationId}`;
 
@@ -99,7 +114,10 @@ export const getEmailNotificationActivityHandler = (
   if (errorOrActiveMessage.isLeft()) {
     // if the message is expired no more processing is necessary
     context.log.warn(`${logPrefix}|RESULT=TTL_EXPIRED`);
-    return { kind: "SUCCESS", result: "EXPIRED" };
+    return EmailNotificationActivityResult.encode({
+      kind: "SUCCESS",
+      result: "EXPIRED"
+    });
   }
 
   // fetch the notification
@@ -133,7 +151,10 @@ export const getEmailNotificationActivityHandler = (
     // The notification object is not compatible with this code
     const error = readableReport(errorOrEmailNotification.value);
     context.log.error(`${logPrefix}|ERROR=${error}`);
-    return { kind: "FAILURE", reason: "WRONG_FORMAT" };
+    return EmailNotificationActivityResult.encode({
+      kind: "FAILURE",
+      reason: "DECODE_ERROR"
+    });
   }
 
   const emailNotification = errorOrEmailNotification.value.channels.EMAIL;
@@ -205,7 +226,7 @@ export const getEmailNotificationActivityHandler = (
 
   appInsightsClient.trackEvent({
     measurements: {
-      elapsed: Date.now() - emailNotificationEvent.message.createdAt.getTime()
+      elapsed: Date.now() - notificationEvent.message.createdAt.getTime()
     },
     name: eventName,
     properties: {
@@ -218,5 +239,8 @@ export const getEmailNotificationActivityHandler = (
   // TODO: handling bounces and delivery updates
   // see https://nodemailer.com/usage/#sending-mail
   // see #150597597
-  return { kind: "SUCCESS", result: "OK" };
+  return EmailNotificationActivityResult.encode({
+    kind: "SUCCESS",
+    result: "OK"
+  });
 };
