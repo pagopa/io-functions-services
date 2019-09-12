@@ -26,6 +26,7 @@ import {
 import { getEmailNotificationActivityHandler } from "../EmailNotificationActivity/handler";
 import { NotificationStatusUpdaterActivityInput } from "../NotificationStatusUpdaterActivity/handler";
 import { getStoreMessageContentActivityHandler } from "../StoreMessageContentActivity/handler";
+import { getWebhookNotificationActivityHandler } from "../WebhookNotificationActivity/handler";
 
 import { NotificationEvent } from "io-functions-commons/dist/src/models/notification_event";
 import { HandlerInputType } from "./utils";
@@ -37,7 +38,7 @@ import { HandlerInputType } from "./utils";
  * See https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-checkpointing-and-replay
  *
  */
-// tslint:disable-next-line: cognitive-complexity
+// tslint:disable-next-line: cognitive-complexity no-big-function
 function* handler(context: IFunctionContext): IterableIterator<unknown> {
   const input = context.df.getInput();
 
@@ -139,8 +140,13 @@ function* handler(context: IFunctionContext): IterableIterator<unknown> {
     // TODO: run all notifications in parallel
 
     if (createNotificationActivityResult.hasEmail) {
-      // send the email notification
+      //
+      // Send the email notification
+      //
+      // We need to catch the exception thrown by callActivityWithRetry when
+      // the activity fails too many times.
       try {
+        // trigger the EmailNotificationActivity that will send the email
         const emailNotificationActivityResult: PromiseType<
           ReturnType<ReturnType<typeof getEmailNotificationActivityHandler>>
         > = yield context.df.callActivityWithRetry(
@@ -163,7 +169,7 @@ function* handler(context: IFunctionContext): IterableIterator<unknown> {
           );
         }
 
-        // update the notification status
+        // once the email has been sent, update the notification status
         const emailNotificationStatusUpdaterActivityInput = NotificationStatusUpdaterActivityInput.encode(
           {
             channel: NotificationChannelEnum.EMAIL,
@@ -173,6 +179,7 @@ function* handler(context: IFunctionContext): IterableIterator<unknown> {
             status: NotificationChannelStatusValueEnum.SENT
           }
         );
+
         try {
           yield context.df.callActivityWithRetry(
             "NotificationStatusUpdaterActivity",
@@ -180,23 +187,87 @@ function* handler(context: IFunctionContext): IterableIterator<unknown> {
             emailNotificationStatusUpdaterActivityInput
           );
         } catch (e) {
-          // too many failures
+          // Too many failures while updating the notification status.
+          // We can't do much about it, we just log it and continue.
           context.log.error(
             `${logPrefix}|NotificationStatusUpdaterActivity failed too many times|CHANNEL=email|ERROR=${e}`
           );
         }
-
-        // TODO: add webhook channel
       } catch (e) {
-        // too many failures
+        // Too many failures while sending the email.
+        // We can't do much about it, we just log it and continue.
         context.log.error(
-          `${logPrefix}|EmailNotificationActivity failed too many times|MESSAGE_ID=${createdMessageEvent.message.id}|ERROR=${e}`
+          `${logPrefix}|EmailNotificationActivity failed too many times|ERROR=${e}`
+        );
+      }
+    }
+
+    if (createNotificationActivityResult.hasWebhook) {
+      //
+      // Send the webhook notification
+      //
+      // We need to catch the exception thrown by callActivityWithRetry when
+      // the activity fails too many times.
+      try {
+        // trigger the EmailNotificationActivity that will send the email
+        const webhookNotificationActivityResult: PromiseType<
+          ReturnType<ReturnType<typeof getEmailNotificationActivityHandler>>
+        > = yield context.df.callActivityWithRetry(
+          "WebhookNotificationActivity",
+          retryOptions,
+          {
+            webhookNotificationEventJson: NotificationEvent.encode(
+              createNotificationActivityResult.notificationEvent
+            )
+          } as HandlerInputType<
+            ReturnType<typeof getWebhookNotificationActivityHandler>
+          >
+        );
+
+        if (!context.df.isReplaying) {
+          context.log.verbose(
+            `${logPrefix}|WebhookNotificationActivity result: ${JSON.stringify(
+              webhookNotificationActivityResult
+            )}`
+          );
+        }
+
+        // once the email has been sent, update the notification status
+        const webhookNotificationStatusUpdaterActivityInput = NotificationStatusUpdaterActivityInput.encode(
+          {
+            channel: NotificationChannelEnum.WEBHOOK,
+            messageId: createdMessageEvent.message.id,
+            notificationId:
+              createNotificationActivityResult.notificationEvent.notificationId,
+            status: NotificationChannelStatusValueEnum.SENT
+          }
+        );
+
+        try {
+          yield context.df.callActivityWithRetry(
+            "NotificationStatusUpdaterActivity",
+            retryOptions,
+            webhookNotificationStatusUpdaterActivityInput
+          );
+        } catch (e) {
+          // Too many failures while updating the notification status.
+          // We can't do much about it, we just log it and continue.
+          context.log.error(
+            `${logPrefix}|NotificationStatusUpdaterActivity failed too many times|CHANNEL=webhook|ERROR=${e}`
+          );
+        }
+      } catch (e) {
+        // Too many failures while sending the email.
+        // We can't do much about it, we just log it and continue.
+        context.log.error(
+          `${logPrefix}|WebhookNotificationActivity failed too many times|ERROR=${e}`
         );
       }
     }
 
     // TODO: messageStatusUpdater(MessageStatusValueEnum.PROCESSED);
   } catch (e) {
+    // FIXME: no exceptions reach this point?
     // too many retries
     context.log.error(
       `CreatedMessageOrchestrator|Fatal error, StoreMessageContentActivity or CreateNotificationActivity exceeded the max retries|MESSAGE_ID=${createdMessageEvent.message.id}|ERROR=${e}`
