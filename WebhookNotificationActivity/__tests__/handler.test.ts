@@ -203,7 +203,7 @@ describe("handler", () => {
         getAppinsightsMock as any,
         notificationModelMock as any
       )(nullContext, {
-        webhookNotificationEventJson: getMockNotificationEvent()
+        notificationEvent: getMockNotificationEvent()
       })
     ).rejects.toThrow();
   });
@@ -218,7 +218,7 @@ describe("handler", () => {
         getAppinsightsMock as any,
         notificationModelMock as any
       )(nullContext, {
-        webhookNotificationEventJson: getMockNotificationEvent()
+        notificationEvent: getMockNotificationEvent()
       })
     ).rejects.toThrow();
   });
@@ -233,9 +233,9 @@ describe("handler", () => {
         getAppinsightsMock as any,
         notificationModelMock as any
       )(nullContext, {
-        webhookNotificationEventJson: getMockNotificationEvent()
+        notificationEvent: getMockNotificationEvent()
       })
-    ).resolves.toEqual({ kind: "FAILURE", reason: "WRONG_FORMAT" });
+    ).resolves.toEqual({ kind: "FAILURE", reason: "DECODE_ERROR" });
   });
 
   it("should forward a notification", async () => {
@@ -250,7 +250,7 @@ describe("handler", () => {
       getAppinsightsMock as any,
       notificationModelMock as any
     )(nullContext, {
-      webhookNotificationEventJson: getMockNotificationEvent(aMessageContent)
+      notificationEvent: getMockNotificationEvent(aMessageContent)
     });
 
     expect(mockAppinsights.trackDependency).toHaveBeenCalledWith(
@@ -286,9 +286,7 @@ describe("handler", () => {
       getAppinsightsMock as any,
       notificationModelMock as any
     )(nullContext, {
-      webhookNotificationEventJson: getMockNotificationEvent(
-        aLongMessageContent
-      )
+      notificationEvent: getMockNotificationEvent(aLongMessageContent)
     });
 
     expect(result).toEqual({
@@ -313,7 +311,7 @@ describe("handler", () => {
         getAppinsightsMock as any,
         notificationModelMock as any
       )(nullContext, {
-        webhookNotificationEventJson: getMockNotificationEvent(aMessageContent)
+        notificationEvent: getMockNotificationEvent(aMessageContent)
       })
     ).rejects.toThrow();
 
@@ -342,7 +340,7 @@ describe("handler", () => {
       getAppinsightsMock as any,
       notificationModelMock as any
     )(nullContext, {
-      webhookNotificationEventJson: {
+      notificationEvent: {
         ...notificationEvent,
         message: {
           ...notificationEvent.message,

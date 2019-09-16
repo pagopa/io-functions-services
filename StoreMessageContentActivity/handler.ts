@@ -1,8 +1,13 @@
+import * as t from "io-ts";
+
 import { Context } from "@azure/functions";
 import { BlobService } from "azure-storage";
 import { isLeft } from "fp-ts/lib/Either";
 import { fromNullable, isNone } from "fp-ts/lib/Option";
-import { BlockedInboxOrChannelEnum } from "io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
+import {
+  BlockedInboxOrChannel,
+  BlockedInboxOrChannelEnum
+} from "io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
 import { CreatedMessageEvent } from "io-functions-commons/dist/src/models/created_message_event";
 import { MessageModel } from "io-functions-commons/dist/src/models/message";
 import {
@@ -10,25 +15,42 @@ import {
   ProfileModel,
   RetrievedProfile
 } from "io-functions-commons/dist/src/models/profile";
+import { readableReport } from "italia-ts-commons/lib/reporters";
 
-export interface ISuccessfulStoreMessageContentActivityResult {
-  kind: "SUCCESS";
-  blockedInboxOrChannels: ReadonlyArray<BlockedInboxOrChannelEnum>;
-  profile: RetrievedProfile;
-}
+export const SuccessfulStoreMessageContentActivityResult = t.interface({
+  blockedInboxOrChannels: t.readonlyArray(BlockedInboxOrChannel),
+  kind: t.literal("SUCCESS"),
+  profile: RetrievedProfile
+});
 
-interface IFailedStoreMessageContentActivityResult {
-  kind: "FAILURE";
-  reason:  // tslint:disable-next-line: max-union-size
-    | "PERMANENT_ERROR"
-    | "PROFILE_NOT_FOUND"
-    | "MASTER_INBOX_DISABLED"
-    | "SENDER_BLOCKED";
-}
+export type SuccessfulStoreMessageContentActivityResult = t.TypeOf<
+  typeof SuccessfulStoreMessageContentActivityResult
+>;
 
-type StoreMessageContentActivityResult =
-  | ISuccessfulStoreMessageContentActivityResult
-  | IFailedStoreMessageContentActivityResult;
+export const FailedStoreMessageContentActivityResult = t.interface({
+  kind: t.literal("FAILURE"),
+  reason: t.keyof({
+    // see https://github.com/gcanti/io-ts#union-of-string-literals
+    BAD_DATA: null,
+    MASTER_INBOX_DISABLED: null,
+    PERMANENT_ERROR: null,
+    PROFILE_NOT_FOUND: null,
+    SENDER_BLOCKED: null
+  })
+});
+
+export type FailedStoreMessageContentActivityResult = t.TypeOf<
+  typeof FailedStoreMessageContentActivityResult
+>;
+
+export const StoreMessageContentActivityResult = t.taggedUnion("kind", [
+  SuccessfulStoreMessageContentActivityResult,
+  FailedStoreMessageContentActivityResult
+]);
+
+export type StoreMessageContentActivityResult = t.TypeOf<
+  typeof StoreMessageContentActivityResult
+>;
 
 /**
  * Returns a function for handling storeMessageContentActivity
@@ -39,8 +61,21 @@ export const getStoreMessageContentActivityHandler = (
   lBlobService: BlobService
 ) => async (
   context: Context,
-  createdMessageEvent: CreatedMessageEvent
+  input: unknown
 ): Promise<StoreMessageContentActivityResult> => {
+  const createdMessageEventOrError = CreatedMessageEvent.decode(input);
+
+  if (createdMessageEventOrError.isLeft()) {
+    context.log.error(
+      `StoreMessageContentActivity|Unable to parse CreatedMessageEvent|ERROR=${readableReport(
+        createdMessageEventOrError.value
+      )}`
+    );
+    return { kind: "FAILURE", reason: "BAD_DATA" };
+  }
+
+  const createdMessageEvent = createdMessageEventOrError.value;
+
   const newMessageWithoutContent = createdMessageEvent.message;
 
   const logPrefix = `StoreMessageContentActivity|MESSAGE_ID=${newMessageWithoutContent.id}|RECIPIENT=${newMessageWithoutContent.fiscalCode}`;

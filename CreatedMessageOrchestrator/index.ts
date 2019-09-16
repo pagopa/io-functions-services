@@ -1,35 +1,26 @@
-﻿/*
- * This function is not intended to be invoked directly. Instead it will be
- * triggered by an HTTP starter function.
- *
- * Before running this sample, please:
- * - create a Durable activity function (default name is "Hello")
- * - create a Durable HTTP starter function
- * - run 'npm install durable-functions' from the wwwroot folder of your
- *    function app in Kudu
- */
-
-import * as df from "durable-functions";
+﻿import * as df from "durable-functions";
 import { IFunctionContext } from "durable-functions/lib/src/classes";
 
 import { readableReport } from "italia-ts-commons/lib/reporters";
-import { PromiseType } from "italia-ts-commons/lib/types";
 
 import { NotificationChannelEnum } from "io-functions-commons/dist/generated/definitions/NotificationChannel";
 import { NotificationChannelStatusValueEnum } from "io-functions-commons/dist/generated/definitions/NotificationChannelStatusValue";
 import { CreatedMessageEvent } from "io-functions-commons/dist/src/models/created_message_event";
 
 import {
-  CreateNotificationActivityResult,
-  getCreateNotificationActivityHandler
+  CreateNotificationActivityInput,
+  CreateNotificationActivityResult
 } from "../CreateNotificationActivity/handler";
-import { getEmailNotificationActivityHandler } from "../EmailNotificationActivity/handler";
+import {
+  EmailNotificationActivityInput,
+  EmailNotificationActivityResult
+} from "../EmailNotificationActivity/handler";
 import { NotificationStatusUpdaterActivityInput } from "../NotificationStatusUpdaterActivity/handler";
-import { getStoreMessageContentActivityHandler } from "../StoreMessageContentActivity/handler";
-import { getWebhookNotificationActivityHandler } from "../WebhookNotificationActivity/handler";
-
-import { NotificationEvent } from "io-functions-commons/dist/src/models/notification_event";
-import { HandlerInputType } from "./utils";
+import { StoreMessageContentActivityResult } from "../StoreMessageContentActivity/handler";
+import {
+  WebhookNotificationActivityInput,
+  WebhookNotificationActivityResult
+} from "../WebhookNotificationActivity/handler";
 
 /**
  * Durable Functions Orchestrator that handles CreatedMessage events
@@ -46,9 +37,11 @@ function* handler(context: IFunctionContext): IterableIterator<unknown> {
   const errorOrCreatedMessageEvent = CreatedMessageEvent.decode(input);
   if (errorOrCreatedMessageEvent.isLeft()) {
     context.log.error(
-      `CreatedMessageOrchestrator|Invalid CreatedMessageEvent received|ORCHESTRATOR_ID=${
+      `CreatedMessageOrchestrator|ORCHESTRATOR_ID=${
         context.df.instanceId
-      }|ERRORS=${readableReport(errorOrCreatedMessageEvent.value)}`
+      }|ERROR=DECODE_ERROR|DETAILS=${readableReport(
+        errorOrCreatedMessageEvent.value
+      )}`
     );
     // we will never be able to recover from this, so don't trigger a retry
     return [];
@@ -59,9 +52,7 @@ function* handler(context: IFunctionContext): IterableIterator<unknown> {
 
   const logPrefix = `CreatedMessageOrchestrator|ORCHESTRATOR_ID=${context.df.instanceId}|MESSAGE_ID=${newMessageWithContent.id}|RECIPIENT=${newMessageWithContent.fiscalCode}`;
 
-  if (!context.df.isReplaying) {
-    context.log.verbose(`${logPrefix}|Starting`);
-  }
+  context.log.verbose(`${logPrefix}|Starting`);
 
   // TODO: customize + backoff
   // see https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-error-handling#javascript-functions-2x-only-1
@@ -69,28 +60,35 @@ function* handler(context: IFunctionContext): IterableIterator<unknown> {
 
   try {
     // first we store the content of the message in the database
-    const storeMessageContentActivityResult: PromiseType<
-      ReturnType<ReturnType<typeof getStoreMessageContentActivityHandler>>
-    > = yield context.df.callActivityWithRetry(
+    const storeMessageContentActivityResultJson = yield context.df.callActivityWithRetry(
       "StoreMessageContentActivity",
       retryOptions,
-      // The cast is here for making TypeScript check that we're indeed passing
-      // the right parameters
-      // tslint:disable-next-line: no-useless-cast
-      createdMessageEvent as HandlerInputType<
-        ReturnType<typeof getStoreMessageContentActivityHandler>
-      >
+      CreatedMessageEvent.encode(createdMessageEvent)
     );
 
-    if (!context.df.isReplaying) {
-      context.log.verbose(
-        `${logPrefix}|StoreMessageContentActivity completed|RESULT=${
-          storeMessageContentActivityResult.kind === "SUCCESS"
-            ? "SUCCESS"
-            : "FAILURE/" + storeMessageContentActivityResult.reason
-        }`
+    const storeMessageContentActivityResultOrError = StoreMessageContentActivityResult.decode(
+      storeMessageContentActivityResultJson
+    );
+
+    if (storeMessageContentActivityResultOrError.isLeft()) {
+      context.log.error(
+        `${logPrefix}|ERROR=DECODE_ERROR|DETAILS=${readableReport(
+          storeMessageContentActivityResultOrError.value
+        )}`
       );
+      // we will never be able to recover from this, so don't trigger a retry
+      return [];
     }
+
+    const storeMessageContentActivityResult =
+      storeMessageContentActivityResultOrError.value;
+
+    context.log.verbose(
+      `${logPrefix}|StoreMessageContentActivity completed|RESULT=${storeMessageContentActivityResult.kind}` +
+        (storeMessageContentActivityResult.kind === "FAILURE"
+          ? String(storeMessageContentActivityResult.reason)
+          : "")
+    );
 
     if (storeMessageContentActivityResult.kind !== "SUCCESS") {
       // StoreMessageContentActivity failed permanently, we can't proceed with
@@ -102,17 +100,13 @@ function* handler(context: IFunctionContext): IterableIterator<unknown> {
 
     // then we create a NotificationActivity in the database that will store
     // the status of the notification on each channel
-    const createNotificationActivityResultJson: PromiseType<
-      ReturnType<ReturnType<typeof getCreateNotificationActivityHandler>>
-    > = yield context.df.callActivityWithRetry(
+    const createNotificationActivityResultJson = yield context.df.callActivityWithRetry(
       "CreateNotificationActivity",
       retryOptions,
-      {
+      CreateNotificationActivityInput.encode({
         createdMessageEvent,
         storeMessageContentActivityResult
-      } as HandlerInputType<
-        ReturnType<typeof getCreateNotificationActivityHandler>
-      >
+      })
     );
 
     const createNotificationActivityResultOrError = CreateNotificationActivityResult.decode(
@@ -121,7 +115,7 @@ function* handler(context: IFunctionContext): IterableIterator<unknown> {
 
     if (createNotificationActivityResultOrError.isLeft()) {
       context.log.error(
-        `${logPrefix}|Unable to parse CreateNotificationActivityResult|ERROR=${readableReport(
+        `${logPrefix}|ERROR=DECODE_ERROR|DETAILS=${readableReport(
           createNotificationActivityResultOrError.value
         )}`
       );
@@ -147,51 +141,62 @@ function* handler(context: IFunctionContext): IterableIterator<unknown> {
       // the activity fails too many times.
       try {
         // trigger the EmailNotificationActivity that will send the email
-        const emailNotificationActivityResult: PromiseType<
-          ReturnType<ReturnType<typeof getEmailNotificationActivityHandler>>
-        > = yield context.df.callActivityWithRetry(
+        const emailNotificationActivityResultJson = yield context.df.callActivityWithRetry(
           "EmailNotificationActivity",
           retryOptions,
-          {
-            emailNotificationEventJson: NotificationEvent.encode(
+          EmailNotificationActivityInput.encode({
+            notificationEvent:
               createNotificationActivityResult.notificationEvent
-            )
-          } as HandlerInputType<
-            ReturnType<typeof getEmailNotificationActivityHandler>
-          >
+          })
         );
 
-        if (!context.df.isReplaying) {
-          context.log.verbose(
-            `${logPrefix}|EmailNotificationActivity result: ${JSON.stringify(
-              emailNotificationActivityResult
+        const emailNotificationActivityResultOrError = EmailNotificationActivityResult.decode(
+          emailNotificationActivityResultJson
+        );
+
+        if (emailNotificationActivityResultOrError.isLeft()) {
+          context.log.error(
+            `${logPrefix}|ERROR=DECODE_ERROR|DETAILS=${readableReport(
+              emailNotificationActivityResultOrError.value
             )}`
           );
-        }
+          // not that the activity may have succeeded but we cannot decode its
+          // result, so we can't even update the notification status
+        } else {
+          const emailNotificationActivityResult =
+            emailNotificationActivityResultOrError.value;
 
-        // once the email has been sent, update the notification status
-        const emailNotificationStatusUpdaterActivityInput = NotificationStatusUpdaterActivityInput.encode(
-          {
-            channel: NotificationChannelEnum.EMAIL,
-            messageId: createdMessageEvent.message.id,
-            notificationId:
-              createNotificationActivityResult.notificationEvent.notificationId,
-            status: NotificationChannelStatusValueEnum.SENT
+          if (emailNotificationActivityResult.kind === "FAILURE") {
+            context.log.error(
+              `${logPrefix}|EmailNotificationActivity failed|REASON=${emailNotificationActivityResult.reason}`
+            );
+          } else {
+            // once the email has been sent, update the notification status
+            const emailNotificationStatusUpdaterActivityInput = {
+              channel: NotificationChannelEnum.EMAIL,
+              messageId: createdMessageEvent.message.id,
+              notificationId:
+                createNotificationActivityResult.notificationEvent
+                  .notificationId,
+              status: NotificationChannelStatusValueEnum.SENT
+            };
+
+            try {
+              yield context.df.callActivityWithRetry(
+                "NotificationStatusUpdaterActivity",
+                retryOptions,
+                NotificationStatusUpdaterActivityInput.encode(
+                  emailNotificationStatusUpdaterActivityInput
+                )
+              );
+            } catch (e) {
+              // Too many failures while updating the notification status.
+              // We can't do much about it, we just log it and continue.
+              context.log.error(
+                `${logPrefix}|NotificationStatusUpdaterActivity failed too many times|CHANNEL=email|ERROR=${e}`
+              );
+            }
           }
-        );
-
-        try {
-          yield context.df.callActivityWithRetry(
-            "NotificationStatusUpdaterActivity",
-            retryOptions,
-            emailNotificationStatusUpdaterActivityInput
-          );
-        } catch (e) {
-          // Too many failures while updating the notification status.
-          // We can't do much about it, we just log it and continue.
-          context.log.error(
-            `${logPrefix}|NotificationStatusUpdaterActivity failed too many times|CHANNEL=email|ERROR=${e}`
-          );
         }
       } catch (e) {
         // Too many failures while sending the email.
@@ -210,51 +215,62 @@ function* handler(context: IFunctionContext): IterableIterator<unknown> {
       // the activity fails too many times.
       try {
         // trigger the EmailNotificationActivity that will send the email
-        const webhookNotificationActivityResult: PromiseType<
-          ReturnType<ReturnType<typeof getEmailNotificationActivityHandler>>
-        > = yield context.df.callActivityWithRetry(
+        const webhookNotificationActivityResultJson = yield context.df.callActivityWithRetry(
           "WebhookNotificationActivity",
           retryOptions,
-          {
-            webhookNotificationEventJson: NotificationEvent.encode(
+          WebhookNotificationActivityInput.encode({
+            notificationEvent:
               createNotificationActivityResult.notificationEvent
-            )
-          } as HandlerInputType<
-            ReturnType<typeof getWebhookNotificationActivityHandler>
-          >
+          })
         );
 
-        if (!context.df.isReplaying) {
-          context.log.verbose(
-            `${logPrefix}|WebhookNotificationActivity result: ${JSON.stringify(
-              webhookNotificationActivityResult
+        const webhookNotificationActivityResultOrError = WebhookNotificationActivityResult.decode(
+          webhookNotificationActivityResultJson
+        );
+
+        if (webhookNotificationActivityResultOrError.isLeft()) {
+          context.log.error(
+            `${logPrefix}|ERROR=DECODE_ERROR|DETAILS=${readableReport(
+              webhookNotificationActivityResultOrError.value
             )}`
           );
-        }
+          // not that the activity may have succeeded but we cannot decode its
+          // result, so we can't even update the notification status
+        } else {
+          const webhookNotificationActivityResult =
+            webhookNotificationActivityResultOrError.value;
 
-        // once the email has been sent, update the notification status
-        const webhookNotificationStatusUpdaterActivityInput = NotificationStatusUpdaterActivityInput.encode(
-          {
-            channel: NotificationChannelEnum.WEBHOOK,
-            messageId: createdMessageEvent.message.id,
-            notificationId:
-              createNotificationActivityResult.notificationEvent.notificationId,
-            status: NotificationChannelStatusValueEnum.SENT
+          if (webhookNotificationActivityResult.kind === "FAILURE") {
+            context.log.error(
+              `${logPrefix}|webhookNotificationActivity failed|REASON=${webhookNotificationActivityResult.reason}`
+            );
+          } else {
+            // once the email has been sent, update the notification status
+            const webhookNotificationStatusUpdaterActivityInput = {
+              channel: NotificationChannelEnum.WEBHOOK,
+              messageId: createdMessageEvent.message.id,
+              notificationId:
+                createNotificationActivityResult.notificationEvent
+                  .notificationId,
+              status: NotificationChannelStatusValueEnum.SENT
+            };
+
+            try {
+              yield context.df.callActivityWithRetry(
+                "NotificationStatusUpdaterActivity",
+                retryOptions,
+                NotificationStatusUpdaterActivityInput.encode(
+                  webhookNotificationStatusUpdaterActivityInput
+                )
+              );
+            } catch (e) {
+              // Too many failures while updating the notification status.
+              // We can't do much about it, we just log it and continue.
+              context.log.error(
+                `${logPrefix}|NotificationStatusUpdaterActivity failed too many times|CHANNEL=webhook|ERROR=${e}`
+              );
+            }
           }
-        );
-
-        try {
-          yield context.df.callActivityWithRetry(
-            "NotificationStatusUpdaterActivity",
-            retryOptions,
-            webhookNotificationStatusUpdaterActivityInput
-          );
-        } catch (e) {
-          // Too many failures while updating the notification status.
-          // We can't do much about it, we just log it and continue.
-          context.log.error(
-            `${logPrefix}|NotificationStatusUpdaterActivity failed too many times|CHANNEL=webhook|ERROR=${e}`
-          );
         }
       } catch (e) {
         // Too many failures while sending the email.

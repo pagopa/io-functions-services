@@ -1,9 +1,13 @@
+import * as util from "util";
+
 import { Context } from "@azure/functions";
 
 import * as t from "io-ts";
 
 import { isLeft } from "fp-ts/lib/Either";
 import { fromNullable, none, Option, some } from "fp-ts/lib/Option";
+
+import { readableReport } from "italia-ts-commons/lib/reporters";
 
 import { BlockedInboxOrChannelEnum } from "io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
 import { HttpsUrl } from "io-functions-commons/dist/generated/definitions/HttpsUrl";
@@ -27,7 +31,7 @@ import {
 } from "io-functions-commons/dist/src/models/sender_service";
 import { ulidGenerator } from "io-functions-commons/dist/src/utils/strings";
 
-import { ISuccessfulStoreMessageContentActivityResult } from "../StoreMessageContentActivity/handler";
+import { SuccessfulStoreMessageContentActivityResult } from "../StoreMessageContentActivity/handler";
 
 /**
  * Attempt to resolve an email address from
@@ -72,6 +76,15 @@ async function createNotification(
   };
 }
 
+export const CreateNotificationActivityInput = t.interface({
+  createdMessageEvent: CreatedMessageEvent,
+  storeMessageContentActivityResult: SuccessfulStoreMessageContentActivityResult
+});
+
+export type CreateNotificationActivityInput = t.TypeOf<
+  typeof CreateNotificationActivityInput
+>;
+
 const CreateNotificationActivitySomeResult = t.interface({
   hasEmail: t.boolean,
   hasWebhook: t.boolean,
@@ -91,7 +104,7 @@ type CreateNotificationActivityNoneResult = t.TypeOf<
   typeof CreateNotificationActivityNoneResult
 >;
 
-export const CreateNotificationActivityResult = t.union([
+export const CreateNotificationActivityResult = t.taggedUnion("kind", [
   CreateNotificationActivitySomeResult,
   CreateNotificationActivityNoneResult
 ]);
@@ -107,14 +120,23 @@ export const getCreateNotificationActivityHandler = (
   lSenderServiceModel: SenderServiceModel,
   lNotificationModel: NotificationModel,
   lDefaultWebhookUrl: HttpsUrl
-) => async (
-  context: Context,
-  input: {
-    createdMessageEvent: CreatedMessageEvent;
-    storeMessageContentActivityResult: ISuccessfulStoreMessageContentActivityResult;
+) => async (context: Context, input: unknown): Promise<unknown> => {
+  const inputOrError = CreateNotificationActivityInput.decode(input);
+  if (inputOrError.isLeft()) {
+    context.log.error(
+      `CreateNotificationActivity|Unable to parse CreateNotificationActivityHandlerInput|ERROR=${readableReport(
+        inputOrError.value
+      )}`
+    );
+    return CreateNotificationActivityResult.encode({
+      kind: "none"
+    });
   }
-): Promise<unknown> => {
-  const { createdMessageEvent, storeMessageContentActivityResult } = input;
+
+  const {
+    createdMessageEvent,
+    storeMessageContentActivityResult
+  } = inputOrError.value;
 
   const logPrefix = `CreateNotificationActivity|MESSAGE_ID=${createdMessageEvent.message.id}|RECIPIENT=${createdMessageEvent.message.fiscalCode}`;
 
@@ -248,6 +270,8 @@ export const getCreateNotificationActivityHandler = (
   );
 
   context.log.verbose(`${logPrefix}|RESULT=SUCCESS`);
+
+  context.log.verbose(util.inspect(notificationEvent));
 
   // Return the notification event to the orchestrator
   // The orchestrato will then run the actual notification activities

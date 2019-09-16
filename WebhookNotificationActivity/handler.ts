@@ -6,6 +6,8 @@
  * which in turns delivers the message to the mobile App.
  */
 
+import * as t from "io-ts";
+
 import * as request from "superagent";
 
 import { Either, left, right } from "fp-ts/lib/Either";
@@ -44,9 +46,28 @@ import { HttpsUrl } from "io-functions-commons/dist/generated/definitions/HttpsU
 import { MessageContent } from "io-functions-commons/dist/generated/definitions/MessageContent";
 import { SenderMetadata } from "io-functions-commons/dist/generated/definitions/SenderMetadata";
 
-type IWebhookNotificationActivityResult =
-  | { kind: "SUCCESS"; result: "OK" | "EXPIRED" }
-  | { kind: "FAILURE"; reason: "WRONG_FORMAT" };
+export const WebhookNotificationActivityInput = t.interface({
+  notificationEvent: NotificationEvent
+});
+
+export type WebhookNotificationActivityInput = t.TypeOf<
+  typeof WebhookNotificationActivityInput
+>;
+
+export const WebhookNotificationActivityResult = t.taggedUnion("kind", [
+  t.interface({
+    kind: t.literal("SUCCESS"),
+    result: t.keyof({ OK: null, EXPIRED: null })
+  }),
+  t.interface({
+    kind: t.literal("FAILURE"),
+    reason: t.keyof({ DECODE_ERROR: null })
+  })
+]);
+
+export type WebhookNotificationActivityResult = t.TypeOf<
+  typeof WebhookNotificationActivityResult
+>;
 
 // request timeout in milliseconds
 const DEFAULT_REQUEST_TIMEOUT_MS = 10000;
@@ -135,35 +156,29 @@ export async function sendToWebhook(
 export const getWebhookNotificationActivityHandler = (
   getCustomTelemetryClient: ReturnType<typeof wrapCustomTelemetryClient>,
   lNotificationModel: NotificationModel
-) => async (
-  context: Context,
-  input: {
-    webhookNotificationEventJson: unknown;
-  }
-): Promise<IWebhookNotificationActivityResult> => {
-  const { webhookNotificationEventJson } = input;
+) => async (context: Context, input: unknown): Promise<unknown> => {
+  const inputOrError = WebhookNotificationActivityInput.decode(input);
 
-  const decodedWebhookNotification = NotificationEvent.decode(
-    webhookNotificationEventJson
-  );
-
-  if (decodedWebhookNotification.isLeft()) {
+  if (inputOrError.isLeft()) {
     context.log.error(
-      `WebhookNotificationActivity|Cannot decode NotificationEvent|ERROR=${readableReport(
-        decodedWebhookNotification.value
+      `WebhookNotificationActivity|Cannot decode input|ERROR=${readableReport(
+        inputOrError.value
       )}`
     );
-    return { kind: "FAILURE", reason: "WRONG_FORMAT" };
+    return WebhookNotificationActivityResult.encode({
+      kind: "FAILURE",
+      reason: "DECODE_ERROR"
+    });
   }
 
-  const webhookNotificationEvent = decodedWebhookNotification.value;
+  const { notificationEvent } = inputOrError.value;
 
   const {
     content,
     message,
     notificationId,
     senderMetadata
-  } = webhookNotificationEvent;
+  } = notificationEvent;
 
   const logPrefix = `WebhookNotificationActivity|MESSAGE_ID=${message.id}|RECIPIENT=${message.fiscalCode}|NOTIFICATION_ID=${notificationId}`;
 
@@ -189,7 +204,10 @@ export const getWebhookNotificationActivityHandler = (
   if (errorOrActiveMessage.isLeft()) {
     // if the message is expired no more processing is necessary
     context.log.warn(`${logPrefix}|RESULT=TTL_EXPIRED`);
-    return { kind: "SUCCESS", result: "EXPIRED" };
+    return WebhookNotificationActivityResult.encode({
+      kind: "SUCCESS",
+      result: "EXPIRED"
+    });
   }
 
   // fetch the notification
@@ -223,7 +241,10 @@ export const getWebhookNotificationActivityHandler = (
     // The notification object is not compatible with this code
     const error = readableReport(errorOrWebhookNotification.value);
     context.log.error(`${logPrefix}|ERROR=${error}`);
-    return { kind: "FAILURE", reason: "WRONG_FORMAT" };
+    return WebhookNotificationActivityResult.encode({
+      kind: "FAILURE",
+      reason: "DECODE_ERROR"
+    });
   }
 
   const webhookNotification = errorOrWebhookNotification.value.channels.WEBHOOK;
@@ -276,5 +297,8 @@ export const getWebhookNotificationActivityHandler = (
     success: true
   });
 
-  return { kind: "SUCCESS", result: "OK" };
+  return WebhookNotificationActivityResult.encode({
+    kind: "SUCCESS",
+    result: "OK"
+  });
 };
