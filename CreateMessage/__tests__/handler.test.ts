@@ -1,15 +1,19 @@
+/* tslint:disable: no-any */
+
 import * as fc from "fast-check";
 
 import { MessageModel } from "io-functions-commons/dist/src/models/message";
 import { UserGroup } from "io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
 
 import { right } from "fp-ts/lib/Either";
+import { none, some } from "fp-ts/lib/Option";
 
 import {
   canDefaultAddresses,
   canPaymentAmount,
   canWriteMessage,
   createMessageDocument,
+  CreateMessageHandler,
   forkOrchestrator
 } from "../handler";
 
@@ -232,5 +236,51 @@ describe("forkOrchestrator", () => {
         }
       )
     );
+  });
+});
+
+describe("CreateMessageHandler", () => {
+  it("should return a validation error if fiscalcode is specified both in path and payload", async () => {
+    await fc.assert(
+      fc.asyncProperty(fiscalCodeArb, async fiscalCode => {
+        const createMessageHandler = CreateMessageHandler(
+          undefined as any,
+          undefined as any,
+          undefined as any
+        );
+
+        const response = await createMessageHandler(
+          undefined as any,
+          undefined as any,
+          undefined as any,
+          undefined as any,
+          {
+            fiscal_code: fiscalCode
+          } as any,
+          some(fiscalCode)
+        );
+
+        expect(response.kind).toBe("IResponseErrorValidation");
+      })
+    );
+  });
+
+  it("should return a validation error if fiscalcode is not specified in path nor payload", async () => {
+    const createMessageHandler = CreateMessageHandler(
+      undefined as any,
+      undefined as any,
+      undefined as any
+    );
+
+    const response = await createMessageHandler(
+      undefined as any,
+      undefined as any,
+      undefined as any,
+      undefined as any,
+      {} as any,
+      none
+    );
+
+    expect(response.kind).toBe("IResponseErrorValidation");
   });
 });
