@@ -9,6 +9,7 @@ import * as df from "durable-functions";
 
 import { Either, isLeft, left, right } from "fp-ts/lib/Either";
 import { identity, Lazy } from "fp-ts/lib/function";
+import { fromNullable, isNone, isSome, Option } from "fp-ts/lib/Option";
 import { fromEither, TaskEither, tryCatch } from "fp-ts/lib/TaskEither";
 
 import * as t from "io-ts";
@@ -38,7 +39,7 @@ import {
   ClientIpMiddleware
 } from "io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
 import { ContextMiddleware } from "io-functions-commons/dist/src/utils/middlewares/context_middleware";
-import { FiscalCodeMiddleware } from "io-functions-commons/dist/src/utils/middlewares/fiscalcode";
+import { OptionalFiscalCodeMiddleware } from "io-functions-commons/dist/src/utils/middlewares/fiscalcode";
 import {
   IRequestMiddleware,
   withRequestMiddlewares,
@@ -113,8 +114,8 @@ type ICreateMessageHandler = (
   auth: IAzureApiAuthorization,
   clientIp: ClientIp,
   attrs: IAzureUserAttributes,
-  fiscalCode: FiscalCode,
-  messagePayload: ApiNewMessageWithDefaults
+  messagePayload: ApiNewMessageWithDefaults,
+  maybeFiscalCode: Option<FiscalCode>
 ) => Promise<
   // tslint:disable-next-line:max-union-size
   | IResponseSuccessRedirectToResource<Message, {}>
@@ -342,9 +343,28 @@ export function CreateMessageHandler(
     auth,
     __,
     userAttributes,
-    fiscalCode,
-    messagePayload
+    messagePayload,
+    maybeFiscalCodeInPath
   ) => {
+    const maybeFiscalCodeInPayload = fromNullable(messagePayload.fiscal_code);
+
+    // The fiscal_code parameter must be specified in the path or in the payload but not in both
+    if (isSome(maybeFiscalCodeInPath) && isSome(maybeFiscalCodeInPayload)) {
+      return ResponseErrorValidation(
+        "Bad parameters",
+        "The fiscalcode parameter must be specified in the path or in the payload but not in both"
+      );
+    }
+
+    const maybeFiscalCode = maybeFiscalCodeInPath.alt(maybeFiscalCodeInPayload);
+    if (isNone(maybeFiscalCode)) {
+      return ResponseErrorValidation(
+        "Bad parameters",
+        "The fiscalcode parameter must be specified in the path or in the payload"
+      );
+    }
+
+    const fiscalCode = maybeFiscalCode.value;
     const { service } = userAttributes;
     const { authorizedRecipients, serviceId } = service;
 
@@ -480,10 +500,10 @@ export function CreateMessage(
     ClientIpMiddleware,
     // extracts custom user attributes from the request
     AzureUserAttributesMiddleware(serviceModel),
-    // extracts the fiscal code from the request params
-    FiscalCodeMiddleware,
     // extracts the create message payload from the request body
-    MessagePayloadMiddleware
+    MessagePayloadMiddleware,
+    // extracts the optional fiscal code from the request params
+    OptionalFiscalCodeMiddleware
   );
   return wrapRequestHandler(
     middlewaresWrap(

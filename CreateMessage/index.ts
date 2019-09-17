@@ -69,7 +69,7 @@ const messageModel = new MessageModel(
 const serviceModel = new ServiceModel(documentClient, servicesCollectionUrl);
 
 app.post(
-  "/api/v1/messages/:fiscalcode",
+  "/api/v1/messages/:fiscalcode?",
   CreateMessage(getCustomTelemetryClient, serviceModel, messageModel)
 );
 
