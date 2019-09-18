@@ -24,6 +24,7 @@
     "@types/html-to-text": "^1.4.31",
     "@types/jest": "^24.0.15",
     "@types/nodemailer": "^4.6.2",
+    "@types/superagent": "^3.8.1",
     "azurite": "^3.1.2-preview",
     "danger": "^4.0.2",
     "danger-plugin-digitalcitizenship": "^0.3.1",
@@ -49,6 +50,7 @@
     "io-ts": "1.8.5",
     "italia-ts-commons": "^5.1.5",
     "nodemailer": "^4.6.7",
+    "superagent": "^3.8.3",
     "winston": "^3.2.1"
   }
 }
