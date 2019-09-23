@@ -100,8 +100,8 @@ security:
 paths:
   "/messages":
     post:
-      operationId: submitMessageforUser
-      summary: Submit a Message
+      operationId: submitMessageforUserWithFiscalCodeInBody
+      summary: Submit a Message passing the user fiscal_code in the request body
       description: |-
         Submits a message to a user.
         On error, the reason is returned in the response payload.
@@ -157,8 +157,8 @@ paths:
             $ref: "#/definitions/ProblemJson"
   "/messages/{fiscal_code}":
     post:
-      operationId: submitMessageforUserWithFiscalCode
-      summary: Submit a Message
+      operationId: submitMessageforUser
+      summary: Submit a Message passing the user fiscal_code as path parameter
       description: |-
         Submits a message to a user.
         On error, the reason is returned in the response payload.
