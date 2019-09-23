@@ -98,9 +98,66 @@ schemes:
 security:
 - SubscriptionKey: []
 paths:
-  "/messages/{fiscal_code}":
+  "/messages":
     post:
       operationId: submitMessageforUser
+      summary: Submit a Message
+      description: |-
+        Submits a message to a user.
+        On error, the reason is returned in the response payload.
+        In order to call `submitMessageforUser`, before sending any message,
+        the sender MUST call `getProfile` and check that the profile exists
+        (for the specified fiscal code) and that the `sender_allowed` field
+        of the user's profile it set to `true`.
+      parameters:
+      - name: message
+        in: body
+        schema:
+          $ref: "#/definitions/NewMessage"
+        x-examples:
+          application/json:
+            time_to_live: 3600
+            content:
+              subject: ipsum labore deserunt fugiat
+              markdown:  |-
+                Nullam dapibus metus sed elementum efficitur. Curabitur facilisis sagittis risus nec sodales.
+                Vestibulum in eros sapien. Donec ac odio sit amet dui semper ornare eget nec odio. Pellentesque habitant
+                morbi tristique senectus et netus et malesuada fames ac turpis egestas. Praesent nibh ex, mattis sit amet
+                felis id, sodales euismod velit. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+      responses:
+        '201':
+          description: Message created.
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                description: The identifier of the created message.
+          headers:
+            Location:
+              type: string
+              description: |-
+                Location (URL) of created message resource.
+                A GET request to this URL returns the message status and details.
+          examples:
+            application/json:
+              id: 01BX9NSMKVXXS5PSP2FATZMYYY
+        '400':
+          description: Invalid payload.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+          examples: {}
+        '401':
+          description: Unauthorized
+        '429':
+          description: Too many requests
+        '500':
+          description: The message cannot be delivered.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+  "/messages/{fiscal_code}":
+    post:
+      operationId: submitMessageforUserWithFiscalCode
       summary: Submit a Message
       description: |-
         Submits a message to a user.
