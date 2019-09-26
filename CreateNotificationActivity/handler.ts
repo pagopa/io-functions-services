@@ -165,18 +165,21 @@ export const getCreateNotificationActivityHandler = (
   // then we retrieve the optional email from the user profile
   const maybeEmailFromProfile = getEmailAddressFromProfile(profile);
 
+  // the sender service allows email channel
+  const isEmailChannelAllowed = !senderMetadata.requireSecureChannels
+
   // finally we decide whether we should send the email notification or not -
   // we send an email notification when all the following conditions are met:
   //
   // * email notifications are enabled in the user profile (isEmailEnabledInProfile)
   // * email notifications are not blocked for the sender service (!isEmailBlockedForService)
-  // * the sender service do NOT require secure channels
+  // * the sender service allows email channel
   // * a destination email address is configured (maybeEmailFromProfile)
   //
   const maybeEmailNotificationAddress =
     isEmailEnabledInProfile &&
-    !isEmailBlockedForService &&
-    !senderMetadata.requireSecureChannels
+      !isEmailBlockedForService &&
+      isEmailChannelAllowed
       ? maybeEmailFromProfile
       : none;
 
@@ -204,8 +207,8 @@ export const getCreateNotificationActivityHandler = (
   const maybeWebhookNotificationUrl =
     isWebhookEnabledInProfile && !isWebhookBlockedForService
       ? some({
-          url: lDefaultWebhookUrl
-        })
+        url: lDefaultWebhookUrl
+      })
       : none;
 
   context.log.verbose(
