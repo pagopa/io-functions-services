@@ -286,6 +286,7 @@ export const forkOrchestrator = (
       departmentName: service.departmentName,
       organizationFiscalCode: service.organizationFiscalCode,
       organizationName: service.organizationName,
+      requireSecureChannels: service.requireSecureChannels,
       serviceName: service.serviceName
     },
     serviceVersion: service.version

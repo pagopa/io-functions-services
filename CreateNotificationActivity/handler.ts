@@ -170,10 +170,13 @@ export const getCreateNotificationActivityHandler = (
   //
   // * email notifications are enabled in the user profile (isEmailEnabledInProfile)
   // * email notifications are not blocked for the sender service (!isEmailBlockedForService)
+  // * the sender service do NOT require secure channels
   // * a destination email address is configured (maybeEmailFromProfile)
   //
   const maybeEmailNotificationAddress =
-    isEmailEnabledInProfile && !isEmailBlockedForService
+    isEmailEnabledInProfile &&
+    !isEmailBlockedForService &&
+    !senderMetadata.requireSecureChannels
       ? maybeEmailFromProfile
       : none;
 
