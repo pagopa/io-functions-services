@@ -39,13 +39,15 @@
     "typescript": "^3.3.3"
   },
   "dependencies": {
+    "applicationinsights": "^1.0.3",
+    "azure-storage": "^2.10.3",
     "cors": "^2.8.4",
     "documentdb": "^1.12.2",
     "durable-functions": "^1.2.2",
     "express": "^4.15.3",
     "fp-ts": "1.12.0",
     "html-to-text": "^4.0.0",
-    "io-functions-commons": "^0.6.4",
+    "io-functions-commons": "^1.1.0",
     "io-functions-express": "^0.1.0",
     "io-ts": "1.8.5",
     "italia-ts-commons": "^5.1.5",

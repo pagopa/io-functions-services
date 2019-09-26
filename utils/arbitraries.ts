@@ -176,6 +176,7 @@ export const serviceArb = fc
     maxAmountArb,
     numStringArb(11),
     fc.lorem(),
+    fc.boolean(),
     alphaStringArb(8),
     fc.lorem()
   )
@@ -187,6 +188,7 @@ export const serviceArb = fc
       maxAllowedPaymentAmount,
       organizationFiscalCode,
       organizationName,
+      requireSecureChannels,
       serviceId,
       serviceName
     ]) =>
@@ -199,6 +201,7 @@ export const serviceArb = fc
         organizationFiscalCode: (organizationFiscalCode as unknown) as string &
           PatternString<"^[0-9]{11}$">,
         organizationName: organizationName as NonEmptyString,
+        requireSecureChannels,
         serviceId,
         serviceName: serviceName as NonEmptyString
       } as Service)

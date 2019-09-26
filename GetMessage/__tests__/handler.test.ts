@@ -69,6 +69,7 @@ const someUserAttributes: IAzureUserAttributes = {
     maxAllowedPaymentAmount: 0 as MaxAllowedPaymentAmount,
     organizationFiscalCode: anOrganizationFiscalCode,
     organizationName: "AgID" as NonEmptyString,
+    requireSecureChannels: false,
     serviceId: "test" as NonEmptyString,
     serviceName: "Test" as NonEmptyString,
     version: 1 as NonNegativeNumber
