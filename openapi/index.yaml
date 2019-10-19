@@ -257,6 +257,36 @@ paths:
             $ref: "#/definitions/ProblemJson"
         '429':
           description: Too many requests
+  "/profiles":
+    post:
+      operationId: getProfileByPOST
+      summary: Get a User Profile using POST
+      description:  |-
+        Returns the preferences for the user identified by the
+        fiscal code provided in the request body. The field `sender_allowed` is set fo `false` in case
+        the service which is calling the API has been disabled by the user.
+      responses:
+        '200':
+          description: Found.
+          schema:
+            $ref: "#/definitions/LimitedProfile"
+          examples:
+            application/json:
+              email: foobar@example.com
+              version: 1
+        '401':
+          description: Unauthorized
+        '404':
+          description: No user found for the provided fiscal code.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+        '429':
+          description: Too many requests
+      parameters:
+        - name: payload
+          in: body
+          schema:
+            $ref: "#/definitions/GetLimitedProfileByPOSTPayload"
   "/profiles/{fiscal_code}":
     get:
       operationId: getProfile
@@ -328,6 +358,13 @@ paths:
       parameters:
       - $ref: "#/parameters/DateUTC"
 definitions:
+  GetLimitedProfileByPOSTPayload:
+    type: object
+    properties:
+      fiscal_code:
+        $ref: "#/definitions/FiscalCode"
+    required:
+      - fiscal_code
   SubscriptionsFeed:
     type: object
     properties:

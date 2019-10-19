@@ -1,6 +1,8 @@
 import * as express from "express";
+
 import { isRight } from "fp-ts/lib/Either";
 import { isSome } from "fp-ts/lib/Option";
+
 import { LimitedProfile } from "io-functions-commons/dist/generated/definitions/LimitedProfile";
 import { ProfileModel } from "io-functions-commons/dist/src/models/profile";
 import { ServiceModel } from "io-functions-commons/dist/src/models/service";
@@ -17,7 +19,6 @@ import {
   ClientIp,
   ClientIpMiddleware
 } from "io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
-import { FiscalCodeMiddleware } from "io-functions-commons/dist/src/utils/middlewares/fiscalcode";
 import {
   withRequestMiddlewares,
   wrapRequestHandler
@@ -36,23 +37,24 @@ import {
   ResponseErrorNotFound,
   ResponseSuccessJson
 } from "italia-ts-commons/lib/responses";
-import { FiscalCode } from "italia-ts-commons/lib/strings";
 
+import { GetLimitedProfileByPOSTPayload } from "../generated/definitions/GetLimitedProfileByPOSTPayload";
 import {
+  GetLimitedProfileByPOSTPayloadMiddleware,
   isSenderAllowed,
   retrievedProfileToLimitedProfile
 } from "../utils/profile";
 
 /**
- * Type of a GetLimitedProfile handler.
+ * Type of a GetLimitedProfileByPOST handler.
  *
- * GetLimitedProfile expects a FiscalCode as input and returns a LimitedProfile or a NotFound error.
+ * GetLimitedProfileByPOST expects a FiscalCode as input (in the body) and returns a LimitedProfile or a NotFound error.
  */
-type IGetLimitedProfileHandler = (
+type IGetLimitedProfileByPOSTHandler = (
   apiAuthorization: IAzureApiAuthorization,
   clientIp: ClientIp,
   userAttributes: IAzureUserAttributes,
-  fiscalCode: FiscalCode
+  payload: GetLimitedProfileByPOSTPayload
 ) => Promise<
   | IResponseSuccessJson<LimitedProfile>
   | IResponseErrorNotFound
@@ -60,14 +62,14 @@ type IGetLimitedProfileHandler = (
 >;
 
 /**
- * Returns a type safe GetLimitedProfile handler.
+ * Returns a type safe GetLimitedProfileByPOST handler.
  */
-export function GetLimitedProfileHandler(
+export function GetLimitedProfileByPOSTHandler(
   profileModel: ProfileModel
-): IGetLimitedProfileHandler {
-  return async (_, __, userAttributes, fiscalCode) => {
+): IGetLimitedProfileByPOSTHandler {
+  return async (_, __, userAttributes, payload) => {
     const maybeProfileOrError = await profileModel.findOneProfileByFiscalCode(
-      fiscalCode
+      payload.fiscal_code
     );
     if (isRight(maybeProfileOrError)) {
       const maybeProfile = maybeProfileOrError.value;
@@ -99,19 +101,19 @@ export function GetLimitedProfileHandler(
 }
 
 /**
- * Wraps a GetLimitedProfile handler inside an Express request handler.
+ * Wraps a GetLimitedProfileByPOST handler inside an Express request handler.
  */
-export function GetLimitedProfile(
+export function GetLimitedProfileByPOST(
   serviceModel: ServiceModel,
   profileModel: ProfileModel
 ): express.RequestHandler {
-  const handler = GetLimitedProfileHandler(profileModel);
+  const handler = GetLimitedProfileByPOSTHandler(profileModel);
 
   const middlewaresWrap = withRequestMiddlewares(
     AzureApiAuthMiddleware(new Set([UserGroup.ApiLimitedProfileRead])),
     ClientIpMiddleware,
     AzureUserAttributesMiddleware(serviceModel),
-    FiscalCodeMiddleware
+    GetLimitedProfileByPOSTPayloadMiddleware
   );
 
   return wrapRequestHandler(
