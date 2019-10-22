@@ -5,7 +5,7 @@ import { BlockedInboxOrChannelEnum } from "io-functions-commons/dist/generated/d
 import { NewMessage } from "io-functions-commons/dist/generated/definitions/NewMessage";
 import { PreferredLanguageEnum } from "io-functions-commons/dist/generated/definitions/PreferredLanguage";
 import { NewMessageWithoutContent } from "io-functions-commons/dist/src/models/message";
-import { Profile } from "io-functions-commons/dist/src/models/profile";
+import { RetrievedProfile } from "io-functions-commons/dist/src/models/profile";
 import { Service } from "io-functions-commons/dist/src/models/service";
 import { ClientIp } from "io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
 import {
@@ -214,14 +214,21 @@ export const versionedServiceArb = fc
     version: version as NonNegativeNumber
   }));
 
-export const profileArb = fc.tuple(fiscalCodeArb, fc.emailAddress()).map(
-  ([fiscalCode, email]) =>
-    ({
-      blockedInboxOrChannels: {
-        "01234567890": new Set([BlockedInboxOrChannelEnum.INBOX])
-      },
-      email: email as EmailString,
-      fiscalCode,
-      preferredLanguages: [PreferredLanguageEnum.en_GB]
-    } as Profile)
-);
+export const retrievedProfileArb = fc
+  .tuple(fc.nat(), fiscalCodeArb, fc.emailAddress())
+  .map(
+    ([version, fiscalCode, email]) =>
+      ({
+        _self: "123",
+        _ts: 123,
+        blockedInboxOrChannels: {
+          "01234567890": new Set([BlockedInboxOrChannelEnum.INBOX])
+        },
+        email: email as EmailString,
+        fiscalCode,
+        id: `${fiscalCodeArb}-0000000000000000` as NonEmptyString,
+        kind: "IRetrievedProfile",
+        preferredLanguages: [PreferredLanguageEnum.en_GB],
+        version: version as NonNegativeNumber
+      } as RetrievedProfile)
+  );
