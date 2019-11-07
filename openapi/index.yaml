@@ -257,6 +257,36 @@ paths:
             $ref: "#/definitions/ProblemJson"
         '429':
           description: Too many requests
+  "/profiles":
+    post:
+      operationId: getProfileByPOST
+      summary: Get a User Profile using POST
+      description:  |-
+        Returns the preferences for the user identified by the
+        fiscal code provided in the request body. The field `sender_allowed` is set fo `false` in case
+        the service which is calling the API has been disabled by the user.
+      responses:
+        '200':
+          description: Found.
+          schema:
+            $ref: "#/definitions/LimitedProfile"
+          examples:
+            application/json:
+              email: foobar@example.com
+              version: 1
+        '401':
+          description: Unauthorized
+        '404':
+          description: No user found for the provided fiscal code.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+        '429':
+          description: Too many requests
+      parameters:
+        - name: payload
+          in: body
+          schema:
+            $ref: "#/definitions/GetLimitedProfileByPOSTPayload"
   "/profiles/{fiscal_code}":
     get:
       operationId: getProfile
@@ -289,12 +319,24 @@ paths:
       operationId: getSubscriptionsFeedForDate
       summary: Get Subscriptions Feed
       description:  |-
-        Returns the hashed fiscal codes of users that subscribed to or
-        unsubscribed from your service on the provided date (UTC). By querying
-        this feed on each day, you can know what users you can or cannot send
-        messages to without having to query `getProfile` for each message.
-        This is an optimization for services that send hi volumes of
-        messages per day to avoid having to make two API calls for each message.
+        Returns the **hashed fiscal codes** of users that **subscribed to** or
+        **unsubscribed from** your service **on the provided date** (UTC).
+
+        By querying this feed on each day, you will be able to retrieve the
+        "delta" of users that subscribed and unsubscribed fom your service.
+        You will have to keep a list of users somewhere in your infrastructure
+        that you will update each day by adding the subscribed users and
+        removing the unsunbscribed users.
+
+        You will then be able to query this local list to know which users you
+        can send messages, to without having to query `getProfile` for each message.
+
+        To avoid sharing the citizens fiscal codes, the API will
+        provide the hex encoding of the SHA256 hash of the upper case fiscal code.
+        In pseudo code `CF_HASH = LOWERCASE(HEX(SHA256(UPPERCASE(CF))))`.
+
+        Note that this is an optimization for those services that need to send very high
+        volumes of messages per day, to avoid having to make two API calls for each message.
       responses:
         '200':
           description: Found.
@@ -316,6 +358,13 @@ paths:
       parameters:
       - $ref: "#/parameters/DateUTC"
 definitions:
+  GetLimitedProfileByPOSTPayload:
+    type: object
+    properties:
+      fiscal_code:
+        $ref: "#/definitions/FiscalCode"
+    required:
+      - fiscal_code
   SubscriptionsFeed:
     type: object
     properties:

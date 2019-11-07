@@ -40,8 +40,10 @@ jobs:
       - checkout
       - *restore_node_cache
       - *install_node_modules
+      # Generate definitions
+      - run: yarn generate:definitions
       - run: yarn test:coverage
-      - run: 'bash <(curl -s https://codecov.io/bash)'
+      - run: "bash <(curl -s https://codecov.io/bash)"
 
   lint:
     <<: *defaults_js
