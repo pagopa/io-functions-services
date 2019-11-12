@@ -157,7 +157,7 @@ export const getCreateNotificationActivityHandler = (
   // in their profile
   const isEmailEnabledInProfile = profile.isEmailEnabled;
 
-  // Check if the email is validated
+  // Check if the email in the user profile is validated
   const isEmailValidatedInProfile = profile.isEmailValidated;
 
   // first we check whether the user has blocked emails notifications for the
@@ -175,6 +175,7 @@ export const getCreateNotificationActivityHandler = (
   // we send an email notification when all the following conditions are met:
   //
   // * email notifications are enabled in the user profile (isEmailEnabledInProfile)
+  // * email is validated in the user profile (isEmailValidatedInProfile)
   // * email notifications are not blocked for the sender service (!isEmailBlockedForService)
   // * the sender service allows email channel
   // * a destination email address is configured (maybeEmailFromProfile)
