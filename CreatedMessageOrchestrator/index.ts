@@ -7,6 +7,7 @@ import { NotificationChannelEnum } from "io-functions-commons/dist/generated/def
 import { NotificationChannelStatusValueEnum } from "io-functions-commons/dist/generated/definitions/NotificationChannelStatusValue";
 import { CreatedMessageEvent } from "io-functions-commons/dist/src/models/created_message_event";
 
+import { MessageStatusValueEnum } from "io-functions-commons/dist/generated/definitions/MessageStatusValue";
 import {
   CreateNotificationActivityInput,
   CreateNotificationActivityResult
@@ -15,6 +16,7 @@ import {
   EmailNotificationActivityInput,
   EmailNotificationActivityResult
 } from "../EmailNotificationActivity/handler";
+import { Input as MessageStatusUpdaterActivityInput } from "../MessageStatusUpdaterActivity/handler";
 import { NotificationStatusUpdaterActivityInput } from "../NotificationStatusUpdaterActivity/handler";
 import { StoreMessageContentActivityResult } from "../StoreMessageContentActivity/handler";
 import {
@@ -93,7 +95,21 @@ function* handler(context: IFunctionContext): IterableIterator<unknown> {
     if (storeMessageContentActivityResult.kind !== "SUCCESS") {
       // StoreMessageContentActivity failed permanently, we can't proceed with
       // delivering the notifications
-      // TODO: messageStatusUpdater(MessageStatusValueEnum.REJECTED); ?
+
+      // Update message status
+      const messageStatusUpdaterActivityInputRejected = MessageStatusUpdaterActivityInput.encode(
+        {
+          messageId: newMessageWithContent.id,
+          status: MessageStatusValueEnum.REJECTED
+        }
+      );
+
+      // TODO: Do we need to do something is this fails?
+      yield context.df.callActivityWithRetry(
+        "MessageStatusUpdaterActivity",
+        retryOptions,
+        messageStatusUpdaterActivityInputRejected
+      );
 
       return [];
     }
@@ -281,14 +297,40 @@ function* handler(context: IFunctionContext): IterableIterator<unknown> {
       }
     }
 
-    // TODO: messageStatusUpdater(MessageStatusValueEnum.PROCESSED);
+    // Update the message status
+    const messageStatusUpdaterActivityInputProcessed = MessageStatusUpdaterActivityInput.encode(
+      {
+        messageId: newMessageWithContent.id,
+        status: MessageStatusValueEnum.PROCESSED
+      }
+    );
+
+    // TODO: Do we need to do something is this fails?
+    yield context.df.callActivityWithRetry(
+      "MessageStatusUpdaterActivity",
+      retryOptions,
+      messageStatusUpdaterActivityInputProcessed
+    );
   } catch (e) {
     // FIXME: no exceptions reach this point?
     // too many retries
     context.log.error(
       `CreatedMessageOrchestrator|Fatal error, StoreMessageContentActivity or CreateNotificationActivity exceeded the max retries|MESSAGE_ID=${createdMessageEvent.message.id}|ERROR=${e}`
     );
-    // TODO: messageStatusUpdater(MessageStatusValueEnum.FAILED);
+    // Update the message status
+    const messageStatusUpdaterActivityInputFailed = MessageStatusUpdaterActivityInput.encode(
+      {
+        messageId: newMessageWithContent.id,
+        status: MessageStatusValueEnum.FAILED
+      }
+    );
+
+    // TODO: Do we need to do something is this fails?
+    yield context.df.callActivityWithRetry(
+      "MessageStatusUpdaterActivity",
+      retryOptions,
+      messageStatusUpdaterActivityInputFailed
+    );
   }
 
   return [];
