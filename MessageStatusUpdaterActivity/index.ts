@@ -1,20 +1,36 @@
-﻿/*
- * This function is not intended to be invoked directly. Instead it will be
- * triggered by an orchestrator function.
- *
- * Before running this sample, please:
- * - create a Durable orchestration function
- * - create a Durable HTTP starter function
- * - run 'npm install durable-functions' from the wwwroot folder of your
- *   function app in Kudu
- */
+﻿import { AzureFunction } from "@azure/functions";
+import { DocumentClient as DocumentDBClient } from "documentdb";
 
-import { AzureFunction, Context } from "@azure/functions";
+import {
+  MESSAGE_STATUS_COLLECTION_NAME,
+  MessageStatusModel
+} from "io-functions-commons/dist/src/models/message_status";
+import * as documentDbUtils from "io-functions-commons/dist/src/utils/documentdb";
+import { getRequiredStringEnv } from "io-functions-commons/dist/src/utils/env";
 
-const activityFunction: AzureFunction = async (
-  context: Context
-): Promise<string> => {
-  return `Hello ${context.bindings.name}!`;
-};
+import { getMessageStatusUpdaterActivityHandler } from "./handler";
 
-export default activityFunction;
+const cosmosDbUri = getRequiredStringEnv("CUSTOMCONNSTR_COSMOSDB_URI");
+const cosmosDbKey = getRequiredStringEnv("CUSTOMCONNSTR_COSMOSDB_KEY");
+const cosmosDbName = getRequiredStringEnv("COSMOSDB_NAME");
+
+const documentDbDatabaseUrl = documentDbUtils.getDatabaseUri(cosmosDbName);
+
+const documentClient = new DocumentDBClient(cosmosDbUri, {
+  masterKey: cosmosDbKey
+});
+
+const messagesStatusCollectionUrl = documentDbUtils.getCollectionUri(
+  documentDbDatabaseUrl,
+  MESSAGE_STATUS_COLLECTION_NAME
+);
+const messageStatusModel = new MessageStatusModel(
+  documentClient,
+  messagesStatusCollectionUrl
+);
+
+const messageStatusUpdaterActivityHandler: AzureFunction = getMessageStatusUpdaterActivityHandler(
+  messageStatusModel
+);
+
+export default messageStatusUpdaterActivityHandler;

@@ -11,7 +11,7 @@ import {
 } from "io-functions-commons/dist/src/models/message_status";
 import { ReadableReporter } from "italia-ts-commons/lib/reporters";
 
-const Input = t.interface({
+export const Input = t.interface({
   messageId: NonEmptyString,
   status: MessageStatusValue
 });
