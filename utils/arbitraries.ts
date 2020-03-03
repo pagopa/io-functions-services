@@ -222,7 +222,7 @@ export const retrievedProfileArb = fc
         _self: "123",
         _ts: 123,
         blockedInboxOrChannels: {
-          "01234567890": new Set([BlockedInboxOrChannelEnum.INBOX])
+          "01234567890": [BlockedInboxOrChannelEnum.INBOX]
         },
         email: email as EmailString,
         fiscalCode,
