@@ -12,8 +12,9 @@
     "test": "jest",
     "test:coverage": "jest --coverage",
     "lint": "tslint -p .",
-    "deploy": "npm run build && func azure functionapp publish agid-functions-services-test",
-    "generate:definitions": "rimraf ./generated/definitions && mkdir -p ./generated/definitions && gen-api-models --api-spec ./openapi/index.yaml --out-dir ./generated/definitions"
+    "generate:definitions": "rimraf ./generated/definitions && shx mkdir -p ./generated/definitions && gen-api-models --api-spec ./openapi/index.yaml --out-dir ./generated/definitions",
+    "dist:modules": "modclean -r -n default:safe && npm prune --production",
+    "predeploy": "npm-run-all build:production dist:modules"
   },
   "description": "",
   "devDependencies": {
@@ -32,8 +33,10 @@
     "italia-tslint-rules": "^1.1.3",
     "italia-utils": "^4.1.0",
     "jest": "^24.8.0",
+    "modclean": "^3.0.0-beta.1",
     "npm-run-all": "^4.1.5",
     "prettier": "^1.18.2",
+    "shx": "^0.3.2",
     "ts-jest": "^24.0.2",
     "tslint": "^5.17.0",
     "typescript": "^3.3.3"
