@@ -137,10 +137,9 @@ export function GetMessageHandler(
     }
 
     // fetch the content of the message from the blob storage
-    const errorOrMaybeContent = await messageModel.getStoredContent(
+    const errorOrMaybeContent = await messageModel.getContentFromBlob(
       blobService,
-      retrievedMessage.id,
-      retrievedMessage.fiscalCode
+      retrievedMessage.id
     );
 
     if (isLeft(errorOrMaybeContent)) {

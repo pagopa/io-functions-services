@@ -11,7 +11,6 @@ import {
 import { CreatedMessageEvent } from "io-functions-commons/dist/src/models/created_message_event";
 import { MessageModel } from "io-functions-commons/dist/src/models/message";
 import {
-  IProfileBlockedInboxOrChannels,
   ProfileModel,
   RetrievedProfile
 } from "io-functions-commons/dist/src/models/profile";
@@ -108,10 +107,8 @@ export const getStoreMessageContentActivityHandler = (
 
   // channels the user has blocked for this sender service
   const blockedInboxOrChannels = fromNullable(profile.blockedInboxOrChannels)
-    .chain((bc: IProfileBlockedInboxOrChannels) =>
-      fromNullable(bc[newMessageWithoutContent.senderServiceId])
-    )
-    .getOrElse(new Set());
+    .chain(bc => fromNullable(bc[newMessageWithoutContent.senderServiceId]))
+    .getOrElse([]);
 
   context.log.verbose(
     `${logPrefix}|BLOCKED_CHANNELS=${JSON.stringify(blockedInboxOrChannels)}`
@@ -131,9 +128,8 @@ export const getStoreMessageContentActivityHandler = (
   }
 
   // whether the user has blocked inbox storage for messages from this sender
-  const isMessageStorageBlockedForService = blockedInboxOrChannels.has(
-    BlockedInboxOrChannelEnum.INBOX
-  );
+  const isMessageStorageBlockedForService =
+    blockedInboxOrChannels.indexOf(BlockedInboxOrChannelEnum.INBOX) >= 0;
 
   if (isMessageStorageBlockedForService) {
     // the recipient's inbox is disabled
@@ -144,10 +140,9 @@ export const getStoreMessageContentActivityHandler = (
   // Save the content of the message to the blob storage.
   // In case of a retry this operation will overwrite the message content with itself
   // (this is fine as we don't know if the operation succeeded at first)
-  const errorOrAttachment = await lMessageModel.attachStoredContent(
+  const errorOrAttachment = await lMessageModel.storeContentAsBlob(
     lBlobService,
     newMessageWithoutContent.id,
-    newMessageWithoutContent.fiscalCode,
     createdMessageEvent.content
   );
 

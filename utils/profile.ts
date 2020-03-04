@@ -1,10 +1,7 @@
 import { BlockedInboxOrChannelEnum } from "io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
 import { LimitedProfile } from "io-functions-commons/dist/generated/definitions/LimitedProfile";
 import { ServiceId } from "io-functions-commons/dist/generated/definitions/ServiceId";
-import {
-  IProfileBlockedInboxOrChannels,
-  RetrievedProfile
-} from "io-functions-commons/dist/src/models/profile";
+import { RetrievedProfile } from "io-functions-commons/dist/src/models/profile";
 import { IRequestMiddleware } from "io-functions-commons/dist/src/utils/request_middleware";
 import { ResponseErrorFromValidationErrors } from "italia-ts-commons/lib/responses";
 import { GetLimitedProfileByPOSTPayload } from "../generated/definitions/GetLimitedProfileByPOSTPayload";
@@ -14,13 +11,19 @@ import { GetLimitedProfileByPOSTPayload } from "../generated/definitions/GetLimi
  * messages to the user identified by this profile
  */
 export function isSenderAllowed(
-  blockedInboxOrChannels: IProfileBlockedInboxOrChannels | undefined,
+  blockedInboxOrChannels:
+    | RetrievedProfile["blockedInboxOrChannels"]
+    | undefined,
   serviceId: ServiceId
 ): boolean {
   return (
     blockedInboxOrChannels === undefined ||
     blockedInboxOrChannels[serviceId] === undefined ||
-    !blockedInboxOrChannels[serviceId].has(BlockedInboxOrChannelEnum.INBOX)
+    !(
+      blockedInboxOrChannels[serviceId].indexOf(
+        BlockedInboxOrChannelEnum.INBOX
+      ) >= 0
+    )
   );
 }
 
