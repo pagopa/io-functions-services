@@ -14,7 +14,7 @@
     "lint": "tslint -p .",
     "generate:definitions": "rimraf ./generated/definitions && shx mkdir -p ./generated/definitions && gen-api-models --api-spec ./openapi/index.yaml --out-dir ./generated/definitions",
     "dist:modules": "modclean -r -n default:safe && npm prune --production",
-    "predeploy": "npm-run-all build:production dist:modules"
+    "predeploy": "npm-run-all build dist:modules"
   },
   "description": "",
   "devDependencies": {
