@@ -1,5 +1,5 @@
 import * as express from "express";
-import { isLeft, isRight } from "fp-ts/lib/Either";
+import { isRight } from "fp-ts/lib/Either";
 import { isSome } from "fp-ts/lib/Option";
 import { LimitedProfile } from "io-functions-commons/dist/generated/definitions/LimitedProfile";
 import { ProfileModel } from "io-functions-commons/dist/src/models/profile";
