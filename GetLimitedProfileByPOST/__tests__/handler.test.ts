@@ -19,10 +19,10 @@ import {
   retrievedProfileArb
 } from "../../utils/arbitraries";
 import { retrievedProfileToLimitedProfile } from "../../utils/profile";
-import { GetLimitedProfileHandler } from "../handler";
+import { GetLimitedProfileByPOSTHandler } from "../handler";
 
 // tslint:disable-next-line: no-big-function
-describe("GetLimitedProfileHandler", () => {
+describe("GetLimitedProfileByPOSTHandler", () => {
   const mockAzureApiAuthorization: IAzureApiAuthorization = {
     groups: new Set(),
     kind: "IAzureApiAuthorization",
@@ -47,7 +47,7 @@ describe("GetLimitedProfileHandler", () => {
           const mockProfileModel = ({
             findOneProfileByFiscalCode: jest.fn(() => Promise.resolve(left({})))
           } as unknown) as ProfileModel;
-          const limitedProfileHandler = GetLimitedProfileHandler(
+          const limitedProfileHandler = GetLimitedProfileByPOSTHandler(
             mockProfileModel
           );
 
@@ -55,7 +55,7 @@ describe("GetLimitedProfileHandler", () => {
             mockAzureApiAuthorization,
             clientIp,
             mockAzureUserAttributes,
-            fiscalCode
+            { fiscal_code: fiscalCode }
           );
 
           expect(
@@ -81,7 +81,7 @@ describe("GetLimitedProfileHandler", () => {
               Promise.resolve(right(none))
             )
           } as unknown) as ProfileModel;
-          const limitedProfileHandler = GetLimitedProfileHandler(
+          const limitedProfileHandler = GetLimitedProfileByPOSTHandler(
             mockProfileModel
           );
 
@@ -89,7 +89,7 @@ describe("GetLimitedProfileHandler", () => {
             mockAzureApiAuthorization,
             clientIp,
             mockAzureUserAttributes,
-            fiscalCode
+            { fiscal_code: fiscalCode }
           );
 
           expect(
@@ -116,7 +116,7 @@ describe("GetLimitedProfileHandler", () => {
               Promise.resolve(right(some(retrievedProfile)))
             )
           } as unknown) as ProfileModel;
-          const limitedProfileHandler = GetLimitedProfileHandler(
+          const limitedProfileHandler = GetLimitedProfileByPOSTHandler(
             mockProfileModel
           );
 
@@ -133,7 +133,7 @@ describe("GetLimitedProfileHandler", () => {
                 authorizedRecipients: new Set(["ABC" as FiscalCode])
               }
             },
-            fiscalCode
+            { fiscal_code: fiscalCode }
           );
 
           expect(
@@ -160,7 +160,7 @@ describe("GetLimitedProfileHandler", () => {
               Promise.resolve(right(some(retrievedProfile)))
             )
           } as unknown) as ProfileModel;
-          const limitedProfileHandler = GetLimitedProfileHandler(
+          const limitedProfileHandler = GetLimitedProfileByPOSTHandler(
             mockProfileModel
           );
 
@@ -177,7 +177,7 @@ describe("GetLimitedProfileHandler", () => {
                 authorizedRecipients: new Set([retrievedProfile.fiscalCode])
               }
             },
-            fiscalCode
+            { fiscal_code: fiscalCode }
           );
 
           expect(
@@ -209,7 +209,7 @@ describe("GetLimitedProfileHandler", () => {
               Promise.resolve(right(some(retrievedProfile)))
             )
           } as unknown) as ProfileModel;
-          const limitedProfileHandler = GetLimitedProfileHandler(
+          const limitedProfileHandler = GetLimitedProfileByPOSTHandler(
             mockProfileModel
           );
 
@@ -220,7 +220,7 @@ describe("GetLimitedProfileHandler", () => {
             },
             clientIp,
             mockAzureUserAttributes,
-            fiscalCode
+            { fiscal_code: fiscalCode }
           );
 
           expect(

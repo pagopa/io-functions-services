@@ -1,6 +1,6 @@
 import * as express from "express";
 
-import { isRight } from "fp-ts/lib/Either";
+import { isLeft, isRight } from "fp-ts/lib/Either";
 import { isSome } from "fp-ts/lib/Option";
 
 import { LimitedProfile } from "io-functions-commons/dist/generated/definitions/LimitedProfile";
@@ -38,6 +38,7 @@ import {
   ResponseSuccessJson
 } from "italia-ts-commons/lib/responses";
 
+import { canWriteMessage } from "../CreateMessage/handler";
 import { GetLimitedProfileByPOSTPayload } from "../generated/definitions/GetLimitedProfileByPOSTPayload";
 import {
   GetLimitedProfileByPOSTPayloadMiddleware,
@@ -67,13 +68,26 @@ type IGetLimitedProfileByPOSTHandler = (
 export function GetLimitedProfileByPOSTHandler(
   profileModel: ProfileModel
 ): IGetLimitedProfileByPOSTHandler {
-  return async (_, __, userAttributes, payload) => {
+  return async (auth, __, userAttributes, payload) => {
     const maybeProfileOrError = await profileModel.findOneProfileByFiscalCode(
       payload.fiscal_code
     );
     if (isRight(maybeProfileOrError)) {
       const maybeProfile = maybeProfileOrError.value;
-      if (isSome(maybeProfile)) {
+      if (
+        isSome(maybeProfile) &&
+        // Sandboxed accounts will receive 404 even when the user exists
+        // if they're not authorized to send a messages to this fiscal code.
+        // This prevents leaking the information, to sandboxed account,
+        // that the fiscal code belongs to a subscribed user
+        isRight(
+          canWriteMessage(
+            auth.groups,
+            userAttributes.service.authorizedRecipients,
+            maybeProfile.value.fiscalCode
+          )
+        )
+      ) {
         const profile = maybeProfile.value;
 
         return ResponseSuccessJson(
