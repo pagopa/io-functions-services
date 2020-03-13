@@ -52,7 +52,10 @@ describe("GetLimitedProfileHandler", () => {
           );
 
           const response = await limitedProfileHandler(
-            mockAzureApiAuthorization,
+            {
+              ...mockAzureApiAuthorization,
+              groups: new Set([UserGroup.ApiMessageWrite])
+            },
             clientIp,
             mockAzureUserAttributes,
             fiscalCode
@@ -86,7 +89,10 @@ describe("GetLimitedProfileHandler", () => {
           );
 
           const response = await limitedProfileHandler(
-            mockAzureApiAuthorization,
+            {
+              ...mockAzureApiAuthorization,
+              groups: new Set([UserGroup.ApiMessageWrite])
+            },
             clientIp,
             mockAzureUserAttributes,
             fiscalCode
@@ -104,7 +110,7 @@ describe("GetLimitedProfileHandler", () => {
     );
   });
 
-  it("should respond with ResponseErrorNotFound when the requested profile is found in the db but the service is sandboxed", async () => {
+  it("should respond with 403 when the requested profile is found in the db but the service is sandboxed", async () => {
     await fc.assert(
       fc.asyncProperty(
         clientIpArb,
@@ -138,11 +144,10 @@ describe("GetLimitedProfileHandler", () => {
 
           expect(
             mockProfileModel.findOneProfileByFiscalCode
-          ).toHaveBeenCalledTimes(1);
-          expect(mockProfileModel.findOneProfileByFiscalCode).toBeCalledWith(
-            fiscalCode
+          ).not.toHaveBeenCalled();
+          expect(response.kind).toBe(
+            "IResponseErrorForbiddenNotAuthorizedForRecipient"
           );
-          expect(response.kind).toBe("IResponseErrorNotFound");
         }
       )
     );
@@ -174,7 +179,7 @@ describe("GetLimitedProfileHandler", () => {
               ...mockAzureUserAttributes,
               service: {
                 ...mockAzureUserAttributes.service,
-                authorizedRecipients: new Set([retrievedProfile.fiscalCode])
+                authorizedRecipients: new Set([fiscalCode])
               }
             },
             fiscalCode
