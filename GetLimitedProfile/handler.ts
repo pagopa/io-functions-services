@@ -1,5 +1,5 @@
 import * as express from "express";
-import { isRight } from "fp-ts/lib/Either";
+import { isLeft, isRight } from "fp-ts/lib/Either";
 import { isSome } from "fp-ts/lib/Option";
 import { LimitedProfile } from "io-functions-commons/dist/generated/definitions/LimitedProfile";
 import { ProfileModel } from "io-functions-commons/dist/src/models/profile";
@@ -31,13 +31,16 @@ import {
   clientIPAndCidrTuple as ipTuple
 } from "io-functions-commons/dist/src/utils/source_ip_check";
 import {
+  IResponseErrorForbiddenNotAuthorizedForRecipient,
   IResponseErrorNotFound,
   IResponseSuccessJson,
+  ResponseErrorForbiddenNotAuthorizedForRecipient,
   ResponseErrorNotFound,
   ResponseSuccessJson
 } from "italia-ts-commons/lib/responses";
 import { FiscalCode } from "italia-ts-commons/lib/strings";
 
+import { canWriteMessage } from "../CreateMessage/handler";
 import {
   isSenderAllowed,
   retrievedProfileToLimitedProfile
@@ -54,9 +57,11 @@ type IGetLimitedProfileHandler = (
   userAttributes: IAzureUserAttributes,
   fiscalCode: FiscalCode
 ) => Promise<
+  // tslint:disable-next-line: max-union-size
   | IResponseSuccessJson<LimitedProfile>
   | IResponseErrorNotFound
   | IResponseErrorQuery
+  | IResponseErrorForbiddenNotAuthorizedForRecipient
 >;
 
 /**
@@ -65,12 +70,30 @@ type IGetLimitedProfileHandler = (
 export function GetLimitedProfileHandler(
   profileModel: ProfileModel
 ): IGetLimitedProfileHandler {
-  return async (_, __, userAttributes, fiscalCode) => {
+  return async (auth, __, userAttributes, fiscalCode) => {
+    // Sandboxed accounts will receive 403
+    // if they're not authorized to send a messages to this fiscal code.
+    // This prevents leaking the information, to sandboxed account,
+    // that the fiscal code belongs to a subscribed user
+    if (
+      isLeft(
+        canWriteMessage(
+          auth.groups,
+          userAttributes.service.authorizedRecipients,
+          fiscalCode
+        )
+      )
+    ) {
+      return ResponseErrorForbiddenNotAuthorizedForRecipient;
+    }
+
     const maybeProfileOrError = await profileModel.findOneProfileByFiscalCode(
       fiscalCode
     );
+
     if (isRight(maybeProfileOrError)) {
       const maybeProfile = maybeProfileOrError.value;
+
       if (isSome(maybeProfile)) {
         const profile = maybeProfile.value;
 
