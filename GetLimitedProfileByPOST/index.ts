@@ -20,8 +20,8 @@ import winston = require("winston");
 
 import { GetLimitedProfileByPOST } from "./handler";
 
-const cosmosDbUri = getRequiredStringEnv("CUSTOMCONNSTR_COSMOSDB_URI");
-const cosmosDbKey = getRequiredStringEnv("CUSTOMCONNSTR_COSMOSDB_KEY");
+const cosmosDbUri = getRequiredStringEnv("COSMOSDB_URI");
+const cosmosDbKey = getRequiredStringEnv("COSMOSDB_KEY");
 const cosmosDbName = getRequiredStringEnv("COSMOSDB_NAME");
 
 const documentClient = new DocumentDBClient(cosmosDbUri, {
