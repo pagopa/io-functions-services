@@ -70,8 +70,9 @@ export const getEmailNotificationActivityHandler = (
   const inputOrError = EmailNotificationActivityInput.decode(input);
 
   if (inputOrError.isLeft()) {
-    context.log.error(
-      `EmailNotificationActivity|Cannot decode input|ERROR=${readableReport(
+    context.log.error(`EmailNotificationActivity|Cannot decode input`);
+    context.log.verbose(
+      `EmailNotificationActivity|ERROR_DETAILS=${readableReport(
         inputOrError.value
       )}`
     );
@@ -150,7 +151,8 @@ export const getEmailNotificationActivityHandler = (
   if (errorOrEmailNotification.isLeft()) {
     // The notification object is not compatible with this code
     const error = readableReport(errorOrEmailNotification.value);
-    context.log.error(`${logPrefix}|ERROR=${error}`);
+    context.log.error(`${logPrefix}|ERROR`);
+    context.log.verbose(`${logPrefix}|ERROR_DETAILS=${error}`);
     return EmailNotificationActivityResult.encode({
       kind: "FAILURE",
       reason: "DECODE_ERROR"

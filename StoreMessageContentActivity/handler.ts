@@ -66,7 +66,10 @@ export const getStoreMessageContentActivityHandler = (
 
   if (createdMessageEventOrError.isLeft()) {
     context.log.error(
-      `StoreMessageContentActivity|Unable to parse CreatedMessageEvent|ERROR=${readableReport(
+      `StoreMessageContentActivity|Unable to parse CreatedMessageEvent`
+    );
+    context.log.verbose(
+      `StoreMessageContentActivity|ERROR_DETAILS=${readableReport(
         createdMessageEventOrError.value
       )}`
     );

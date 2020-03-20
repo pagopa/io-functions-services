@@ -39,9 +39,10 @@ function* handler(context: IFunctionContext): IterableIterator<unknown> {
   const errorOrCreatedMessageEvent = CreatedMessageEvent.decode(input);
   if (errorOrCreatedMessageEvent.isLeft()) {
     context.log.error(
-      `CreatedMessageOrchestrator|ORCHESTRATOR_ID=${
-        context.df.instanceId
-      }|ERROR=DECODE_ERROR|DETAILS=${readableReport(
+      `CreatedMessageOrchestrator|ORCHESTRATOR_ID=${context.df.instanceId}|ERROR=DECODE_ERROR`
+    );
+    context.log.verbose(
+      `CreatedMessageOrchestrator|ERROR_DETAILS=${readableReport(
         errorOrCreatedMessageEvent.value
       )}`
     );
@@ -73,8 +74,9 @@ function* handler(context: IFunctionContext): IterableIterator<unknown> {
     );
 
     if (storeMessageContentActivityResultOrError.isLeft()) {
-      context.log.error(
-        `${logPrefix}|ERROR=DECODE_ERROR|DETAILS=${readableReport(
+      context.log.error(`${logPrefix}|ERROR=DECODE_ERROR`);
+      context.log.verbose(
+        `${logPrefix}|ERROR_DETAILS=${readableReport(
           storeMessageContentActivityResultOrError.value
         )}`
       );
@@ -130,8 +132,9 @@ function* handler(context: IFunctionContext): IterableIterator<unknown> {
     );
 
     if (createNotificationActivityResultOrError.isLeft()) {
-      context.log.error(
-        `${logPrefix}|ERROR=DECODE_ERROR|DETAILS=${readableReport(
+      context.log.error(`${logPrefix}|ERROR=DECODE_ERROR`);
+      context.log.verbose(
+        `${logPrefix}|ERROR_DETAILS=${readableReport(
           createNotificationActivityResultOrError.value
         )}`
       );

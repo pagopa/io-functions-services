@@ -124,7 +124,10 @@ export const getCreateNotificationActivityHandler = (
   const inputOrError = CreateNotificationActivityInput.decode(input);
   if (inputOrError.isLeft()) {
     context.log.error(
-      `CreateNotificationActivity|Unable to parse CreateNotificationActivityHandlerInput|ERROR=${readableReport(
+      `CreateNotificationActivity|Unable to parse CreateNotificationActivityHandlerInput`
+    );
+    context.log.verbose(
+      `CreateNotificationActivity|ERROR_DETAILS=${readableReport(
         inputOrError.value
       )}`
     );
