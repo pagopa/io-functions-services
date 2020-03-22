@@ -160,8 +160,9 @@ export const getWebhookNotificationActivityHandler = (
   const inputOrError = WebhookNotificationActivityInput.decode(input);
 
   if (inputOrError.isLeft()) {
-    context.log.error(
-      `WebhookNotificationActivity|Cannot decode input|ERROR=${readableReport(
+    context.log.error(`WebhookNotificationActivity|Cannot decode input`);
+    context.log.verbose(
+      `WebhookNotificationActivity|ERROR_DETAILS=${readableReport(
         inputOrError.value
       )}`
     );
@@ -240,7 +241,8 @@ export const getWebhookNotificationActivityHandler = (
   if (errorOrWebhookNotification.isLeft()) {
     // The notification object is not compatible with this code
     const error = readableReport(errorOrWebhookNotification.value);
-    context.log.error(`${logPrefix}|ERROR=${error}`);
+    context.log.error(`${logPrefix}|ERROR`);
+    context.log.verbose(`${logPrefix}|ERROR_DETAILS=${error}`);
     return WebhookNotificationActivityResult.encode({
       kind: "FAILURE",
       reason: "DECODE_ERROR"
