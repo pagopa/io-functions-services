@@ -19,6 +19,7 @@ import {
 
 import {
   alphaStringArb,
+  emailStringArb,
   fiscalCodeArb,
   fiscalCodeArrayArb,
   fiscalCodeSetArb,
@@ -201,7 +202,13 @@ describe("forkOrchestrator", () => {
         newMessageArb,
         newMessageWithoutContentArb,
         versionedServiceArb,
-        async (newMessage, newMessageWithoutContent, service) => {
+        emailStringArb,
+        async (
+          newMessage,
+          newMessageWithoutContent,
+          service,
+          serviceUserEmail
+        ) => {
           const mockDfClient = {
             startNew: jest.fn(() => Promise.resolve("orchestratorId"))
           };
@@ -211,7 +218,8 @@ describe("forkOrchestrator", () => {
             getDfClient as any,
             newMessage.content,
             service,
-            newMessageWithoutContent
+            newMessageWithoutContent,
+            serviceUserEmail
           ).run();
           expect(response.isRight()).toBeTruthy();
           expect(getDfClient).toHaveBeenCalledTimes(1);
@@ -228,7 +236,8 @@ describe("forkOrchestrator", () => {
                 organizationFiscalCode: service.organizationFiscalCode,
                 organizationName: service.organizationName,
                 requireSecureChannels: service.requireSecureChannels,
-                serviceName: service.serviceName
+                serviceName: service.serviceName,
+                serviceUserEmail
               },
               serviceVersion: service.version
             })
