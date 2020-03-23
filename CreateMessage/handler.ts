@@ -269,7 +269,8 @@ export const forkOrchestrator = (
   getDfClient: Lazy<ReturnType<typeof df.getClient>>,
   messageContent: ApiNewMessageWithDefaults["content"],
   service: IAzureUserAttributes["service"],
-  newMessageWithoutContent: NewMessageWithoutContent
+  newMessageWithoutContent: NewMessageWithoutContent,
+  serviceUserEmail: IAzureUserAttributes["email"]
 ): TaskEither<IResponseErrorValidation | IResponseErrorInternal, string> => {
   //
   // emit created message event to the output queue
@@ -287,7 +288,8 @@ export const forkOrchestrator = (
       organizationFiscalCode: service.organizationFiscalCode,
       organizationName: service.organizationName,
       requireSecureChannels: service.requireSecureChannels,
-      serviceName: service.serviceName
+      serviceName: service.serviceName,
+      serviceUserEmail
     },
     serviceVersion: service.version
   });
@@ -366,7 +368,7 @@ export function CreateMessageHandler(
     }
 
     const fiscalCode = maybeFiscalCode.value;
-    const { service } = userAttributes;
+    const { service, email: serviceUserEmail } = userAttributes;
     const { authorizedRecipients, serviceId } = service;
 
     // a new message ID gets generated for each request, even for requests that
@@ -459,7 +461,8 @@ export function CreateMessageHandler(
             () => df.getClient(context),
             messagePayload.content,
             service,
-            newMessageWithoutContent
+            newMessageWithoutContent,
+            serviceUserEmail
           ).map(() => redirectToNewMessage(newMessageWithoutContent))
         )
         // fold failure responses (left) and success responses (right) to a

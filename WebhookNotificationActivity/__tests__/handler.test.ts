@@ -9,6 +9,7 @@ import { none, some } from "fp-ts/lib/Option";
 
 import { isLeft, left, right } from "fp-ts/lib/Either";
 import {
+  EmailString,
   FiscalCode,
   NonEmptyString,
   OrganizationFiscalCode
@@ -92,7 +93,8 @@ const aSenderMetadata: CreatedMessageEventSenderMetadata = {
   organizationFiscalCode: anOrganizationFiscalCode,
   organizationName: "org" as NonEmptyString,
   requireSecureChannels: false,
-  serviceName: "service" as NonEmptyString
+  serviceName: "service" as NonEmptyString,
+  serviceUserEmail: "email@exmaple.com" as EmailString
 };
 
 const aNotificationEvent = {

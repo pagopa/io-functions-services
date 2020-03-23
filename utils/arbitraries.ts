@@ -39,6 +39,8 @@ export const alphaStringArb = (len: number) =>
 const numStringArb = (len: number) =>
   fc.array(fc.nat(9).map(String), len, len).map(joinS);
 
+export const emailStringArb = fc.emailAddress().map(_ => _ as EmailString);
+
 const fiscalCodeAlphaNumArb = fc
   .subarray("0123456789LMNPQRSTUV".split(""), 1, 1)
   .map(headA);
