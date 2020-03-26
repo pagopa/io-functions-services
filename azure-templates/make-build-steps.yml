@@ -22,6 +22,11 @@ steps:
     path: $(YARN_CACHE_FOLDER)
   displayName: Cache yarn packages
 
+- task: UseNode@1
+  inputs:
+    version: $(NODE_VERSION)
+  displayName: 'Set up Node.js'
+  
 - script: |
     yarn install --frozen-lockfile --no-progress --non-interactive --network-concurrency 1
   displayName: 'Install node modules'
