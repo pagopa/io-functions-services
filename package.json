@@ -1,9 +1,9 @@
 {
   "name": "io-functions-services",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "license": "MIT",
   "scripts": {
-    "prebuild":"npm-run-all generate:*",
+    "prebuild": "npm-run-all generate:*",
     "build": "tsc",
     "build:production": "npm run prestart && npm prune --production",
     "watch": "tsc --w",
