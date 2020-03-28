@@ -41,10 +41,11 @@ import {
   wrapCustomTelemetryClient
 } from "io-functions-commons/dist/src/utils/application_insights";
 
-import { CreatedMessageWithContent } from "io-functions-commons/dist/generated/definitions/CreatedMessageWithContent";
 import { HttpsUrl } from "io-functions-commons/dist/generated/definitions/HttpsUrl";
 import { MessageContent } from "io-functions-commons/dist/generated/definitions/MessageContent";
 import { SenderMetadata } from "io-functions-commons/dist/generated/definitions/SenderMetadata";
+
+import { Notification } from "../generated/notifications/Notification";
 
 export const WebhookNotificationActivityInput = t.interface({
   notificationEvent: NotificationEvent
@@ -74,19 +75,19 @@ const DEFAULT_REQUEST_TIMEOUT_MS = 10000;
 
 /**
  * Convert the internal representation of the message
- * to the one of the public API
+ * to the one of the public NotificationAPI
  */
 function newMessageToPublic(
   newMessage: NewMessageWithoutContent,
-  content: MessageContent
-): CreatedMessageWithContent {
-  return {
-    content,
+  content?: MessageContent
+): Notification["message"] {
+  const message = {
     created_at: newMessage.createdAt,
     fiscal_code: newMessage.fiscalCode,
     id: newMessage.id,
     sender_service_id: newMessage.senderServiceId
   };
+  return content ? { ...message, content } : message;
 }
 
 /**
@@ -118,9 +119,15 @@ export async function sendToWebhook(
       .set("Content-Type", "application/json")
       .accept("application/json")
       .send({
-        message: newMessageToPublic(message, content),
+        // if the service requires secure channels
+        // we send an empty (generic) push notification
+        message: senderMetadata.requireSecureChannels
+          ? newMessageToPublic(message)
+          : newMessageToPublic(message, content),
         sender_metadata: senderMetadataToPublic(senderMetadata)
-      });
+        // cast to check we're using the correct type
+        // against the generated request types
+      } as Notification);
 
     if (response.error) {
       return left<RuntimeError, request.Response>(
