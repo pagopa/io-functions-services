@@ -91,7 +91,7 @@ info:
       1. (optional) Call [getMessage](#operation/getMessage) to check whether
          the message has been notified to the recipient.
 
-host: api.cd.italia.it
+host: api.io.italia.it
 basePath: "/api/v1"
 schemes:
 - https
