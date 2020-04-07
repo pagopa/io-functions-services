@@ -16,7 +16,7 @@
     "test:coverage": "jest --coverage",
     "lint": "tslint -p .",
     "generate:definitions": "rimraf ./generated/definitions && shx mkdir -p ./generated/definitions && gen-api-models --api-spec ./openapi/index.yaml --out-dir ./generated/definitions",
-    "generate:api-notifications": "rimraf ./generated/notifications && shx mkdir -p ./generated/notifications && gen-api-models --api-spec https://raw.githubusercontent.com/pagopa/io-backend/master/api_notifications.yaml --out-dir ./generated/notifications",
+    "generate:api-notifications": "rimraf ./generated/notifications && shx mkdir -p ./generated/notifications && gen-api-models --api-spec https://raw.githubusercontent.com/pagopa/io-backend/master/api_notifications.yaml --out-dir ./generated/notifications --response-decoders",
     "dist:modules": "modclean -r -n default:safe && npm prune --production",
     "predeploy": "npm-run-all build dist:modules"
   },
@@ -29,7 +29,6 @@
     "@types/html-to-text": "^1.4.31",
     "@types/jest": "^24.0.15",
     "@types/nodemailer": "^4.6.2",
-    "@types/superagent": "^3.8.1",
     "azurite": "^3.1.2-preview",
     "danger": "^4.0.2",
     "danger-plugin-digitalcitizenship": "^0.3.1",
@@ -47,6 +46,7 @@
     "typescript": "^3.3.3"
   },
   "dependencies": {
+    "abort-controller": "^3.0.0",
     "applicationinsights": "^1.0.3",
     "azure-storage": "^2.10.3",
     "cors": "^2.8.4",
@@ -58,9 +58,8 @@
     "io-functions-commons": "^5.1.0",
     "io-functions-express": "^0.1.0",
     "io-ts": "1.8.5",
-    "italia-ts-commons": "^5.1.5",
+    "italia-ts-commons": "^6.3.0",
     "nodemailer": "^4.6.7",
-    "superagent": "^3.8.3",
     "winston": "^3.2.1"
   },
   "resolutions": {

@@ -16,6 +16,15 @@ import {
 
 import { getRequiredStringEnv } from "io-functions-commons/dist/src/utils/env";
 
+import { agent } from "italia-ts-commons";
+
+import {
+  AbortableFetch,
+  setFetchTimeout,
+  toFetch
+} from "italia-ts-commons/lib/fetch";
+import { Millisecond } from "italia-ts-commons/lib/units";
+import { getNotifyClient } from "./client";
 import { getWebhookNotificationActivityHandler } from "./handler";
 
 // Setup DocumentDB
@@ -44,6 +53,17 @@ const notificationModel = new NotificationModel(
 // Whether we're in a production environment
 const isProduction = process.env.NODE_ENV === "production";
 
+// Webhook must be an https endpoint
+const abortableFetch = AbortableFetch(agent.getHttpsFetch(process.env));
+// 10 seconds timeout by default
+const fetchWithTimeout = setFetchTimeout(
+  (process.env.FETCH_KEEPALIVE_TIMEOUT
+    ? parseInt(process.env.FETCH_KEEPALIVE_TIMEOUT, 10)
+    : 10000) as Millisecond,
+  abortableFetch
+);
+const notifyApiCall = getNotifyClient(toFetch(fetchWithTimeout));
+
 const getCustomTelemetryClient = wrapCustomTelemetryClient(
   isProduction,
   new TelemetryClient()
@@ -51,7 +71,8 @@ const getCustomTelemetryClient = wrapCustomTelemetryClient(
 
 const activityFunction: AzureFunction = getWebhookNotificationActivityHandler(
   getCustomTelemetryClient,
-  notificationModel
+  notificationModel,
+  notifyApiCall
 );
 
 export default activityFunction;
