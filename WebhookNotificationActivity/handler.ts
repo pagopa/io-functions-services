@@ -153,12 +153,12 @@ export function sendToWebhook(
             ? // in case of server HTTP 5xx errors we trigger a retry
               left(
                 TransientError(
-                  `Transient HTTP error calling webhook: ${r.status} (${r.value})`
+                  `Transient HTTP error calling webhook: ${r.status}`
                 )
               )
             : left(
                 PermanentError(
-                  `Permanent HTTP error calling webhook: ${r.status} (${r.value})`
+                  `Permanent HTTP error calling webhook: ${r.status}`
                 )
               )
       )

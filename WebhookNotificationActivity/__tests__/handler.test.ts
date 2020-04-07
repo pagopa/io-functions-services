@@ -139,19 +139,16 @@ const nullLog = {
   warn: console.warn
 };
 
-// tslint:disable-next-line: typedef
-function mockFetch<T>(status: number, json: T) {
+const mockFetch = <T>(status: number, json: T) => {
   return jest.fn(() => ({
     json: () => Promise.resolve(json),
     status
   }));
-}
+};
 
 const nullContext = {
   log: nullLog
 } as any;
-
-// Webhook must be an https endpoint
 
 describe("sendToWebhook", () => {
   it("should return a transient error in case of timeout", async () => {
@@ -342,7 +339,7 @@ describe("handler", () => {
       expect.objectContaining({
         name: "notification.webhook.delivery",
         properties: {
-          error: "Permanent HTTP error calling webhook: 401 (undefined)"
+          error: "Permanent HTTP error calling webhook: 401"
         },
         resultCode: "PermanentError",
         success: false
