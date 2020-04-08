@@ -333,7 +333,7 @@ describe("handler", () => {
       )(nullContext, {
         notificationEvent: getMockNotificationEvent(aMessageContent)
       })
-    ).rejects.toThrow();
+    ).resolves.toEqual({ kind: "FAILURE", reason: "SEND_TO_WEBHOOK_FAILED" });
 
     expect(mockAppinsights.trackDependency).toHaveBeenCalledWith(
       expect.objectContaining({
