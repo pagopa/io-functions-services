@@ -5,9 +5,8 @@
 jest.mock("applicationinsights");
 jest.mock("azure-storage");
 
-import { none, some } from "fp-ts/lib/Option";
-
 import { isLeft, left, right } from "fp-ts/lib/Either";
+import { none, some } from "fp-ts/lib/Option";
 import {
   EmailString,
   FiscalCode,
@@ -23,8 +22,6 @@ import { NotificationEvent } from "io-functions-commons/dist/src/models/notifica
 
 import { readableReport } from "italia-ts-commons/lib/reporters";
 
-import * as superagent from "superagent";
-
 import {
   getWebhookNotificationActivityHandler,
   sendToWebhook
@@ -36,17 +33,15 @@ import { MessageContent } from "io-functions-commons/dist/generated/definitions/
 import { MessageSubject } from "io-functions-commons/dist/generated/definitions/MessageSubject";
 import { NotificationChannelEnum } from "io-functions-commons/dist/generated/definitions/NotificationChannel";
 import { TimeToLiveSeconds } from "io-functions-commons/dist/generated/definitions/TimeToLiveSeconds";
+import { getNotifyClient } from "../client";
 
-// as superagent does not export request methods directly
-// we must override the superagent.Request prototype
-// so we can set up our jest mock to use it instead
-// of the send() method
-const mockSuperagentResponse = (response: any) => {
-  const sendMock = jest.fn();
-  // tslint:disable-next-line:no-object-mutation
-  (superagent as any).Request.prototype.send = sendMock;
-  return sendMock.mockReturnValueOnce(Promise.resolve(response));
-};
+import { agent } from "italia-ts-commons";
+import {
+  AbortableFetch,
+  setFetchTimeout,
+  toFetch
+} from "italia-ts-commons/lib/fetch";
+import { Millisecond } from "italia-ts-commons/lib/units";
 
 afterEach(() => {
   jest.restoreAllMocks();
@@ -144,20 +139,29 @@ const nullLog = {
   warn: console.warn
 };
 
+const mockFetch = <T>(status: number, json: T) => {
+  return jest.fn(() => ({
+    json: () => Promise.resolve(json),
+    status
+  }));
+};
+
 const nullContext = {
   log: nullLog
 } as any;
 
 describe("sendToWebhook", () => {
   it("should return a transient error in case of timeout", async () => {
-    const sendMock = jest.fn();
-    sendMock.mockImplementation(() => {
-      return Promise.reject({ timeout: true });
-    });
-    // tslint:disable-next-line:no-object-mutation
-    (superagent as any).Request.prototype.send = sendMock;
-    const ret = await sendToWebhook({} as any, {} as any, {} as any, {} as any);
-    expect(sendMock).toHaveBeenCalledTimes(1);
+    const abortableFetch = AbortableFetch(agent.getHttpsFetch(process.env));
+    const fetchWithTimeout = setFetchTimeout(1 as Millisecond, abortableFetch);
+    const notifyApiCall = getNotifyClient(toFetch(fetchWithTimeout));
+    const ret = await sendToWebhook(
+      notifyApiCall,
+      "http://localhost/test" as HttpsUrl,
+      aMessage as any,
+      aMessageContent,
+      aSenderMetadata
+    ).run();
     expect(isLeft(ret)).toBeTruthy();
     if (isLeft(ret)) {
       expect(isTransientError(ret.value)).toBeTruthy();
@@ -165,14 +169,16 @@ describe("sendToWebhook", () => {
   });
 
   it("should return a transient error in case the webhook returns HTTP status 5xx", async () => {
-    const sendMock = jest.fn();
-    sendMock.mockImplementation(() => {
-      return Promise.reject({ status: 555 });
-    });
-    // tslint:disable-next-line:no-object-mutation
-    (superagent as any).Request.prototype.send = sendMock;
-    const ret = await sendToWebhook({} as any, {} as any, {} as any, {} as any);
-    expect(sendMock).toHaveBeenCalledTimes(1);
+    const fetchApi = mockFetch(500, { status: 500 });
+    const notifyApiCall = getNotifyClient(fetchApi as any);
+    const ret = await sendToWebhook(
+      notifyApiCall,
+      {} as any,
+      {} as any,
+      {} as any,
+      {} as any
+    ).run();
+    expect(fetchApi).toHaveBeenCalledTimes(1);
     expect(isLeft(ret)).toBeTruthy();
     if (isLeft(ret)) {
       expect(isTransientError(ret.value)).toBeTruthy();
@@ -180,14 +186,16 @@ describe("sendToWebhook", () => {
   });
 
   it("should return a permanent error in case the webhook returns HTTP status 4xx", async () => {
-    const sendMock = jest.fn();
-    sendMock.mockImplementation(() => {
-      return Promise.reject({ status: 444 });
-    });
-    // tslint:disable-next-line:no-object-mutation
-    (superagent as any).Request.prototype.send = sendMock;
-    const ret = await sendToWebhook({} as any, {} as any, {} as any, {} as any);
-    expect(sendMock).toHaveBeenCalledTimes(1);
+    const fetchApi = mockFetch(401, { status: 401 });
+    const notifyApiCall = getNotifyClient(fetchApi as any);
+    const ret = await sendToWebhook(
+      notifyApiCall,
+      {} as any,
+      {} as any,
+      {} as any,
+      {} as any
+    ).run();
+    expect(fetchApi).toHaveBeenCalledTimes(1);
     expect(isLeft(ret)).toBeTruthy();
     if (isLeft(ret)) {
       expect(isTransientError(ret.value)).toBeFalsy();
@@ -203,6 +211,7 @@ describe("handler", () => {
 
     await expect(
       getWebhookNotificationActivityHandler(
+        {} as any,
         getAppinsightsMock as any,
         notificationModelMock as any
       )(nullContext, {
@@ -218,6 +227,7 @@ describe("handler", () => {
 
     await expect(
       getWebhookNotificationActivityHandler(
+        {} as any,
         getAppinsightsMock as any,
         notificationModelMock as any
       )(nullContext, {
@@ -234,7 +244,8 @@ describe("handler", () => {
     await expect(
       getWebhookNotificationActivityHandler(
         getAppinsightsMock as any,
-        notificationModelMock as any
+        notificationModelMock as any,
+        {} as any
       )(nullContext, {
         notificationEvent: getMockNotificationEvent()
       })
@@ -247,11 +258,14 @@ describe("handler", () => {
       update: jest.fn(() => Promise.resolve(right(some(aNotification))))
     };
 
-    mockSuperagentResponse({ status: 200 });
+    const notifyCallApiMock = jest
+      .fn()
+      .mockReturnValue(Promise.resolve(right({ status: 200 })));
 
     const result = await getWebhookNotificationActivityHandler(
       getAppinsightsMock as any,
-      notificationModelMock as any
+      notificationModelMock as any,
+      notifyCallApiMock as any
     )(nullContext, {
       notificationEvent: getMockNotificationEvent(aMessageContent)
     });
@@ -273,7 +287,9 @@ describe("handler", () => {
   it("should forward a notification with the provided subject", async () => {
     const customSubject = "A custom subject" as MessageSubject;
 
-    mockSuperagentResponse({ status: 200 });
+    const notifyCallApiMock = jest
+      .fn()
+      .mockReturnValue(Promise.resolve(right({ status: 200 })));
 
     const aLongMessageContent = {
       markdown: aMessageBodyMarkdown,
@@ -287,7 +303,8 @@ describe("handler", () => {
 
     const result = await getWebhookNotificationActivityHandler(
       getAppinsightsMock as any,
-      notificationModelMock as any
+      notificationModelMock as any,
+      notifyCallApiMock
     )(nullContext, {
       notificationEvent: getMockNotificationEvent(aLongMessageContent)
     });
@@ -298,11 +315,10 @@ describe("handler", () => {
     });
   });
 
-  it("should respond with a transient error when delivery fails", async () => {
-    mockSuperagentResponse({
-      error: true,
-      text: "some error"
-    });
+  it("should track delivery failures", async () => {
+    const notifyCallApiMock = jest
+      .fn()
+      .mockReturnValue(Promise.resolve(right({ status: 401 })));
 
     const notificationModelMock = {
       find: jest.fn(() => right(some(aNotification))),
@@ -312,17 +328,18 @@ describe("handler", () => {
     await expect(
       getWebhookNotificationActivityHandler(
         getAppinsightsMock as any,
-        notificationModelMock as any
+        notificationModelMock as any,
+        notifyCallApiMock
       )(nullContext, {
         notificationEvent: getMockNotificationEvent(aMessageContent)
       })
-    ).rejects.toThrow();
+    ).resolves.toEqual({ kind: "FAILURE", reason: "SEND_TO_WEBHOOK_FAILED" });
 
     expect(mockAppinsights.trackDependency).toHaveBeenCalledWith(
       expect.objectContaining({
         name: "notification.webhook.delivery",
         properties: {
-          error: "Permanent HTTP error calling API Proxy: some error"
+          error: "Permanent HTTP error calling webhook: 401"
         },
         resultCode: "PermanentError",
         success: false
@@ -341,7 +358,8 @@ describe("handler", () => {
 
     const ret = await getWebhookNotificationActivityHandler(
       getAppinsightsMock as any,
-      notificationModelMock as any
+      notificationModelMock as any,
+      {} as any
     )(nullContext, {
       notificationEvent: {
         ...notificationEvent,

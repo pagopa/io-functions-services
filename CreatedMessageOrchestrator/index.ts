@@ -264,7 +264,7 @@ function* handler(context: IFunctionContext): IterableIterator<unknown> {
               `${logPrefix}|webhookNotificationActivity failed|REASON=${webhookNotificationActivityResult.reason}`
             );
           } else {
-            // once the email has been sent, update the notification status
+            // once the push notification has been sent, update the notification status
             const webhookNotificationStatusUpdaterActivityInput = {
               channel: NotificationChannelEnum.WEBHOOK,
               messageId: createdMessageEvent.message.id,
