@@ -11,7 +11,7 @@ import { notifyDefaultDecoder } from "../generated/notifications/requestTypes";
 import { SuccessResponse } from "../generated/notifications/SuccessResponse";
 
 export type WebhookNotifyT = r.IPostApiRequestType<
-  { readonly notification?: Notification; readonly webhookEndpoint: HttpsUrl },
+  { readonly notification: Notification; readonly webhookEndpoint: HttpsUrl },
   "Content-Type",
   never,
   // tslint:disable-next-line: max-union-size

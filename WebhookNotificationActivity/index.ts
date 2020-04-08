@@ -53,13 +53,13 @@ const notificationModel = new NotificationModel(
 // Whether we're in a production environment
 const isProduction = process.env.NODE_ENV === "production";
 
-// Webhook must be an https endpoint
+// 5 seconds timeout by default
+const DEFAULT_NOTIFY_REQUEST_TIMEOUT_MS = 5000;
+
+// Webhook must be an https endpoint so we use an https agent
 const abortableFetch = AbortableFetch(agent.getHttpsFetch(process.env));
-// 10 seconds timeout by default
 const fetchWithTimeout = setFetchTimeout(
-  (process.env.FETCH_KEEPALIVE_TIMEOUT
-    ? parseInt(process.env.FETCH_KEEPALIVE_TIMEOUT, 10)
-    : 10000) as Millisecond,
+  DEFAULT_NOTIFY_REQUEST_TIMEOUT_MS as Millisecond,
   abortableFetch
 );
 const notifyApiCall = getNotifyClient(toFetch(fetchWithTimeout));
