@@ -23,6 +23,7 @@ import {
 import { NotificationEvent } from "io-functions-commons/dist/src/models/notification_event";
 
 import {
+  isTransientError,
   PermanentError,
   RuntimeError,
   TransientError
@@ -66,7 +67,7 @@ export const WebhookNotificationActivityResult = t.taggedUnion("kind", [
   }),
   t.interface({
     kind: t.literal("FAILURE"),
-    reason: t.keyof({ DECODE_ERROR: null })
+    reason: t.keyof({ DECODE_ERROR: null, SEND_TO_WEBHOOK_FAILED: null })
   })
 ]);
 
@@ -305,7 +306,14 @@ export const getWebhookNotificationActivityHandler = (
       success: false
     });
     context.log.error(`${logPrefix}|ERROR=${error.message}`);
-    throw new Error("Error while calling webhook");
+    if (isTransientError(error)) {
+      throw new Error("Error while calling webhook");
+    } else {
+      return WebhookNotificationActivityResult.encode({
+        kind: "FAILURE",
+        reason: "SEND_TO_WEBHOOK_FAILED"
+      });
+    }
   }
 
   const apiMessageResponse = sendResult.value;
