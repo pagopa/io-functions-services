@@ -14,8 +14,6 @@ import {
   SERVICE_COLLECTION_NAME,
   ServiceModel
 } from "io-functions-commons/dist/src/models/service";
-import { TelemetryClient } from "io-functions-commons/dist/src/utils/application_insights";
-import { wrapCustomTelemetryClient } from "io-functions-commons/dist/src/utils/application_insights";
 import * as documentDbUtils from "io-functions-commons/dist/src/utils/documentdb";
 import { getRequiredStringEnv } from "io-functions-commons/dist/src/utils/env";
 import { secureExpressApp } from "io-functions-commons/dist/src/utils/express";
@@ -24,15 +22,11 @@ import { setAppContext } from "io-functions-commons/dist/src/utils/middlewares/c
 
 import createAzureFunctionHandler from "io-functions-express/dist/src/createAzureFunctionsHandler";
 
+import {
+  initAppInsights,
+  withAppInsightsContext
+} from "io-functions-commons/dist/src/utils/application_insights";
 import { CreateMessage } from "./handler";
-
-// Whether we're in a production environment
-const isProduction = process.env.NODE_ENV === "production";
-
-const getCustomTelemetryClient = wrapCustomTelemetryClient(
-  isProduction,
-  new TelemetryClient()
-);
 
 // Setup Express
 const app = express();
@@ -68,9 +62,13 @@ const messageModel = new MessageModel(
 
 const serviceModel = new ServiceModel(documentClient, servicesCollectionUrl);
 
+const telemetryClient = initAppInsights(
+  getRequiredStringEnv("APPINSIGHTS_INSTRUMENTATIONKEY")
+);
+
 app.post(
   "/api/v1/messages/:fiscalcode?",
-  CreateMessage(getCustomTelemetryClient, serviceModel, messageModel)
+  CreateMessage(telemetryClient, serviceModel, messageModel)
 );
 
 const azureFunctionHandler = createAzureFunctionHandler(app);
@@ -86,7 +84,7 @@ winston.add(contextTransport);
 function httpStart(context: Context): void {
   logger = context.log;
   setAppContext(app, context);
-  azureFunctionHandler(context);
+  withAppInsightsContext(context, () => azureFunctionHandler(context));
 }
 
 export default httpStart;
