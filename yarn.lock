@@ -2,7 +2,12 @@
 # yarn lockfile v1
 
 
-"@azure/functions@^1.0.1-beta1", "@azure/functions@^1.0.2-beta2":
+"@azure/functions@^1.0.1-beta1":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@azure/functions/-/functions-1.2.0.tgz#e668c3811c6effee93e4553e69de017e2f48acd3"
+  integrity sha512-qkaQqTnr56xUnYNkKBM/2wsnf6imAJ3NF6Nbpk691Y6JYliA1YdZngsZsrpHS9tQ9/71MqARl8m50+EmEfLG3g==
+
+"@azure/functions@^1.0.2-beta2":
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/@azure/functions/-/functions-1.0.3.tgz#1b51d58f188903f59f39bd093fe6f7b8d88deb11"
   integrity sha512-/D+sz6LgWT+A6RRW2zhwlwhKqqDSxL6HCF1Q1lN0iXolD2FfNFZpzrOxGyGYEEXp/5Dtjp12bcRTBhMH1cBi2Q==
@@ -873,10 +878,20 @@ anymatch@^2.0.0:
     micromatch "^3.1.4"
     normalize-path "^2.1.1"
 
-applicationinsights@^1.0.3:
-  version "1.4.2"
-  resolved "https://registry.yarnpkg.com/applicationinsights/-/applicationinsights-1.4.2.tgz#2f25f7a3f3e5bf0ab4486b63e42a48a9ec321d52"
-  integrity sha512-1wE37G9zEMZTsPJVQ8BDrQtsGgG3DGMActLHwPAF8TYHAXkfqqpeZYCH0XV4lUZ7H4MffRMwN2Ln2nEtUmT8HQ==
+applicationinsights@^1.7.3:
+  version "1.7.3"
+  resolved "https://registry.yarnpkg.com/applicationinsights/-/applicationinsights-1.7.3.tgz#13dc9bc2ae9c467659c6816c52c0fb72ee2d804e"
+  integrity sha512-4O0oHAwJOjMlbxfStdpZM9i+kIj8uiqc72okMDJmcXPuHfj41cFCRiNxrq/V5zPnhT3RWJTEeWRxrXWuBkiLXg==
+  dependencies:
+    cls-hooked "^4.2.2"
+    continuation-local-storage "^3.2.1"
+    diagnostic-channel "0.2.0"
+    diagnostic-channel-publishers "^0.3.3"
+
+applicationinsights@^1.7.4:
+  version "1.7.4"
+  resolved "https://registry.yarnpkg.com/applicationinsights/-/applicationinsights-1.7.4.tgz#e7d96435594d893b00cf49f70a5927105dbb8749"
+  integrity sha512-XFLsNlcanpjFhHNvVWEfcm6hr7lu9znnb6Le1Lk5RE03YUV9X2B2n2MfM4kJZRrUdV+C0hdHxvWyv+vWoLfY7A==
   dependencies:
     cls-hooked "^4.2.2"
     continuation-local-storage "^3.2.1"
@@ -3501,18 +3516,19 @@ invert-kv@^2.0.0:
   resolved "https://registry.yarnpkg.com/invert-kv/-/invert-kv-2.0.0.tgz#7393f5afa59ec9ff5f67a27620d11c226e3eec02"
   integrity sha512-wPVv/y/QQ/Uiirj/vh3oP+1Ww+AWehmi1g5fFWGPF6IpCBCDVrhgHRMvrLfdYcwDh3QJbGXDW4JAuzxElLSqKA==
 
-io-functions-commons@^5.1.0:
-  version "5.1.0"
-  resolved "https://registry.yarnpkg.com/io-functions-commons/-/io-functions-commons-5.1.0.tgz#fbcb8ac23f2bca70b4bbb4d1ee6e9bd7500bc2d8"
-  integrity sha512-K2W++PPuFXoBXIl5D0jR6mM8Z5dL+6aJVrv1Ui6QDTCpEFcZbskvjqGLT+X2H+yI8k0N/NDiCegYDf1x1ZNGsw==
+io-functions-commons@^7.2.0:
+  version "7.2.0"
+  resolved "https://registry.yarnpkg.com/io-functions-commons/-/io-functions-commons-7.2.0.tgz#2a7e0f78b03b721d8ed0f95207439b62aacab3db"
+  integrity sha512-lARIBnCijHKGAPGr+uLt03gxtcKOXAfCO7E810MFCOpEC2E7/SkYvgqcQq3N+2DlGw0LA4vabnBfsjZn+/XynQ==
   dependencies:
-    applicationinsights "^1.0.3"
+    applicationinsights "^1.7.3"
     azure-storage "^2.10.3"
     cidr-matcher "^2.1.0"
     documentdb "^1.15.3"
     helmet "^3.13.0"
     helmet-csp "^2.5.1"
     io-functions-express "^0.1.1"
+    italia-ts-commons "^6.3.0"
     nodemailer "^4.6.7"
     referrer-policy "^1.1.0"
     rehype-stringify "^3.0.0"

@@ -53,8 +53,6 @@ const mockAppinsights = {
   trackEvent: jest.fn()
 };
 
-const getAppinsightsMock = () => mockAppinsights;
-
 const aFiscalCode = "FRLFRC74E04B157I" as FiscalCode;
 
 const aMessageId = "A_MESSAGE_ID" as NonEmptyString;
@@ -211,9 +209,8 @@ describe("handler", () => {
 
     await expect(
       getWebhookNotificationActivityHandler(
-        {} as any,
-        getAppinsightsMock as any,
-        notificationModelMock as any
+        notificationModelMock as any,
+        {} as any
       )(nullContext, {
         notificationEvent: getMockNotificationEvent()
       })
@@ -227,9 +224,8 @@ describe("handler", () => {
 
     await expect(
       getWebhookNotificationActivityHandler(
-        {} as any,
-        getAppinsightsMock as any,
-        notificationModelMock as any
+        notificationModelMock as any,
+        {} as any
       )(nullContext, {
         notificationEvent: getMockNotificationEvent()
       })
@@ -243,7 +239,6 @@ describe("handler", () => {
 
     await expect(
       getWebhookNotificationActivityHandler(
-        getAppinsightsMock as any,
         notificationModelMock as any,
         {} as any
       )(nullContext, {
@@ -263,20 +258,11 @@ describe("handler", () => {
       .mockReturnValue(Promise.resolve(right({ status: 200 })));
 
     const result = await getWebhookNotificationActivityHandler(
-      getAppinsightsMock as any,
       notificationModelMock as any,
       notifyCallApiMock as any
     )(nullContext, {
       notificationEvent: getMockNotificationEvent(aMessageContent)
     });
-
-    expect(mockAppinsights.trackDependency).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: "notification.webhook.delivery",
-        resultCode: 200,
-        success: true
-      })
-    );
 
     expect(result).toEqual({
       kind: "SUCCESS",
@@ -302,7 +288,6 @@ describe("handler", () => {
     };
 
     const result = await getWebhookNotificationActivityHandler(
-      getAppinsightsMock as any,
       notificationModelMock as any,
       notifyCallApiMock
     )(nullContext, {
@@ -327,24 +312,12 @@ describe("handler", () => {
 
     await expect(
       getWebhookNotificationActivityHandler(
-        getAppinsightsMock as any,
         notificationModelMock as any,
         notifyCallApiMock
       )(nullContext, {
         notificationEvent: getMockNotificationEvent(aMessageContent)
       })
     ).resolves.toEqual({ kind: "FAILURE", reason: "SEND_TO_WEBHOOK_FAILED" });
-
-    expect(mockAppinsights.trackDependency).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: "notification.webhook.delivery",
-        properties: {
-          error: "Permanent HTTP error calling webhook: 401"
-        },
-        resultCode: "PermanentError",
-        success: false
-      })
-    );
 
     expect(notificationModelMock.update).not.toHaveBeenCalled();
   });
@@ -357,7 +330,6 @@ describe("handler", () => {
     const notificationEvent = getMockNotificationEvent();
 
     const ret = await getWebhookNotificationActivityHandler(
-      getAppinsightsMock as any,
       notificationModelMock as any,
       {} as any
     )(nullContext, {

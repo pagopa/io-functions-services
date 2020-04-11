@@ -24,7 +24,6 @@ import {
   NewMessageWithoutContent
 } from "io-functions-commons/dist/src/models/message";
 import { ServiceModel } from "io-functions-commons/dist/src/models/service";
-import { CustomTelemetryClientFactory } from "io-functions-commons/dist/src/utils/application_insights";
 import {
   AzureApiAuthMiddleware,
   IAzureApiAuthorization,
@@ -58,6 +57,7 @@ import {
   ulidGenerator
 } from "io-functions-commons/dist/src/utils/strings";
 
+import { initAppInsights } from "io-functions-commons/dist/src/utils/application_insights";
 import { readableReport } from "italia-ts-commons/lib/reporters";
 import {
   IResponseErrorForbiddenNotAuthorized,
@@ -337,7 +337,7 @@ const redirectToNewMessage = (
  * Returns a type safe CreateMessage handler.
  */
 export function CreateMessageHandler(
-  getCustomTelemetryClient: CustomTelemetryClientFactory,
+  telemetryClient: ReturnType<typeof initAppInsights>,
   messageModel: MessageModel,
   generateObjectId: ObjectIdGenerator
 ): ICreateMessageHandler {
@@ -375,18 +375,6 @@ export function CreateMessageHandler(
     // fail as it's used as a unique operation identifier in application
     // insights
     const messageId = generateObjectId();
-
-    // configure a telemetry client for application insights
-    const telemetryClient = getCustomTelemetryClient(
-      {
-        // each tracked event is associated to the messageId
-        operationId: messageId,
-        serviceId
-      },
-      {
-        messageId
-      }
-    );
 
     // helper function used to track the message creation event in application
     // insights
@@ -484,12 +472,12 @@ export function CreateMessageHandler(
  * Wraps a CreateMessage handler inside an Express request handler.
  */
 export function CreateMessage(
-  getCustomTelemetryClient: CustomTelemetryClientFactory,
+  telemetryClient: ReturnType<typeof initAppInsights>,
   serviceModel: ServiceModel,
   messageModel: MessageModel
 ): express.RequestHandler {
   const handler = CreateMessageHandler(
-    getCustomTelemetryClient,
+    telemetryClient,
     messageModel,
     ulidGenerator
   );

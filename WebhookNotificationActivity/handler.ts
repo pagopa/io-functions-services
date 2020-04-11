@@ -11,8 +11,6 @@ import * as t from "io-ts";
 import { Either, left, right } from "fp-ts/lib/Either";
 
 import { readableReport } from "italia-ts-commons/lib/reporters";
-import { NonEmptyString } from "italia-ts-commons/lib/strings";
-import { UrlFromString } from "italia-ts-commons/lib/url";
 
 import { Context } from "@azure/functions";
 
@@ -34,11 +32,6 @@ import {
   ActiveMessage,
   NewMessageWithoutContent
 } from "io-functions-commons/dist/src/models/message";
-
-import {
-  diffInMilliseconds,
-  wrapCustomTelemetryClient
-} from "io-functions-commons/dist/src/utils/application_insights";
 
 import { HttpsUrl } from "io-functions-commons/dist/generated/definitions/HttpsUrl";
 import { MessageContent } from "io-functions-commons/dist/generated/definitions/MessageContent";
@@ -171,7 +164,6 @@ export function sendToWebhook(
  * Returns a function for handling WebhookNotificationActivity
  */
 export const getWebhookNotificationActivityHandler = (
-  getCustomTelemetryClient: ReturnType<typeof wrapCustomTelemetryClient>,
   lNotificationModel: NotificationModel,
   notifyApiCall: TypeofApiCall<WebhookNotifyT>
 ) => async (context: Context, input: unknown): Promise<unknown> => {
@@ -200,22 +192,6 @@ export const getWebhookNotificationActivityHandler = (
   } = notificationEvent;
 
   const logPrefix = `WebhookNotificationActivity|MESSAGE_ID=${message.id}|RECIPIENT=${message.fiscalCode}|NOTIFICATION_ID=${notificationId}`;
-
-  const serviceId = message.senderServiceId;
-
-  const eventName = "notification.webhook.delivery";
-
-  const appInsightsClient = getCustomTelemetryClient(
-    {
-      operationId: notificationId,
-      operationParentId: message.id,
-      serviceId: NonEmptyString.is(serviceId) ? serviceId : undefined
-    },
-    {
-      messageId: message.id,
-      notificationId
-    }
-  );
 
   // Check whether the message is expired
   const errorOrActiveMessage = ActiveMessage.decode(message);
@@ -269,8 +245,6 @@ export const getWebhookNotificationActivityHandler = (
 
   const webhookNotification = errorOrWebhookNotification.value.channels.WEBHOOK;
 
-  const startWebhookCallTime = process.hrtime();
-
   const sendResult = await sendToWebhook(
     notifyApiCall,
     webhookNotification.url,
@@ -279,32 +253,8 @@ export const getWebhookNotificationActivityHandler = (
     senderMetadata
   ).run();
 
-  const webhookCallDurationMs = diffInMilliseconds(startWebhookCallTime);
-
-  // hide backend secret token in logs
-  const hostName = UrlFromString.decode(webhookNotification.url).fold(
-    _ => "invalid url",
-    url => url.hostname || "invalid hostname"
-  );
-
-  const eventContent = {
-    data: hostName,
-    dependencyTypeName: "HTTP",
-    duration: webhookCallDurationMs,
-    name: eventName
-  };
-
   if (sendResult.isLeft()) {
     const error = sendResult.value;
-    // track the event of failed delivery
-    appInsightsClient.trackDependency({
-      ...eventContent,
-      properties: {
-        error: error.message
-      },
-      resultCode: error.kind,
-      success: false
-    });
     context.log.error(`${logPrefix}|ERROR=${error.message}`);
     if (isTransientError(error)) {
       throw new Error("Error while calling webhook");
@@ -315,15 +265,6 @@ export const getWebhookNotificationActivityHandler = (
       });
     }
   }
-
-  const apiMessageResponse = sendResult.value;
-
-  // track the event of successful delivery
-  appInsightsClient.trackDependency({
-    ...eventContent,
-    resultCode: apiMessageResponse.status,
-    success: true
-  });
 
   return WebhookNotificationActivityResult.encode({
     kind: "SUCCESS",
