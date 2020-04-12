@@ -58,8 +58,7 @@
     "io-functions-commons": "^7.2.0",
     "io-functions-express": "^0.1.0",
     "io-ts": "1.8.5",
-    "italia-ts-commons": "^6.3.0",
-    "node-fetch": "^2.6.0",
+    "italia-ts-commons": "^6.3.1",
     "nodemailer": "^4.6.7",
     "winston": "^3.2.1"
   },
