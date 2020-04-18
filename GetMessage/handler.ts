@@ -1,5 +1,4 @@
 import * as express from "express";
-import * as winston from "winston";
 
 import {
   ClientIp,
@@ -63,9 +62,11 @@ import {
   retrievedMessageToPublic
 } from "io-functions-commons/dist/src/utils/messages";
 
+import { Context } from "@azure/functions";
 import { MessageResponseWithContent } from "io-functions-commons/dist/generated/definitions/MessageResponseWithContent";
 import { MessageResponseWithoutContent } from "io-functions-commons/dist/generated/definitions/MessageResponseWithoutContent";
 import { MessageStatusValueEnum } from "io-functions-commons/dist/generated/definitions/MessageStatusValue";
+import { ContextMiddleware } from "io-functions-commons/dist/src/utils/middlewares/context_middleware";
 
 /**
  * Type of a GetMessage handler.
@@ -75,6 +76,7 @@ import { MessageStatusValueEnum } from "io-functions-commons/dist/generated/defi
  * errors.
  */
 type IGetMessageHandler = (
+  context: Context,
   auth: IAzureApiAuthorization,
   clientIp: ClientIp,
   attrs: IAzureUserAttributes,
@@ -102,7 +104,7 @@ export function GetMessageHandler(
   notificationStatusModel: NotificationStatusModel,
   blobService: BlobService
 ): IGetMessageHandler {
-  return async (_, __, userAttributes, fiscalCode, messageId) => {
+  return async (context, _, __, userAttributes, fiscalCode, messageId) => {
     const errorOrMaybeDocument = await messageModel.findMessageForRecipient(
       fiscalCode,
       messageId
@@ -143,7 +145,7 @@ export function GetMessageHandler(
     );
 
     if (isLeft(errorOrMaybeContent)) {
-      winston.error(
+      context.log.error(
         `GetMessageHandler|${JSON.stringify(errorOrMaybeContent.value)}`
       );
       return ResponseErrorInternal(
@@ -217,6 +219,7 @@ export function GetMessage(
     blobService
   );
   const middlewaresWrap = withRequestMiddlewares(
+    ContextMiddleware(),
     AzureApiAuthMiddleware(new Set([UserGroup.ApiMessageRead])),
     ClientIpMiddleware,
     AzureUserAttributesMiddleware(serviceModel),
@@ -225,7 +228,9 @@ export function GetMessage(
   );
   return wrapRequestHandler(
     middlewaresWrap(
-      checkSourceIpForHandler(handler, (_, c, u, __, ___) => ipTuple(c, u))
+      checkSourceIpForHandler(handler, (_, __, c, u, ___, ____) =>
+        ipTuple(c, u)
+      )
     )
   );
 }

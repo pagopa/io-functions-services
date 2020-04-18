@@ -2,8 +2,6 @@
 /* tslint:disable:no-duplicate-string */
 /* tslint:disable:no-big-function */
 
-jest.mock("winston");
-
 import { Either, left, right } from "fp-ts/lib/Either";
 import { none, Option, some } from "fp-ts/lib/Option";
 
@@ -48,6 +46,19 @@ import { ServiceId } from "io-functions-commons/dist/generated/definitions/Servi
 import { TimeToLiveSeconds } from "io-functions-commons/dist/generated/definitions/TimeToLiveSeconds";
 
 import { GetMessageHandler } from "../handler";
+
+const mockContext = {
+  log: {
+    // tslint:disable-next-line: no-console
+    error: console.error,
+    // tslint:disable-next-line: no-console
+    info: console.log,
+    // tslint:disable-next-line: no-console
+    verbose: console.log,
+    // tslint:disable-next-line: no-console
+    warn: console.warn
+  }
+} as any;
 
 afterEach(() => {
   jest.resetAllMocks();
@@ -194,6 +205,7 @@ describe("GetMessageHandler", () => {
     );
 
     const result = await getMessageHandler(
+      mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
       someUserAttributes,
@@ -231,6 +243,7 @@ describe("GetMessageHandler", () => {
     );
 
     const result = await getMessageHandler(
+      mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
       someUserAttributes,
@@ -265,6 +278,7 @@ describe("GetMessageHandler", () => {
     );
 
     const result = await getMessageHandler(
+      mockContext,
       aUserAuthenticationTrustedApplication,
       undefined as any, // not used
       someUserAttributes,
@@ -305,6 +319,7 @@ describe("GetMessageHandler", () => {
     );
 
     const result = await getMessageHandler(
+      mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
       someUserAttributes,
@@ -336,6 +351,7 @@ describe("GetMessageHandler", () => {
     );
 
     const result = await getMessageHandler(
+      mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
       someUserAttributes,
@@ -380,6 +396,7 @@ describe("GetMessageHandler", () => {
     );
 
     const result = await getMessageHandler(
+      mockContext,
       aUserAuthenticationTrustedApplication,
       undefined as any, // not used
       someUserAttributes,
@@ -422,6 +439,7 @@ describe("GetMessageHandler", () => {
     );
 
     const result = await getMessageHandler(
+      mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
       someUserAttributes,
@@ -457,6 +475,7 @@ describe("GetMessageHandler", () => {
     );
 
     const result = await getMessageHandler(
+      mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
       someUserAttributes,
