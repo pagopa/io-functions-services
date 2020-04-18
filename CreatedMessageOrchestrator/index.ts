@@ -1,5 +1,5 @@
 ﻿import * as df from "durable-functions";
-import { IFunctionContext } from "durable-functions/lib/src/classes";
+import { IOrchestrationFunctionContext } from "durable-functions/lib/src/classes";
 
 import { readableReport } from "italia-ts-commons/lib/reporters";
 
@@ -32,7 +32,7 @@ import {
  *
  */
 // tslint:disable-next-line: cognitive-complexity no-big-function
-function* handler(context: IFunctionContext): IterableIterator<unknown> {
+function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
   const input = context.df.getInput();
 
   // decode input CreatedMessageEvent
