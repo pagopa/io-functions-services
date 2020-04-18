@@ -4,8 +4,6 @@ import { createBlobService } from "azure-storage";
 import * as cors from "cors";
 import * as express from "express";
 
-import { DocumentClient as DocumentDBClient } from "documentdb";
-
 import {
   MESSAGE_COLLECTION_NAME,
   MessageModel
@@ -34,6 +32,7 @@ import {
   NotificationStatusModel
 } from "io-functions-commons/dist/src/models/notification_status";
 
+import { getDocumentClient } from "../utils/cosmosdb";
 import { GetMessage } from "./handler";
 
 // Setup Express
@@ -70,9 +69,7 @@ const notificationsStatusCollectionUrl = documentDbUtils.getCollectionUri(
   NOTIFICATION_STATUS_COLLECTION_NAME
 );
 
-const documentClient = new DocumentDBClient(cosmosDbUri, {
-  masterKey: cosmosDbKey
-});
+const documentClient = getDocumentClient(cosmosDbUri, cosmosDbKey);
 
 const messageModel = new MessageModel(
   documentClient,

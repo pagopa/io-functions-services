@@ -3,8 +3,6 @@
 import * as cors from "cors";
 import * as express from "express";
 
-import { DocumentClient as DocumentDBClient } from "documentdb";
-
 import {
   MESSAGE_COLLECTION_NAME,
   MessageModel
@@ -24,6 +22,7 @@ import {
   initAppInsights,
   withAppInsightsContext
 } from "io-functions-commons/dist/src/utils/application_insights";
+import { getDocumentClient } from "../utils/cosmosdb";
 import { CreateMessage } from "./handler";
 
 // Setup Express
@@ -48,9 +47,7 @@ const servicesCollectionUrl = documentDbUtils.getCollectionUri(
   SERVICE_COLLECTION_NAME
 );
 
-const documentClient = new DocumentDBClient(cosmosDbUri, {
-  masterKey: cosmosDbKey
-});
+const documentClient = getDocumentClient(cosmosDbUri, cosmosDbKey);
 
 const messageModel = new MessageModel(
   documentClient,
