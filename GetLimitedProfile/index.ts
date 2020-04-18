@@ -1,6 +1,5 @@
 import { Context } from "@azure/functions";
 import cors = require("cors");
-import { DocumentClient as DocumentDBClient } from "documentdb";
 import express = require("express");
 import {
   PROFILE_COLLECTION_NAME,
@@ -16,6 +15,7 @@ import { secureExpressApp } from "io-functions-commons/dist/src/utils/express";
 import { setAppContext } from "io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import createAzureFunctionHandler from "io-functions-express/dist/src/createAzureFunctionsHandler";
 
+import { getDocumentClient } from "../utils/cosmosdb";
 import { GetLimitedProfile } from "./handler";
 
 // Setup Express
@@ -29,9 +29,7 @@ const cosmosDbUri = getRequiredStringEnv("COSMOSDB_URI");
 const cosmosDbKey = getRequiredStringEnv("COSMOSDB_KEY");
 const cosmosDbName = getRequiredStringEnv("COSMOSDB_NAME");
 
-const documentClient = new DocumentDBClient(cosmosDbUri, {
-  masterKey: cosmosDbKey
-});
+const documentClient = getDocumentClient(cosmosDbUri, cosmosDbKey);
 
 const documentDbDatabaseUrl = documentDbUtils.getDatabaseUri(cosmosDbName);
 

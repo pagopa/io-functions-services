@@ -1,6 +1,5 @@
 ﻿import { AzureFunction } from "@azure/functions";
 import { createBlobService } from "azure-storage";
-import { DocumentClient as DocumentDBClient } from "documentdb";
 
 import {
   MESSAGE_COLLECTION_NAME,
@@ -12,6 +11,7 @@ import {
 } from "io-functions-commons/dist/src/models/profile";
 import * as documentDbUtils from "io-functions-commons/dist/src/utils/documentdb";
 import { getRequiredStringEnv } from "io-functions-commons/dist/src/utils/env";
+import { getDocumentClient } from "../utils/cosmosdb";
 import { getStoreMessageContentActivityHandler } from "./handler";
 
 // Setup DocumentDB
@@ -24,9 +24,7 @@ const documentDbDatabaseUrl = documentDbUtils.getDatabaseUri(cosmosDbName);
 // We create the db client, services and models here
 // as if any error occurs during the construction of these objects
 // that would be unrecoverable anyway and we neither may trig a retry
-const documentClient = new DocumentDBClient(cosmosDbUri, {
-  masterKey: cosmosDbKey
-});
+const documentClient = getDocumentClient(cosmosDbUri, cosmosDbKey);
 
 const profilesCollectionUrl = documentDbUtils.getCollectionUri(
   documentDbDatabaseUrl,

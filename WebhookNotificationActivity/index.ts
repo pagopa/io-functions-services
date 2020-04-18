@@ -1,7 +1,5 @@
 ﻿import { AzureFunction } from "@azure/functions";
 
-import { DocumentClient as DocumentDBClient } from "documentdb";
-
 import {
   NOTIFICATION_COLLECTION_NAME,
   NotificationModel
@@ -20,6 +18,7 @@ import {
 } from "italia-ts-commons/lib/fetch";
 import { Millisecond } from "italia-ts-commons/lib/units";
 
+import { getDocumentClient } from "../utils/cosmosdb";
 import { getNotifyClient } from "./client";
 import { getWebhookNotificationActivityHandler } from "./handler";
 
@@ -33,9 +32,7 @@ const documentDbDatabaseUrl = documentDbUtils.getDatabaseUri(cosmosDbName);
 // We create the db client, services and models here
 // as if any error occurs during the construction of these objects
 // that would be unrecoverable anyway and we neither may trig a retry
-const documentClient = new DocumentDBClient(cosmosDbUri, {
-  masterKey: cosmosDbKey
-});
+const documentClient = getDocumentClient(cosmosDbUri, cosmosDbKey);
 
 const notificationsCollectionUrl = documentDbUtils.getCollectionUri(
   documentDbDatabaseUrl,
