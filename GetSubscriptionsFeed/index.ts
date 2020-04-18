@@ -3,9 +3,6 @@ import { createTableService } from "azure-storage";
 
 import * as cors from "cors";
 import * as express from "express";
-import * as winston from "winston";
-
-import { DocumentClient as DocumentDBClient } from "documentdb";
 
 import {
   SERVICE_COLLECTION_NAME,
@@ -14,11 +11,11 @@ import {
 import * as documentDbUtils from "io-functions-commons/dist/src/utils/documentdb";
 import { getRequiredStringEnv } from "io-functions-commons/dist/src/utils/env";
 import { secureExpressApp } from "io-functions-commons/dist/src/utils/express";
-import { AzureContextTransport } from "io-functions-commons/dist/src/utils/logging";
 import { setAppContext } from "io-functions-commons/dist/src/utils/middlewares/context_middleware";
 
 import createAzureFunctionHandler from "io-functions-express/dist/src/createAzureFunctionsHandler";
 
+import { getDocumentClient } from "../utils/cosmosdb";
 import { GetSubscriptionsFeed } from "./handler";
 
 // Setup Express
@@ -39,9 +36,7 @@ const servicesCollectionUrl = documentDbUtils.getCollectionUri(
   SERVICE_COLLECTION_NAME
 );
 
-const documentClient = new DocumentDBClient(cosmosDbUri, {
-  masterKey: cosmosDbKey
-});
+const documentClient = getDocumentClient(cosmosDbUri, cosmosDbKey);
 
 const serviceModel = new ServiceModel(documentClient, servicesCollectionUrl);
 
@@ -57,16 +52,8 @@ app.get(
 
 const azureFunctionHandler = createAzureFunctionHandler(app);
 
-// tslint:disable-next-line: no-let
-let logger: Context["log"] | undefined;
-const contextTransport = new AzureContextTransport(() => logger, {
-  level: "debug"
-});
-winston.add(contextTransport);
-
 // Binds the express app to an Azure Function handler
 function httpStart(context: Context): void {
-  logger = context.log;
   setAppContext(app, context);
   azureFunctionHandler(context);
 }

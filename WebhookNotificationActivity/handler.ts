@@ -8,13 +8,9 @@
 
 import * as t from "io-ts";
 
-import * as request from "superagent";
-
 import { Either, left, right } from "fp-ts/lib/Either";
 
 import { readableReport } from "italia-ts-commons/lib/reporters";
-import { NonEmptyString } from "italia-ts-commons/lib/strings";
-import { UrlFromString } from "italia-ts-commons/lib/url";
 
 import { Context } from "@azure/functions";
 
@@ -25,6 +21,7 @@ import {
 import { NotificationEvent } from "io-functions-commons/dist/src/models/notification_event";
 
 import {
+  isTransientError,
   PermanentError,
   RuntimeError,
   TransientError
@@ -36,15 +33,17 @@ import {
   NewMessageWithoutContent
 } from "io-functions-commons/dist/src/models/message";
 
-import {
-  diffInMilliseconds,
-  wrapCustomTelemetryClient
-} from "io-functions-commons/dist/src/utils/application_insights";
-
-import { CreatedMessageWithContent } from "io-functions-commons/dist/generated/definitions/CreatedMessageWithContent";
 import { HttpsUrl } from "io-functions-commons/dist/generated/definitions/HttpsUrl";
 import { MessageContent } from "io-functions-commons/dist/generated/definitions/MessageContent";
 import { SenderMetadata } from "io-functions-commons/dist/generated/definitions/SenderMetadata";
+
+import { fromEither, TaskEither, tryCatch } from "fp-ts/lib/TaskEither";
+import {
+  TypeofApiCall,
+  TypeofApiResponse
+} from "italia-ts-commons/lib/requests";
+import { Notification } from "../generated/notifications/Notification";
+import { WebhookNotifyT } from "./client";
 
 export const WebhookNotificationActivityInput = t.interface({
   notificationEvent: NotificationEvent
@@ -61,7 +60,7 @@ export const WebhookNotificationActivityResult = t.taggedUnion("kind", [
   }),
   t.interface({
     kind: t.literal("FAILURE"),
-    reason: t.keyof({ DECODE_ERROR: null })
+    reason: t.keyof({ DECODE_ERROR: null, SEND_TO_WEBHOOK_FAILED: null })
   })
 ]);
 
@@ -69,24 +68,21 @@ export type WebhookNotificationActivityResult = t.TypeOf<
   typeof WebhookNotificationActivityResult
 >;
 
-// request timeout in milliseconds
-const DEFAULT_REQUEST_TIMEOUT_MS = 10000;
-
 /**
  * Convert the internal representation of the message
- * to the one of the public API
+ * to the one of the public NotificationAPI
  */
 function newMessageToPublic(
   newMessage: NewMessageWithoutContent,
-  content: MessageContent
-): CreatedMessageWithContent {
-  return {
-    content,
+  content?: MessageContent
+): Notification["message"] {
+  const message = {
     created_at: newMessage.createdAt,
     fiscal_code: newMessage.fiscalCode,
     id: newMessage.id,
     sender_service_id: newMessage.senderServiceId
   };
+  return content ? { ...message, content } : message;
 }
 
 /**
@@ -106,62 +102,77 @@ function senderMetadataToPublic(
 /**
  * Post data to the API proxy webhook endpoint.
  */
-export async function sendToWebhook(
+export function sendToWebhook(
+  notifyApiCall: TypeofApiCall<WebhookNotifyT>,
   webhookEndpoint: HttpsUrl,
   message: NewMessageWithoutContent,
   content: MessageContent,
   senderMetadata: CreatedMessageEventSenderMetadata
-): Promise<Either<RuntimeError, request.Response>> {
-  try {
-    const response = await request("POST", webhookEndpoint)
-      .timeout(DEFAULT_REQUEST_TIMEOUT_MS)
-      .set("Content-Type", "application/json")
-      .accept("application/json")
-      .send({
-        message: newMessageToPublic(message, content),
-        sender_metadata: senderMetadataToPublic(senderMetadata)
-      });
-
-    if (response.error) {
-      return left<RuntimeError, request.Response>(
-        // in case of server HTTP 5xx errors we trigger a retry
-        response.serverError
-          ? TransientError(
-              `Transient HTTP error calling API Proxy: ${response.text}`
+): TaskEither<RuntimeError, TypeofApiResponse<WebhookNotifyT>> {
+  // Needed to polyfill AbortController
+  require("abort-controller/polyfill");
+  return tryCatch(
+    () =>
+      notifyApiCall({
+        notification: {
+          // if the service requires secure channels
+          // we send an empty (generic) push notification
+          message: senderMetadata.requireSecureChannels
+            ? newMessageToPublic(message)
+            : newMessageToPublic(message, content),
+          sender_metadata: senderMetadataToPublic(senderMetadata)
+        },
+        webhookEndpoint
+      }),
+    err =>
+      // tslint:disable-next-line: no-any
+      (err as any).name === "AbortError"
+        ? (TransientError(`Timeout calling webhook: ${err}`) as RuntimeError)
+        : (PermanentError(
+            `Unexpected exception raised calling webhook: ${err}`
+          ) as RuntimeError)
+  ).chain(response =>
+    fromEither(
+      response.fold<Either<RuntimeError, TypeofApiResponse<WebhookNotifyT>>>(
+        errs =>
+          left(
+            PermanentError(
+              `Decoding error calling webhook: ${readableReport(errs)}`
             )
-          : PermanentError(
-              `Permanent HTTP error calling API Proxy: ${response.text}`
-            )
-      );
-    }
-    return right<RuntimeError, request.Response>(response);
-  } catch (err) {
-    const errorMsg =
-      err.response && err.response.text ? err.response.text : "unknown error";
-    return left<RuntimeError, request.Response>(
-      err.timeout
-        ? TransientError(`Timeout calling API Proxy`)
-        : // when the server returns an HTTP 5xx error
-        err.status && err.status % 500 < 100
-        ? TransientError(`Transient error calling API proxy: ${errorMsg}`)
-        : // when the server returns some other type of HTTP error
-          PermanentError(`Permanent error calling API Proxy: ${errorMsg}`)
-    );
-  }
+          ),
+        r =>
+          r.status === 200
+            ? right(r)
+            : r.status === 500
+            ? // in case of server HTTP 5xx errors we trigger a retry
+              left(
+                TransientError(
+                  `Transient HTTP error calling webhook: ${r.status}`
+                )
+              )
+            : left(
+                PermanentError(
+                  `Permanent HTTP error calling webhook: ${r.status}`
+                )
+              )
+      )
+    )
+  );
 }
 
 /**
  * Returns a function for handling WebhookNotificationActivity
  */
 export const getWebhookNotificationActivityHandler = (
-  getCustomTelemetryClient: ReturnType<typeof wrapCustomTelemetryClient>,
-  lNotificationModel: NotificationModel
+  lNotificationModel: NotificationModel,
+  notifyApiCall: TypeofApiCall<WebhookNotifyT>
 ) => async (context: Context, input: unknown): Promise<unknown> => {
   const inputOrError = WebhookNotificationActivityInput.decode(input);
 
   if (inputOrError.isLeft()) {
-    context.log.error(
-      `WebhookNotificationActivity|Cannot decode input|ERROR=${readableReport(
+    context.log.error(`WebhookNotificationActivity|Cannot decode input`);
+    context.log.verbose(
+      `WebhookNotificationActivity|ERROR_DETAILS=${readableReport(
         inputOrError.value
       )}`
     );
@@ -181,22 +192,6 @@ export const getWebhookNotificationActivityHandler = (
   } = notificationEvent;
 
   const logPrefix = `WebhookNotificationActivity|MESSAGE_ID=${message.id}|RECIPIENT=${message.fiscalCode}|NOTIFICATION_ID=${notificationId}`;
-
-  const serviceId = message.senderServiceId;
-
-  const eventName = "notification.webhook.delivery";
-
-  const appInsightsClient = getCustomTelemetryClient(
-    {
-      operationId: notificationId,
-      operationParentId: message.id,
-      serviceId: NonEmptyString.is(serviceId) ? serviceId : undefined
-    },
-    {
-      messageId: message.id,
-      notificationId
-    }
-  );
 
   // Check whether the message is expired
   const errorOrActiveMessage = ActiveMessage.decode(message);
@@ -240,7 +235,8 @@ export const getWebhookNotificationActivityHandler = (
   if (errorOrWebhookNotification.isLeft()) {
     // The notification object is not compatible with this code
     const error = readableReport(errorOrWebhookNotification.value);
-    context.log.error(`${logPrefix}|ERROR=${error}`);
+    context.log.error(`${logPrefix}|ERROR`);
+    context.log.verbose(`${logPrefix}|ERROR_DETAILS=${error}`);
     return WebhookNotificationActivityResult.encode({
       kind: "FAILURE",
       reason: "DECODE_ERROR"
@@ -249,53 +245,26 @@ export const getWebhookNotificationActivityHandler = (
 
   const webhookNotification = errorOrWebhookNotification.value.channels.WEBHOOK;
 
-  const startWebhookCallTime = process.hrtime();
-
   const sendResult = await sendToWebhook(
+    notifyApiCall,
     webhookNotification.url,
     message,
     content,
     senderMetadata
-  );
-
-  const webhookCallDurationMs = diffInMilliseconds(startWebhookCallTime);
-
-  // hide backend secret token in logs
-  const hostName = UrlFromString.decode(webhookNotification.url).fold(
-    _ => "invalid url",
-    url => url.hostname || "invalid hostname"
-  );
-
-  const eventContent = {
-    data: hostName,
-    dependencyTypeName: "HTTP",
-    duration: webhookCallDurationMs,
-    name: eventName
-  };
+  ).run();
 
   if (sendResult.isLeft()) {
     const error = sendResult.value;
-    // track the event of failed delivery
-    appInsightsClient.trackDependency({
-      ...eventContent,
-      properties: {
-        error: error.message
-      },
-      resultCode: error.kind,
-      success: false
-    });
     context.log.error(`${logPrefix}|ERROR=${error.message}`);
-    throw new Error("Error while calling webhook");
+    if (isTransientError(error)) {
+      throw new Error("Error while calling webhook");
+    } else {
+      return WebhookNotificationActivityResult.encode({
+        kind: "FAILURE",
+        reason: "SEND_TO_WEBHOOK_FAILED"
+      });
+    }
   }
-
-  const apiMessageResponse = sendResult.value;
-
-  // track the event of successful delivery
-  appInsightsClient.trackDependency({
-    ...eventContent,
-    resultCode: apiMessageResponse.status,
-    success: true
-  });
 
   return WebhookNotificationActivityResult.encode({
     kind: "SUCCESS",

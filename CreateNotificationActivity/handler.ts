@@ -10,6 +10,7 @@ import { fromNullable, none, Option, some } from "fp-ts/lib/Option";
 import { readableReport } from "italia-ts-commons/lib/reporters";
 
 import { BlockedInboxOrChannelEnum } from "io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
+import { FiscalCode } from "io-functions-commons/dist/generated/definitions/FiscalCode";
 import { HttpsUrl } from "io-functions-commons/dist/generated/definitions/HttpsUrl";
 import { MessageContent } from "io-functions-commons/dist/generated/definitions/MessageContent";
 import { NotificationChannelEnum } from "io-functions-commons/dist/generated/definitions/NotificationChannel";
@@ -119,12 +120,16 @@ export type CreateNotificationActivityResult = t.TypeOf<
 export const getCreateNotificationActivityHandler = (
   lSenderServiceModel: SenderServiceModel,
   lNotificationModel: NotificationModel,
-  lDefaultWebhookUrl: HttpsUrl
+  lDefaultWebhookUrl: HttpsUrl,
+  lSandboxFiscalCode: FiscalCode
 ) => async (context: Context, input: unknown): Promise<unknown> => {
   const inputOrError = CreateNotificationActivityInput.decode(input);
   if (inputOrError.isLeft()) {
     context.log.error(
-      `CreateNotificationActivity|Unable to parse CreateNotificationActivityHandlerInput|ERROR=${readableReport(
+      `CreateNotificationActivity|Unable to parse CreateNotificationActivityHandlerInput`
+    );
+    context.log.verbose(
+      `CreateNotificationActivity|ERROR_DETAILS=${readableReport(
         inputOrError.value
       )}`
     );
@@ -166,8 +171,17 @@ export const getCreateNotificationActivityHandler = (
   const isEmailBlockedForService =
     blockedInboxOrChannels.indexOf(BlockedInboxOrChannelEnum.EMAIL) >= 0;
 
-  // then we retrieve the optional email from the user profile
-  const maybeEmailFromProfile = getEmailAddressFromProfile(profile);
+  // If the message is sent to the SANDBOX_FISCAL_CODE we consider it a test message
+  // so we send the email notification to the email associated to the user owner
+  // of the sender service (the one registered in the developer portal).
+  // Otherwise we try to get the email from the user profile.
+  const maybeNotificationEmailAddress: Option<NotificationChannelEmail> =
+    newMessageWithoutContent.fiscalCode === lSandboxFiscalCode
+      ? some({
+          addressSource: NotificationAddressSourceEnum.SERVICE_USER_ADDRESS,
+          toAddress: senderMetadata.serviceUserEmail
+        })
+      : getEmailAddressFromProfile(profile);
 
   // the sender service allows email channel
   const isEmailChannelAllowed = !senderMetadata.requireSecureChannels;
@@ -179,18 +193,18 @@ export const getCreateNotificationActivityHandler = (
   // * email is validated in the user profile (isEmailValidatedInProfile)
   // * email notifications are not blocked for the sender service (!isEmailBlockedForService)
   // * the sender service allows email channel
-  // * a destination email address is configured (maybeEmailFromProfile)
+  // * a destination email address is configured (maybeNotificationEmailAddress)
   //
   const maybeEmailNotificationAddress =
     isEmailEnabledInProfile &&
     isEmailValidatedInProfile &&
     !isEmailBlockedForService &&
     isEmailChannelAllowed
-      ? maybeEmailFromProfile
+      ? maybeNotificationEmailAddress
       : none;
 
   context.log.verbose(
-    `${logPrefix}|CHANNEL=EMAIL|PROFILE_ENABLED=${isEmailEnabledInProfile}|SERVICE_BLOCKED=${isEmailBlockedForService}|PROFILE_EMAIL=${maybeEmailFromProfile.isSome()}|WILL_NOTIFY=${maybeEmailNotificationAddress.isSome()}`
+    `${logPrefix}|CHANNEL=EMAIL|PROFILE_ENABLED=${isEmailEnabledInProfile}|SERVICE_BLOCKED=${isEmailBlockedForService}|PROFILE_EMAIL=${maybeEmailNotificationAddress.isSome()}|WILL_NOTIFY=${maybeEmailNotificationAddress.isSome()}`
   );
 
   //

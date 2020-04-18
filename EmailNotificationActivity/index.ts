@@ -11,8 +11,6 @@
 
 import { AzureFunction } from "@azure/functions";
 
-import { DocumentClient as DocumentDBClient } from "documentdb";
-
 import * as NodeMailer from "nodemailer";
 
 import {
@@ -23,6 +21,7 @@ import * as documentDbUtils from "io-functions-commons/dist/src/utils/documentdb
 import { getRequiredStringEnv } from "io-functions-commons/dist/src/utils/env";
 import { MailUpTransport } from "io-functions-commons/dist/src/utils/mailup";
 
+import { getDocumentClient } from "../utils/cosmosdb";
 import { getEmailNotificationActivityHandler } from "./handler";
 
 // Setup DocumentDB
@@ -35,9 +34,7 @@ const documentDbDatabaseUrl = documentDbUtils.getDatabaseUri(cosmosDbName);
 // We create the db client, services and models here
 // as if any error occurs during the construction of these objects
 // that would be unrecoverable anyway and we neither may trig a retry
-const documentClient = new DocumentDBClient(cosmosDbUri, {
-  masterKey: cosmosDbKey
-});
+const documentClient = getDocumentClient(cosmosDbUri, cosmosDbKey);
 
 const notificationsCollectionUrl = documentDbUtils.getCollectionUri(
   documentDbDatabaseUrl,

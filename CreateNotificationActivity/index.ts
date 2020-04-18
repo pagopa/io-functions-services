@@ -10,8 +10,8 @@
  */
 
 import { AzureFunction } from "@azure/functions";
-import { DocumentClient as DocumentDBClient } from "documentdb";
 
+import { FiscalCode } from "io-functions-commons/dist/generated/definitions/FiscalCode";
 import { HttpsUrl } from "io-functions-commons/dist/generated/definitions/HttpsUrl";
 import {
   NOTIFICATION_COLLECTION_NAME,
@@ -24,7 +24,16 @@ import {
 import * as documentDbUtils from "io-functions-commons/dist/src/utils/documentdb";
 import { getRequiredStringEnv } from "io-functions-commons/dist/src/utils/env";
 
+import { getDocumentClient } from "../utils/cosmosdb";
 import { getCreateNotificationActivityHandler } from "./handler";
+
+const sandboxFiscalCode = FiscalCode.decode(
+  getRequiredStringEnv("SANDBOX_FISCAL_CODE")
+).getOrElseL(_ => {
+  throw new Error(
+    `Check that the environment variable SANDBOX_FISCAL_CODE is set to a valid FiscalCode`
+  );
+});
 
 // Setup DocumentDB
 const cosmosDbUri = getRequiredStringEnv("COSMOSDB_URI");
@@ -36,9 +45,7 @@ const documentDbDatabaseUrl = documentDbUtils.getDatabaseUri(cosmosDbName);
 // We create the db client, services and models here
 // as if any error occurs during the construction of these objects
 // that would be unrecoverable anyway and we neither may trig a retry
-const documentClient = new DocumentDBClient(cosmosDbUri, {
-  masterKey: cosmosDbKey
-});
+const documentClient = getDocumentClient(cosmosDbUri, cosmosDbKey);
 
 const notificationsCollectionUrl = documentDbUtils.getCollectionUri(
   documentDbDatabaseUrl,
@@ -69,7 +76,8 @@ const defaultWebhookUrl = HttpsUrl.decode(
 const activityFunctionHandler: AzureFunction = getCreateNotificationActivityHandler(
   senderServiceModel,
   notificationModel,
-  defaultWebhookUrl
+  defaultWebhookUrl,
+  sandboxFiscalCode
 );
 
 export default activityFunctionHandler;

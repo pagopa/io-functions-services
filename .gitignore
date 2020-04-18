@@ -45,3 +45,7 @@ __pycache__/
 coverage
 
 generated
+
+docker*
+azure-functions-core-tools/**/*
+
