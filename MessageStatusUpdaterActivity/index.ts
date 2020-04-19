@@ -7,16 +7,12 @@ import {
 import * as documentDbUtils from "io-functions-commons/dist/src/utils/documentdb";
 import { getRequiredStringEnv } from "io-functions-commons/dist/src/utils/env";
 
-import { getDocumentClient } from "../utils/cosmosdb";
+import { documentClient } from "../utils/cosmosdb";
 import { getMessageStatusUpdaterActivityHandler } from "./handler";
 
-const cosmosDbUri = getRequiredStringEnv("COSMOSDB_URI");
-const cosmosDbKey = getRequiredStringEnv("COSMOSDB_KEY");
 const cosmosDbName = getRequiredStringEnv("COSMOSDB_NAME");
 
 const documentDbDatabaseUrl = documentDbUtils.getDatabaseUri(cosmosDbName);
-
-const documentClient = getDocumentClient(cosmosDbUri, cosmosDbKey);
 
 const messagesStatusCollectionUrl = documentDbUtils.getCollectionUri(
   documentDbDatabaseUrl,
