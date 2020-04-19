@@ -22,7 +22,7 @@ import {
   initAppInsights,
   withAppInsightsContext
 } from "io-functions-commons/dist/src/utils/application_insights";
-import { getDocumentClient } from "../utils/cosmosdb";
+import { documentClient } from "../utils/cosmosdb";
 import { CreateMessage } from "./handler";
 
 // Setup Express
@@ -32,8 +32,6 @@ secureExpressApp(app);
 // Set up CORS (free access to the API from browser clients)
 app.use(cors());
 
-const cosmosDbUri = getRequiredStringEnv("COSMOSDB_URI");
-const cosmosDbKey = getRequiredStringEnv("COSMOSDB_KEY");
 const cosmosDbName = getRequiredStringEnv("COSMOSDB_NAME");
 const messageContainerName = getRequiredStringEnv("MESSAGE_CONTAINER_NAME");
 
@@ -46,8 +44,6 @@ const servicesCollectionUrl = documentDbUtils.getCollectionUri(
   documentDbDatabaseUrl,
   SERVICE_COLLECTION_NAME
 );
-
-const documentClient = getDocumentClient(cosmosDbUri, cosmosDbKey);
 
 const messageModel = new MessageModel(
   documentClient,

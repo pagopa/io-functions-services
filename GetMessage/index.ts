@@ -32,7 +32,7 @@ import {
   NotificationStatusModel
 } from "io-functions-commons/dist/src/models/notification_status";
 
-import { getDocumentClient } from "../utils/cosmosdb";
+import { documentClient } from "../utils/cosmosdb";
 import { GetMessage } from "./handler";
 
 // Setup Express
@@ -42,8 +42,6 @@ secureExpressApp(app);
 // Set up CORS (free access to the API from browser clients)
 app.use(cors());
 
-const cosmosDbUri = getRequiredStringEnv("COSMOSDB_URI");
-const cosmosDbKey = getRequiredStringEnv("COSMOSDB_KEY");
 const cosmosDbName = getRequiredStringEnv("COSMOSDB_NAME");
 const messageContainerName = getRequiredStringEnv("MESSAGE_CONTAINER_NAME");
 
@@ -68,8 +66,6 @@ const notificationsStatusCollectionUrl = documentDbUtils.getCollectionUri(
   documentDbDatabaseUrl,
   NOTIFICATION_STATUS_COLLECTION_NAME
 );
-
-const documentClient = getDocumentClient(cosmosDbUri, cosmosDbKey);
 
 const messageModel = new MessageModel(
   documentClient,

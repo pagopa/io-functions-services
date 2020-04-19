@@ -2,17 +2,11 @@
  * Use a singleton CosmosDB client across functions.
  */
 import { DocumentClient as DocumentDBClient } from "documentdb";
+import { getRequiredStringEnv } from "io-functions-commons/dist/src/utils/env";
 
-// tslint:disable-next-line: no-let
-let instance: DocumentDBClient;
+const cosmosDbUri = getRequiredStringEnv("COSMOSDB_URI");
+const masterKey = getRequiredStringEnv("COSMOSDB_KEY");
 
-export function getDocumentClient(
-  cosmosDbUri: string,
-  cosmosDbKey: string
-): DocumentDBClient {
-  return instance
-    ? instance
-    : (instance = new DocumentDBClient(cosmosDbUri, {
-        masterKey: cosmosDbKey
-      }));
-}
+export const documentClient = new DocumentDBClient(cosmosDbUri, {
+  masterKey
+});

@@ -15,7 +15,7 @@ import { secureExpressApp } from "io-functions-commons/dist/src/utils/express";
 import { setAppContext } from "io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import createAzureFunctionHandler from "io-functions-express/dist/src/createAzureFunctionsHandler";
 
-import { getDocumentClient } from "../utils/cosmosdb";
+import { documentClient } from "../utils/cosmosdb";
 import { GetLimitedProfile } from "./handler";
 
 // Setup Express
@@ -25,11 +25,7 @@ secureExpressApp(app);
 // Set up CORS (free access to the API from browser clients)
 app.use(cors());
 
-const cosmosDbUri = getRequiredStringEnv("COSMOSDB_URI");
-const cosmosDbKey = getRequiredStringEnv("COSMOSDB_KEY");
 const cosmosDbName = getRequiredStringEnv("COSMOSDB_NAME");
-
-const documentClient = getDocumentClient(cosmosDbUri, cosmosDbKey);
 
 const documentDbDatabaseUrl = documentDbUtils.getDatabaseUri(cosmosDbName);
 
