@@ -13,6 +13,8 @@ import { AzureFunction } from "@azure/functions";
 
 import * as NodeMailer from "nodemailer";
 
+import { agent } from "italia-ts-commons";
+
 import {
   NOTIFICATION_COLLECTION_NAME,
   NotificationModel
@@ -62,7 +64,8 @@ const mailerTransporter = NodeMailer.createTransport(
     creds: {
       Secret: mailupSecret,
       Username: mailupUsername
-    }
+    },
+    fetchAgent: agent.getHttpsFetch(process.env)
   })
 );
 

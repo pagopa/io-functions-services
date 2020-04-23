@@ -57,7 +57,7 @@ import {
   ulidGenerator
 } from "io-functions-commons/dist/src/utils/strings";
 
-import { initAppInsights } from "io-functions-commons/dist/src/utils/application_insights";
+import { initAppInsights } from "italia-ts-commons/lib/appinsights";
 import { readableReport } from "italia-ts-commons/lib/reporters";
 import {
   IResponseErrorForbiddenNotAuthorized,
