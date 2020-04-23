@@ -829,15 +829,6 @@ agent-base@4, agent-base@^4.3.0:
   dependencies:
     es6-promisify "^5.0.0"
 
-"agentkeepalive@git+https://github.com/pagopa/agentkeepalive.git#v4.1.1":
-  version "4.1.0"
-  uid "91309bcab216dccbd08631e227a974afbfe807fb"
-  resolved "git+https://github.com/pagopa/agentkeepalive.git#91309bcab216dccbd08631e227a974afbfe807fb"
-  dependencies:
-    debug "^4.1.0"
-    depd "^1.1.2"
-    humanize-ms "^1.2.1"
-
 "agentkeepalive@https://github.com/pagopa/agentkeepalive#v4.1.1":
   version "4.1.0"
   resolved "https://github.com/pagopa/agentkeepalive#91309bcab216dccbd08631e227a974afbfe807fb"
@@ -3913,18 +3904,6 @@ italia-ts-commons@^5.0.1:
     fp-ts "1.12.0"
     io-ts "1.8.5"
     json-set-map "^1.0.2"
-    validator "^10.1.0"
-
-italia-ts-commons@^6.3.1:
-  version "6.4.1"
-  resolved "https://registry.yarnpkg.com/italia-ts-commons/-/italia-ts-commons-6.4.1.tgz#dbe46659b4aee68995393d63364e977e41ef7b86"
-  integrity sha512-1wRKf+uobLsD0ycmRrCs8CGNXRs7nMW4T/EXFpBjcvUcgMJLN2/ISDiMR1gRWrBEFOb1+vaEVaBjpaJ2yJTpmw==
-  dependencies:
-    agentkeepalive "https://github.com/pagopa/agentkeepalive#v4.1.1"
-    fp-ts "1.12.0"
-    io-ts "1.8.5"
-    json-set-map "^1.0.2"
-    node-fetch "^2.6.0"
     validator "^10.1.0"
 
 italia-ts-commons@^7.0.1:
