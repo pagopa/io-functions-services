@@ -20,6 +20,7 @@ import createAzureFunctionHandler from "io-functions-express/dist/src/createAzur
 
 import { withAppInsightsContext } from "io-functions-commons/dist/src/utils/application_insights";
 import { initAppInsights } from "italia-ts-commons/lib/appinsights";
+import { initTelemetryClient } from "../utils/appinsights";
 import { documentClient } from "../utils/cosmosdb";
 import { CreateMessage } from "./handler";
 
@@ -51,7 +52,7 @@ const messageModel = new MessageModel(
 
 const serviceModel = new ServiceModel(documentClient, servicesCollectionUrl);
 
-const telemetryClient = initAppInsights(
+const telemetryClient = initTelemetryClient(
   getRequiredStringEnv("APPINSIGHTS_INSTRUMENTATIONKEY")
 );
 
