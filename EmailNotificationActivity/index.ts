@@ -26,6 +26,20 @@ import { MailUpTransport } from "io-functions-commons/dist/src/utils/mailup";
 import { documentClient } from "../utils/cosmosdb";
 import { getEmailNotificationActivityHandler } from "./handler";
 
+import { NonEmptyString } from "italia-ts-commons/lib/strings";
+import nodemailerSendgrid = require("nodemailer-sendgrid");
+
+//
+//  setup SendGrid
+//
+const SendgridTransport = NonEmptyString.decode(process.env.SENDGRID_API_KEY)
+  .map(sendgridApiKey =>
+    nodemailerSendgrid({
+      apiKey: sendgridApiKey
+    })
+  )
+  .getOrElse(undefined);
+
 // Setup DocumentDB
 const cosmosDbName = getRequiredStringEnv("COSMOSDB_NAME");
 
@@ -60,13 +74,14 @@ const HTML_TO_TEXT_OPTIONS: HtmlToTextOptions = {
 const MAIL_FROM = getRequiredStringEnv("MAIL_FROM_DEFAULT");
 
 const mailerTransporter = NodeMailer.createTransport(
-  MailUpTransport({
-    creds: {
-      Secret: mailupSecret,
-      Username: mailupUsername
-    },
-    fetchAgent: agent.getHttpsFetch(process.env)
-  })
+  SendgridTransport ||
+    MailUpTransport({
+      creds: {
+        Secret: mailupSecret,
+        Username: mailupUsername
+      },
+      fetchAgent: agent.getHttpsFetch(process.env)
+    })
 );
 
 const activityFunction: AzureFunction = getEmailNotificationActivityHandler(
