@@ -74,14 +74,15 @@ const HTML_TO_TEXT_OPTIONS: HtmlToTextOptions = {
 const MAIL_FROM = getRequiredStringEnv("MAIL_FROM_DEFAULT");
 
 const mailerTransporter = NodeMailer.createTransport(
-  SendgridTransport ||
-    MailUpTransport({
-      creds: {
-        Secret: mailupSecret,
-        Username: mailupUsername
-      },
-      fetchAgent: agent.getHttpsFetch(process.env)
-    })
+  SendgridTransport !== undefined
+    ? SendgridTransport
+    : MailUpTransport({
+        creds: {
+          Secret: mailupSecret,
+          Username: mailupUsername
+        },
+        fetchAgent: agent.getHttpsFetch(process.env)
+      })
 );
 
 const activityFunction: AzureFunction = getEmailNotificationActivityHandler(
