@@ -109,8 +109,6 @@ export function sendToWebhook(
   content: MessageContent,
   senderMetadata: CreatedMessageEventSenderMetadata
 ): TaskEither<RuntimeError, TypeofApiResponse<WebhookNotifyT>> {
-  // Needed to polyfill AbortController
-  require("abort-controller/polyfill");
   return tryCatch(
     () =>
       notifyApiCall({
