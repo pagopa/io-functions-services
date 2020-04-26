@@ -82,7 +82,7 @@ const MAIL_FROM = getRequiredStringEnv("MAIL_FROM_DEFAULT");
 // 5 seconds timeout by default
 const DEFAULT_EMAIL_REQUEST_TIMEOUT_MS = 5000;
 
-// Webhook must be an https endpoint so we use an https agent
+// Must be an https endpoint so we use an https agent
 const abortableFetch = AbortableFetch(agent.getHttpsFetch(process.env));
 const fetchWithTimeout = setFetchTimeout(
   DEFAULT_EMAIL_REQUEST_TIMEOUT_MS as Millisecond,
