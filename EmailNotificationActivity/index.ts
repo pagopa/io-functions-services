@@ -26,7 +26,13 @@ import { MailUpTransport } from "io-functions-commons/dist/src/utils/mailup";
 import { documentClient } from "../utils/cosmosdb";
 import { getEmailNotificationActivityHandler } from "./handler";
 
+import {
+  AbortableFetch,
+  setFetchTimeout,
+  toFetch
+} from "italia-ts-commons/lib/fetch";
 import { NonEmptyString } from "italia-ts-commons/lib/strings";
+import { Millisecond } from "italia-ts-commons/lib/units";
 import nodemailerSendgrid = require("nodemailer-sendgrid");
 
 //
@@ -73,6 +79,16 @@ const HTML_TO_TEXT_OPTIONS: HtmlToTextOptions = {
 // default sender for email
 const MAIL_FROM = getRequiredStringEnv("MAIL_FROM_DEFAULT");
 
+// 5 seconds timeout by default
+const DEFAULT_EMAIL_REQUEST_TIMEOUT_MS = 5000;
+
+// Must be an https endpoint so we use an https agent
+const abortableFetch = AbortableFetch(agent.getHttpsFetch(process.env));
+const fetchWithTimeout = setFetchTimeout(
+  DEFAULT_EMAIL_REQUEST_TIMEOUT_MS as Millisecond,
+  abortableFetch
+);
+
 const mailerTransporter = NodeMailer.createTransport(
   SendgridTransport !== undefined
     ? SendgridTransport
@@ -81,7 +97,7 @@ const mailerTransporter = NodeMailer.createTransport(
           Secret: mailupSecret,
           Username: mailupUsername
         },
-        fetchAgent: agent.getHttpsFetch(process.env)
+        fetchAgent: toFetch(fetchWithTimeout)
       })
 );
 

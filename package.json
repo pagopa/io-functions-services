@@ -45,7 +45,6 @@
     "typescript": "^3.3.3"
   },
   "dependencies": {
-    "abort-controller": "^3.0.0",
     "applicationinsights": "^1.7.4",
     "azure-storage": "^2.10.3",
     "cors": "^2.8.4",
@@ -57,7 +56,7 @@
     "io-functions-commons": "^9.0.0",
     "io-functions-express": "^0.1.0",
     "io-ts": "1.8.5",
-    "italia-ts-commons": "^7.0.1",
+    "italia-ts-commons": "^8.1.0",
     "nodemailer": "^4.6.7",
     "nodemailer-sendgrid": "^1.0.3"
   },
