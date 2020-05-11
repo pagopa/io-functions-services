@@ -1,6 +1,6 @@
 swagger: '2.0'
 info:
-  version: 1.0.0
+  version: 1.0.1
   title: IO API for Public Administration Services
   contact:
     name: Digital Transformation Team
@@ -33,6 +33,12 @@ info:
     Fiscal Code that you will be able to use to send test messages. Messages
     sent to the fake Fiscal Code will be notified to the email address used
     during the registration process on the developer portal.
+
+    # Rate limits
+
+    All API requests are subject to rate limits.
+    Rate limits apply on a subscription key basis.
+    The current rate limit is of `150 requests` every `5 seconds`.
 
     # Messages
 
