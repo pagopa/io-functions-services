@@ -39,6 +39,7 @@ info:
     All API requests are subject to rate limits.
     Rate limits apply on a subscription key basis.
     The current rate limit is of `150 requests` every `5 seconds`.
+    If limits are exceeded the API server returns a 429 (Too Many Requests) response.
 
     # Messages
 
