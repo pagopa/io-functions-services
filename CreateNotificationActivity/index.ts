@@ -17,10 +17,6 @@ import {
   NOTIFICATION_COLLECTION_NAME,
   NotificationModel
 } from "io-functions-commons/dist/src/models/notification";
-import {
-  SENDER_SERVICE_COLLECTION_NAME,
-  SenderServiceModel
-} from "io-functions-commons/dist/src/models/sender_service";
 import * as documentDbUtils from "io-functions-commons/dist/src/utils/documentdb";
 import { getRequiredStringEnv } from "io-functions-commons/dist/src/utils/env";
 
@@ -49,15 +45,6 @@ const notificationModel = new NotificationModel(
   notificationsCollectionUrl
 );
 
-const senderServicesCollectionUrl = documentDbUtils.getCollectionUri(
-  documentDbDatabaseUrl,
-  SENDER_SERVICE_COLLECTION_NAME
-);
-const senderServiceModel = new SenderServiceModel(
-  documentClient,
-  senderServicesCollectionUrl
-);
-
 const defaultWebhookUrl = HttpsUrl.decode(
   getRequiredStringEnv("WEBHOOK_CHANNEL_URL")
 ).getOrElseL(_ => {
@@ -67,7 +54,6 @@ const defaultWebhookUrl = HttpsUrl.decode(
 });
 
 const activityFunctionHandler: AzureFunction = getCreateNotificationActivityHandler(
-  senderServiceModel,
   notificationModel,
   defaultWebhookUrl,
   sandboxFiscalCode
