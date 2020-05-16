@@ -26,10 +26,6 @@ import {
 } from "io-functions-commons/dist/src/models/notification";
 import { NotificationEvent } from "io-functions-commons/dist/src/models/notification_event";
 import { RetrievedProfile } from "io-functions-commons/dist/src/models/profile";
-import {
-  newSenderService,
-  SenderServiceModel
-} from "io-functions-commons/dist/src/models/sender_service";
 import { ulidGenerator } from "io-functions-commons/dist/src/utils/strings";
 
 import { SuccessfulStoreMessageContentActivityResult } from "../StoreMessageContentActivity/handler";
@@ -118,7 +114,6 @@ export type CreateNotificationActivityResult = t.TypeOf<
  * Returns a function for handling createNotificationActivity
  */
 export const getCreateNotificationActivityHandler = (
-  lSenderServiceModel: SenderServiceModel,
   lNotificationModel: NotificationModel,
   lDefaultWebhookUrl: HttpsUrl,
   lSandboxFiscalCode: FiscalCode
@@ -234,27 +229,6 @@ export const getCreateNotificationActivityHandler = (
   context.log.verbose(
     `${logPrefix}|CHANNEL=WEBHOOK|CHANNEL_ENABLED=${isWebhookEnabledInProfile}|SERVICE_BLOCKED=${isWebhookBlockedForService}|WILL_NOTIFY=${maybeWebhookNotificationUrl.isSome()}`
   );
-
-  //
-  // Record that the sender service has sent a message to the user
-  //
-
-  const errorOrSenderService = await lSenderServiceModel.createOrUpdate(
-    newSenderService(
-      newMessageWithoutContent.fiscalCode,
-      newMessageWithoutContent.senderServiceId,
-      createdMessageEvent.serviceVersion
-    ),
-    // partition key
-    newMessageWithoutContent.fiscalCode
-  );
-
-  if (isLeft(errorOrSenderService)) {
-    context.log.error(`${logPrefix}|ERROR=${errorOrSenderService.value.body}`);
-    throw new Error(
-      `Cannot save sender service id: ${errorOrSenderService.value.body}`
-    );
-  }
 
   //
   // If we can't send any notification there's not point in creating a
