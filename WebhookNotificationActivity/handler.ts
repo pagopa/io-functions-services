@@ -255,7 +255,7 @@ export const getWebhookNotificationActivityHandler = (
     const error = sendResult.value;
     context.log.error(`${logPrefix}|ERROR=${error.message}`);
     if (isTransientError(error)) {
-      throw new Error("Error while calling webhook");
+      throw new Error(`Error while calling webhook: ${error.message}`);
     } else {
       return WebhookNotificationActivityResult.encode({
         kind: "FAILURE",
