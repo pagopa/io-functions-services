@@ -165,7 +165,7 @@ export const getEmailNotificationActivityHandler = (
     const error = sendResult.value;
     // track the event of failed delivery
     context.log.error(`${logPrefix}|ERROR=${error.message}`);
-    throw new Error("Error while sending email");
+    throw new Error(`Error while sending email: ${error.message}`);
   }
 
   context.log.verbose(`${logPrefix}|RESULT=SUCCESS`);
