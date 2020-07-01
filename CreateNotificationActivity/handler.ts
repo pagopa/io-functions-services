@@ -183,8 +183,8 @@ export const getCreateNotificationActivityHandler = (
   // the sender service allows email channel
   const isEmailChannelAllowed = !senderMetadata.requireSecureChannels;
 
-  // if the service is in our blacklist for sending email
-  const isInBlackList = lEmailNotificationServiceBlackList.includes(
+  // wether the service is in our blacklist for sending email
+  const isEmailDisabledForService = lEmailNotificationServiceBlackList.includes(
     createdMessageEvent.message.senderServiceId
   );
 
@@ -199,7 +199,7 @@ export const getCreateNotificationActivityHandler = (
   // * a destination email address is configured (maybeNotificationEmailAddress)
   //
   const maybeEmailNotificationAddress =
-    !isInBlackList &&
+    !isEmailDisabledForService &&
     isEmailEnabledInProfile &&
     isEmailValidatedInProfile &&
     !isEmailBlockedForService &&
