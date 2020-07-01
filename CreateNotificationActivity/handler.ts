@@ -28,6 +28,7 @@ import { NotificationEvent } from "io-functions-commons/dist/src/models/notifica
 import { RetrievedProfile } from "io-functions-commons/dist/src/models/profile";
 import { ulidGenerator } from "io-functions-commons/dist/src/utils/strings";
 
+import { ServiceId } from "io-functions-commons/dist/generated/definitions/ServiceId";
 import { SuccessfulStoreMessageContentActivityResult } from "../StoreMessageContentActivity/handler";
 
 /**
@@ -116,7 +117,8 @@ export type CreateNotificationActivityResult = t.TypeOf<
 export const getCreateNotificationActivityHandler = (
   lNotificationModel: NotificationModel,
   lDefaultWebhookUrl: HttpsUrl,
-  lSandboxFiscalCode: FiscalCode
+  lSandboxFiscalCode: FiscalCode,
+  lEmailNotificationServiceBlackList: ReadonlyArray<ServiceId>
 ) => async (context: Context, input: unknown): Promise<unknown> => {
   const inputOrError = CreateNotificationActivityInput.decode(input);
   if (inputOrError.isLeft()) {
@@ -181,9 +183,15 @@ export const getCreateNotificationActivityHandler = (
   // the sender service allows email channel
   const isEmailChannelAllowed = !senderMetadata.requireSecureChannels;
 
+  // if the service is in our blacklist for sending email
+  const isInBlackList = lEmailNotificationServiceBlackList.includes(
+    createdMessageEvent.message.senderServiceId
+  );
+
   // finally we decide whether we should send the email notification or not -
   // we send an email notification when all the following conditions are met:
   //
+  // * email notifications are enabled for this service (!isInBlackList)
   // * email notifications are enabled in the user profile (isEmailEnabledInProfile)
   // * email is validated in the user profile (isEmailValidatedInProfile)
   // * email notifications are not blocked for the sender service (!isEmailBlockedForService)
@@ -191,6 +199,7 @@ export const getCreateNotificationActivityHandler = (
   // * a destination email address is configured (maybeNotificationEmailAddress)
   //
   const maybeEmailNotificationAddress =
+    !isInBlackList &&
     isEmailEnabledInProfile &&
     isEmailValidatedInProfile &&
     !isEmailBlockedForService &&
@@ -242,7 +251,9 @@ export const getCreateNotificationActivityHandler = (
   if (noChannelsConfigured) {
     context.log.warn(`${logPrefix}|RESULT=NO_CHANNELS_ENABLED`);
     // return no notifications
-    return { kind: "none" };
+    return {
+      kind: "none"
+    };
   }
 
   //
