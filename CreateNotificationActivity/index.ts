@@ -13,6 +13,7 @@ import { AzureFunction } from "@azure/functions";
 
 import { FiscalCode } from "io-functions-commons/dist/generated/definitions/FiscalCode";
 import { HttpsUrl } from "io-functions-commons/dist/generated/definitions/HttpsUrl";
+import { ServiceId } from "io-functions-commons/dist/generated/definitions/ServiceId";
 import {
   NOTIFICATION_COLLECTION_NAME,
   NotificationModel
@@ -22,12 +23,21 @@ import { getRequiredStringEnv } from "io-functions-commons/dist/src/utils/env";
 
 import { documentClient } from "../utils/cosmosdb";
 import { getCreateNotificationActivityHandler } from "./handler";
+import { parseCommaSeparatedListOf } from "./utils";
 
 const sandboxFiscalCode = FiscalCode.decode(
   getRequiredStringEnv("SANDBOX_FISCAL_CODE")
 ).getOrElseL(_ => {
   throw new Error(
     `Check that the environment variable SANDBOX_FISCAL_CODE is set to a valid FiscalCode`
+  );
+});
+
+const emailNotificationServiceBlackList = parseCommaSeparatedListOf(ServiceId)(
+  process.env.EMAIL_NOTIFICATION_SERVICE_BLACKLIST
+).getOrElseL(_ => {
+  throw new Error(
+    `Check that the environment variable EMAIL_NOTIFICATION_SERVICE_BLACKLIST is either unset or set to a comma-separated list of valid ServiceId`
   );
 });
 
@@ -56,7 +66,8 @@ const defaultWebhookUrl = HttpsUrl.decode(
 const activityFunctionHandler: AzureFunction = getCreateNotificationActivityHandler(
   notificationModel,
   defaultWebhookUrl,
-  sandboxFiscalCode
+  sandboxFiscalCode,
+  emailNotificationServiceBlackList
 );
 
 export default activityFunctionHandler;
