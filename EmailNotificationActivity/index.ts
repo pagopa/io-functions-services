@@ -91,6 +91,7 @@ const fetchWithTimeout = setFetchTimeout(
 
 // Whether we're in a production environment
 const isProduction = process.env.NODE_ENV === "production";
+const mailhogHostname: string = process.env.MAILHOG_HOSTNAME || "localhost";
 
 const mailerTransporter = NodeMailer.createTransport(
   isProduction
@@ -105,7 +106,7 @@ const mailerTransporter = NodeMailer.createTransport(
         })
     : // For development we use mailhog to intercept emails
       NodeMailer.createTransport({
-        host: "localhost",
+        host: mailhogHostname,
         port: 1025,
         secure: false
       })
