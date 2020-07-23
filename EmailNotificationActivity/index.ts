@@ -105,11 +105,11 @@ const mailerTransporter = NodeMailer.createTransport(
           fetchAgent: toFetch(fetchWithTimeout)
         })
     : // For development we use mailhog to intercept emails
-      NodeMailer.createTransport({
+      {
         host: mailhogHostname,
         port: 1025,
         secure: false
-      })
+      }
 );
 
 const activityFunction: AzureFunction = getEmailNotificationActivityHandler(
