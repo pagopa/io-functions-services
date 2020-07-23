@@ -89,16 +89,27 @@ const fetchWithTimeout = setFetchTimeout(
   abortableFetch
 );
 
+// Whether we're in a production environment
+const isProduction = process.env.NODE_ENV === "production";
+const mailhogHostname: string = process.env.MAILHOG_HOSTNAME || "localhost";
+
 const mailerTransporter = NodeMailer.createTransport(
-  SendgridTransport !== undefined
-    ? SendgridTransport
-    : MailUpTransport({
-        creds: {
-          Secret: mailupSecret,
-          Username: mailupUsername
-        },
-        fetchAgent: toFetch(fetchWithTimeout)
-      })
+  isProduction
+    ? SendgridTransport !== undefined
+      ? SendgridTransport
+      : MailUpTransport({
+          creds: {
+            Secret: mailupSecret,
+            Username: mailupUsername
+          },
+          fetchAgent: toFetch(fetchWithTimeout)
+        })
+    : // For development we use mailhog to intercept emails
+      {
+        host: mailhogHostname,
+        port: 1025,
+        secure: false
+      }
 );
 
 const activityFunction: AzureFunction = getEmailNotificationActivityHandler(
