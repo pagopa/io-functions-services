@@ -29,6 +29,7 @@ import { RetrievedProfile } from "io-functions-commons/dist/src/models/profile";
 import { ulidGenerator } from "io-functions-commons/dist/src/utils/strings";
 
 import { ServiceId } from "io-functions-commons/dist/generated/definitions/ServiceId";
+import { NonEmptyString } from "italia-ts-commons/lib/strings";
 import { SuccessfulStoreMessageContentActivityResult } from "../StoreMessageContentActivity/handler";
 
 /**
@@ -53,10 +54,9 @@ async function createNotification(
   newMessageContent: MessageContent,
   newNotification: NewNotification
 ): Promise<NotificationEvent> {
-  const errorOrNotification = await lNotificationModel.create(
-    newNotification,
-    newNotification.messageId
-  );
+  const errorOrNotification = await lNotificationModel
+    .create(newNotification)
+    .run();
 
   if (isLeft(errorOrNotification)) {
     throw new Error(
@@ -69,7 +69,7 @@ async function createNotification(
   return {
     content: newMessageContent,
     message: newMessageWithoutContent,
-    notificationId: notification.id,
+    notificationId: notification.id as NonEmptyString,
     senderMetadata
   };
 }
@@ -264,7 +264,7 @@ export const getCreateNotificationActivityHandler = (
     ...createNewNotification(
       ulidGenerator,
       newMessageWithoutContent.fiscalCode,
-      newMessageWithoutContent.id
+      newMessageWithoutContent.id as NonEmptyString
     ),
     channels: {
       [NotificationChannelEnum.EMAIL]: maybeEmailNotificationAddress.toUndefined(),

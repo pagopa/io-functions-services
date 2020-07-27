@@ -8,6 +8,7 @@ import { NotificationChannelStatusValueEnum } from "io-functions-commons/dist/ge
 import { CreatedMessageEvent } from "io-functions-commons/dist/src/models/created_message_event";
 
 import { MessageStatusValueEnum } from "io-functions-commons/dist/generated/definitions/MessageStatusValue";
+import { NonEmptyString } from "italia-ts-commons/lib/strings";
 import {
   CreateNotificationActivityInput,
   CreateNotificationActivityResult
@@ -101,7 +102,7 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
       // Update message status
       const messageStatusUpdaterActivityInputRejected = MessageStatusUpdaterActivityInput.encode(
         {
-          messageId: newMessageWithContent.id,
+          messageId: newMessageWithContent.id as NonEmptyString,
           status: MessageStatusValueEnum.REJECTED
         }
       );
@@ -193,7 +194,7 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
             // once the email has been sent, update the notification status
             const emailNotificationStatusUpdaterActivityInput = {
               channel: NotificationChannelEnum.EMAIL,
-              messageId: createdMessageEvent.message.id,
+              messageId: createdMessageEvent.message.id as NonEmptyString,
               notificationId:
                 createNotificationActivityResult.notificationEvent
                   .notificationId,
@@ -267,7 +268,7 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
             // once the push notification has been sent, update the notification status
             const webhookNotificationStatusUpdaterActivityInput = {
               channel: NotificationChannelEnum.WEBHOOK,
-              messageId: createdMessageEvent.message.id,
+              messageId: createdMessageEvent.message.id as NonEmptyString,
               notificationId:
                 createNotificationActivityResult.notificationEvent
                   .notificationId,
@@ -303,7 +304,7 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
     // Update the message status
     const messageStatusUpdaterActivityInputProcessed = MessageStatusUpdaterActivityInput.encode(
       {
-        messageId: newMessageWithContent.id,
+        messageId: newMessageWithContent.id as NonEmptyString,
         status: MessageStatusValueEnum.PROCESSED
       }
     );
@@ -323,7 +324,7 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
     // Update the message status
     const messageStatusUpdaterActivityInputFailed = MessageStatusUpdaterActivityInput.encode(
       {
-        messageId: newMessageWithContent.id,
+        messageId: newMessageWithContent.id as NonEmptyString,
         status: MessageStatusValueEnum.FAILED
       }
     );

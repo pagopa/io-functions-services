@@ -35,18 +35,18 @@ export const getMessageStatusUpdaterActivityHandler = (
 
   const { messageId, status } = decodedInput.value;
 
-  const messageStatusUpdater = getMessageStatusUpdater(
+  const result = await getMessageStatusUpdater(
     messageStatusModel,
     messageId
-  );
-
-  const result = await messageStatusUpdater(status);
+  )(status).run();
 
   if (result.isLeft()) {
     context.log.error(
-      `MessageStatusUpdaterActivity|MESSAGE_ID=${messageId}|STATUS=${status}|ERROR=${result.value.message}`
+      `MessageStatusUpdaterActivity|MESSAGE_ID=${messageId}|STATUS=${status}|ERROR=${JSON.stringify(
+        result.value
+      )}`
     );
-    throw new Error(result.value.message);
+    throw new Error(JSON.stringify(result.value));
   }
 
   context.log.verbose(

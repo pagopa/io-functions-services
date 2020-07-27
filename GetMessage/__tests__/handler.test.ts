@@ -13,7 +13,7 @@ import {
 } from "io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
 import { IAzureUserAttributes } from "io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
 
-import { NonNegativeNumber } from "italia-ts-commons/lib/numbers";
+import { NonNegativeInteger } from "italia-ts-commons/lib/numbers";
 import {
   EmailString,
   FiscalCode,
@@ -83,7 +83,7 @@ const someUserAttributes: IAzureUserAttributes = {
     requireSecureChannels: false,
     serviceId: "test" as NonEmptyString,
     serviceName: "Test" as NonEmptyString,
-    version: 1 as NonNegativeNumber
+    version: 1 as NonNegativeInteger
   }
 };
 
@@ -159,7 +159,7 @@ const aRetrievedNotificationStatus: RetrievedNotificationStatus = {
   status: NotificationChannelStatusValueEnum.SENT,
   statusId: makeStatusId("1" as NonEmptyString, NotificationChannelEnum.EMAIL),
   updatedAt: new Date(),
-  version: 1 as NonNegativeNumber
+  version: 1 as NonNegativeInteger
 };
 
 const aMessageStatus: MessageStatus = {

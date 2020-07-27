@@ -1,26 +1,27 @@
-﻿import { AzureFunction } from "@azure/functions";
-
+import { CosmosClient } from "@azure/cosmos";
+import { AzureFunction } from "@azure/functions";
 import {
   MESSAGE_STATUS_COLLECTION_NAME,
   MessageStatusModel
 } from "io-functions-commons/dist/src/models/message_status";
-import * as documentDbUtils from "io-functions-commons/dist/src/utils/documentdb";
 import { getRequiredStringEnv } from "io-functions-commons/dist/src/utils/env";
 
-import { documentClient } from "../utils/cosmosdb";
 import { getMessageStatusUpdaterActivityHandler } from "./handler";
 
+// Setup DocumentDB
+const cosmosDbUri = getRequiredStringEnv("COSMOSDB_URI");
 const cosmosDbName = getRequiredStringEnv("COSMOSDB_NAME");
+const cosmosDbKey = getRequiredStringEnv("COSMOSDB_KEY");
 
-const documentDbDatabaseUrl = documentDbUtils.getDatabaseUri(cosmosDbName);
+const cosmosdbClient = new CosmosClient({
+  endpoint: cosmosDbUri,
+  key: cosmosDbKey
+});
 
-const messagesStatusCollectionUrl = documentDbUtils.getCollectionUri(
-  documentDbDatabaseUrl,
-  MESSAGE_STATUS_COLLECTION_NAME
-);
 const messageStatusModel = new MessageStatusModel(
-  documentClient,
-  messagesStatusCollectionUrl
+  cosmosdbClient
+    .database(cosmosDbName)
+    .container(MESSAGE_STATUS_COLLECTION_NAME)
 );
 
 const messageStatusUpdaterActivityHandler: AzureFunction = getMessageStatusUpdaterActivityHandler(

@@ -2,6 +2,22 @@
 # yarn lockfile v1
 
 
+"@azure/cosmos@^3.7.2":
+  version "3.7.4"
+  resolved "https://registry.yarnpkg.com/@azure/cosmos/-/cosmos-3.7.4.tgz#d94f9e5ff36bfcd42957d25e10e4f2a6ebbbfcf5"
+  integrity sha512-IbSEadapQDajSCXj7gUc8OklkOd/oAY4w7XBLHouWc4iKQTtntb2DmGjhrbh2W5Ku+pmBSr1GTApCjQ55iIjlQ==
+  dependencies:
+    "@types/debug" "^4.1.4"
+    debug "^4.1.1"
+    fast-json-stable-stringify "^2.0.0"
+    node-abort-controller "^1.0.4"
+    node-fetch "^2.6.0"
+    os-name "^3.1.0"
+    priorityqueuejs "^1.0.0"
+    semaphore "^1.0.5"
+    tslib "^2.0.0"
+    uuid "^8.1.0"
+
 "@azure/functions@^1.0.2-beta2", "@azure/functions@^1.2.0":
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/@azure/functions/-/functions-1.2.0.tgz#e668c3811c6effee93e4553e69de017e2f48acd3"
@@ -626,6 +642,11 @@
   integrity sha512-invOmosX0DqbpA+cE2yoHGUlF/blyf7nB0OGYBBiH27crcVm5NmFaZkLP4Ta1hGaesckCi5lVLlydNJCxkTOSg==
   dependencies:
     "@types/express" "*"
+
+"@types/debug@^4.1.4":
+  version "4.1.5"
+  resolved "https://registry.yarnpkg.com/@types/debug/-/debug-4.1.5.tgz#b14efa8852b7768d898906613c23f688713e02cd"
+  integrity sha512-Q1y515GcOdTHgagaVFhHnIFQ38ygs/kmxdNpvpou+raI9UO3YZcHDngBSYKQklcKlvA7iuQlmIKbzvmxcOE9CQ==
 
 "@types/documentdb@^1.10.5":
   version "1.10.5"
@@ -2186,7 +2207,7 @@ doctrine@0.7.2:
     esutils "^1.1.6"
     isarray "0.0.1"
 
-documentdb@^1.12.2, documentdb@^1.15.3:
+documentdb@^1.12.2:
   version "1.15.3"
   resolved "https://registry.yarnpkg.com/documentdb/-/documentdb-1.15.3.tgz#ce83a248515667054d45009ff94c4a1e5f72067b"
   integrity sha512-V+B0D1arcWVT3uv/Nms2aNNeJBgndysDcXfyOFgz2dlMCmY8cWMFXFuo+6T4A8PjLL2pI9QSoo4CwXQBREFcnA==
@@ -3525,16 +3546,16 @@ invert-kv@^1.0.0:
   resolved "https://registry.yarnpkg.com/invert-kv/-/invert-kv-1.0.0.tgz#104a8e4aaca6d3d8cd157a8ef8bfab2d7a3ffdb6"
   integrity sha1-EEqOSqym09jNFXqO+L+rLXo//bY=
 
-io-functions-commons@^10.6.0:
-  version "10.6.0"
-  resolved "https://registry.yarnpkg.com/io-functions-commons/-/io-functions-commons-10.6.0.tgz#6c2eface3dc5b40d1cc100cc824583d4d4563513"
-  integrity sha512-j4oIwBPbdHLAY+1sKl2bOvOhye5MKFdnQEwmHtH0a6WTYrL1P1m3ZBWtbAJWUzC0mYAOf7tf+vumIUu1mzWfkA==
+io-functions-commons@^12.0.0:
+  version "12.0.0"
+  resolved "https://registry.yarnpkg.com/io-functions-commons/-/io-functions-commons-12.0.0.tgz#3dc07c92ace5ef728af75978f4a1ac0a0528b113"
+  integrity sha512-OHdQOyhXIk6oXzoJq4gzmeBRCG7z66LQap/4W9AxLlljGmiQQdL6p0WvUtSwX1eK2YWuaPJQcnbATVmGd6xx6A==
   dependencies:
+    "@azure/cosmos" "^3.7.2"
     "@types/node-fetch" "^2.5.6"
     applicationinsights "^1.7.3"
     azure-storage "^2.10.3"
     cidr-matcher "^2.1.0"
-    documentdb "^1.15.3"
     fp-ts "1.17.4"
     helmet "^3.13.0"
     helmet-csp "^2.5.1"
@@ -5174,6 +5195,11 @@ nocache@2.1.0:
   resolved "https://registry.yarnpkg.com/nocache/-/nocache-2.1.0.tgz#120c9ffec43b5729b1d5de88cd71aa75a0ba491f"
   integrity sha512-0L9FvHG3nfnnmaEQPjT9xhfN4ISk0A8/2j4M37Np4mcDesJjHgEUfgPhdCyZuFI954tjokaIj/A3NdpFNdEh4Q==
 
+node-abort-controller@^1.0.4:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/node-abort-controller/-/node-abort-controller-1.1.0.tgz#8a734a631b022af29963be7245c1483cbb9e070d"
+  integrity sha512-dEYmUqjtbivotqjraOe8UvhT/poFfog1BQRNsZm/MSEDDESk2cQ1tvD8kGyuN07TM/zoW+n42odL8zTeJupYdQ==
+
 node-cleanup@^2.1.2:
   version "2.1.2"
   resolved "https://registry.yarnpkg.com/node-cleanup/-/node-cleanup-2.1.2.tgz#7ac19abd297e09a7f72a71545d951b517e4dde2c"
@@ -5846,7 +5872,7 @@ pretty-format@^24.9.0:
     ansi-styles "^3.2.0"
     react-is "^16.8.4"
 
-priorityqueuejs@1.0.0:
+priorityqueuejs@1.0.0, priorityqueuejs@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/priorityqueuejs/-/priorityqueuejs-1.0.0.tgz#2ee4f23c2560913e08c07ce5ccdd6de3df2c5af8"
   integrity sha1-LuTyPCVgkT4IwHzlzN1t498sWvg=
@@ -6474,6 +6500,11 @@ semaphore@1.0.5:
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/semaphore/-/semaphore-1.0.5.tgz#b492576e66af193db95d65e25ec53f5f19798d60"
   integrity sha1-tJJXbmavGT25XWXiXsU/Xxl5jWA=
+
+semaphore@^1.0.5:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/semaphore/-/semaphore-1.1.0.tgz#aaad8b86b20fe8e9b32b16dc2ee682a8cd26a8aa"
+  integrity sha512-O4OZEaNtkMd/K0i6js9SL+gqy0ZCBMgUvlSqHKi4IBdjhe7wB8pwztUk1BbZ1fmrvpwFrPbHzqd2w5pTcJH6LA==
 
 semver-diff@^3.1.1:
   version "3.1.1"
@@ -7191,6 +7222,11 @@ tslib@^1.10.0, tslib@^1.8.0, tslib@^1.8.1, tslib@^1.9.0:
   resolved "https://registry.yarnpkg.com/tslib/-/tslib-1.11.1.tgz#eb15d128827fbee2841549e171f45ed338ac7e35"
   integrity sha512-aZW88SY8kQbU7gpV19lN24LtXh/yD4ZZg6qieAJDDg+YBsJcSmLGK9QpnUjAKVG/xefmvJGd1WUmfpT/g6AJGA==
 
+tslib@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/tslib/-/tslib-2.0.0.tgz#18d13fc2dce04051e20f074cc8387fd8089ce4f3"
+  integrity sha512-lTqkx847PI7xEDYJntxZH89L2/aXInsyF2luSafe/+0fHOMjlBNXdH6th7f70qxLDhul7KZK0zC8V5ZIyHl0/g==
+
 tslint-config-prettier@^1.18.0:
   version "1.18.0"
   resolved "https://registry.yarnpkg.com/tslint-config-prettier/-/tslint-config-prettier-1.18.0.tgz#75f140bde947d35d8f0d238e0ebf809d64592c37"
@@ -7617,6 +7653,11 @@ uuid@^3.3.2:
   version "3.4.0"
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-3.4.0.tgz#b23e4358afa8a202fe7a100af1f5f883f02007ee"
   integrity sha512-HjSDRw6gZE5JMggctHBcjVak08+KEVhSIiDzFnT9S9aegmp85S/bReBVTb4QTFaRNptJ9kuYaNhnbNEOkbKb/A==
+
+uuid@^8.1.0:
+  version "8.2.0"
+  resolved "https://registry.yarnpkg.com/uuid/-/uuid-8.2.0.tgz#cb10dd6b118e2dada7d0cd9730ba7417c93d920e"
+  integrity sha512-CYpGiFTUrmI6OBMkAdjSDM0k5h8SkkiTP4WAjQgDgNB1S3Ou9VBEvr6q0Kv2H1mMk7IWfxYGpMH5sd5AvcIV2Q==
 
 validate-npm-package-license@^3.0.1:
   version "3.0.4"

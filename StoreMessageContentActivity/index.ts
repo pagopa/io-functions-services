@@ -1,4 +1,5 @@
-﻿import { AzureFunction } from "@azure/functions";
+﻿import { CosmosClient } from "@azure/cosmos";
+import { AzureFunction } from "@azure/functions";
 import { createBlobService } from "azure-storage";
 
 import {
@@ -9,30 +10,27 @@ import {
   PROFILE_COLLECTION_NAME,
   ProfileModel
 } from "io-functions-commons/dist/src/models/profile";
-import * as documentDbUtils from "io-functions-commons/dist/src/utils/documentdb";
 import { getRequiredStringEnv } from "io-functions-commons/dist/src/utils/env";
-import { documentClient } from "../utils/cosmosdb";
 import { getStoreMessageContentActivityHandler } from "./handler";
 
 // Setup DocumentDB
+// Setup DocumentDB
+const cosmosDbUri = getRequiredStringEnv("COSMOSDB_URI");
 const cosmosDbName = getRequiredStringEnv("COSMOSDB_NAME");
+const cosmosDbKey = getRequiredStringEnv("COSMOSDB_KEY");
 
-const documentDbDatabaseUrl = documentDbUtils.getDatabaseUri(cosmosDbName);
+const cosmosdbClient = new CosmosClient({
+  endpoint: cosmosDbUri,
+  key: cosmosDbKey
+});
 
-const profilesCollectionUrl = documentDbUtils.getCollectionUri(
-  documentDbDatabaseUrl,
-  PROFILE_COLLECTION_NAME
+const profileModel = new ProfileModel(
+  cosmosdbClient.database(cosmosDbName).container(PROFILE_COLLECTION_NAME)
 );
-const profileModel = new ProfileModel(documentClient, profilesCollectionUrl);
 
-const messagesCollectionUrl = documentDbUtils.getCollectionUri(
-  documentDbDatabaseUrl,
-  MESSAGE_COLLECTION_NAME
-);
 const messageContainerName = getRequiredStringEnv("MESSAGE_CONTAINER_NAME");
 const messageModel = new MessageModel(
-  documentClient,
-  messagesCollectionUrl,
+  cosmosdbClient.database(cosmosDbName).container(MESSAGE_COLLECTION_NAME),
   messageContainerName
 );
 

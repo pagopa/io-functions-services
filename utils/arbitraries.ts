@@ -9,7 +9,7 @@ import { RetrievedProfile } from "io-functions-commons/dist/src/models/profile";
 import { Service } from "io-functions-commons/dist/src/models/service";
 import { ClientIp } from "io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
 import {
-  NonNegativeNumber,
+  NonNegativeInteger,
   WithinRangeInteger
 } from "italia-ts-commons/lib/numbers";
 import {
@@ -213,7 +213,7 @@ export const versionedServiceArb = fc
   .tuple(serviceArb, fc.nat())
   .map(([service, version]) => ({
     ...service,
-    version: version as NonNegativeNumber
+    version: version as NonNegativeInteger
   }));
 
 export const retrievedProfileArb = fc
@@ -231,6 +231,6 @@ export const retrievedProfileArb = fc
         id: `${fiscalCodeArb}-0000000000000000` as NonEmptyString,
         kind: "IRetrievedProfile",
         preferredLanguages: [PreferredLanguageEnum.en_GB],
-        version: version as NonNegativeNumber
+        version: version as NonNegativeInteger
       } as RetrievedProfile)
   );

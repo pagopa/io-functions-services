@@ -1,11 +1,9 @@
-﻿import { AzureFunction } from "@azure/functions";
-
+﻿import { CosmosClient } from "@azure/cosmos";
+import { AzureFunction } from "@azure/functions";
 import {
   NOTIFICATION_COLLECTION_NAME,
   NotificationModel
 } from "io-functions-commons/dist/src/models/notification";
-
-import * as documentDbUtils from "io-functions-commons/dist/src/utils/documentdb";
 
 import { getRequiredStringEnv } from "io-functions-commons/dist/src/utils/env";
 
@@ -18,22 +16,21 @@ import {
 } from "italia-ts-commons/lib/fetch";
 import { Millisecond } from "italia-ts-commons/lib/units";
 
-import { documentClient } from "../utils/cosmosdb";
 import { getNotifyClient } from "./client";
 import { getWebhookNotificationActivityHandler } from "./handler";
 
 // Setup DocumentDB
+const cosmosDbUri = getRequiredStringEnv("COSMOSDB_URI");
 const cosmosDbName = getRequiredStringEnv("COSMOSDB_NAME");
+const cosmosDbKey = getRequiredStringEnv("COSMOSDB_KEY");
 
-const documentDbDatabaseUrl = documentDbUtils.getDatabaseUri(cosmosDbName);
+const cosmosdbClient = new CosmosClient({
+  endpoint: cosmosDbUri,
+  key: cosmosDbKey
+});
 
-const notificationsCollectionUrl = documentDbUtils.getCollectionUri(
-  documentDbDatabaseUrl,
-  NOTIFICATION_COLLECTION_NAME
-);
 const notificationModel = new NotificationModel(
-  documentClient,
-  notificationsCollectionUrl
+  cosmosdbClient.database(cosmosDbName).container(NOTIFICATION_COLLECTION_NAME)
 );
 
 // 5 seconds timeout by default

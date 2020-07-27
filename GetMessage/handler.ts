@@ -105,10 +105,9 @@ export function GetMessageHandler(
   blobService: BlobService
 ): IGetMessageHandler {
   return async (context, _, __, userAttributes, fiscalCode, messageId) => {
-    const errorOrMaybeDocument = await messageModel.findMessageForRecipient(
-      fiscalCode,
-      messageId
-    );
+    const errorOrMaybeDocument = await messageModel
+      .findMessageForRecipient(fiscalCode, messageId)
+      .run();
 
     if (isLeft(errorOrMaybeDocument)) {
       // the query failed
@@ -139,10 +138,9 @@ export function GetMessageHandler(
     }
 
     // fetch the content of the message from the blob storage
-    const errorOrMaybeContent = await messageModel.getContentFromBlob(
-      blobService,
-      retrievedMessage.id
-    );
+    const errorOrMaybeContent = await messageModel
+      .getContentFromBlob(blobService, retrievedMessage.id)
+      .run();
 
     if (isLeft(errorOrMaybeContent)) {
       context.log.error(
@@ -163,8 +161,8 @@ export function GetMessageHandler(
     const errorOrNotificationStatuses = await getMessageNotificationStatuses(
       notificationModel,
       notificationStatusModel,
-      retrievedMessage.id
-    );
+      retrievedMessage.id as NonEmptyString
+    ).run();
 
     if (isLeft(errorOrNotificationStatuses)) {
       return ResponseErrorInternal(
@@ -173,13 +171,15 @@ export function GetMessageHandler(
     }
     const notificationStatuses = errorOrNotificationStatuses.value;
 
-    const errorOrMaybeMessageStatus = await messageStatusModel.findOneByMessageId(
-      retrievedMessage.id
-    );
+    const errorOrMaybeMessageStatus = await messageStatusModel
+      .findLastVersionByModelId(retrievedMessage.id)
+      .run();
 
     if (isLeft(errorOrMaybeMessageStatus)) {
       return ResponseErrorInternal(
-        `Error retrieving MessageStatus: ${errorOrMaybeMessageStatus.value.code}|${errorOrMaybeMessageStatus.value.body}`
+        `Error retrieving MessageStatus: ${JSON.stringify(
+          errorOrMaybeMessageStatus.value
+        )}`
       );
     }
     const maybeMessageStatus = errorOrMaybeMessageStatus.value;

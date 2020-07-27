@@ -8,10 +8,8 @@
  * - run 'npm install durable-functions' from the wwwroot folder of your
  *   function app in Kudu
  */
-
+import { CosmosClient } from "@azure/cosmos";
 import { AzureFunction } from "@azure/functions";
-
-import * as documentDbUtils from "io-functions-commons/dist/src/utils/documentdb";
 
 import {
   NOTIFICATION_STATUS_COLLECTION_NAME,
@@ -19,23 +17,22 @@ import {
 } from "io-functions-commons/dist/src/models/notification_status";
 import { getRequiredStringEnv } from "io-functions-commons/dist/src/utils/env";
 
-import { documentClient } from "../utils/cosmosdb";
 import { getNotificationStatusUpdaterActivityHandler } from "./handler";
 
 // Setup DocumentDB
-
+const cosmosDbUri = getRequiredStringEnv("COSMOSDB_URI");
 const cosmosDbName = getRequiredStringEnv("COSMOSDB_NAME");
+const cosmosDbKey = getRequiredStringEnv("COSMOSDB_KEY");
 
-const documentDbDatabaseUrl = documentDbUtils.getDatabaseUri(cosmosDbName);
-
-const notificationStatusCollectionUrl = documentDbUtils.getCollectionUri(
-  documentDbDatabaseUrl,
-  NOTIFICATION_STATUS_COLLECTION_NAME
-);
+const cosmosdbClient = new CosmosClient({
+  endpoint: cosmosDbUri,
+  key: cosmosDbKey
+});
 
 const notificationStatusModel = new NotificationStatusModel(
-  documentClient,
-  notificationStatusCollectionUrl
+  cosmosdbClient
+    .database(cosmosDbName)
+    .container(NOTIFICATION_STATUS_COLLECTION_NAME)
 );
 
 const activityFunction: AzureFunction = getNotificationStatusUpdaterActivityHandler(

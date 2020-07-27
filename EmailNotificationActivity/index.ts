@@ -9,6 +9,7 @@
  *   function app in Kudu
  */
 
+import { CosmosClient } from "@azure/cosmos";
 import { AzureFunction } from "@azure/functions";
 
 import * as NodeMailer from "nodemailer";
@@ -19,11 +20,9 @@ import {
   NOTIFICATION_COLLECTION_NAME,
   NotificationModel
 } from "io-functions-commons/dist/src/models/notification";
-import * as documentDbUtils from "io-functions-commons/dist/src/utils/documentdb";
 import { getRequiredStringEnv } from "io-functions-commons/dist/src/utils/env";
 import { MailUpTransport } from "io-functions-commons/dist/src/utils/mailup";
 
-import { documentClient } from "../utils/cosmosdb";
 import { getEmailNotificationActivityHandler } from "./handler";
 
 import {
@@ -47,17 +46,17 @@ const SendgridTransport = NonEmptyString.decode(process.env.SENDGRID_API_KEY)
   .getOrElse(undefined);
 
 // Setup DocumentDB
+const cosmosDbUri = getRequiredStringEnv("COSMOSDB_URI");
 const cosmosDbName = getRequiredStringEnv("COSMOSDB_NAME");
+const cosmosDbKey = getRequiredStringEnv("COSMOSDB_KEY");
 
-const documentDbDatabaseUrl = documentDbUtils.getDatabaseUri(cosmosDbName);
+const cosmosdbClient = new CosmosClient({
+  endpoint: cosmosDbUri,
+  key: cosmosDbKey
+});
 
-const notificationsCollectionUrl = documentDbUtils.getCollectionUri(
-  documentDbDatabaseUrl,
-  NOTIFICATION_COLLECTION_NAME
-);
 const notificationModel = new NotificationModel(
-  documentClient,
-  notificationsCollectionUrl
+  cosmosdbClient.database(cosmosDbName).container(NOTIFICATION_COLLECTION_NAME)
 );
 
 //

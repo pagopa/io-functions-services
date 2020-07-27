@@ -87,9 +87,9 @@ export function GetLimitedProfileHandler(
       return ResponseErrorForbiddenNotAuthorizedForRecipient;
     }
 
-    const maybeProfileOrError = await profileModel.findOneProfileByFiscalCode(
-      fiscalCode
-    );
+    const maybeProfileOrError = await profileModel
+      .findLastVersionByModelId(fiscalCode)
+      .run();
 
     if (isRight(maybeProfileOrError)) {
       const maybeProfile = maybeProfileOrError.value;

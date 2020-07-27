@@ -92,16 +92,17 @@ export const getEmailNotificationActivityHandler = (
   }
 
   // fetch the notification
-  const errorOrMaybeNotification = await lNotificationModel.find(
-    notificationId,
-    message.id
-  );
+  const errorOrMaybeNotification = await lNotificationModel
+    .find(notificationId, message.id)
+    .run();
 
   if (errorOrMaybeNotification.isLeft()) {
     const error = errorOrMaybeNotification.value;
     // we got an error while fetching the notification
-    context.log.warn(`${logPrefix}|ERROR=${error.body}`);
-    throw new Error(`Error while fetching the notification: ${error.body}`);
+    context.log.warn(`${logPrefix}|ERROR=${JSON.stringify(error)}`);
+    throw new Error(
+      `Error while fetching the notification: ${JSON.stringify(error)}`
+    );
   }
 
   const maybeEmailNotification = errorOrMaybeNotification.value;
