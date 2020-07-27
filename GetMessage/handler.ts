@@ -161,7 +161,7 @@ export function GetMessageHandler(
     const errorOrNotificationStatuses = await getMessageNotificationStatuses(
       notificationModel,
       notificationStatusModel,
-      retrievedMessage.id as NonEmptyString
+      retrievedMessage.id
     ).run();
 
     if (isLeft(errorOrNotificationStatuses)) {

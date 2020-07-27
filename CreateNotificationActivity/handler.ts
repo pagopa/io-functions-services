@@ -29,7 +29,6 @@ import { RetrievedProfile } from "io-functions-commons/dist/src/models/profile";
 import { ulidGenerator } from "io-functions-commons/dist/src/utils/strings";
 
 import { ServiceId } from "io-functions-commons/dist/generated/definitions/ServiceId";
-import { NonEmptyString } from "italia-ts-commons/lib/strings";
 import { SuccessfulStoreMessageContentActivityResult } from "../StoreMessageContentActivity/handler";
 
 /**
@@ -69,7 +68,7 @@ async function createNotification(
   return {
     content: newMessageContent,
     message: newMessageWithoutContent,
-    notificationId: notification.id as NonEmptyString,
+    notificationId: notification.id,
     senderMetadata
   };
 }
@@ -264,7 +263,7 @@ export const getCreateNotificationActivityHandler = (
     ...createNewNotification(
       ulidGenerator,
       newMessageWithoutContent.fiscalCode,
-      newMessageWithoutContent.id as NonEmptyString
+      newMessageWithoutContent.id
     ),
     channels: {
       [NotificationChannelEnum.EMAIL]: maybeEmailNotificationAddress.toUndefined(),
