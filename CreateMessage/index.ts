@@ -1,5 +1,5 @@
-import { CosmosClient } from "@azure/cosmos";
 import { Context } from "@azure/functions";
+import { cosmosdbInstance } from "../utils/cosmosdb";
 
 import * as cors from "cors";
 import * as express from "express";
@@ -29,25 +29,15 @@ secureExpressApp(app);
 // Set up CORS (free access to the API from browser clients)
 app.use(cors());
 
-// Setup DocumentDB
-const cosmosDbUri = getRequiredStringEnv("COSMOSDB_URI");
-const cosmosDbName = getRequiredStringEnv("COSMOSDB_NAME");
-const cosmosDbKey = getRequiredStringEnv("COSMOSDB_KEY");
-
-const cosmosdbClient = new CosmosClient({
-  endpoint: cosmosDbUri,
-  key: cosmosDbKey
-});
-
 const messageContainerName = getRequiredStringEnv("MESSAGE_CONTAINER_NAME");
 
 const messageModel = new MessageModel(
-  cosmosdbClient.database(cosmosDbName).container(MESSAGE_COLLECTION_NAME),
+  cosmosdbInstance.container(MESSAGE_COLLECTION_NAME),
   messageContainerName
 );
 
 const serviceModel = new ServiceModel(
-  cosmosdbClient.database(cosmosDbName).container(SERVICE_COLLECTION_NAME)
+  cosmosdbInstance.container(SERVICE_COLLECTION_NAME)
 );
 
 const telemetryClient = initTelemetryClient(

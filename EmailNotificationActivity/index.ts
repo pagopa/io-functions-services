@@ -8,9 +8,8 @@
  * - run 'npm install durable-functions' from the wwwroot folder of your
  *   function app in Kudu
  */
-
-import { CosmosClient } from "@azure/cosmos";
 import { AzureFunction } from "@azure/functions";
+import { cosmosdbInstance } from "../utils/cosmosdb";
 
 import * as NodeMailer from "nodemailer";
 
@@ -45,18 +44,8 @@ const SendgridTransport = NonEmptyString.decode(process.env.SENDGRID_API_KEY)
   )
   .getOrElse(undefined);
 
-// Setup DocumentDB
-const cosmosDbUri = getRequiredStringEnv("COSMOSDB_URI");
-const cosmosDbName = getRequiredStringEnv("COSMOSDB_NAME");
-const cosmosDbKey = getRequiredStringEnv("COSMOSDB_KEY");
-
-const cosmosdbClient = new CosmosClient({
-  endpoint: cosmosDbUri,
-  key: cosmosDbKey
-});
-
 const notificationModel = new NotificationModel(
-  cosmosdbClient.database(cosmosDbName).container(NOTIFICATION_COLLECTION_NAME)
+  cosmosdbInstance.container(NOTIFICATION_COLLECTION_NAME)
 );
 
 //
