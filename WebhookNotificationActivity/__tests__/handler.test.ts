@@ -251,8 +251,8 @@ describe("handler", () => {
 
   it("should forward a notification", async () => {
     const notificationModelMock = {
-      find: jest.fn(() => taskEither.of(right(some(aNotification)))),
-      update: jest.fn(() => taskEither.of(right(some(aNotification))))
+      find: jest.fn(() => taskEither.of(some(aNotification))),
+      update: jest.fn(() => taskEither.of(some(aNotification)))
     };
 
     const notifyCallApiMock = jest
