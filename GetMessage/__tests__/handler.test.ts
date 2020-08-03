@@ -117,13 +117,10 @@ const aNewMessageWithoutContent: NewMessageWithoutContent = {
 
 const aRetrievedMessageWithoutContent: RetrievedMessageWithoutContent = {
   ...aNewMessageWithoutContent,
-  /* 
-  FIXME: these fields are shipped with RetrievedNotificationStatus objects
-  However, RetrievedNotificationStatus type doesn't include such fields in its definition
-  hence, the compiler consider such fields an error
+  _etag: "_etag",
+  _rid: "_rid",
   _self: "xyz",
-  _ts: 1, 
-  */
+  _ts: 1,
   kind: "IRetrievedMessageWithoutContent"
 };
 
@@ -154,13 +151,10 @@ function getNotificationModelMock(
 }
 
 const aRetrievedNotificationStatus: RetrievedNotificationStatus = {
-  /* 
-  FIXME: these fields are shipped with RetrievedNotificationStatus objects
-  However, RetrievedNotificationStatus type doesn't include such fields in its definition
-  hence, the compiler consider such fields an error
+  _etag: "_etag",
+  _rid: "_rid",
   _self: "xyz",
-  _ts: 123, 
-  */
+  _ts: 1,
   channel: NotificationChannelEnum.EMAIL,
   id: "1" as NonEmptyString,
   kind: "IRetrievedNotificationStatus",
@@ -379,13 +373,10 @@ describe("GetMessageHandler", () => {
 
   it("should provide information about notification status", async () => {
     const aRetrievedNotification: RetrievedNotification = {
-      /* 
-      FIXME: these fields are shipped with RetrievedNotificationStatus objects
-      However, RetrievedNotificationStatus type doesn't include such fields in its definition
-      hence, the compiler consider such fields an error
+      _etag: "_etag",
+      _rid: "_rid",
       _self: "xyz",
-      _ts: 1, 
-      */
+      _ts: 1,
       channels: {
         [NotificationChannelEnum.EMAIL]: {
           addressSource: NotificationAddressSourceEnum.PROFILE_ADDRESS,

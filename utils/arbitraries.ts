@@ -221,8 +221,10 @@ export const retrievedProfileArb = fc
   .map(
     ([version, fiscalCode, email]) =>
       ({
-        _self: "123",
-        _ts: 123,
+        _etag: "_etag",
+        _rid: "_rid",
+        _self: "xyz",
+        _ts: 1,
         blockedInboxOrChannels: {
           "01234567890": [BlockedInboxOrChannelEnum.INBOX]
         },
