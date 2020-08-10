@@ -13,8 +13,9 @@ import {
 import { getRequiredStringEnv } from "io-functions-commons/dist/src/utils/env";
 import { getStoreMessageContentActivityHandler } from "./handler";
 
-const x = cosmosdbInstance.container(PROFILE_COLLECTION_NAME);
-const profileModel = new ProfileModel(x);
+const profileModel = new ProfileModel(
+  cosmosdbInstance.container(PROFILE_COLLECTION_NAME)
+);
 
 const messageContainerName = getRequiredStringEnv("MESSAGE_CONTAINER_NAME");
 const messageModel = new MessageModel(
