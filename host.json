@@ -5,13 +5,9 @@
       "default": "Information"
     }
   },
-  "extensionBundle": {
-    "id": "Microsoft.Azure.Functions.ExtensionBundle",
-    "version": "[1.*, 2.0.0)"
-  },
   "extensions": {
     "durableTask": {
-      "hubName": "FunctionsServicesHub"
+      "hubName": "%SLOT_TASK_HUBNAME%"
     }
   }
 }

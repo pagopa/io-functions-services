@@ -6,25 +6,25 @@
       "command": "host start",
       "problemMatcher": "$func-watch",
       "isBackground": true,
-      "dependsOn": "npm build"
+      "dependsOn": "yarn build"
     },
     {
       "type": "shell",
-      "label": "npm build",
-      "command": "npm run build",
-      "dependsOn": "npm install",
+      "label": "yarn build",
+      "command": "yarn run build",
+      "dependsOn": "yarn install",
       "problemMatcher": "$tsc"
     },
     {
       "type": "shell",
-      "label": "npm install",
-      "command": "npm install"
+      "label": "yarn install",
+      "command": "yarn install"
     },
     {
       "type": "shell",
-      "label": "npm prune",
-      "command": "npm prune --production",
-      "dependsOn": "npm build",
+      "label": "yarn prune",
+      "command": "yarn install --production",
+      "dependsOn": "yarn build",
       "problemMatcher": []
     },
     {
@@ -40,18 +40,6 @@
       "problemMatcher": [
         "$tslint5"
       ]
-    },
-    {
-      "label": "tsc-watch",
-      "command": "npm",
-      "args": [ "run", "watch" ],
-      "type":"shell",
-      "isBackground": true,
-      "group":"build",
-      "problemMatcher": "$tsc-watch",
-      "presentation":{
-        "reveal": "always",
-      }
     }
   ]
 }
