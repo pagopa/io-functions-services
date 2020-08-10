@@ -35,8 +35,8 @@ import {
   ResponseErrorForbiddenNotAuthorized,
   ResponseErrorInternal,
   ResponseErrorNotFound,
-  ResponseSuccessJson,
-  ResponseErrorValidation
+  ResponseErrorValidation,
+  ResponseSuccessJson
 } from "italia-ts-commons/lib/responses";
 import { FiscalCode, NonEmptyString } from "italia-ts-commons/lib/strings";
 
