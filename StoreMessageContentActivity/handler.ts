@@ -87,7 +87,7 @@ export const getStoreMessageContentActivityHandler = (
   // fetch user's profile associated to the fiscal code
   // of the recipient of the message
   const errorOrMaybeProfile = await lProfileModel
-    .findLastVersionByModelId(newMessageWithoutContent.fiscalCode)
+    .findLastVersionByModelId([newMessageWithoutContent.fiscalCode])
     .run();
 
   if (isLeft(errorOrMaybeProfile)) {

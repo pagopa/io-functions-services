@@ -3535,10 +3535,10 @@ invert-kv@^1.0.0:
   resolved "https://registry.yarnpkg.com/invert-kv/-/invert-kv-1.0.0.tgz#104a8e4aaca6d3d8cd157a8ef8bfab2d7a3ffdb6"
   integrity sha1-EEqOSqym09jNFXqO+L+rLXo//bY=
 
-io-functions-commons@^12.5.0:
-  version "12.5.0"
-  resolved "https://registry.yarnpkg.com/io-functions-commons/-/io-functions-commons-12.5.0.tgz#e9d59195ee3f61d8989eb8422539d051a6f8d21a"
-  integrity sha512-VsqsRpy68Na0dNjc7kCaMIOIWBlLqexedf2elf3pWoLXarJkY5vZY5Wm8Vg5Uw+MP54xW+J2fLNaE6V9Uz6hcw==
+io-functions-commons@^12.9.0:
+  version "12.9.0"
+  resolved "https://registry.yarnpkg.com/io-functions-commons/-/io-functions-commons-12.9.0.tgz#1a5c735c5785d2e95cc6961ef425527f37395fda"
+  integrity sha512-UrHjldU/Tc65UEO7pWAfpOXas9gVFB4YaKMPeEKMFWIU3HtTG899gk2TOahzvVHokuv2Oe0OoLJIV412jZNHjA==
   dependencies:
     "@azure/cosmos" "^3.7.2"
     "@types/node-fetch" "^2.5.6"

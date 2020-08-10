@@ -65,9 +65,9 @@ describe("GetLimitedProfileByPOSTHandler", () => {
           expect(
             mockProfileModel.findLastVersionByModelId
           ).toHaveBeenCalledTimes(1);
-          expect(mockProfileModel.findLastVersionByModelId).toBeCalledWith(
+          expect(mockProfileModel.findLastVersionByModelId).toBeCalledWith([
             fiscalCode
-          );
+          ]);
           expect(response.kind).toBe("IResponseErrorQuery");
         }
       )
@@ -100,9 +100,9 @@ describe("GetLimitedProfileByPOSTHandler", () => {
           expect(
             mockProfileModel.findLastVersionByModelId
           ).toHaveBeenCalledTimes(1);
-          expect(mockProfileModel.findLastVersionByModelId).toBeCalledWith(
+          expect(mockProfileModel.findLastVersionByModelId).toBeCalledWith([
             fiscalCode
-          );
+          ]);
           expect(response.kind).toBe("IResponseErrorNotFound");
         }
       )
@@ -187,9 +187,9 @@ describe("GetLimitedProfileByPOSTHandler", () => {
           expect(
             mockProfileModel.findLastVersionByModelId
           ).toHaveBeenCalledTimes(1);
-          expect(mockProfileModel.findLastVersionByModelId).toBeCalledWith(
+          expect(mockProfileModel.findLastVersionByModelId).toBeCalledWith([
             fiscalCode
-          );
+          ]);
           expect(response.kind).toBe("IResponseSuccessJson");
           if (response.kind === "IResponseSuccessJson") {
             expect(response.value).toEqual(
@@ -230,9 +230,9 @@ describe("GetLimitedProfileByPOSTHandler", () => {
           expect(
             mockProfileModel.findLastVersionByModelId
           ).toHaveBeenCalledTimes(1);
-          expect(mockProfileModel.findLastVersionByModelId).toBeCalledWith(
+          expect(mockProfileModel.findLastVersionByModelId).toBeCalledWith([
             fiscalCode
-          );
+          ]);
           expect(response.kind).toBe("IResponseSuccessJson");
           if (response.kind === "IResponseSuccessJson") {
             expect(response.value).toEqual(

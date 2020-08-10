@@ -13,6 +13,8 @@ import {
   NonEmptyString
 } from "italia-ts-commons/lib/strings";
 
+import { fromLeft } from "fp-ts/lib/IOEither";
+import { taskEither } from "fp-ts/lib/TaskEither";
 import {
   clientIpArb,
   fiscalCodeArb,
@@ -20,8 +22,6 @@ import {
 } from "../../utils/arbitraries";
 import { retrievedProfileToLimitedProfile } from "../../utils/profile";
 import { GetLimitedProfileHandler } from "../handler";
-import { taskEither } from "fp-ts/lib/TaskEither";
-import { fromLeft } from "fp-ts/lib/IOEither";
 
 // tslint:disable-next-line: no-big-function
 describe("GetLimitedProfileHandler", () => {
@@ -66,9 +66,9 @@ describe("GetLimitedProfileHandler", () => {
           expect(
             mockProfileModel.findLastVersionByModelId
           ).toHaveBeenCalledTimes(1);
-          expect(mockProfileModel.findLastVersionByModelId).toBeCalledWith(
+          expect(mockProfileModel.findLastVersionByModelId).toBeCalledWith([
             fiscalCode
-          );
+          ]);
           expect(response.kind).toBe("IResponseErrorQuery");
         }
       )
@@ -101,9 +101,9 @@ describe("GetLimitedProfileHandler", () => {
           expect(
             mockProfileModel.findLastVersionByModelId
           ).toHaveBeenCalledTimes(1);
-          expect(mockProfileModel.findLastVersionByModelId).toBeCalledWith(
+          expect(mockProfileModel.findLastVersionByModelId).toBeCalledWith([
             fiscalCode
-          );
+          ]);
           expect(response.kind).toBe("IResponseErrorNotFound");
         }
       )
@@ -188,9 +188,9 @@ describe("GetLimitedProfileHandler", () => {
           expect(
             mockProfileModel.findLastVersionByModelId
           ).toHaveBeenCalledTimes(1);
-          expect(mockProfileModel.findLastVersionByModelId).toBeCalledWith(
+          expect(mockProfileModel.findLastVersionByModelId).toBeCalledWith([
             fiscalCode
-          );
+          ]);
           expect(response.kind).toBe("IResponseSuccessJson");
           if (response.kind === "IResponseSuccessJson") {
             expect(response.value).toEqual(
@@ -231,9 +231,9 @@ describe("GetLimitedProfileHandler", () => {
           expect(
             mockProfileModel.findLastVersionByModelId
           ).toHaveBeenCalledTimes(1);
-          expect(mockProfileModel.findLastVersionByModelId).toBeCalledWith(
+          expect(mockProfileModel.findLastVersionByModelId).toBeCalledWith([
             fiscalCode
-          );
+          ]);
           expect(response.kind).toBe("IResponseSuccessJson");
           if (response.kind === "IResponseSuccessJson") {
             expect(response.value).toEqual(

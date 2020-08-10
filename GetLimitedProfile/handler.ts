@@ -88,7 +88,7 @@ export function GetLimitedProfileHandler(
     }
 
     const maybeProfileOrError = await profileModel
-      .findLastVersionByModelId(fiscalCode)
+      .findLastVersionByModelId([fiscalCode])
       .run();
 
     if (isRight(maybeProfileOrError)) {

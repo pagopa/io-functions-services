@@ -90,7 +90,7 @@ export function GetLimitedProfileByPOSTHandler(
     }
 
     const maybeProfileOrError = await profileModel
-      .findLastVersionByModelId(payload.fiscal_code)
+      .findLastVersionByModelId([payload.fiscal_code])
       .run();
 
     if (isRight(maybeProfileOrError)) {

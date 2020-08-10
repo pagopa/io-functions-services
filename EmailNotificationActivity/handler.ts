@@ -93,7 +93,7 @@ export const getEmailNotificationActivityHandler = (
 
   // fetch the notification
   const errorOrMaybeNotification = await lNotificationModel
-    .find(notificationId, message.id)
+    .find([notificationId, message.id])
     .run();
 
   if (errorOrMaybeNotification.isLeft()) {
