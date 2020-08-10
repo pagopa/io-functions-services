@@ -31,6 +31,12 @@ steps:
   - template: ./make-build-steps.yml
     parameters:
       make: predeploy_build
+
+  # Install functions extensions
+  - task: DotNetCoreCLI@2
+    inputs:
+      command: "build"
+      arguments: "-o bin"
   
   - task: CopyFiles@2
     inputs:
