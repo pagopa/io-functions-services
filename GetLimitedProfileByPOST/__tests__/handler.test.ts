@@ -1,5 +1,5 @@
 import * as fc from "fast-check";
-import { left, right } from "fp-ts/lib/Either";
+import { right } from "fp-ts/lib/Either";
 import { none, some } from "fp-ts/lib/Option";
 import { ProfileModel } from "io-functions-commons/dist/src/models/profile";
 import {
@@ -13,6 +13,7 @@ import {
   NonEmptyString
 } from "italia-ts-commons/lib/strings";
 
+import { fromLeft, taskEither } from "fp-ts/lib/TaskEither";
 import {
   clientIpArb,
   fiscalCodeArb,
@@ -45,7 +46,7 @@ describe("GetLimitedProfileByPOSTHandler", () => {
         fiscalCodeArb,
         async (clientIp, fiscalCode) => {
           const mockProfileModel = ({
-            findOneProfileByFiscalCode: jest.fn(() => Promise.resolve(left({})))
+            findLastVersionByModelId: jest.fn(() => fromLeft({}))
           } as unknown) as ProfileModel;
           const limitedProfileHandler = GetLimitedProfileByPOSTHandler(
             mockProfileModel
@@ -62,11 +63,11 @@ describe("GetLimitedProfileByPOSTHandler", () => {
           );
 
           expect(
-            mockProfileModel.findOneProfileByFiscalCode
+            mockProfileModel.findLastVersionByModelId
           ).toHaveBeenCalledTimes(1);
-          expect(mockProfileModel.findOneProfileByFiscalCode).toBeCalledWith(
+          expect(mockProfileModel.findLastVersionByModelId).toBeCalledWith([
             fiscalCode
-          );
+          ]);
           expect(response.kind).toBe("IResponseErrorQuery");
         }
       )
@@ -80,9 +81,7 @@ describe("GetLimitedProfileByPOSTHandler", () => {
         fiscalCodeArb,
         async (clientIp, fiscalCode) => {
           const mockProfileModel = ({
-            findOneProfileByFiscalCode: jest.fn(() =>
-              Promise.resolve(right(none))
-            )
+            findLastVersionByModelId: jest.fn(() => taskEither.of(none))
           } as unknown) as ProfileModel;
           const limitedProfileHandler = GetLimitedProfileByPOSTHandler(
             mockProfileModel
@@ -99,11 +98,11 @@ describe("GetLimitedProfileByPOSTHandler", () => {
           );
 
           expect(
-            mockProfileModel.findOneProfileByFiscalCode
+            mockProfileModel.findLastVersionByModelId
           ).toHaveBeenCalledTimes(1);
-          expect(mockProfileModel.findOneProfileByFiscalCode).toBeCalledWith(
+          expect(mockProfileModel.findLastVersionByModelId).toBeCalledWith([
             fiscalCode
-          );
+          ]);
           expect(response.kind).toBe("IResponseErrorNotFound");
         }
       )
@@ -118,8 +117,8 @@ describe("GetLimitedProfileByPOSTHandler", () => {
         retrievedProfileArb,
         async (clientIp, fiscalCode, retrievedProfile) => {
           const mockProfileModel = ({
-            findOneProfileByFiscalCode: jest.fn(() =>
-              Promise.resolve(right(some(retrievedProfile)))
+            findLastVersionByModelId: jest.fn(() =>
+              taskEither.of(some(retrievedProfile))
             )
           } as unknown) as ProfileModel;
           const limitedProfileHandler = GetLimitedProfileByPOSTHandler(
@@ -143,7 +142,7 @@ describe("GetLimitedProfileByPOSTHandler", () => {
           );
 
           expect(
-            mockProfileModel.findOneProfileByFiscalCode
+            mockProfileModel.findLastVersionByModelId
           ).not.toHaveBeenCalled();
           expect(response.kind).toBe(
             "IResponseErrorForbiddenNotAuthorizedForRecipient"
@@ -161,8 +160,8 @@ describe("GetLimitedProfileByPOSTHandler", () => {
         retrievedProfileArb,
         async (clientIp, fiscalCode, retrievedProfile) => {
           const mockProfileModel = ({
-            findOneProfileByFiscalCode: jest.fn(() =>
-              Promise.resolve(right(some(retrievedProfile)))
+            findLastVersionByModelId: jest.fn(() =>
+              taskEither.of(some(retrievedProfile))
             )
           } as unknown) as ProfileModel;
           const limitedProfileHandler = GetLimitedProfileByPOSTHandler(
@@ -186,11 +185,11 @@ describe("GetLimitedProfileByPOSTHandler", () => {
           );
 
           expect(
-            mockProfileModel.findOneProfileByFiscalCode
+            mockProfileModel.findLastVersionByModelId
           ).toHaveBeenCalledTimes(1);
-          expect(mockProfileModel.findOneProfileByFiscalCode).toBeCalledWith(
+          expect(mockProfileModel.findLastVersionByModelId).toBeCalledWith([
             fiscalCode
-          );
+          ]);
           expect(response.kind).toBe("IResponseSuccessJson");
           if (response.kind === "IResponseSuccessJson") {
             expect(response.value).toEqual(
@@ -210,8 +209,8 @@ describe("GetLimitedProfileByPOSTHandler", () => {
         retrievedProfileArb,
         async (clientIp, fiscalCode, retrievedProfile) => {
           const mockProfileModel = ({
-            findOneProfileByFiscalCode: jest.fn(() =>
-              Promise.resolve(right(some(retrievedProfile)))
+            findLastVersionByModelId: jest.fn(() =>
+              taskEither.of(some(retrievedProfile))
             )
           } as unknown) as ProfileModel;
           const limitedProfileHandler = GetLimitedProfileByPOSTHandler(
@@ -229,11 +228,11 @@ describe("GetLimitedProfileByPOSTHandler", () => {
           );
 
           expect(
-            mockProfileModel.findOneProfileByFiscalCode
+            mockProfileModel.findLastVersionByModelId
           ).toHaveBeenCalledTimes(1);
-          expect(mockProfileModel.findOneProfileByFiscalCode).toBeCalledWith(
+          expect(mockProfileModel.findLastVersionByModelId).toBeCalledWith([
             fiscalCode
-          );
+          ]);
           expect(response.kind).toBe("IResponseSuccessJson");
           if (response.kind === "IResponseSuccessJson") {
             expect(response.value).toEqual(

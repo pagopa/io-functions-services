@@ -53,10 +53,9 @@ async function createNotification(
   newMessageContent: MessageContent,
   newNotification: NewNotification
 ): Promise<NotificationEvent> {
-  const errorOrNotification = await lNotificationModel.create(
-    newNotification,
-    newNotification.messageId
-  );
+  const errorOrNotification = await lNotificationModel
+    .create(newNotification)
+    .run();
 
   if (isLeft(errorOrNotification)) {
     throw new Error(

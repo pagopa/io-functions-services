@@ -54,13 +54,13 @@ export const getNotificationStatusUpdaterActivityHandler = (
   );
   const errorOrUpdatedNotificationStatus = await notificationStatusUpdater(
     status
-  );
+  ).run();
 
   if (errorOrUpdatedNotificationStatus.isLeft()) {
     context.log.warn(
       `NotificationStatusUpdaterActivity|MESSAGE_ID=${messageId}|NOTIFICATION_ID=${notificationId}|CHANNEL=${channel}|STATUS=${status}|ERROR=${errorOrUpdatedNotificationStatus.value}`
     );
-    throw new Error(errorOrUpdatedNotificationStatus.value.message);
+    throw new Error(JSON.stringify(errorOrUpdatedNotificationStatus.value));
   }
 
   context.log.verbose(

@@ -242,21 +242,12 @@ export const createMessageDocument = (
   //
 
   // attempt to create the message
-  const createMessageTask = tryCatch(
-    () =>
-      messageModel.create(
-        newMessageWithoutContent,
-        newMessageWithoutContent.fiscalCode // partition key
-      ),
-    e => ResponseErrorInternal(String(e))
-  );
-
-  return createMessageTask
-    .mapLeft<IResponseErrorInternal | IResponseErrorQuery>(identity)
-    .chain(r =>
-      fromEither(r).mapLeft(e =>
-        ResponseErrorQuery("Error while creating Message", e)
-      )
+  return messageModel
+    .create(newMessageWithoutContent)
+    .mapLeft<IResponseErrorInternal | IResponseErrorQuery>(e =>
+      e.kind === "COSMOS_ERROR_RESPONSE"
+        ? ResponseErrorInternal(JSON.stringify(e))
+        : ResponseErrorQuery("Error while creating Message", e)
     )
     .map(() => newMessageWithoutContent);
 };

@@ -5,7 +5,6 @@ import * as fc from "fast-check";
 import { MessageModel } from "io-functions-commons/dist/src/models/message";
 import { UserGroup } from "io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
 
-import { right } from "fp-ts/lib/Either";
 import { none, some } from "fp-ts/lib/Option";
 
 import {
@@ -17,6 +16,7 @@ import {
   forkOrchestrator
 } from "../handler";
 
+import { taskEither } from "fp-ts/lib/TaskEither";
 import {
   alphaStringArb,
   emailStringArb,
@@ -164,7 +164,7 @@ describe("createMessageDocument", () => {
         serviceIdArb,
         async (messageId, senderUserId, fiscalCode, ttl, senderServiceId) => {
           const mockMessageModel = ({
-            create: jest.fn(() => Promise.resolve(right({})))
+            create: jest.fn(() => taskEither.of({}))
           } as unknown) as MessageModel;
           const responseTask = createMessageDocument(
             messageId,

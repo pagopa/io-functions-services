@@ -1,8 +1,8 @@
 import { Context } from "@azure/functions";
 import { createBlobService } from "azure-storage";
-
 import * as cors from "cors";
 import * as express from "express";
+import { cosmosdbInstance } from "../utils/cosmosdb";
 
 import {
   MESSAGE_COLLECTION_NAME,
@@ -12,7 +12,6 @@ import {
   SERVICE_COLLECTION_NAME,
   ServiceModel
 } from "io-functions-commons/dist/src/models/service";
-import * as documentDbUtils from "io-functions-commons/dist/src/utils/documentdb";
 import { getRequiredStringEnv } from "io-functions-commons/dist/src/utils/env";
 import { secureExpressApp } from "io-functions-commons/dist/src/utils/express";
 import { setAppContext } from "io-functions-commons/dist/src/utils/middlewares/context_middleware";
@@ -32,7 +31,6 @@ import {
   NotificationStatusModel
 } from "io-functions-commons/dist/src/models/notification_status";
 
-import { documentClient } from "../utils/cosmosdb";
 import { GetMessage } from "./handler";
 
 // Setup Express
@@ -42,52 +40,27 @@ secureExpressApp(app);
 // Set up CORS (free access to the API from browser clients)
 app.use(cors());
 
-const cosmosDbName = getRequiredStringEnv("COSMOSDB_NAME");
 const messageContainerName = getRequiredStringEnv("MESSAGE_CONTAINER_NAME");
 
-const documentDbDatabaseUrl = documentDbUtils.getDatabaseUri(cosmosDbName);
-const messagesCollectionUrl = documentDbUtils.getCollectionUri(
-  documentDbDatabaseUrl,
-  MESSAGE_COLLECTION_NAME
-);
-const servicesCollectionUrl = documentDbUtils.getCollectionUri(
-  documentDbDatabaseUrl,
-  SERVICE_COLLECTION_NAME
-);
-const messageStatusCollectionUrl = documentDbUtils.getCollectionUri(
-  documentDbDatabaseUrl,
-  MESSAGE_STATUS_COLLECTION_NAME
-);
-const notificationsCollectionUrl = documentDbUtils.getCollectionUri(
-  documentDbDatabaseUrl,
-  NOTIFICATION_COLLECTION_NAME
-);
-const notificationsStatusCollectionUrl = documentDbUtils.getCollectionUri(
-  documentDbDatabaseUrl,
-  NOTIFICATION_STATUS_COLLECTION_NAME
-);
-
 const messageModel = new MessageModel(
-  documentClient,
-  messagesCollectionUrl,
+  cosmosdbInstance.container(MESSAGE_COLLECTION_NAME),
   messageContainerName
 );
 
-const serviceModel = new ServiceModel(documentClient, servicesCollectionUrl);
+const serviceModel = new ServiceModel(
+  cosmosdbInstance.container(SERVICE_COLLECTION_NAME)
+);
 
 const messageStatusModel = new MessageStatusModel(
-  documentClient,
-  messageStatusCollectionUrl
+  cosmosdbInstance.container(MESSAGE_STATUS_COLLECTION_NAME)
 );
 
 const notificationModel = new NotificationModel(
-  documentClient,
-  notificationsCollectionUrl
+  cosmosdbInstance.container(NOTIFICATION_COLLECTION_NAME)
 );
 
 const notificationStatusModel = new NotificationStatusModel(
-  documentClient,
-  notificationsStatusCollectionUrl
+  cosmosdbInstance.container(NOTIFICATION_STATUS_COLLECTION_NAME)
 );
 
 const storageConnectionString = getRequiredStringEnv("QueueStorageConnection");

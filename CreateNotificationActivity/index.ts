@@ -8,8 +8,8 @@
  * - run 'npm install durable-functions' from the wwwroot folder of your
  *   function app in Kudu
  */
-
 import { AzureFunction } from "@azure/functions";
+import { cosmosdbInstance } from "../utils/cosmosdb";
 
 import { FiscalCode } from "io-functions-commons/dist/generated/definitions/FiscalCode";
 import { HttpsUrl } from "io-functions-commons/dist/generated/definitions/HttpsUrl";
@@ -18,10 +18,8 @@ import {
   NOTIFICATION_COLLECTION_NAME,
   NotificationModel
 } from "io-functions-commons/dist/src/models/notification";
-import * as documentDbUtils from "io-functions-commons/dist/src/utils/documentdb";
 import { getRequiredStringEnv } from "io-functions-commons/dist/src/utils/env";
 
-import { documentClient } from "../utils/cosmosdb";
 import { getCreateNotificationActivityHandler } from "./handler";
 import { parseCommaSeparatedListOf } from "./utils";
 
@@ -41,18 +39,8 @@ const emailNotificationServiceBlackList = parseCommaSeparatedListOf(ServiceId)(
   );
 });
 
-// Setup DocumentDB
-const cosmosDbName = getRequiredStringEnv("COSMOSDB_NAME");
-
-const documentDbDatabaseUrl = documentDbUtils.getDatabaseUri(cosmosDbName);
-
-const notificationsCollectionUrl = documentDbUtils.getCollectionUri(
-  documentDbDatabaseUrl,
-  NOTIFICATION_COLLECTION_NAME
-);
 const notificationModel = new NotificationModel(
-  documentClient,
-  notificationsCollectionUrl
+  cosmosdbInstance.container(NOTIFICATION_COLLECTION_NAME)
 );
 
 const defaultWebhookUrl = HttpsUrl.decode(

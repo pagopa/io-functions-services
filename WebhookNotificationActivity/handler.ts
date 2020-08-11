@@ -204,20 +204,18 @@ export const getWebhookNotificationActivityHandler = (
   }
 
   // fetch the notification
-  const errorOrMaybeNotification = await lNotificationModel.find(
-    notificationId,
-    message.id
-  );
+  const errorOrMaybeNotification = await lNotificationModel
+    .find([notificationId, message.id])
+    .run();
 
   if (errorOrMaybeNotification.isLeft()) {
     const error = errorOrMaybeNotification.value;
     // we got an error while fetching the notification
-    context.log.warn(`${logPrefix}|ERROR=${error.body}`);
-    throw new Error(`Error while fetching the notification: ${error.body}`);
+    context.log.warn(`${logPrefix}|ERROR=${error.kind}`);
+    throw new Error(`Error while fetching the notification: ${error.kind}`);
   }
 
   const maybeWebhookNotification = errorOrMaybeNotification.value;
-
   if (maybeWebhookNotification.isNone()) {
     // it may happen that the object is not yet visible to this function due to latency
     // as the notification object is retrieved from database and we may be hitting a
@@ -250,7 +248,6 @@ export const getWebhookNotificationActivityHandler = (
     content,
     senderMetadata
   ).run();
-
   if (sendResult.isLeft()) {
     const error = sendResult.value;
     context.log.error(`${logPrefix}|ERROR=${error.message}`);

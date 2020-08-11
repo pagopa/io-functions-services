@@ -35,6 +35,7 @@ import {
   ResponseErrorForbiddenNotAuthorized,
   ResponseErrorInternal,
   ResponseErrorNotFound,
+  ResponseErrorValidation,
   ResponseSuccessJson
 } from "italia-ts-commons/lib/responses";
 import { FiscalCode, NonEmptyString } from "italia-ts-commons/lib/strings";
@@ -67,6 +68,7 @@ import { MessageResponseWithContent } from "io-functions-commons/dist/generated/
 import { MessageResponseWithoutContent } from "io-functions-commons/dist/generated/definitions/MessageResponseWithoutContent";
 import { MessageStatusValueEnum } from "io-functions-commons/dist/generated/definitions/MessageStatusValue";
 import { ContextMiddleware } from "io-functions-commons/dist/src/utils/middlewares/context_middleware";
+import { readableReport } from "italia-ts-commons/lib/reporters";
 
 /**
  * Type of a GetMessage handler.
@@ -105,10 +107,17 @@ export function GetMessageHandler(
   blobService: BlobService
 ): IGetMessageHandler {
   return async (context, _, __, userAttributes, fiscalCode, messageId) => {
-    const errorOrMaybeDocument = await messageModel.findMessageForRecipient(
-      fiscalCode,
-      messageId
-    );
+    const errorOrMessageId = NonEmptyString.decode(messageId);
+
+    if (errorOrMessageId.isLeft()) {
+      return ResponseErrorValidation(
+        "Invalid messageId",
+        readableReport(errorOrMessageId.value)
+      );
+    }
+    const errorOrMaybeDocument = await messageModel
+      .findMessageForRecipient(fiscalCode, errorOrMessageId.value)
+      .run();
 
     if (isLeft(errorOrMaybeDocument)) {
       // the query failed
@@ -139,10 +148,9 @@ export function GetMessageHandler(
     }
 
     // fetch the content of the message from the blob storage
-    const errorOrMaybeContent = await messageModel.getContentFromBlob(
-      blobService,
-      retrievedMessage.id
-    );
+    const errorOrMaybeContent = await messageModel
+      .getContentFromBlob(blobService, retrievedMessage.id)
+      .run();
 
     if (isLeft(errorOrMaybeContent)) {
       context.log.error(
@@ -164,7 +172,7 @@ export function GetMessageHandler(
       notificationModel,
       notificationStatusModel,
       retrievedMessage.id
-    );
+    ).run();
 
     if (isLeft(errorOrNotificationStatuses)) {
       return ResponseErrorInternal(
@@ -173,13 +181,15 @@ export function GetMessageHandler(
     }
     const notificationStatuses = errorOrNotificationStatuses.value;
 
-    const errorOrMaybeMessageStatus = await messageStatusModel.findOneByMessageId(
-      retrievedMessage.id
-    );
+    const errorOrMaybeMessageStatus = await messageStatusModel
+      .findLastVersionByModelId([retrievedMessage.id])
+      .run();
 
     if (isLeft(errorOrMaybeMessageStatus)) {
       return ResponseErrorInternal(
-        `Error retrieving MessageStatus: ${errorOrMaybeMessageStatus.value.code}|${errorOrMaybeMessageStatus.value.body}`
+        `Error retrieving MessageStatus: ${JSON.stringify(
+          errorOrMaybeMessageStatus.value
+        )}`
       );
     }
     const maybeMessageStatus = errorOrMaybeMessageStatus.value;

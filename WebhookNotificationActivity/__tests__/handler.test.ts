@@ -42,6 +42,8 @@ import {
   toFetch
 } from "italia-ts-commons/lib/fetch";
 import { Millisecond } from "italia-ts-commons/lib/units";
+import { taskEither } from "fp-ts/lib/TaskEither";
+import { fromLeft } from "fp-ts/lib/IOEither";
 
 afterEach(() => {
   jest.restoreAllMocks();
@@ -204,7 +206,7 @@ describe("sendToWebhook", () => {
 describe("handler", () => {
   it("should return a transient error when there's an error while retrieving the notification", async () => {
     const notificationModelMock = {
-      find: jest.fn(() => left("error"))
+      find: jest.fn(() => fromLeft("error"))
     };
 
     await expect(
@@ -219,7 +221,7 @@ describe("handler", () => {
 
   it("should return a transient error when the notification does not exist", async () => {
     const notificationModelMock = {
-      find: jest.fn(() => right(none))
+      find: jest.fn(() => taskEither.of(none))
     };
 
     await expect(
@@ -234,7 +236,7 @@ describe("handler", () => {
 
   it("should return a permanent error when the notification does not contain the webhook url", async () => {
     const notificationModelMock = {
-      find: jest.fn(() => right(some({})))
+      find: jest.fn(() => taskEither.of(some({})))
     };
 
     await expect(
@@ -249,8 +251,8 @@ describe("handler", () => {
 
   it("should forward a notification", async () => {
     const notificationModelMock = {
-      find: jest.fn(() => Promise.resolve(right(some(aNotification)))),
-      update: jest.fn(() => Promise.resolve(right(some(aNotification))))
+      find: jest.fn(() => taskEither.of(some(aNotification))),
+      update: jest.fn(() => taskEither.of(some(aNotification)))
     };
 
     const notifyCallApiMock = jest
@@ -283,8 +285,8 @@ describe("handler", () => {
     };
 
     const notificationModelMock = {
-      find: jest.fn(() => right(some(aNotification))),
-      update: jest.fn(() => right(some(aNotification)))
+      find: jest.fn(() => taskEither.of(some(aNotification))),
+      update: jest.fn(() => taskEither.of(some(aNotification)))
     };
 
     const result = await getWebhookNotificationActivityHandler(
@@ -306,8 +308,8 @@ describe("handler", () => {
       .mockReturnValue(Promise.resolve(right({ status: 401 })));
 
     const notificationModelMock = {
-      find: jest.fn(() => right(some(aNotification))),
-      update: jest.fn(() => right(some(aNotification)))
+      find: jest.fn(() => taskEither.of(some(aNotification))),
+      update: jest.fn(() => taskEither.of(some(aNotification)))
     };
 
     await expect(

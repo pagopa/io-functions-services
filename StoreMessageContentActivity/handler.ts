@@ -86,15 +86,17 @@ export const getStoreMessageContentActivityHandler = (
 
   // fetch user's profile associated to the fiscal code
   // of the recipient of the message
-  const errorOrMaybeProfile = await lProfileModel.findOneProfileByFiscalCode(
-    newMessageWithoutContent.fiscalCode
-  );
+  const errorOrMaybeProfile = await lProfileModel
+    .findLastVersionByModelId([newMessageWithoutContent.fiscalCode])
+    .run();
 
   if (isLeft(errorOrMaybeProfile)) {
     // The query has failed, we consider this as a transient error.
     // It's *critical* to trigger a retry here, otherwise no message
     // content will be saved.
-    context.log.error(`${logPrefix}|ERROR=${errorOrMaybeProfile.value.body}`);
+    context.log.error(
+      `${logPrefix}|ERROR=${JSON.stringify(errorOrMaybeProfile.value)}`
+    );
     throw Error("Error while fetching profile");
   }
 
@@ -143,11 +145,13 @@ export const getStoreMessageContentActivityHandler = (
   // Save the content of the message to the blob storage.
   // In case of a retry this operation will overwrite the message content with itself
   // (this is fine as we don't know if the operation succeeded at first)
-  const errorOrAttachment = await lMessageModel.storeContentAsBlob(
-    lBlobService,
-    newMessageWithoutContent.id,
-    createdMessageEvent.content
-  );
+  const errorOrAttachment = await lMessageModel
+    .storeContentAsBlob(
+      lBlobService,
+      newMessageWithoutContent.id,
+      createdMessageEvent.content
+    )
+    .run();
 
   if (isLeft(errorOrAttachment)) {
     context.log.error(`${logPrefix}|ERROR=${errorOrAttachment.value}`);
@@ -156,16 +160,17 @@ export const getStoreMessageContentActivityHandler = (
 
   // Now that the message content has been stored, we can make the message
   // visible to getMessages by changing the pending flag to false
-  const updatedMessageOrError = await lMessageModel.createOrUpdate(
-    {
+  const updatedMessageOrError = await lMessageModel
+    .upsert({
       ...newMessageWithoutContent,
       isPending: false
-    },
-    createdMessageEvent.message.fiscalCode
-  );
+    })
+    .run();
 
   if (isLeft(updatedMessageOrError)) {
-    context.log.error(`${logPrefix}|ERROR=${updatedMessageOrError.value.body}`);
+    context.log.error(
+      `${logPrefix}|ERROR=${JSON.stringify(updatedMessageOrError.value)}`
+    );
     throw new Error("Error while updating message pending status");
   }
 
