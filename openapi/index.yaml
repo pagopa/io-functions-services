@@ -427,6 +427,44 @@ paths:
           description: No service found for the provided ID.
         '429':
           description: Too many requests.
+  "/services/{service_id}/logo":
+    summary: Upload service logo.
+    operationId: uploadServiceLogo
+    description: |
+        Upload a logo for a previously created service with the provided service ID
+    parameters:
+      - name: service_id
+        in: path
+        type: string
+        required: true
+        description: The ID of a existing Service.
+    put:
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: "#/definitions/Logo"
+          description: The logo payload
+      responses:
+        "201":
+          description: Logo uploaded.
+          headers:
+            Location:
+              description: Link to the uploaded logo
+              type: string
+        "400":
+          description: Invalid payload.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: No service found for the provided ID.
+        "500":
+          description: Internal server error
 definitions:
   GetLimitedProfileByPOSTPayload:
     type: object
@@ -516,6 +554,15 @@ definitions:
     allOf:
       - $ref: "#/definitions/Service"
       - $ref: "#/definitions/SubscriptionKeys"
+  Logo:
+    type: object
+    properties:
+      logo:
+        type: string
+        format: byte
+        minLength: 1
+    required:
+      - logo
 responses: {}
 parameters:
   FiscalCode:
