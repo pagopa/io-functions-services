@@ -385,6 +385,20 @@ paths:
           description: Unauthorized.
         "429":
           description: Too many requests.
+    get:
+      operationId: getServices
+      summary: Get Services
+      description: |
+        Retrieve a list of services.
+      responses:
+        "200":
+          description: The list of service ids.
+          schema:
+            "$ref": "#/definitions/ServiceIdCollection"
+        "401":
+          description: Unauthorized.
+        "429":
+          description: Too many requests.
   "/services/{service_id}":
     parameters:
       - name: service_id
@@ -557,6 +571,18 @@ definitions:
     allOf:
       - $ref: "#/definitions/Service"
       - $ref: "#/definitions/SubscriptionKeys"
+  ServiceIdCollection:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/definitions/ServiceId"
+      page_size:
+        type: number
+    required:
+      - items
+      - page_size
   Logo:
     type: object
     properties:
