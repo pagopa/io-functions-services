@@ -470,10 +470,6 @@ paths:
       responses:
         "200":
           description: Logo uploaded.
-          headers:
-            Location:
-              description: Link to the uploaded logo
-              type: string
         "400":
           description: Invalid payload.
           schema:
