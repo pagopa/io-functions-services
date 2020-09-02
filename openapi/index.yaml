@@ -385,6 +385,8 @@ paths:
           description: Unauthorized.
         "429":
           description: Too many requests.
+        "500":
+          description: Internal Server Error.
     get:
       operationId: getServices
       summary: Get Services
@@ -444,6 +446,8 @@ paths:
           description: No service found for the provided ID.
         "429":
           description: Too many requests.
+        "500":
+          description: Internal Server Error.
   "/services/{service_id}/logo":
     parameters:
       - name: service_id
@@ -481,7 +485,7 @@ paths:
         "404":
           description: No service found for the provided ID.
         "500":
-          description: Internal server error
+          description: Internal Server Error.
 definitions:
   GetLimitedProfileByPOSTPayload:
     type: object
@@ -578,11 +582,8 @@ definitions:
         type: array
         items:
           $ref: "#/definitions/ServiceId"
-      page_size:
-        type: number
     required:
       - items
-      - page_size
   Logo:
     type: object
     properties:
