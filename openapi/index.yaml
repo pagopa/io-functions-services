@@ -508,7 +508,7 @@ paths:
           required: true
           schema:
             $ref: "#/definitions/SubscriptionKeyTypePayload"
-          description: The type of the key to be regenerated.
+          description: The type of the key to be regenerated (PRIMARY_KEY or SECONDARY_KEY).
       responses:
         "200":
           description: The subscription keys for the service.
