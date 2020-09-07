@@ -386,12 +386,14 @@ paths:
         "429":
           description: Too many requests.
         "500":
-          description: Internal Server Error.
+          description: The service cannot be created.
+          schema:
+            $ref: "#/definitions/ProblemJson"
     get:
       operationId: getUserServices
       summary: Get User Services
       description: |
-        Retrieves the id of the services tied to the calling user
+        Retrieve the identifiers of the services owned by the calling user
       responses:
         "200":
           description: The list of service ids.
@@ -421,7 +423,7 @@ paths:
         "401":
           description: Unauthorized.
         "403":
-          description: Forbidden
+          description: Forbidden.
         "404":
           description: No service found for the provided ID.
         "429":
@@ -445,25 +447,26 @@ paths:
         "401":
           description: Unauthorized.
         "403":
-          description: Forbidden
+          description: Forbidden.
         "404":
           description: No service found for the provided ID.
         "429":
           description: Too many requests.
         "500":
-          description: Internal Server Error.
+          description: The service cannot be updated.
+          schema:
+            $ref: "#/definitions/ProblemJson"
   "/services/{service_id}/logo":
     parameters:
       - name: service_id
         in: path
         type: string
         required: true
-        description: The ID of a existing Service.
+        description: The ID of an existing Service.
     put:
       summary: Upload service logo.
       description: |
-        Upload a logo for a previously created service with the provided service ID.
-        Logo must be a base64 string's representation of a png image.
+        Upsert a logo for an existing service.
       operationId: uploadServiceLogo
       parameters:
         - name: body
@@ -471,7 +474,7 @@ paths:
           required: true
           schema:
             $ref: "#/definitions/Logo"
-          description: The base64 logo payload
+          description: A base64 string's representation of the logo PNG image.
       responses:
         "200":
           description: Logo uploaded.
@@ -480,17 +483,20 @@ paths:
           schema:
             $ref: "#/definitions/ProblemJson"
         "401":
-          description: Unauthorized
+          description: Unauthorized.
         "403":
-          description: Forbidden
+          description: Forbidden.
         "404":
           description: No service found for the provided ID.
         "500":
-          description: Internal Server Error.
+          description: The service logo cannot be uploaded.
+          schema:
+            $ref: "#/definitions/ProblemJson"
   "/services/{service_id}/keys":
     put:
-      summary: Regenerate a subscription key for the Service identified by the provided service_id
-      operationId: RegenerateSubscriptionKeys
+      summary: Regenerate Service Key
+      description: Regenerate the specified key for the Service identified by the provided id.
+      operationId: regenerateServiceKey
       parameters:
         - name: service_id
           in: path
@@ -502,10 +508,10 @@ paths:
           required: true
           schema:
             $ref: "#/definitions/SubscriptionKeyTypePayload"
-          description: The type of the key to be regenerated
+          description: The type of the key to be regenerated (PRIMARY_KEY or SECONDARY_KEY).
       responses:
         "200":
-          description: The subscription keys for the service
+          description: The subscription keys for the service.
           schema:
             $ref: "#/definitions/SubscriptionKeys"
         "400":
@@ -513,11 +519,13 @@ paths:
           schema:
             $ref: "#/definitions/ProblemJson"
         "403":
-          description: Forbidden
+          description: Forbidden.
         "404":
-          description: Subscription not found
+          description: Service not found.
         "500":
-          description: Internal server error
+          description: Cannot regenerate service key.
+          schema:
+            $ref: "#/definitions/ProblemJson"
 definitions:
   GetLimitedProfileByPOSTPayload:
     type: object
@@ -560,39 +568,39 @@ definitions:
     pattern: "[0-9]{4}-[0-9]{2}-[0-9]{2}"
     x-example: "2019-09-15"
   ProblemJson:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/master/openapi/definitions.yaml#/ProblemJson"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/ProblemJson"
   NotificationChannelStatusValue:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/master/openapi/definitions.yaml#/NotificationChannelStatusValue"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/NotificationChannelStatusValue"
   MessageResponseWithContent:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/master/openapi/definitions.yaml#/MessageResponseWithContent"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/MessageResponseWithContent"
   FiscalCode:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/master/openapi/definitions.yaml#/FiscalCode"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/FiscalCode"
   LimitedProfile:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/master/openapi/definitions.yaml#/LimitedProfile"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/LimitedProfile"
   Timestamp:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/master/openapi/definitions.yaml#/Timestamp"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/Timestamp"
   TimeToLiveSeconds:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/master/openapi/definitions.yaml#/TimeToLiveSeconds"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/TimeToLiveSeconds"
   MessageContent:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/master/openapi/definitions.yaml#/MessageContent"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/MessageContent"
   NewMessage:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/master/openapi/definitions.yaml#/NewMessage"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/NewMessage"
   ServicePayload:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/master/openapi/definitions.yaml#/ServicePayload"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/ServicePayload"
   Service:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/master/openapi/definitions.yaml#/Service"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/Service"
   ServiceMetadata:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/master/openapi/definitions.yaml#/ServiceMetadata"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/ServiceMetadata"
   ServiceScope:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/master/openapi/definitions.yaml#/ServiceScope"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/ServiceScope"
   ServiceId:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/master/openapi/definitions.yaml#/ServiceId"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/ServiceId"
   ServiceName:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/master/openapi/definitions.yaml#/ServiceName"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/ServiceName"
   OrganizationName:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/master/openapi/definitions.yaml#/OrganizationName"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/OrganizationName"
   DepartmentName:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/master/openapi/definitions.yaml#/DepartmentName"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/DepartmentName"
   SubscriptionKeys:
     type: object
     properties:
