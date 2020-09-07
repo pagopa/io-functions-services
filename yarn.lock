@@ -528,19 +528,6 @@
   dependencies:
     "@types/node" ">= 8"
 
-"@pagopa/io-utils@^5.0.0":
-  version "5.0.0"
-  resolved "http://localhost:4873/@pagopa%2fio-utils/-/io-utils-5.0.0.tgz#e8673db60fb8ddfff2fd77086d4ad79a100d727b"
-  integrity sha512-eJVZ8Z5aGaxhr133SykC+EZr1nCq3fEGOzAroCqkbU7nKQeh1KiEWUb3bZRfzUbCmiLeSrv7dxUx8siuifXRjQ==
-  dependencies:
-    fs-extra "^6.0.0"
-    italia-ts-commons "^5.0.1"
-    nunjucks "^3.1.2"
-    prettier "^1.12.1"
-    swagger-parser "^7.0.0"
-    write-yaml-file "^4.1.0"
-    yargs "^11.1.0"
-
 "@sendgrid/client@^6.5.5":
   version "6.5.5"
   resolved "https://registry.yarnpkg.com/@sendgrid/client/-/client-6.5.5.tgz#66cf569445d98a795998a894bb432a9939ead7c3"
@@ -3127,11 +3114,6 @@ graceful-fs@^4.1.6:
   resolved "https://registry.yarnpkg.com/graceful-fs/-/graceful-fs-4.2.2.tgz#6f0952605d0140c1cfdb138ed005775b92d67b02"
   integrity sha512-IItsdsea19BoLC7ELy13q1iJFNmd7ofZH5+X/pJr90/nRoPEX0DJo1dHDbgtYWOhJhcCgMDTOw84RZ72q6lB+Q==
 
-graceful-fs@^4.2.3:
-  version "4.2.4"
-  resolved "http://localhost:4873/graceful-fs/-/graceful-fs-4.2.4.tgz#2256bde14d3632958c465ebc96dc467ca07a29fb"
-  integrity sha512-WjKPNJF79dtJAVniUlGGWHYGz2jWxT6VhN/4m1NdkbZ2nOsEF+cI1Edgql5zCRhs/VsQYRvrXctxktVXZUkixw==
-
 "graceful-readlink@>= 1.0.0":
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/graceful-readlink/-/graceful-readlink-1.0.1.tgz#4cafad76bc62f02fa039b2f94e9a3dd3a391a725"
@@ -4038,6 +4020,18 @@ italia-tslint-rules@^1.1.3:
     tslint-react "^4.0.0"
     tslint-sonarts "^1.9.0"
     typestrict "^1.0.2"
+
+italia-utils@^4.1.0:
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/italia-utils/-/italia-utils-4.1.0.tgz#1f610776cfbdc56651b6e7c2b36bcb3a6666e5de"
+  integrity sha512-Qg3ydl2DnGwRp+4JahflkyfPD35oXtUh3y/R54qjNV7xQ2FJEwDnXyG743F71KTG1LF8Gw2hTSqo6yAf336iwA==
+  dependencies:
+    fs-extra "^6.0.0"
+    italia-ts-commons "^5.0.1"
+    nunjucks "^3.1.2"
+    prettier "^1.12.1"
+    swagger-parser "^7.0.0"
+    yargs "^11.1.0"
 
 jest-changed-files@^24.9.0:
   version "24.9.0"
@@ -7896,15 +7890,6 @@ write-file-atomic@2.4.1:
     imurmurhash "^0.1.4"
     signal-exit "^3.0.2"
 
-write-file-atomic@^2.4.3:
-  version "2.4.3"
-  resolved "http://localhost:4873/write-file-atomic/-/write-file-atomic-2.4.3.tgz#1fd2e9ae1df3e75b8d8c367443c692d4ca81f481"
-  integrity sha512-GaETH5wwsX+GcnzhPgKcKjJ6M2Cq3/iZp1WyY/X1CSqrW+jVNM9Y7D8EC2sM4ZG/V8wZlSniJnCKWPmBYAucRQ==
-  dependencies:
-    graceful-fs "^4.1.11"
-    imurmurhash "^0.1.4"
-    signal-exit "^3.0.2"
-
 write-file-atomic@^3.0.0:
   version "3.0.3"
   resolved "https://registry.yarnpkg.com/write-file-atomic/-/write-file-atomic-3.0.3.tgz#56bd5c5a5c70481cd19c571bd39ab965a5de56e8"
@@ -7914,15 +7899,6 @@ write-file-atomic@^3.0.0:
     is-typedarray "^1.0.0"
     signal-exit "^3.0.2"
     typedarray-to-buffer "^3.1.5"
-
-write-yaml-file@^4.1.0:
-  version "4.1.0"
-  resolved "http://localhost:4873/write-yaml-file/-/write-yaml-file-4.1.0.tgz#8a8af90b608b0e0a91d7b1fc67d1c5f06d8092f0"
-  integrity sha512-jN421OlwO/MN/EwAykk5ic8AL9QAycpKGaHKFBlcr3aQ6RUX8ZbrreOPUuhoYSxj/o30FhOQLSH36WYldAFrUw==
-  dependencies:
-    graceful-fs "^4.2.3"
-    js-yaml "^3.13.1"
-    write-file-atomic "^2.4.3"
 
 ws@^5.2.0:
   version "5.2.2"
