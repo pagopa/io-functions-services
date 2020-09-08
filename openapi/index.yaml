@@ -369,7 +369,22 @@ paths:
       parameters:
         - in: body
           name: body
-          description: The service payload.
+          description: > 
+            The service payload. It includes several attributes:
+
+            * `service_name`: `required` The name of the service to be created.
+
+            * `organization_name`: `required` The name of the organization.
+
+            * `department_name`: `required` The name of the department that refers to the organization. Generally it' s an internal department that owns the service.
+
+            * `organization_fiscal_code`: `required` The fiscal code of the organization. If it can't be provided, it should be set to a default value (i.e `"00000000000"`).
+
+            * `authorized_cidrs`: `required` An array of allowed source IPs or IP ranges for this service. It can be set to empty.
+
+            * `require_secure_channels`: `optional` If set to `true` allows only push notification, disabling email's channel. Default value is `false`.
+
+            * `service_metadata`: `optional` A set of metadata properties related to this service.
           schema:
             "$ref": "#/definitions/ServicePayload"
       responses:
@@ -431,12 +446,26 @@ paths:
     put:
       operationId: updateService
       summary: Update Service
-      description: |
-        Update a previously created service with the provided service ID
+      description: Update a previously created service with the provided service ID
       parameters:
         - in: body
           name: body
-          description: The service payload.
+          description: >
+            The service payload. It includes several attributes:
+
+            * `service_name`: `required` The name of the service to be created.
+
+            * `organization_name`: `required` The name of the organization.
+
+            * `department_name`: `required` The name of the department that refers to the organization. Generally it' s an internal department that owns the service.
+
+            * `organization_fiscal_code`: `required` The fiscal code of the organization. If it can't be provided, it should be set to a default value (i.e `"00000000000"`).
+
+            * `authorized_cidrs`: `required` An array of allowed source IPs or IP ranges for this service. It can be set to empty.
+
+            * `require_secure_channels`: `optional` If set to `true` allows only push notification, disabling email's channel. Default value is `false`.
+
+            * `service_metadata`: `optional` A set of metadata properties related to this service.
           schema:
             "$ref": "#/definitions/ServicePayload"
       responses:
@@ -474,7 +503,8 @@ paths:
           required: true
           schema:
             $ref: "#/definitions/Logo"
-          description: A base64 string's representation of the logo PNG image.
+          description: A base64 string's representation of the service's logo PNG image.
+            It can be a service's own logo or an organization's logo.
       responses:
         "200":
           description: Logo uploaded.
