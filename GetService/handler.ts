@@ -21,13 +21,8 @@ import {
   wrapRequestHandler
 } from "io-functions-commons/dist/src/utils/request_middleware";
 import {
-  IResponseErrorForbiddenNotAuthorized,
-  IResponseErrorInternal,
-  IResponseErrorNotFound,
   IResponseSuccessJson,
-  ResponseErrorForbiddenNotAuthorized,
   ResponseErrorInternal,
-  ResponseErrorNotFound,
   ResponseSuccessJson
 } from "italia-ts-commons/lib/responses";
 import { NonEmptyString } from "italia-ts-commons/lib/strings";
@@ -47,16 +42,11 @@ import {
 } from "fp-ts/lib/TaskEither";
 import { ServiceModel } from "io-functions-commons/dist/src/models/service";
 import { ContextMiddleware } from "io-functions-commons/dist/src/utils/middlewares/context_middleware";
-import { IResponseType } from "italia-ts-commons/lib/requests";
 import { Service } from "../generated/api-admin/Service";
 import { SubscriptionKeys } from "../generated/api-admin/SubscriptionKeys";
 import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWithSubscriptionKeys";
 import { APIClient } from "../utils/clients/admin";
-import {
-  IResponseErrorUnauthorized,
-  ResponseErrorUnauthorized,
-  unhandledResponseStatus
-} from "../utils/responses";
+import { ErrorResponses, toErrorServerResponse } from "../utils/responses";
 
 /**
  * Type of a GetService handler.
@@ -74,30 +64,6 @@ type IGetServiceHandler = (
 ) => Promise<
   IResponseSuccessJson<ServiceWithSubscriptionKeys> | ErrorResponses
 >;
-
-const toErrorServerResponse = <S extends number, T>(
-  response: IResponseType<S, T>
-) => {
-  if (response.status === 401) {
-    return ResponseErrorUnauthorized("Unauthorized", "Unauthorized");
-  }
-
-  if (response.status === 403) {
-    return ResponseErrorForbiddenNotAuthorized;
-  }
-
-  if (response.status === 404) {
-    return ResponseErrorNotFound("Not found", "Resource not found");
-  }
-
-  return unhandledResponseStatus(response.status);
-};
-
-type ErrorResponses =
-  | IResponseErrorNotFound
-  | IResponseErrorUnauthorized
-  | IResponseErrorForbiddenNotAuthorized
-  | IResponseErrorInternal;
 
 const getServiceTask = (
   apiClient: ReturnType<APIClient>,

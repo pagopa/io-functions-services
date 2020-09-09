@@ -1,11 +1,19 @@
 import * as express from "express";
 import * as t from "io-ts";
 import { errorsToReadableMessages } from "italia-ts-commons/lib/reporters";
+import { IResponseType } from "italia-ts-commons/lib/requests";
 import {
   HttpStatusCodeEnum,
   IResponse,
+  IResponseErrorForbiddenNotAuthorized,
+  IResponseErrorInternal,
+  IResponseErrorNotFound,
+  IResponseErrorTooManyRequests,
+  ResponseErrorForbiddenNotAuthorized,
   ResponseErrorGeneric,
   ResponseErrorInternal,
+  ResponseErrorNotFound,
+  ResponseErrorTooManyRequests,
   ResponseErrorValidation
 } from "italia-ts-commons/lib/responses";
 
@@ -93,3 +101,32 @@ export function ResponseErrorUnauthorized(
     }
   };
 }
+
+export type ErrorResponses =
+  | IResponseErrorNotFound
+  | IResponseErrorUnauthorized
+  | IResponseErrorForbiddenNotAuthorized
+  | IResponseErrorInternal
+  | IResponseErrorTooManyRequests;
+
+export const toErrorServerResponse = <S extends number, T>(
+  response: IResponseType<S, T>
+) => {
+  if (response.status === 401) {
+    return ResponseErrorUnauthorized("Unauthorized", "Unauthorized");
+  }
+
+  if (response.status === 403) {
+    return ResponseErrorForbiddenNotAuthorized;
+  }
+
+  if (response.status === 404) {
+    return ResponseErrorNotFound("Not found", "Resource not found");
+  }
+
+  if (response.status === 429) {
+    return ResponseErrorTooManyRequests("Too many requests");
+  }
+
+  return unhandledResponseStatus(response.status);
+};
