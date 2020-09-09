@@ -528,19 +528,6 @@
   dependencies:
     "@types/node" ">= 8"
 
-"@pagopa/io-utils@^5.0.0":
-  version "5.0.0"
-  resolved "http://localhost:4873/@pagopa%2fio-utils/-/io-utils-5.0.0.tgz#e8673db60fb8ddfff2fd77086d4ad79a100d727b"
-  integrity sha512-eJVZ8Z5aGaxhr133SykC+EZr1nCq3fEGOzAroCqkbU7nKQeh1KiEWUb3bZRfzUbCmiLeSrv7dxUx8siuifXRjQ==
-  dependencies:
-    fs-extra "^6.0.0"
-    italia-ts-commons "^5.0.1"
-    nunjucks "^3.1.2"
-    prettier "^1.12.1"
-    swagger-parser "^7.0.0"
-    write-yaml-file "^4.1.0"
-    yargs "^11.1.0"
-
 "@sendgrid/client@^6.5.5":
   version "6.5.5"
   resolved "https://registry.yarnpkg.com/@sendgrid/client/-/client-6.5.5.tgz#66cf569445d98a795998a894bb432a9939ead7c3"
@@ -4038,6 +4025,19 @@ italia-tslint-rules@^1.1.3:
     tslint-react "^4.0.0"
     tslint-sonarts "^1.9.0"
     typestrict "^1.0.2"
+
+italia-utils@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/italia-utils/-/italia-utils-5.0.0.tgz#e086fe88f12f2a13cfe878895eb3f75554020e5b"
+  integrity sha512-bR/ZGOuO/zy1EUSozieDep9YAhflsSAAN02LwhZ+azNRN1Y9JPXyLStcJuk7xDHw+3QCy0jaM2XxAPLaizGoLQ==
+  dependencies:
+    fs-extra "^6.0.0"
+    italia-ts-commons "^5.0.1"
+    nunjucks "^3.1.2"
+    prettier "^1.12.1"
+    swagger-parser "^7.0.0"
+    write-yaml-file "^4.1.0"
+    yargs "^11.1.0"
 
 jest-changed-files@^24.9.0:
   version "24.9.0"
