@@ -1,5 +1,4 @@
 import { Context } from "@azure/functions";
-import * as cors from "cors";
 import * as express from "express";
 import { cosmosdbInstance } from "../utils/cosmosdb";
 
