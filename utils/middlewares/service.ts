@@ -3,6 +3,7 @@ import { ResponseErrorFromValidationErrors } from "italia-ts-commons/lib/respons
 
 import { Logo as ApiLogo } from "../../generated/definitions/Logo";
 import { ServicePayload } from "../../generated/definitions/ServicePayload";
+import { SubscriptionKeyTypePayload } from "../../generated/definitions/SubscriptionKeyTypePayload";
 
 /**
  * A middleware that extracts a Service payload from a request.
@@ -14,6 +15,19 @@ export const ServicePayloadMiddleware: IRequestMiddleware<
   Promise.resolve(
     ServicePayload.decode(request.body).mapLeft(
       ResponseErrorFromValidationErrors(ServicePayload)
+    )
+  );
+
+/**
+ * A middleware that extracts a SubscriptionKeyType payload from a request.
+ */
+export const SubscriptionKeyTypePayloadMiddleware: IRequestMiddleware<
+  "IResponseErrorValidation",
+  SubscriptionKeyTypePayload
+> = request =>
+  Promise.resolve(
+    SubscriptionKeyTypePayload.decode(request.body).mapLeft(
+      ResponseErrorFromValidationErrors(SubscriptionKeyTypePayload)
     )
   );
 
