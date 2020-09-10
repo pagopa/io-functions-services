@@ -432,6 +432,8 @@ paths:
       summary: Get Service
       description: |
         Retrieve a previously created service with the provided service ID.
+        This API operation needs the same API key of the service being retrieved
+        otherwise 403 forbidden will be returned to the caller.
       responses:
         "200":
           description: Service found.
