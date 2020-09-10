@@ -598,39 +598,39 @@ definitions:
     pattern: "[0-9]{4}-[0-9]{2}-[0-9]{2}"
     x-example: "2019-09-15"
   ProblemJson:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/ProblemJson"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.3.0/openapi/definitions.yaml#/ProblemJson"
   NotificationChannelStatusValue:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/NotificationChannelStatusValue"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.3.0/openapi/definitions.yaml#/NotificationChannelStatusValue"
   MessageResponseWithContent:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/MessageResponseWithContent"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.3.0/openapi/definitions.yaml#/MessageResponseWithContent"
   FiscalCode:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/FiscalCode"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.3.0/openapi/definitions.yaml#/FiscalCode"
   LimitedProfile:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/LimitedProfile"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.3.0/openapi/definitions.yaml#/LimitedProfile"
   Timestamp:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/Timestamp"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.3.0/openapi/definitions.yaml#/Timestamp"
   TimeToLiveSeconds:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/TimeToLiveSeconds"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.3.0/openapi/definitions.yaml#/TimeToLiveSeconds"
   MessageContent:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/MessageContent"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.3.0/openapi/definitions.yaml#/MessageContent"
   NewMessage:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/NewMessage"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.3.0/openapi/definitions.yaml#/NewMessage"
   ServicePayload:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/ServicePayload"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.3.0/openapi/definitions.yaml#/ServicePayload"
   Service:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/Service"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.3.0/openapi/definitions.yaml#/Service"
   ServiceMetadata:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/ServiceMetadata"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.3.0/openapi/definitions.yaml#/ServiceMetadata"
   ServiceScope:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/ServiceScope"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.3.0/openapi/definitions.yaml#/ServiceScope"
   ServiceId:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/ServiceId"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.3.0/openapi/definitions.yaml#/ServiceId"
   ServiceName:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/ServiceName"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.3.0/openapi/definitions.yaml#/ServiceName"
   OrganizationName:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/OrganizationName"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.3.0/openapi/definitions.yaml#/OrganizationName"
   DepartmentName:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v13.1.0/openapi/definitions.yaml#/DepartmentName"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.3.0/openapi/definitions.yaml#/DepartmentName"
   SubscriptionKeys:
     type: object
     properties:
