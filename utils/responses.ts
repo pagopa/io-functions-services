@@ -112,21 +112,16 @@ export type ErrorResponses =
 export const toErrorServerResponse = <S extends number, T>(
   response: IResponseType<S, T>
 ) => {
-  if (response.status === 401) {
-    return ResponseErrorUnauthorized("Unauthorized", "Unauthorized");
+  switch (response.status) {
+    case 401:
+      return ResponseErrorUnauthorized("Unauthorized", "Unauthorized");
+    case 403:
+      return ResponseErrorForbiddenNotAuthorized;
+    case 404:
+      return ResponseErrorNotFound("Not found", "Resource not found");
+    case 429:
+      return ResponseErrorTooManyRequests("Too many requests");
+    default:
+      return unhandledResponseStatus(response.status);
   }
-
-  if (response.status === 403) {
-    return ResponseErrorForbiddenNotAuthorized;
-  }
-
-  if (response.status === 404) {
-    return ResponseErrorNotFound("Not found", "Resource not found");
-  }
-
-  if (response.status === 429) {
-    return ResponseErrorTooManyRequests("Too many requests");
-  }
-
-  return unhandledResponseStatus(response.status);
 };
