@@ -33,8 +33,10 @@ import {
 } from "io-functions-commons/dist/src/utils/source_ip_check";
 
 import { Context } from "@azure/functions";
+import { left, right } from "fp-ts/lib/Either";
 import { identity } from "fp-ts/lib/function";
 import {
+  fromEither,
   fromLeft,
   taskEither,
   TaskEither,
@@ -46,7 +48,12 @@ import { Service } from "../generated/api-admin/Service";
 import { SubscriptionKeys } from "../generated/api-admin/SubscriptionKeys";
 import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWithSubscriptionKeys";
 import { APIClient } from "../utils/clients/admin";
-import { ErrorResponses, toErrorServerResponse } from "../utils/responses";
+import {
+  ErrorResponses,
+  IResponseErrorUnauthorized,
+  ResponseErrorUnauthorized,
+  toErrorServerResponse
+} from "../utils/responses";
 
 /**
  * Type of a GetService handler.
@@ -67,23 +74,37 @@ type IGetServiceHandler = (
 
 const getServiceTask = (
   apiClient: ReturnType<APIClient>,
-  serviceId: string
+  serviceId: string,
+  subscriptionId: string
 ): TaskEither<ErrorResponses, Service> =>
-  tryCatch(
-    () =>
-      apiClient.getService({
-        service_id: serviceId
-      }),
-    errs => ResponseErrorInternal(JSON.stringify(errs))
+  fromEither<IResponseErrorUnauthorized, {}>(
+    serviceId !== subscriptionId
+      ? left(
+          ResponseErrorUnauthorized(
+            "Unauthorized",
+            "You are not allowed to get this service"
+          )
+        )
+      : right({})
   ).foldTaskEither(
-    err => fromLeft(err),
-    maybeResponse =>
-      maybeResponse.fold(
-        errs => fromLeft(ResponseErrorInternal(JSON.stringify(errs))),
-        responseType =>
-          responseType.status !== 200
-            ? fromLeft(toErrorServerResponse(responseType))
-            : taskEither.of(responseType.value)
+    e => fromLeft(e),
+    _ =>
+      tryCatch(
+        () =>
+          apiClient.getService({
+            service_id: serviceId
+          }),
+        errs => ResponseErrorInternal(JSON.stringify(errs))
+      ).foldTaskEither(
+        err => fromLeft(err),
+        maybeResponse =>
+          maybeResponse.fold(
+            errs => fromLeft(ResponseErrorInternal(JSON.stringify(errs))),
+            responseType =>
+              responseType.status !== 200
+                ? fromLeft(toErrorServerResponse(responseType))
+                : taskEither.of(responseType.value)
+          )
       )
   );
 
@@ -115,8 +136,8 @@ const getSubscriptionKeysTask = (
 export function GetServiceHandler(
   apiClient: ReturnType<APIClient>
 ): IGetServiceHandler {
-  return (_, __, ___, ____, serviceId) => {
-    return getServiceTask(apiClient, serviceId)
+  return (_, apiAuth, ___, ____, serviceId) => {
+    return getServiceTask(apiClient, serviceId, apiAuth.subscriptionId)
       .chain(service =>
         getSubscriptionKeysTask(apiClient, serviceId).map(subscriptionKeys =>
           ResponseSuccessJson({

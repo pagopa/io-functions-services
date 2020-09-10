@@ -25,9 +25,6 @@ const serviceModel = new ServiceModel(
   cosmosdbInstance.container(SERVICE_COLLECTION_NAME)
 );
 
-// Set up CORS (free access to the API from browser clients)
-app.use(cors());
-
 app.get(
   "/api/v1/services/:service_id/logo",
   GetUploadServiceLogo(serviceModel, client)

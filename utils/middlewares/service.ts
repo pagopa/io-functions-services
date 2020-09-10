@@ -1,19 +1,19 @@
-import { Service as ApiService } from "io-functions-commons/dist/generated/definitions/Service";
 import { IRequestMiddleware } from "io-functions-commons/dist/src/utils/request_middleware";
 import { ResponseErrorFromValidationErrors } from "italia-ts-commons/lib/responses";
 
 import { Logo as ApiLogo } from "../../generated/definitions/Logo";
+import { ServicePayload } from "../../generated/definitions/ServicePayload";
 
 /**
  * A middleware that extracts a Service payload from a request.
  */
 export const ServicePayloadMiddleware: IRequestMiddleware<
   "IResponseErrorValidation",
-  ApiService
+  ServicePayload
 > = request =>
   Promise.resolve(
-    ApiService.decode(request.body).mapLeft(
-      ResponseErrorFromValidationErrors(ApiService)
+    ServicePayload.decode(request.body).mapLeft(
+      ResponseErrorFromValidationErrors(ServicePayload)
     )
   );
 
@@ -26,6 +26,6 @@ export const LogoPayloadMiddleware: IRequestMiddleware<
 > = request =>
   Promise.resolve(
     ApiLogo.decode(request.body).mapLeft(
-      ResponseErrorFromValidationErrors(ApiService)
+      ResponseErrorFromValidationErrors(ApiLogo)
     )
   );
