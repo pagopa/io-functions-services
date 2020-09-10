@@ -375,22 +375,6 @@ paths:
             Through the API a service can send messages to the IO users
             that haven't opted out from it. Service metadata are used
             to qualify the sender of these messages to the recipient.
-            The service payload includes several attributes:
-            * `service_name`: `required` The name of the service to be created.
-
-            * `organization_name`: `required` The name of the organization.
-
-            * `department_name`: `required` The name of the department that refers to the organization. Generally it' s an internal department that owns the service.
-
-            * `organization_fiscal_code`: `required` The fiscal code of the organization. If it can't be provided, it should be set to a default value (i.e `"00000000000"`).
-
-            * `authorized_cidrs`: `required` An array of allowed source IPs or IP ranges for this service. It can be set to empty.
-
-            * `require_secure_channels`: `optional` If set to `true` allows only push notification, disabling email's channel. Default value is `false`.
-
-            * `ìs_visible`: `optional` If set to `false` it hides service allowing a logical delete operation, otherwise it enables service to be visible. Default value is `true`
-
-            * `service_metadata`: `optional` A set of metadata properties related to this service.
           schema:
             "$ref": "#/definitions/ServicePayload"
       responses:
@@ -462,22 +446,6 @@ paths:
             The updated service payload.
             This API operation needs the same API key of the service being updated
             otherwise 403 forbidden will be returned to the caller.
-            The service payload includes several attributes:
-            * `service_name`: `required` The name of the service to be created.
-
-            * `organization_name`: `required` The name of the organization.
-
-            * `department_name`: `required` The name of the department that refers to the organization. Generally it' s an internal department that owns the service.
-
-            * `organization_fiscal_code`: `required` The fiscal code of the organization. If it can't be provided, it should be set to a default value (i.e `"00000000000"`).
-
-            * `authorized_cidrs`: `required` An array of allowed source IPs or IP ranges for this service. It can be set to empty.
-
-            * `require_secure_channels`: `optional` If set to `true` allows only push notification, disabling email's channel. Default value is `false`.
-
-            * `ìs_visible`: `optional` If set to `false` it hides service allowing a logical delete operation, otherwise it enables service to be visible. Default value is `true`
-
-            * `service_metadata`: `optional` A set of metadata properties related to this service.
           schema:
             "$ref": "#/definitions/ServicePayload"
       responses:
@@ -610,39 +578,39 @@ definitions:
     pattern: "[0-9]{4}-[0-9]{2}-[0-9]{2}"
     x-example: "2019-09-15"
   ProblemJson:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.2.0/openapi/definitions.yaml#/ProblemJson"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/ProblemJson"
   NotificationChannelStatusValue:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.2.0/openapi/definitions.yaml#/NotificationChannelStatusValue"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/NotificationChannelStatusValue"
   MessageResponseWithContent:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.2.0/openapi/definitions.yaml#/MessageResponseWithContent"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/MessageResponseWithContent"
   FiscalCode:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.2.0/openapi/definitions.yaml#/FiscalCode"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/FiscalCode"
   LimitedProfile:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.2.0/openapi/definitions.yaml#/LimitedProfile"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/LimitedProfile"
   Timestamp:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.2.0/openapi/definitions.yaml#/Timestamp"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/Timestamp"
   TimeToLiveSeconds:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.2.0/openapi/definitions.yaml#/TimeToLiveSeconds"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/TimeToLiveSeconds"
   MessageContent:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.2.0/openapi/definitions.yaml#/MessageContent"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/MessageContent"
   NewMessage:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.2.0/openapi/definitions.yaml#/NewMessage"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/NewMessage"
   ServicePayload:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.2.0/openapi/definitions.yaml#/ServicePayload"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/ServicePayload"
   Service:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.2.0/openapi/definitions.yaml#/Service"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/Service"
   ServiceMetadata:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.2.0/openapi/definitions.yaml#/ServiceMetadata"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/ServiceMetadata"
   ServiceScope:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.2.0/openapi/definitions.yaml#/ServiceScope"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/ServiceScope"
   ServiceId:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.2.0/openapi/definitions.yaml#/ServiceId"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/ServiceId"
   ServiceName:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.2.0/openapi/definitions.yaml#/ServiceName"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/ServiceName"
   OrganizationName:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.2.0/openapi/definitions.yaml#/OrganizationName"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/OrganizationName"
   DepartmentName:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.2.0/openapi/definitions.yaml#/DepartmentName"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/DepartmentName"
   SubscriptionKeys:
     type: object
     properties:
