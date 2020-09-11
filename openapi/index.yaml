@@ -579,6 +579,8 @@ definitions:
     x-example: "2019-09-15"
   ProblemJson:
     $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/ProblemJson"
+  CIDR:
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/CIDR" 
   NotificationChannelStatusValue:
     $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/NotificationChannelStatusValue"
   MessageResponseWithContent:
