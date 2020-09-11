@@ -331,7 +331,7 @@ describe("GetServiceHandler", () => {
     expect(result.kind).toBe("IResponseErrorForbiddenNotAuthorized");
   });
 
-  it("should respond with Not found if no subscriptionKeys were found bu the given serviceId", async () => {
+  it("should respond with Not found if no subscriptionKeys were found by the given serviceId", async () => {
     const apiClientMock = {
       getService: jest.fn(() =>
         Promise.resolve(right({ status: 200, value: aService }))
