@@ -83,7 +83,7 @@ const getUserServicesTask = (
 /**
  * Handles requests for getting an array of serviceID by providing the current user email.
  */
-export function GetServiceHandler(
+export function GetUserServicesHandler(
   apiClient: ReturnType<APIClient>
 ): IGetUserServicesHandler {
   return (_, __, ___, userAttributes) => {
@@ -110,7 +110,7 @@ export function GetUserServices(
   serviceModel: ServiceModel,
   client: ReturnType<APIClient>
 ): express.RequestHandler {
-  const handler = GetServiceHandler(client);
+  const handler = GetUserServicesHandler(client);
   const middlewaresWrap = withRequestMiddlewares(
     ContextMiddleware(),
     AzureApiAuthMiddleware(new Set([UserGroup.ApiServiceRead])),
