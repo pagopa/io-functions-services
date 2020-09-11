@@ -46,10 +46,10 @@ import {
 } from "fp-ts/lib/TaskEither";
 import { ServiceModel } from "io-functions-commons/dist/src/models/service";
 import { ContextMiddleware } from "io-functions-commons/dist/src/utils/middlewares/context_middleware";
+import { RequiredBodyPayloadMiddleware } from "io-functions-commons/dist/src/utils/middlewares/required_body_payload";
 import { SubscriptionKeys } from "../generated/definitions/SubscriptionKeys";
 import { SubscriptionKeyTypePayload } from "../generated/definitions/SubscriptionKeyTypePayload";
 import { APIClient } from "../utils/clients/admin";
-import { SubscriptionKeyTypePayloadMiddleware } from "../utils/middlewares/service";
 import {
   ErrorResponses,
   IResponseErrorUnauthorized,
@@ -134,7 +134,7 @@ export function GetRegenerateServiceKey(
     ClientIpMiddleware,
     AzureUserAttributesMiddleware(serviceModel),
     RequiredParamMiddleware("service_id", NonEmptyString),
-    SubscriptionKeyTypePayloadMiddleware
+    RequiredBodyPayloadMiddleware(SubscriptionKeyTypePayload)
   );
   return wrapRequestHandler(
     middlewaresWrap(

@@ -49,8 +49,7 @@ import { ErrorResponses, toErrorServerResponse } from "../utils/responses";
 /**
  * Type of a GetUserServices handler.
  *
- * GetUserServices returns a list of ServiceId as output or unauthorized or too many requests
- * errors.
+ * GetUserServices returns a list of ServiceId as output.
  */
 type IGetUserServicesHandler = (
   context: Context,

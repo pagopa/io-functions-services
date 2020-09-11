@@ -46,9 +46,9 @@ import {
 } from "fp-ts/lib/TaskEither";
 import { ServiceModel } from "io-functions-commons/dist/src/models/service";
 import { ContextMiddleware } from "io-functions-commons/dist/src/utils/middlewares/context_middleware";
+import { RequiredBodyPayloadMiddleware } from "io-functions-commons/dist/src/utils/middlewares/required_body_payload";
 import { Logo } from "../generated/api-admin/Logo";
 import { APIClient } from "../utils/clients/admin";
-import { LogoPayloadMiddleware } from "../utils/middlewares/service";
 import {
   ErrorResponses,
   IResponseErrorUnauthorized,
@@ -129,7 +129,7 @@ export function GetUploadServiceLogo(
     ClientIpMiddleware,
     AzureUserAttributesMiddleware(serviceModel),
     RequiredParamMiddleware("service_id", NonEmptyString),
-    LogoPayloadMiddleware
+    RequiredBodyPayloadMiddleware(Logo)
   );
   return wrapRequestHandler(
     middlewaresWrap(
