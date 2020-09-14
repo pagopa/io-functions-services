@@ -8,6 +8,6 @@ export const serviceOwnerCheck = (
   msg: string
 ) =>
   fromPredicate<ErrorResponses, NonEmptyString>(
-    (svcId: NonEmptyString) => svcId !== ownerSubscriptionId,
+    (svcId: NonEmptyString) => svcId === ownerSubscriptionId,
     _ => ResponseErrorUnauthorized("Unauthorized", msg)
   )(serviceId);

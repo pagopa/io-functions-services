@@ -26,7 +26,6 @@ import {
   IResponseErrorNotFound,
   IResponseErrorTooManyRequests,
   IResponseSuccessJson,
-  ResponseErrorInternal,
   ResponseSuccessJson
 } from "italia-ts-commons/lib/responses";
 import { NonEmptyString } from "italia-ts-commons/lib/strings";
@@ -50,9 +49,11 @@ import { RequiredBodyPayloadMiddleware } from "io-functions-commons/dist/src/uti
 import { SubscriptionKeys } from "../generated/definitions/SubscriptionKeys";
 import { SubscriptionKeyTypePayload } from "../generated/definitions/SubscriptionKeyTypePayload";
 import { APIClient } from "../utils/clients/admin";
+import { getLogger, ILogger } from "../utils/logging";
 import {
   ErrorResponses,
   IResponseErrorUnauthorized,
+  toDefaultResponseErrorInternal,
   toErrorServerResponse
 } from "../utils/responses";
 import { serviceOwnerCheck } from "../utils/subscription";
@@ -65,8 +66,10 @@ type ResponseTypes =
   | IResponseErrorTooManyRequests
   | IResponseErrorInternal;
 
+const logPrefix = "RegenerateServiceKeyHandler";
+
 /**
- * Type of a GetRegenerateServiceKeyHandler handler.
+ * Type of a RegenerateServiceKeyHandler handler.
  *
  * RegenerateServiceKey expects a service ID and a subscriptionKeyType as input
  * and returns regenerated subscriptionkeys as outcome
@@ -81,6 +84,7 @@ type IRegenerateServiceKeyHandler = (
 ) => Promise<ResponseTypes>;
 
 const regenerateServiceKeyTask = (
+  logger: ILogger,
   apiClient: ReturnType<APIClient>,
   serviceId: NonEmptyString,
   subscriptionKeyTypePayload: SubscriptionKeyTypePayload
@@ -91,12 +95,18 @@ const regenerateServiceKeyTask = (
         service_id: serviceId,
         subscriptionKeyTypePayload
       }),
-    errs => ResponseErrorInternal(JSON.stringify(errs))
+    errs => {
+      logger.logUnknown(errs);
+      return toDefaultResponseErrorInternal(errs);
+    }
   ).foldTaskEither(
     err => fromLeft(err),
     errorOrResponse =>
       errorOrResponse.fold(
-        errs => fromLeft(ResponseErrorInternal(JSON.stringify(errs))),
+        errs => {
+          logger.logErrors(errs);
+          return fromLeft(toDefaultResponseErrorInternal(errs));
+        },
         responseType =>
           responseType.status !== 200
             ? fromLeft(toErrorServerResponse(responseType))
@@ -118,6 +128,7 @@ export function RegenerateServiceKeyHandler(
     )
       .chain(() =>
         regenerateServiceKeyTask(
+          getLogger(_, logPrefix, "UploadServiceLogo"),
           apiClient,
           serviceId,
           subscriptionKeyTypePayload

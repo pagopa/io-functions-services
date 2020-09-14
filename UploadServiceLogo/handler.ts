@@ -26,7 +26,6 @@ import {
   IResponseErrorNotFound,
   IResponseErrorTooManyRequests,
   IResponseSuccessJson,
-  ResponseErrorInternal,
   ResponseSuccessJson
 } from "italia-ts-commons/lib/responses";
 import { NonEmptyString } from "italia-ts-commons/lib/strings";
@@ -49,9 +48,11 @@ import { ContextMiddleware } from "io-functions-commons/dist/src/utils/middlewar
 import { RequiredBodyPayloadMiddleware } from "io-functions-commons/dist/src/utils/middlewares/required_body_payload";
 import { Logo } from "../generated/api-admin/Logo";
 import { APIClient } from "../utils/clients/admin";
+import { getLogger, ILogger } from "../utils/logging";
 import {
   ErrorResponses,
   IResponseErrorUnauthorized,
+  toDefaultResponseErrorInternal,
   toErrorServerResponse
 } from "../utils/responses";
 import { serviceOwnerCheck } from "../utils/subscription";
@@ -64,13 +65,15 @@ type ResponseTypes =
   | IResponseErrorTooManyRequests
   | IResponseErrorInternal;
 
+const logPrefix = "UploadServiceLogoHandler";
+
 /**
- * Type of a GetUploadServiceLogoHandler handler.
+ * Type of a UploadServiceLogoHandler handler.
  *
- * GetUploadServiceLogo expects a service ID and a logo as input
+ * UploadServiceLogo expects a service ID and a logo as input
  * and returns informations about upload outcome
  */
-type IGetUploadServiceLogoHandler = (
+type IUploadServiceLogoHandler = (
   context: Context,
   auth: IAzureApiAuthorization,
   clientIp: ClientIp,
@@ -80,6 +83,7 @@ type IGetUploadServiceLogoHandler = (
 ) => Promise<ResponseTypes>;
 
 const uploadServiceLogoTask = (
+  logger: ILogger,
   apiClient: ReturnType<APIClient>,
   serviceId: string,
   logo: Logo
@@ -90,12 +94,18 @@ const uploadServiceLogoTask = (
         logo,
         service_id: serviceId
       }),
-    errs => ResponseErrorInternal(JSON.stringify(errs))
+    errs => {
+      logger.logUnknown(errs);
+      return toDefaultResponseErrorInternal(errs);
+    }
   ).foldTaskEither(
     err => fromLeft(err),
     errorOrResponse =>
       errorOrResponse.fold(
-        errs => fromLeft(ResponseErrorInternal(JSON.stringify(errs))),
+        errs => {
+          logger.logErrors(errs);
+          return fromLeft(toDefaultResponseErrorInternal(errs));
+        },
         responseType =>
           responseType.status !== 201
             ? fromLeft(toErrorServerResponse(responseType))
@@ -106,29 +116,36 @@ const uploadServiceLogoTask = (
 /**
  * Handles requests for upload a service logo by a service ID and a base64 logo' s string.
  */
-export function GetUploadServiceLogoHandler(
+export function UploadServiceLogoHandler(
   apiClient: ReturnType<APIClient>
-): IGetUploadServiceLogoHandler {
+): IUploadServiceLogoHandler {
   return (_, apiAuth, ___, ____, serviceId, logoPayload) => {
     return serviceOwnerCheck(
       serviceId,
       apiAuth.subscriptionId,
       "You are not allowed to upload a logo for this service"
     )
-      .chain(() => uploadServiceLogoTask(apiClient, serviceId, logoPayload))
+      .chain(() =>
+        uploadServiceLogoTask(
+          getLogger(_, logPrefix, "UploadServiceLogo"),
+          apiClient,
+          serviceId,
+          logoPayload
+        )
+      )
       .fold<ResponseTypes>(identity, identity)
       .run();
   };
 }
 
 /**
- * Wraps a GetUploadServiceLogo handler inside an Express request handler.
+ * Wraps a UploadServiceLogo handler inside an Express request handler.
  */
-export function GetUploadServiceLogo(
+export function UploadServiceLogo(
   serviceModel: ServiceModel,
   client: ReturnType<APIClient>
 ): express.RequestHandler {
-  const handler = GetUploadServiceLogoHandler(client);
+  const handler = UploadServiceLogoHandler(client);
   const middlewaresWrap = withRequestMiddlewares(
     ContextMiddleware(),
     AzureApiAuthMiddleware(new Set([UserGroup.ApiServiceWrite])),

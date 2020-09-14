@@ -25,7 +25,6 @@ import {
   IResponseErrorNotFound,
   IResponseErrorTooManyRequests,
   IResponseSuccessJson,
-  ResponseErrorInternal,
   ResponseSuccessJson
 } from "italia-ts-commons/lib/responses";
 
@@ -51,9 +50,11 @@ import { SubscriptionKeys } from "../generated/api-admin/SubscriptionKeys";
 import { ServicePayload } from "../generated/definitions/ServicePayload";
 import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWithSubscriptionKeys";
 import { APIClient } from "../utils/clients/admin";
+import { getLogger, ILogger } from "../utils/logging";
 import {
   ErrorResponses,
   IResponseErrorUnauthorized,
+  toDefaultResponseErrorInternal,
   toErrorServerResponse
 } from "../utils/responses";
 import { serviceOwnerCheck } from "../utils/subscription";
@@ -81,7 +82,10 @@ type IUpdateServiceHandler = (
   servicePayload: ServicePayload
 ) => Promise<ResponseTypes>;
 
+const logPrefix = "UpdateServiceHandler";
+
 const getSubscriptionKeysTask = (
+  logger: ILogger,
   apiClient: ReturnType<APIClient>,
   serviceId: NonEmptyString
 ): TaskEither<ErrorResponses, SubscriptionKeys> =>
@@ -90,12 +94,18 @@ const getSubscriptionKeysTask = (
       apiClient.getSubscriptionKeys({
         service_id: serviceId
       }),
-    errs => ResponseErrorInternal(JSON.stringify(errs))
+    errs => {
+      logger.logUnknown(errs);
+      return toDefaultResponseErrorInternal(errs);
+    }
   ).foldTaskEither(
     err => fromLeft(err),
     errorOrResponse =>
       errorOrResponse.fold(
-        errs => fromLeft(ResponseErrorInternal(JSON.stringify(errs))),
+        errs => {
+          logger.logErrors(errs);
+          return fromLeft(toDefaultResponseErrorInternal(errs));
+        },
         responseType =>
           responseType.status !== 200
             ? fromLeft(toErrorServerResponse(responseType))
@@ -104,6 +114,7 @@ const getSubscriptionKeysTask = (
   );
 
 const updateServiceTask = (
+  logger: ILogger,
   apiClient: ReturnType<APIClient>,
   servicePayload: ServicePayload,
   serviceId: NonEmptyString
@@ -118,12 +129,18 @@ const updateServiceTask = (
         },
         service_id: serviceId
       }),
-    errs => ResponseErrorInternal(JSON.stringify(errs))
+    errs => {
+      logger.logUnknown(errs);
+      return toDefaultResponseErrorInternal(errs);
+    }
   ).foldTaskEither(
     err => fromLeft(err),
     errorOrResponse =>
       errorOrResponse.fold(
-        errs => fromLeft(ResponseErrorInternal(JSON.stringify(errs))),
+        errs => {
+          logger.logErrors(errs);
+          return fromLeft(toDefaultResponseErrorInternal(errs));
+        },
         responseType =>
           responseType.status !== 200
             ? fromLeft(toErrorServerResponse(responseType))
@@ -144,8 +161,17 @@ export function UpdateServiceHandler(
       "You are not allowed to update this service"
     )
       .chain(() =>
-        updateServiceTask(apiClient, servicePayload, serviceId).chain(service =>
-          getSubscriptionKeysTask(apiClient, serviceId).map(subscriptionKeys =>
+        updateServiceTask(
+          getLogger(_, logPrefix, "UpdateService"),
+          apiClient,
+          servicePayload,
+          serviceId
+        ).chain(service =>
+          getSubscriptionKeysTask(
+            getLogger(_, logPrefix, "GetSubscriptionKeys"),
+            apiClient,
+            serviceId
+          ).map(subscriptionKeys =>
             ResponseSuccessJson({
               ...service,
               ...subscriptionKeys

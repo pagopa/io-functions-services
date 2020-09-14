@@ -21,21 +21,14 @@ import { toAuthorizedCIDRs } from "io-functions-commons/dist/src/models/service"
 import { MaxAllowedPaymentAmount } from "io-functions-commons/dist/generated/definitions/MaxAllowedPaymentAmount";
 
 import { left, right } from "fp-ts/lib/Either";
+import * as reporters from "italia-ts-commons/lib/reporters";
 import { Subscription } from "../../generated/api-admin/Subscription";
 import { ServicePayload } from "../../generated/definitions/ServicePayload";
 import { CreateServiceHandler } from "../handler";
 
 const mockContext = {
-  log: {
-    // tslint:disable-next-line: no-console
-    error: console.error,
-    // tslint:disable-next-line: no-console
-    info: console.log,
-    // tslint:disable-next-line: no-console
-    verbose: console.log,
-    // tslint:disable-next-line: no-console
-    warn: console.warn
-  }
+  // tslint:disable-next-line: no-console
+  log: console.log
 } as any;
 
 afterEach(() => {
@@ -96,6 +89,8 @@ const aUserAuthenticationDeveloper: IAzureApiAuthorization = {
 
 const mockUlidGenerator = jest.fn(() => aServiceId);
 
+const productName = "IO_API_SERVICES" as NonEmptyString;
+
 describe("CreateServiceHandler", () => {
   it("should respond with a created service with subscriptionKeys by providing a servicePayload", async () => {
     const apiClientMock = {
@@ -109,7 +104,8 @@ describe("CreateServiceHandler", () => {
 
     const createServiceHandler = CreateServiceHandler(
       apiClientMock as any,
-      mockUlidGenerator as any
+      mockUlidGenerator as any,
+      productName
     );
     const result = await createServiceHandler(
       mockContext,
@@ -140,7 +136,8 @@ describe("CreateServiceHandler", () => {
 
     const createServiceHandler = CreateServiceHandler(
       apiClientMock as any,
-      mockUlidGenerator as any
+      mockUlidGenerator as any,
+      productName
     );
     const result = await createServiceHandler(
       mockContext,
@@ -166,9 +163,14 @@ describe("CreateServiceHandler", () => {
       )
     };
 
+    jest
+      .spyOn(reporters, "errorsToReadableMessages")
+      .mockImplementation(() => ["ValidationErrors"]);
+
     const createServiceHandler = CreateServiceHandler(
       apiClientMock as any,
-      mockUlidGenerator as any
+      mockUlidGenerator as any,
+      productName
     );
     const result = await createServiceHandler(
       mockContext,
@@ -194,7 +196,8 @@ describe("CreateServiceHandler", () => {
 
     const createServiceHandler = CreateServiceHandler(
       apiClientMock as any,
-      mockUlidGenerator as any
+      mockUlidGenerator as any,
+      productName
     );
     const result = await createServiceHandler(
       mockContext,
@@ -220,7 +223,8 @@ describe("CreateServiceHandler", () => {
 
     const createServiceHandler = CreateServiceHandler(
       apiClientMock as any,
-      mockUlidGenerator as any
+      mockUlidGenerator as any,
+      productName
     );
     const result = await createServiceHandler(
       mockContext,
@@ -246,7 +250,8 @@ describe("CreateServiceHandler", () => {
 
     const createServiceHandler = CreateServiceHandler(
       apiClientMock as any,
-      mockUlidGenerator as any
+      mockUlidGenerator as any,
+      productName
     );
     const result = await createServiceHandler(
       mockContext,
@@ -275,7 +280,8 @@ describe("CreateServiceHandler", () => {
 
     const createServiceHandler = CreateServiceHandler(
       apiClientMock as any,
-      mockUlidGenerator as any
+      mockUlidGenerator as any,
+      productName
     );
     const result = await createServiceHandler(
       mockContext,
@@ -301,9 +307,14 @@ describe("CreateServiceHandler", () => {
       )
     };
 
+    jest
+      .spyOn(reporters, "errorsToReadableMessages")
+      .mockImplementation(() => ["ValidationErrors"]);
+
     const createServiceHandler = CreateServiceHandler(
       apiClientMock as any,
-      mockUlidGenerator as any
+      mockUlidGenerator as any,
+      productName
     );
     const result = await createServiceHandler(
       mockContext,
@@ -328,7 +339,8 @@ describe("CreateServiceHandler", () => {
 
     const createServiceHandler = CreateServiceHandler(
       apiClientMock as any,
-      mockUlidGenerator as any
+      mockUlidGenerator as any,
+      productName
     );
     const result = await createServiceHandler(
       mockContext,

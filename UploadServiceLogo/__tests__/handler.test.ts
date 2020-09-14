@@ -21,20 +21,13 @@ import { toAuthorizedCIDRs } from "io-functions-commons/dist/src/models/service"
 import { MaxAllowedPaymentAmount } from "io-functions-commons/dist/generated/definitions/MaxAllowedPaymentAmount";
 
 import { left, right } from "fp-ts/lib/Either";
+import * as reporters from "italia-ts-commons/lib/reporters";
 import { Logo } from "../../generated/api-admin/Logo";
-import { GetUploadServiceLogoHandler } from "../handler";
+import { UploadServiceLogoHandler } from "../handler";
 
 const mockContext = {
-  log: {
-    // tslint:disable-next-line: no-console
-    error: console.error,
-    // tslint:disable-next-line: no-console
-    info: console.log,
-    // tslint:disable-next-line: no-console
-    verbose: console.log,
-    // tslint:disable-next-line: no-console
-    warn: console.warn
-  }
+  // tslint:disable-next-line: no-console
+  log: console.log
 } as any;
 
 afterEach(() => {
@@ -84,16 +77,16 @@ const aLogoPayload: Logo = {
   logo: "base64-logo-img" as NonEmptyString
 };
 
-describe("GetUploadServiceLogoHandler", () => {
+describe("UploadServiceLogoHandler", () => {
   it("should respond with 200 if log upload was successfull", async () => {
     const apiClientMock = {
       uploadServiceLogo: jest.fn(() => Promise.resolve(right({ status: 201 })))
     };
 
-    const getUploadServiceLogoHandler = GetUploadServiceLogoHandler(
+    const uploadServiceLogoHandler = UploadServiceLogoHandler(
       apiClientMock as any
     );
-    const result = await getUploadServiceLogoHandler(
+    const result = await uploadServiceLogoHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
@@ -114,10 +107,10 @@ describe("GetUploadServiceLogoHandler", () => {
       uploadServiceLogo: jest.fn(() => Promise.resolve(right({ status: 201 })))
     };
 
-    const getUploadServiceLogoHandler = GetUploadServiceLogoHandler(
+    const uploadServiceLogoHandler = UploadServiceLogoHandler(
       apiClientMock as any
     );
-    const result = await getUploadServiceLogoHandler(
+    const result = await uploadServiceLogoHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
@@ -139,10 +132,10 @@ describe("GetUploadServiceLogoHandler", () => {
       uploadServiceLogo: jest.fn(() => Promise.reject(new Error("Timeout")))
     };
 
-    const getUploadServiceLogoHandler = GetUploadServiceLogoHandler(
+    const uploadServiceLogoHandler = UploadServiceLogoHandler(
       apiClientMock as any
     );
-    const result = await getUploadServiceLogoHandler(
+    const result = await uploadServiceLogoHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
@@ -163,10 +156,14 @@ describe("GetUploadServiceLogoHandler", () => {
       )
     };
 
-    const getUploadServiceLogoHandler = GetUploadServiceLogoHandler(
+    jest
+      .spyOn(reporters, "errorsToReadableMessages")
+      .mockImplementation(() => ["ValidationErrors"]);
+
+    const uploadServiceLogoHandler = UploadServiceLogoHandler(
       apiClientMock as any
     );
-    const result = await getUploadServiceLogoHandler(
+    const result = await uploadServiceLogoHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
@@ -185,10 +182,10 @@ describe("GetUploadServiceLogoHandler", () => {
       uploadServiceLogo: jest.fn(() => Promise.resolve(right({ status: 404 })))
     };
 
-    const getUploadServiceLogoHandler = GetUploadServiceLogoHandler(
+    const uploadServiceLogoHandler = UploadServiceLogoHandler(
       apiClientMock as any
     );
-    const result = await getUploadServiceLogoHandler(
+    const result = await uploadServiceLogoHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
@@ -210,10 +207,10 @@ describe("GetUploadServiceLogoHandler", () => {
       uploadServiceLogo: jest.fn(() => Promise.resolve(right({ status: 403 })))
     };
 
-    const getUploadServiceLogoHandler = GetUploadServiceLogoHandler(
+    const uploadServiceLogoHandler = UploadServiceLogoHandler(
       apiClientMock as any
     );
-    const result = await getUploadServiceLogoHandler(
+    const result = await uploadServiceLogoHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used

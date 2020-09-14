@@ -86,7 +86,7 @@ type ICreateServiceHandler = (
 ) => Promise<ResponseTypes>;
 
 const createSubscriptionTask = (
-  errsLog: ILogger,
+  logger: ILogger,
   apiClient: ReturnType<APIClient>,
   userEmail: EmailString,
   subscriptionId: NonEmptyString,
@@ -102,7 +102,7 @@ const createSubscriptionTask = (
         subscription_id: subscriptionId
       }),
     errs => {
-      errsLog.logUnknown(errs);
+      logger.logUnknown(errs);
       return toDefaultResponseErrorInternal(errs);
     }
   ).foldTaskEither(
@@ -110,7 +110,7 @@ const createSubscriptionTask = (
     errorOrResponse =>
       errorOrResponse.fold(
         errs => {
-          errsLog.logErrors(errs);
+          logger.logErrors(errs);
           return fromLeft(toDefaultResponseErrorInternal(errs));
         },
         responseType =>
@@ -120,7 +120,7 @@ const createSubscriptionTask = (
       )
   );
 const createServiceTask = (
-  errsLog: ILogger,
+  logger: ILogger,
   apiClient: ReturnType<APIClient>,
   servicePayload: ServicePayload,
   subscriptionId: NonEmptyString
@@ -135,7 +135,7 @@ const createServiceTask = (
         }
       }),
     errs => {
-      errsLog.logUnknown(errs);
+      logger.logUnknown(errs);
       return toDefaultResponseErrorInternal(errs);
     }
   ).foldTaskEither(
@@ -143,7 +143,7 @@ const createServiceTask = (
     errorOrResponse =>
       errorOrResponse.fold(
         errs => {
-          errsLog.logErrors(errs);
+          logger.logErrors(errs);
           return fromLeft(toDefaultResponseErrorInternal(errs));
         },
         responseType =>
@@ -163,7 +163,7 @@ export function CreateServiceHandler(
 ): ICreateServiceHandler {
   return (context, __, ___, userAttributes, servicePayload) => {
     const subscriptionId = generateObjectId();
-    context.log.info(
+    context.log(
       `${logPrefix}| Creating new service with subscriptionId=${subscriptionId}`
     );
     return createSubscriptionTask(

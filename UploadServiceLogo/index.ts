@@ -12,7 +12,7 @@ import { setAppContext } from "io-functions-commons/dist/src/utils/middlewares/c
 import createAzureFunctionHandler from "io-functions-express/dist/src/createAzureFunctionsHandler";
 
 import { getApiClient } from "../utils/apiclient";
-import { GetUploadServiceLogo } from "./handler";
+import { UploadServiceLogo } from "./handler";
 
 // Setup Express
 const app = express();
@@ -26,7 +26,7 @@ const serviceModel = new ServiceModel(
 
 app.put(
   "/api/v1/services/:service_id/logo",
-  GetUploadServiceLogo(serviceModel, client)
+  UploadServiceLogo(serviceModel, client)
 );
 
 const azureFunctionHandler = createAzureFunctionHandler(app);

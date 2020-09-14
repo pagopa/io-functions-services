@@ -21,19 +21,12 @@ import { toAuthorizedCIDRs } from "io-functions-commons/dist/src/models/service"
 import { MaxAllowedPaymentAmount } from "io-functions-commons/dist/generated/definitions/MaxAllowedPaymentAmount";
 
 import { left, right } from "fp-ts/lib/Either";
+import * as reporters from "italia-ts-commons/lib/reporters";
 import { GetServiceHandler } from "../handler";
 
 const mockContext = {
-  log: {
-    // tslint:disable-next-line: no-console
-    error: console.error,
-    // tslint:disable-next-line: no-console
-    info: console.log,
-    // tslint:disable-next-line: no-console
-    verbose: console.log,
-    // tslint:disable-next-line: no-console
-    warn: console.warn
-  }
+  // tslint:disable-next-line: no-console
+  log: console.log
 } as any;
 
 afterEach(() => {
@@ -170,6 +163,10 @@ describe("GetServiceHandler", () => {
       )
     };
 
+    const readableMessages = jest
+      .spyOn(reporters, "errorsToReadableMessages")
+      .mockImplementation(() => ["ValidationErrors"]);
+
     const getServiceHandler = GetServiceHandler(apiClientMock as any);
     const result = await getServiceHandler(
       mockContext,
@@ -265,6 +262,10 @@ describe("GetServiceHandler", () => {
         Promise.resolve(left({ err: "ValidationError" }))
       )
     };
+
+    const readableMessages = jest
+      .spyOn(reporters, "errorsToReadableMessages")
+      .mockImplementation(() => ["ValidationErrors"]);
 
     const getServiceHandler = GetServiceHandler(apiClientMock as any);
     const result = await getServiceHandler(

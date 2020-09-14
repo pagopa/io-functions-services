@@ -21,21 +21,14 @@ import { toAuthorizedCIDRs } from "io-functions-commons/dist/src/models/service"
 import { MaxAllowedPaymentAmount } from "io-functions-commons/dist/generated/definitions/MaxAllowedPaymentAmount";
 
 import { left, right } from "fp-ts/lib/Either";
+import * as reporters from "italia-ts-commons/lib/reporters";
 import { Subscription } from "../../generated/api-admin/Subscription";
 import { ServicePayload } from "../../generated/definitions/ServicePayload";
 import { UpdateServiceHandler } from "../handler";
 
 const mockContext = {
-  log: {
-    // tslint:disable-next-line: no-console
-    error: console.error,
-    // tslint:disable-next-line: no-console
-    info: console.log,
-    // tslint:disable-next-line: no-console
-    verbose: console.log,
-    // tslint:disable-next-line: no-console
-    warn: console.warn
-  }
+  // tslint:disable-next-line: no-console
+  log: console.log
 } as any;
 
 afterEach(() => {
@@ -183,7 +176,7 @@ describe("UpdateServiceHandler", () => {
     expect(result.kind).toBe("IResponseErrorInternal");
   });
 
-  it("should respond with an internal error if updateService returns errors", async () => {
+  it("should respond with an internal error if updateService returns Errors", async () => {
     const apiClientMock = {
       getSubscriptionKeys: jest.fn(() =>
         Promise.resolve(right({ status: 200, value: someSubscriptionKeys }))
@@ -192,6 +185,10 @@ describe("UpdateServiceHandler", () => {
         Promise.resolve(left({ err: "ValidationError" }))
       )
     };
+
+    jest
+      .spyOn(reporters, "errorsToReadableMessages")
+      .mockImplementation(() => ["ValidationErrors"]);
 
     const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
     const result = await updateServiceHandler(
@@ -295,6 +292,9 @@ describe("UpdateServiceHandler", () => {
         Promise.resolve(right({ status: 200, value: aService }))
       )
     };
+    jest
+      .spyOn(reporters, "errorsToReadableMessages")
+      .mockImplementation(() => ["ValidationErrors"]);
 
     const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
     const result = await updateServiceHandler(

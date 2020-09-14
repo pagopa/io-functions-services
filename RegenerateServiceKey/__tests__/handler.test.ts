@@ -21,21 +21,14 @@ import { toAuthorizedCIDRs } from "io-functions-commons/dist/src/models/service"
 import { MaxAllowedPaymentAmount } from "io-functions-commons/dist/generated/definitions/MaxAllowedPaymentAmount";
 
 import { left, right } from "fp-ts/lib/Either";
+import * as reporters from "italia-ts-commons/lib/reporters";
 import { SubscriptionKeyTypeEnum } from "../../generated/api-admin/SubscriptionKeyType";
 import { SubscriptionKeyTypePayload } from "../../generated/api-admin/SubscriptionKeyTypePayload";
 import { RegenerateServiceKeyHandler } from "../handler";
 
 const mockContext = {
-  log: {
-    // tslint:disable-next-line: no-console
-    error: console.error,
-    // tslint:disable-next-line: no-console
-    info: console.log,
-    // tslint:disable-next-line: no-console
-    verbose: console.log,
-    // tslint:disable-next-line: no-console
-    warn: console.warn
-  }
+  // tslint:disable-next-line: no-console
+  log: console.log
 } as any;
 
 afterEach(() => {
@@ -210,6 +203,10 @@ describe("RegenerateServiceKeyHandler", () => {
         Promise.resolve(left({ err: "ValidationError" }))
       )
     };
+
+    jest
+      .spyOn(reporters, "errorsToReadableMessages")
+      .mockImplementation(() => ["ValidationErrors"]);
 
     const regenerateServiceKeyHandler = RegenerateServiceKeyHandler(
       apiClientMock as any

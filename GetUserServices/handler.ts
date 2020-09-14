@@ -20,7 +20,6 @@ import {
 } from "io-functions-commons/dist/src/utils/request_middleware";
 import {
   IResponseSuccessJson,
-  ResponseErrorInternal,
   ResponseSuccessJson
 } from "italia-ts-commons/lib/responses";
 import { EmailString, NonEmptyString } from "italia-ts-commons/lib/strings";
@@ -44,7 +43,12 @@ import { ContextMiddleware } from "io-functions-commons/dist/src/utils/middlewar
 import { UserInfo } from "../generated/api-admin/UserInfo";
 import { ServiceIdCollection } from "../generated/definitions/ServiceIdCollection";
 import { APIClient } from "../utils/clients/admin";
-import { ErrorResponses, toErrorServerResponse } from "../utils/responses";
+import { getLogger, ILogger } from "../utils/logging";
+import {
+  ErrorResponses,
+  toDefaultResponseErrorInternal,
+  toErrorServerResponse
+} from "../utils/responses";
 
 /**
  * Type of a GetUserServices handler.
@@ -58,7 +62,10 @@ type IGetUserServicesHandler = (
   attrs: IAzureUserAttributes
 ) => Promise<IResponseSuccessJson<ServiceIdCollection> | ErrorResponses>;
 
+const logPrefix = "GetUserServicesHandler";
+
 const getUserServicesTask = (
+  logger: ILogger,
   apiClient: ReturnType<APIClient>,
   userEmail: EmailString
 ): TaskEither<ErrorResponses, UserInfo> =>
@@ -67,12 +74,18 @@ const getUserServicesTask = (
       apiClient.getUser({
         email: userEmail
       }),
-    errs => ResponseErrorInternal(JSON.stringify(errs))
+    errs => {
+      logger.logUnknown(errs);
+      return toDefaultResponseErrorInternal(errs);
+    }
   ).foldTaskEither(
     err => fromLeft(err),
     errorOrResponse =>
       errorOrResponse.fold(
-        errs => fromLeft(ResponseErrorInternal(JSON.stringify(errs))),
+        errs => {
+          logger.logErrors(errs);
+          return fromLeft(toDefaultResponseErrorInternal(errs));
+        },
         responseType =>
           responseType.status !== 200
             ? fromLeft(toErrorServerResponse(responseType))
@@ -87,7 +100,11 @@ export function GetUserServicesHandler(
   apiClient: ReturnType<APIClient>
 ): IGetUserServicesHandler {
   return (_, __, ___, userAttributes) => {
-    return getUserServicesTask(apiClient, userAttributes.email)
+    return getUserServicesTask(
+      getLogger(_, logPrefix, "GetUserServices"),
+      apiClient,
+      userAttributes.email
+    )
       .map(userInfo =>
         ResponseSuccessJson({
           items: userInfo.subscriptions.map(it =>
