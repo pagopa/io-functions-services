@@ -37,10 +37,8 @@ import {
 } from "io-functions-commons/dist/src/utils/source_ip_check";
 
 import { Context } from "@azure/functions";
-import { left, right } from "fp-ts/lib/Either";
 import { identity } from "fp-ts/lib/function";
 import {
-  fromEither,
   fromLeft,
   taskEither,
   TaskEither,
@@ -55,9 +53,9 @@ import { APIClient } from "../utils/clients/admin";
 import {
   ErrorResponses,
   IResponseErrorUnauthorized,
-  ResponseErrorUnauthorized,
   toErrorServerResponse
 } from "../utils/responses";
+import { serviceOwnerCheck } from "../utils/subscription";
 
 type ResponseTypes =
   | IResponseSuccessJson<SubscriptionKeys>
@@ -78,13 +76,13 @@ type IRegenerateServiceKeyHandler = (
   auth: IAzureApiAuthorization,
   clientIp: ClientIp,
   attrs: IAzureUserAttributes,
-  serviceId: string,
+  serviceId: NonEmptyString,
   subscriptionKeyTypePayload: SubscriptionKeyTypePayload
 ) => Promise<ResponseTypes>;
 
 const regenerateServiceKeyTask = (
   apiClient: ReturnType<APIClient>,
-  serviceId: string,
+  serviceId: NonEmptyString,
   subscriptionKeyTypePayload: SubscriptionKeyTypePayload
 ): TaskEither<ErrorResponses, IResponseSuccessJson<SubscriptionKeys>> =>
   tryCatch(
@@ -113,15 +111,10 @@ export function RegenerateServiceKeyHandler(
   apiClient: ReturnType<APIClient>
 ): IRegenerateServiceKeyHandler {
   return (_, apiAuth, ___, ____, serviceId, subscriptionKeyTypePayload) => {
-    return fromEither<ErrorResponses, {}>(
-      serviceId !== apiAuth.subscriptionId
-        ? left(
-            ResponseErrorUnauthorized(
-              "Unauthorized",
-              "You are not allowed to regenerate keys for this service"
-            )
-          )
-        : right({})
+    return serviceOwnerCheck(
+      serviceId,
+      apiAuth.subscriptionId,
+      "You are not allowed to regenerate keys for this service"
     )
       .chain(() =>
         regenerateServiceKeyTask(

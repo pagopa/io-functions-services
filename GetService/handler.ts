@@ -33,10 +33,8 @@ import {
 } from "io-functions-commons/dist/src/utils/source_ip_check";
 
 import { Context } from "@azure/functions";
-import { left, right } from "fp-ts/lib/Either";
 import { identity } from "fp-ts/lib/function";
 import {
-  fromEither,
   fromLeft,
   taskEither,
   TaskEither,
@@ -48,11 +46,8 @@ import { Service } from "../generated/api-admin/Service";
 import { SubscriptionKeys } from "../generated/api-admin/SubscriptionKeys";
 import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWithSubscriptionKeys";
 import { APIClient } from "../utils/clients/admin";
-import {
-  ErrorResponses,
-  ResponseErrorUnauthorized,
-  toErrorServerResponse
-} from "../utils/responses";
+import { ErrorResponses, toErrorServerResponse } from "../utils/responses";
+import { serviceOwnerCheck } from "../utils/subscription";
 
 /**
  * Type of a GetService handler.
@@ -66,7 +61,7 @@ type IGetServiceHandler = (
   auth: IAzureApiAuthorization,
   clientIp: ClientIp,
   attrs: IAzureUserAttributes,
-  serviceId: string
+  serviceId: NonEmptyString
 ) => Promise<
   IResponseSuccessJson<ServiceWithSubscriptionKeys> | ErrorResponses
 >;
@@ -122,15 +117,10 @@ export function GetServiceHandler(
   apiClient: ReturnType<APIClient>
 ): IGetServiceHandler {
   return (_, apiAuth, ___, ____, serviceId) => {
-    return fromEither<ErrorResponses, {}>(
-      serviceId !== apiAuth.subscriptionId
-        ? left(
-            ResponseErrorUnauthorized(
-              "Unauthorized",
-              "You are not allowed to get this service"
-            )
-          )
-        : right({})
+    return serviceOwnerCheck(
+      serviceId,
+      apiAuth.subscriptionId,
+      "You are not allowed to get this service"
     )
       .chain(() =>
         getServiceTask(apiClient, serviceId).chain(service =>

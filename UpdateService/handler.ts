@@ -35,10 +35,8 @@ import {
 } from "io-functions-commons/dist/src/utils/source_ip_check";
 
 import { Context } from "@azure/functions";
-import { left, right } from "fp-ts/lib/Either";
 import { identity } from "fp-ts/lib/function";
 import {
-  fromEither,
   fromLeft,
   taskEither,
   TaskEither,
@@ -56,9 +54,9 @@ import { APIClient } from "../utils/clients/admin";
 import {
   ErrorResponses,
   IResponseErrorUnauthorized,
-  ResponseErrorUnauthorized,
   toErrorServerResponse
 } from "../utils/responses";
+import { serviceOwnerCheck } from "../utils/subscription";
 
 type ResponseTypes =
   | IResponseSuccessJson<ServiceWithSubscriptionKeys>
@@ -140,15 +138,10 @@ export function UpdateServiceHandler(
   apiClient: ReturnType<APIClient>
 ): IUpdateServiceHandler {
   return (_, apiAuth, ___, ____, serviceId, servicePayload) => {
-    return fromEither<ErrorResponses, {}>(
-      serviceId !== apiAuth.subscriptionId
-        ? left(
-            ResponseErrorUnauthorized(
-              "Unauthorized",
-              "You are not allowed to update this service"
-            )
-          )
-        : right({})
+    return serviceOwnerCheck(
+      serviceId,
+      apiAuth.subscriptionId,
+      "You are not allowed to update this service"
     )
       .chain(() =>
         updateServiceTask(apiClient, servicePayload, serviceId).chain(service =>

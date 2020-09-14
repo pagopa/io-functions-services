@@ -20,6 +20,7 @@ export const unhandledResponseStatus = (status: number) =>
 
 export const toDefaultResponseErrorInternal = (errs: unknown | Errors) =>
   ResponseErrorInternal(toError(errs).message);
+
 /**
  * Interface for unauthorized error response.
  */
