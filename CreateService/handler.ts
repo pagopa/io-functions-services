@@ -47,13 +47,13 @@ import {
   ObjectIdGenerator,
   ulidGenerator
 } from "io-functions-commons/dist/src/utils/strings";
-import { errorsToReadableMessages } from "italia-ts-commons/lib/reporters";
 import { EmailString, NonEmptyString } from "italia-ts-commons/lib/strings";
 import { Service } from "../generated/api-admin/Service";
 import { Subscription } from "../generated/api-admin/Subscription";
 import { ServicePayload } from "../generated/definitions/ServicePayload";
 import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWithSubscriptionKeys";
 import { APIClient } from "../utils/clients/admin";
+import { defaultErrsLog, ErrorsLogType } from "../utils/logging";
 import {
   ErrorResponses,
   IResponseErrorUnauthorized,
@@ -70,6 +70,7 @@ type ResponseTypes =
   | IResponseErrorInternal;
 
 const logPrefix = "CreateServiceHandler";
+
 /**
  * Type of a CreateService handler.
  *
@@ -85,7 +86,7 @@ type ICreateServiceHandler = (
 ) => Promise<ResponseTypes>;
 
 const createSubscriptionTask = (
-  context: Context,
+  errsLog: ErrorsLogType,
   apiClient: ReturnType<APIClient>,
   userEmail: EmailString,
   subscriptionId: NonEmptyString,
@@ -101,11 +102,7 @@ const createSubscriptionTask = (
         subscription_id: subscriptionId
       }),
     errs => {
-      context.log(
-        `${logPrefix}| createSubscriptionTask on call errs=${JSON.stringify(
-          errs
-        )}`
-      );
+      errsLog(errs);
       return toDefaultResponseErrorInternal(errs);
     }
   ).foldTaskEither(
@@ -113,11 +110,7 @@ const createSubscriptionTask = (
     errorOrResponse =>
       errorOrResponse.fold(
         errs => {
-          context.log(
-            `${logPrefix}| createSubscriptionTask Errors=${errorsToReadableMessages(
-              errs
-            )}`
-          );
+          errsLog(errs);
           return fromLeft(toDefaultResponseErrorInternal(errs));
         },
         responseType =>
@@ -127,7 +120,7 @@ const createSubscriptionTask = (
       )
   );
 const createServiceTask = (
-  context: Context,
+  errsLog: ErrorsLogType,
   apiClient: ReturnType<APIClient>,
   servicePayload: ServicePayload,
   subscriptionId: NonEmptyString
@@ -142,9 +135,7 @@ const createServiceTask = (
         }
       }),
     errs => {
-      context.log(
-        `${logPrefix}| createServiceTask on call errs=${JSON.stringify(errs)}`
-      );
+      errsLog(errs);
       return toDefaultResponseErrorInternal(errs);
     }
   ).foldTaskEither(
@@ -152,11 +143,7 @@ const createServiceTask = (
     errorOrResponse =>
       errorOrResponse.fold(
         errs => {
-          context.log(
-            `${logPrefix}| createServiceTask Errors=${errorsToReadableMessages(
-              errs
-            )}`
-          );
+          errsLog(errs);
           return fromLeft(toDefaultResponseErrorInternal(errs));
         },
         responseType =>
@@ -180,7 +167,7 @@ export function CreateServiceHandler(
       `${logPrefix}| Creating new service with subscriptionId=${subscriptionId}`
     );
     return createSubscriptionTask(
-      context,
+      defaultErrsLog(context, logPrefix, "CreateSubscription"),
       apiClient,
       userAttributes.email,
       subscriptionId,
@@ -188,7 +175,7 @@ export function CreateServiceHandler(
     )
       .chain(subscription =>
         createServiceTask(
-          context,
+          defaultErrsLog(context, logPrefix, "CreateService"),
           apiClient,
           servicePayload,
           subscriptionId
