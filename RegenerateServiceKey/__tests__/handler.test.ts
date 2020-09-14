@@ -23,7 +23,7 @@ import { MaxAllowedPaymentAmount } from "io-functions-commons/dist/generated/def
 import { left, right } from "fp-ts/lib/Either";
 import { SubscriptionKeyTypeEnum } from "../../generated/api-admin/SubscriptionKeyType";
 import { SubscriptionKeyTypePayload } from "../../generated/api-admin/SubscriptionKeyTypePayload";
-import { GetRegenerateServiceKeyHandler } from "../handler";
+import { RegenerateServiceKeyHandler } from "../handler";
 
 const mockContext = {
   log: {
@@ -94,7 +94,7 @@ const aUserAuthenticationDeveloper: IAzureApiAuthorization = {
   userId: "u123" as NonEmptyString
 };
 
-describe("GetRegenerateServiceKeyHandler", () => {
+describe("RegenerateServiceKeyHandler", () => {
   it("should respond with a regenerated subscription primary key", async () => {
     const apiClientMock = {
       RegenerateSubscriptionKeys: jest.fn(() =>
@@ -104,10 +104,10 @@ describe("GetRegenerateServiceKeyHandler", () => {
       )
     };
 
-    const getRegenerateServiceKeyHandler = GetRegenerateServiceKeyHandler(
+    const regenerateServiceKeyHandler = RegenerateServiceKeyHandler(
       apiClientMock as any
     );
-    const result = await getRegenerateServiceKeyHandler(
+    const result = await regenerateServiceKeyHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
@@ -132,10 +132,10 @@ describe("GetRegenerateServiceKeyHandler", () => {
       )
     };
 
-    const getRegenerateServiceKeyHandler = GetRegenerateServiceKeyHandler(
+    const regenerateServiceKeyHandler = RegenerateServiceKeyHandler(
       apiClientMock as any
     );
-    const result = await getRegenerateServiceKeyHandler(
+    const result = await regenerateServiceKeyHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
@@ -151,6 +151,35 @@ describe("GetRegenerateServiceKeyHandler", () => {
     }
   });
 
+  it("should respond with an Unauthorized error if service is no owned by current user", async () => {
+    const apiClientMock = {
+      RegenerateSubscriptionKeys: jest.fn(() =>
+        Promise.resolve(
+          right({ status: 200, value: regeneratedPrimarySubscriptionKeys })
+        )
+      )
+    };
+
+    const regenerateServiceKeyHandler = RegenerateServiceKeyHandler(
+      apiClientMock as any
+    );
+    const result = await regenerateServiceKeyHandler(
+      mockContext,
+      aUserAuthenticationDeveloper,
+      undefined as any, // not used
+      someUserAttributes,
+      "aServiceId" as NonEmptyString,
+      { key_type: SubscriptionKeyTypeEnum.SECONDARY_KEY }
+    );
+
+    expect(result.kind).toBe("IResponseErrorUnauthorized");
+    if (result.kind === "IResponseErrorUnauthorized") {
+      expect(result.detail).toEqual(
+        "Unauthorized: You are not allowed to regenerate keys for this service"
+      );
+    }
+  });
+
   it("should respond with an internal error if RegenerateSubscriptionKeys does not respond", async () => {
     const apiClientMock = {
       RegenerateSubscriptionKeys: jest.fn(() =>
@@ -158,10 +187,10 @@ describe("GetRegenerateServiceKeyHandler", () => {
       )
     };
 
-    const getRegenerateServiceKeyHandler = GetRegenerateServiceKeyHandler(
+    const regenerateServiceKeyHandler = RegenerateServiceKeyHandler(
       apiClientMock as any
     );
-    const result = await getRegenerateServiceKeyHandler(
+    const result = await regenerateServiceKeyHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
@@ -182,10 +211,10 @@ describe("GetRegenerateServiceKeyHandler", () => {
       )
     };
 
-    const getRegenerateServiceKeyHandler = GetRegenerateServiceKeyHandler(
+    const regenerateServiceKeyHandler = RegenerateServiceKeyHandler(
       apiClientMock as any
     );
-    const result = await getRegenerateServiceKeyHandler(
+    const result = await regenerateServiceKeyHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
@@ -206,10 +235,10 @@ describe("GetRegenerateServiceKeyHandler", () => {
       )
     };
 
-    const getRegenerateServiceKeyHandler = GetRegenerateServiceKeyHandler(
+    const regenerateServiceKeyHandler = RegenerateServiceKeyHandler(
       apiClientMock as any
     );
-    const result = await getRegenerateServiceKeyHandler(
+    const result = await regenerateServiceKeyHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
@@ -233,10 +262,10 @@ describe("GetRegenerateServiceKeyHandler", () => {
       )
     };
 
-    const getRegenerateServiceKeyHandler = GetRegenerateServiceKeyHandler(
+    const regenerateServiceKeyHandler = RegenerateServiceKeyHandler(
       apiClientMock as any
     );
-    const result = await getRegenerateServiceKeyHandler(
+    const result = await regenerateServiceKeyHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
@@ -257,10 +286,10 @@ describe("GetRegenerateServiceKeyHandler", () => {
       )
     };
 
-    const getRegenerateServiceKeyHandler = GetRegenerateServiceKeyHandler(
+    const regenerateServiceKeyHandler = RegenerateServiceKeyHandler(
       apiClientMock as any
     );
-    const result = await getRegenerateServiceKeyHandler(
+    const result = await regenerateServiceKeyHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used

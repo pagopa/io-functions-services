@@ -23,7 +23,7 @@ import { MaxAllowedPaymentAmount } from "io-functions-commons/dist/generated/def
 import { left, right } from "fp-ts/lib/Either";
 import { Subscription } from "../../generated/api-admin/Subscription";
 import { ServicePayload } from "../../generated/definitions/ServicePayload";
-import { GetCreateServiceHandler } from "../handler";
+import { CreateServiceHandler } from "../handler";
 
 const mockContext = {
   log: {
@@ -96,7 +96,7 @@ const aUserAuthenticationDeveloper: IAzureApiAuthorization = {
 
 const mockUlidGenerator = jest.fn(() => aServiceId);
 
-describe("GetCreateServiceHandler", () => {
+describe("CreateServiceHandler", () => {
   it("should respond with a created service with subscriptionKeys by providing a servicePayload", async () => {
     const apiClientMock = {
       createService: jest.fn(() =>
@@ -107,11 +107,11 @@ describe("GetCreateServiceHandler", () => {
       )
     };
 
-    const getCreateServiceHandler = GetCreateServiceHandler(
+    const createServiceHandler = CreateServiceHandler(
       apiClientMock as any,
       mockUlidGenerator as any
     );
-    const result = await getCreateServiceHandler(
+    const result = await createServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
@@ -138,11 +138,11 @@ describe("GetCreateServiceHandler", () => {
       createSubscription: jest.fn(() => Promise.reject(new Error("Timeout")))
     };
 
-    const getCreateServiceHandler = GetCreateServiceHandler(
+    const createServiceHandler = CreateServiceHandler(
       apiClientMock as any,
       mockUlidGenerator as any
     );
-    const result = await getCreateServiceHandler(
+    const result = await createServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
@@ -166,11 +166,11 @@ describe("GetCreateServiceHandler", () => {
       )
     };
 
-    const getCreateServiceHandler = GetCreateServiceHandler(
+    const createServiceHandler = CreateServiceHandler(
       apiClientMock as any,
       mockUlidGenerator as any
     );
-    const result = await getCreateServiceHandler(
+    const result = await createServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
@@ -192,11 +192,11 @@ describe("GetCreateServiceHandler", () => {
       createSubscription: jest.fn(() => Promise.resolve(right({ status: 400 })))
     };
 
-    const getCreateServiceHandler = GetCreateServiceHandler(
+    const createServiceHandler = CreateServiceHandler(
       apiClientMock as any,
       mockUlidGenerator as any
     );
-    const result = await getCreateServiceHandler(
+    const result = await createServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
@@ -218,11 +218,11 @@ describe("GetCreateServiceHandler", () => {
       createSubscription: jest.fn(() => Promise.resolve(right({ status: 403 })))
     };
 
-    const getCreateServiceHandler = GetCreateServiceHandler(
+    const createServiceHandler = CreateServiceHandler(
       apiClientMock as any,
       mockUlidGenerator as any
     );
-    const result = await getCreateServiceHandler(
+    const result = await createServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
@@ -244,11 +244,11 @@ describe("GetCreateServiceHandler", () => {
       createSubscription: jest.fn(() => Promise.resolve(right({ status: 404 })))
     };
 
-    const getCreateServiceHandler = GetCreateServiceHandler(
+    const createServiceHandler = CreateServiceHandler(
       apiClientMock as any,
       mockUlidGenerator as any
     );
-    const result = await getCreateServiceHandler(
+    const result = await createServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
@@ -273,11 +273,11 @@ describe("GetCreateServiceHandler", () => {
       )
     };
 
-    const getCreateServiceHandler = GetCreateServiceHandler(
+    const createServiceHandler = CreateServiceHandler(
       apiClientMock as any,
       mockUlidGenerator as any
     );
-    const result = await getCreateServiceHandler(
+    const result = await createServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
@@ -301,11 +301,11 @@ describe("GetCreateServiceHandler", () => {
       )
     };
 
-    const getCreateServiceHandler = GetCreateServiceHandler(
+    const createServiceHandler = CreateServiceHandler(
       apiClientMock as any,
       mockUlidGenerator as any
     );
-    const result = await getCreateServiceHandler(
+    const result = await createServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
@@ -326,11 +326,11 @@ describe("GetCreateServiceHandler", () => {
       )
     };
 
-    const getCreateServiceHandler = GetCreateServiceHandler(
+    const createServiceHandler = CreateServiceHandler(
       apiClientMock as any,
       mockUlidGenerator as any
     );
-    const result = await getCreateServiceHandler(
+    const result = await createServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used

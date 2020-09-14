@@ -23,7 +23,7 @@ import { MaxAllowedPaymentAmount } from "io-functions-commons/dist/generated/def
 import { left, right } from "fp-ts/lib/Either";
 import { Subscription } from "../../generated/api-admin/Subscription";
 import { ServicePayload } from "../../generated/definitions/ServicePayload";
-import { GetUpdateServiceHandler } from "../handler";
+import { UpdateServiceHandler } from "../handler";
 
 const mockContext = {
   log: {
@@ -96,7 +96,7 @@ const aUserAuthenticationDeveloper: IAzureApiAuthorization = {
 
 const mockUlidGenerator = jest.fn(() => aServiceId);
 
-describe("GetUpdateServiceHandler", () => {
+describe("UpdateServiceHandler", () => {
   it("should respond with an updated service with subscriptionKeys by providing a servicePayload", async () => {
     const apiClientMock = {
       getSubscriptionKeys: jest.fn(() =>
@@ -107,10 +107,8 @@ describe("GetUpdateServiceHandler", () => {
       )
     };
 
-    const getUpdateServiceHandler = GetUpdateServiceHandler(
-      apiClientMock as any
-    );
-    const result = await getUpdateServiceHandler(
+    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
@@ -130,7 +128,7 @@ describe("GetUpdateServiceHandler", () => {
     }
   });
 
-  it("should respond with an internal error if service is not owned by current user", async () => {
+  it("should respond with an Unauthorized error if service is not owned by current user", async () => {
     const apiClientMock = {
       getSubscriptionKeys: jest.fn(() =>
         Promise.resolve(right({ status: 200, value: someSubscriptionKeys }))
@@ -140,10 +138,8 @@ describe("GetUpdateServiceHandler", () => {
       )
     };
 
-    const getUpdateServiceHandler = GetUpdateServiceHandler(
-      apiClientMock as any
-    );
-    const result = await getUpdateServiceHandler(
+    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
@@ -171,10 +167,8 @@ describe("GetUpdateServiceHandler", () => {
       updateService: jest.fn(() => Promise.reject(new Error("Timeout")))
     };
 
-    const getUpdateServiceHandler = GetUpdateServiceHandler(
-      apiClientMock as any
-    );
-    const result = await getUpdateServiceHandler(
+    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
@@ -199,10 +193,8 @@ describe("GetUpdateServiceHandler", () => {
       )
     };
 
-    const getUpdateServiceHandler = GetUpdateServiceHandler(
-      apiClientMock as any
-    );
-    const result = await getUpdateServiceHandler(
+    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
@@ -225,10 +217,8 @@ describe("GetUpdateServiceHandler", () => {
       updateService: jest.fn(() => Promise.resolve(right({ status: 401 })))
     };
 
-    const getUpdateServiceHandler = GetUpdateServiceHandler(
-      apiClientMock as any
-    );
-    const result = await getUpdateServiceHandler(
+    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
@@ -254,10 +244,8 @@ describe("GetUpdateServiceHandler", () => {
       updateService: jest.fn(() => Promise.resolve(right({ status: 404 })))
     };
 
-    const getUpdateServiceHandler = GetUpdateServiceHandler(
-      apiClientMock as any
-    );
-    const result = await getUpdateServiceHandler(
+    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
@@ -283,10 +271,8 @@ describe("GetUpdateServiceHandler", () => {
       )
     };
 
-    const getUpdateServiceHandler = GetUpdateServiceHandler(
-      apiClientMock as any
-    );
-    const result = await getUpdateServiceHandler(
+    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
@@ -310,10 +296,8 @@ describe("GetUpdateServiceHandler", () => {
       )
     };
 
-    const getUpdateServiceHandler = GetUpdateServiceHandler(
-      apiClientMock as any
-    );
-    const result = await getUpdateServiceHandler(
+    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
@@ -338,10 +322,8 @@ describe("GetUpdateServiceHandler", () => {
       )
     };
 
-    const getUpdateServiceHandler = GetUpdateServiceHandler(
-      apiClientMock as any
-    );
-    const result = await getUpdateServiceHandler(
+    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
@@ -366,10 +348,8 @@ describe("GetUpdateServiceHandler", () => {
       )
     };
 
-    const getUpdateServiceHandler = GetUpdateServiceHandler(
-      apiClientMock as any
-    );
-    const result = await getUpdateServiceHandler(
+    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used
@@ -394,10 +374,8 @@ describe("GetUpdateServiceHandler", () => {
       )
     };
 
-    const getUpdateServiceHandler = GetUpdateServiceHandler(
-      apiClientMock as any
-    );
-    const result = await getUpdateServiceHandler(
+    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
       undefined as any, // not used

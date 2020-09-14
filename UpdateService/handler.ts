@@ -69,12 +69,12 @@ type ResponseTypes =
   | IResponseErrorInternal;
 
 /**
- * Type of a GetUpdateService handler.
+ * Type of a UpdateService handler.
  *
- * GetUpdateService expects a service_id and a service payload as input
+ * UpdateService expects a service_id and a service payload as input
  * and returns updated service with subscription keys
  */
-type IGetCreateServiceHandler = (
+type IUpdateServiceHandler = (
   context: Context,
   auth: IAzureApiAuthorization,
   clientIp: ClientIp,
@@ -95,8 +95,8 @@ const getSubscriptionKeysTask = (
     errs => ResponseErrorInternal(JSON.stringify(errs))
   ).foldTaskEither(
     err => fromLeft(err),
-    maybeResponse =>
-      maybeResponse.fold(
+    errorOResponse =>
+      errorOResponse.fold(
         errs => fromLeft(ResponseErrorInternal(JSON.stringify(errs))),
         responseType =>
           responseType.status !== 200
@@ -108,64 +108,56 @@ const getSubscriptionKeysTask = (
 const updateServiceTask = (
   apiClient: ReturnType<APIClient>,
   servicePayload: ServicePayload,
-  serviceId: NonEmptyString,
-  subscriptionId: NonEmptyString
+  serviceId: NonEmptyString
 ): TaskEither<ErrorResponses, Service> =>
-  fromEither<IResponseErrorUnauthorized, {}>(
-    serviceId !== subscriptionId
-      ? left(
-          ResponseErrorUnauthorized(
-            "Unauthorized",
-            "You are not allowed to update this service"
-          )
-        )
-      : right({})
+  tryCatch(
+    () =>
+      apiClient.updateService({
+        service: {
+          ...servicePayload,
+          authorized_recipients: [],
+          service_id: serviceId
+        },
+        service_id: serviceId
+      }),
+    errs => ResponseErrorInternal(JSON.stringify(errs))
   ).foldTaskEither(
-    e => fromLeft(e),
-    _ =>
-      tryCatch(
-        () =>
-          apiClient.updateService({
-            service: {
-              ...servicePayload,
-              authorized_recipients: [],
-              service_id: subscriptionId
-            },
-            service_id: serviceId
-          }),
-        errs => ResponseErrorInternal(JSON.stringify(errs))
-      ).foldTaskEither(
-        err => fromLeft(err),
-        maybeResponse =>
-          maybeResponse.fold(
-            errs => fromLeft(ResponseErrorInternal(JSON.stringify(errs))),
-            responseType =>
-              responseType.status !== 200
-                ? fromLeft(toErrorServerResponse(responseType))
-                : taskEither.of(responseType.value)
-          )
+    err => fromLeft(err),
+    errorOResponse =>
+      errorOResponse.fold(
+        errs => fromLeft(ResponseErrorInternal(JSON.stringify(errs))),
+        responseType =>
+          responseType.status !== 200
+            ? fromLeft(toErrorServerResponse(responseType))
+            : taskEither.of(responseType.value)
       )
   );
 
 /**
  * Handles requests for updating a service by given serviceId and a Service Payload.
  */
-export function GetUpdateServiceHandler(
+export function UpdateServiceHandler(
   apiClient: ReturnType<APIClient>
-): IGetCreateServiceHandler {
+): IUpdateServiceHandler {
   return (_, apiAuth, ___, ____, serviceId, servicePayload) => {
-    return updateServiceTask(
-      apiClient,
-      servicePayload,
-      serviceId,
-      apiAuth.subscriptionId
+    return fromEither<ErrorResponses, {}>(
+      serviceId !== apiAuth.subscriptionId
+        ? left(
+            ResponseErrorUnauthorized(
+              "Unauthorized",
+              "You are not allowed to update this service"
+            )
+          )
+        : right({})
     )
-      .chain(service =>
-        getSubscriptionKeysTask(apiClient, serviceId).map(subscriptionKeys =>
-          ResponseSuccessJson({
-            ...service,
-            ...subscriptionKeys
-          })
+      .chain(() =>
+        updateServiceTask(apiClient, servicePayload, serviceId).chain(service =>
+          getSubscriptionKeysTask(apiClient, serviceId).map(subscriptionKeys =>
+            ResponseSuccessJson({
+              ...service,
+              ...subscriptionKeys
+            })
+          )
         )
       )
       .fold<ResponseTypes>(identity, identity)
@@ -174,13 +166,13 @@ export function GetUpdateServiceHandler(
 }
 
 /**
- * Wraps a GetUpdateService handler inside an Express request handler.
+ * Wraps a UpdateService handler inside an Express request handler.
  */
-export function GetUpdateService(
+export function UpdateService(
   serviceModel: ServiceModel,
   client: ReturnType<APIClient>
 ): express.RequestHandler {
-  const handler = GetUpdateServiceHandler(client);
+  const handler = UpdateServiceHandler(client);
   const middlewaresWrap = withRequestMiddlewares(
     ContextMiddleware(),
     AzureApiAuthMiddleware(new Set([UserGroup.ApiServiceWrite])),

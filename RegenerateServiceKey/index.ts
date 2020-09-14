@@ -12,7 +12,7 @@ import { setAppContext } from "io-functions-commons/dist/src/utils/middlewares/c
 import createAzureFunctionHandler from "io-functions-express/dist/src/createAzureFunctionsHandler";
 
 import { getApiClient } from "../utils/apiclient";
-import { GetRegenerateServiceKey } from "./handler";
+import { RegenerateServiceKey } from "./handler";
 
 // Setup Express
 const app = express();
@@ -24,9 +24,9 @@ const serviceModel = new ServiceModel(
   cosmosdbInstance.container(SERVICE_COLLECTION_NAME)
 );
 
-app.get(
+app.put(
   "/api/v1/services/:service_id/keys",
-  GetRegenerateServiceKey(serviceModel, client)
+  RegenerateServiceKey(serviceModel, client)
 );
 
 const azureFunctionHandler = createAzureFunctionHandler(app);

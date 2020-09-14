@@ -109,6 +109,31 @@ describe("GetUploadServiceLogoHandler", () => {
     }
   });
 
+  it("should respond with an Unauthorized error if service is no owned by current user", async () => {
+    const apiClientMock = {
+      uploadServiceLogo: jest.fn(() => Promise.resolve(right({ status: 201 })))
+    };
+
+    const getUploadServiceLogoHandler = GetUploadServiceLogoHandler(
+      apiClientMock as any
+    );
+    const result = await getUploadServiceLogoHandler(
+      mockContext,
+      aUserAuthenticationDeveloper,
+      undefined as any, // not used
+      someUserAttributes,
+      "aServiceId" as NonEmptyString,
+      aLogoPayload
+    );
+
+    expect(result.kind).toBe("IResponseErrorUnauthorized");
+    if (result.kind === "IResponseErrorUnauthorized") {
+      expect(result.detail).toEqual(
+        "Unauthorized: You are not allowed to upload a logo for this service"
+      );
+    }
+  });
+
   it("should respond with an internal error if upload service logo does not respond", async () => {
     const apiClientMock = {
       uploadServiceLogo: jest.fn(() => Promise.reject(new Error("Timeout")))

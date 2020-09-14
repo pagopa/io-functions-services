@@ -70,8 +70,8 @@ const getUserServicesTask = (
     errs => ResponseErrorInternal(JSON.stringify(errs))
   ).foldTaskEither(
     err => fromLeft(err),
-    maybeResponse =>
-      maybeResponse.fold(
+    errorOResponse =>
+      errorOResponse.fold(
         errs => fromLeft(ResponseErrorInternal(JSON.stringify(errs))),
         responseType =>
           responseType.status !== 200

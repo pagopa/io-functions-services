@@ -24,7 +24,7 @@ const serviceModel = new ServiceModel(
   cosmosdbInstance.container(SERVICE_COLLECTION_NAME)
 );
 
-app.get(
+app.put(
   "/api/v1/services/:service_id/logo",
   GetUploadServiceLogo(serviceModel, client)
 );

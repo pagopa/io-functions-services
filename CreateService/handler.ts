@@ -68,15 +68,13 @@ type ResponseTypes =
   | IResponseErrorTooManyRequests
   | IResponseErrorInternal;
 
-const productName = "IO-SERVICES-API" as NonEmptyString;
-
 /**
- * Type of a GetCreateService handler.
+ * Type of a CreateService handler.
  *
- * GetCreateService expects a service payload as input
+ * CreateService expects a service payload as input
  * and returns service with subscription keys
  */
-type IGetCreateServiceHandler = (
+type ICreateServiceHandler = (
   context: Context,
   auth: IAzureApiAuthorization,
   clientIp: ClientIp,
@@ -87,7 +85,8 @@ type IGetCreateServiceHandler = (
 const createSubscriptionTask = (
   apiClient: ReturnType<APIClient>,
   userEmail: EmailString,
-  subscriptionId: NonEmptyString
+  subscriptionId: NonEmptyString,
+  productName: NonEmptyString
 ): TaskEither<ErrorResponses, Subscription> =>
   tryCatch(
     () =>
@@ -101,8 +100,8 @@ const createSubscriptionTask = (
     errs => ResponseErrorInternal(JSON.stringify(errs))
   ).foldTaskEither(
     err => fromLeft(err),
-    maybeResponse =>
-      maybeResponse.fold(
+    errorOResponse =>
+      errorOResponse.fold(
         errs => fromLeft(ResponseErrorInternal(JSON.stringify(errs))),
         responseType =>
           responseType.status !== 200
@@ -127,8 +126,8 @@ const createServiceTask = (
     errs => ResponseErrorInternal(JSON.stringify(errs))
   ).foldTaskEither(
     err => fromLeft(err),
-    maybeResponse =>
-      maybeResponse.fold(
+    errorOResponse =>
+      errorOResponse.fold(
         errs => fromLeft(ResponseErrorInternal(JSON.stringify(errs))),
         responseType =>
           responseType.status !== 200
@@ -140,16 +139,18 @@ const createServiceTask = (
 /**
  * Handles requests for create a service by a Service Payload.
  */
-export function GetCreateServiceHandler(
+export function CreateServiceHandler(
   apiClient: ReturnType<APIClient>,
-  generateObjectId: ObjectIdGenerator
-): IGetCreateServiceHandler {
+  generateObjectId: ObjectIdGenerator,
+  productName: NonEmptyString
+): ICreateServiceHandler {
   return (_, __, ___, userAttributes, servicePayload) => {
     const subscriptionId = generateObjectId();
     return createSubscriptionTask(
       apiClient,
       userAttributes.email,
-      subscriptionId
+      subscriptionId,
+      productName
     )
       .chain(subscription =>
         createServiceTask(apiClient, servicePayload, subscriptionId).map(
@@ -167,13 +168,14 @@ export function GetCreateServiceHandler(
 }
 
 /**
- * Wraps a GetCreateService handler inside an Express request handler.
+ * Wraps a CreateService handler inside an Express request handler.
  */
-export function GetCreateService(
+export function CreateService(
   serviceModel: ServiceModel,
-  client: ReturnType<APIClient>
+  client: ReturnType<APIClient>,
+  productName: NonEmptyString
 ): express.RequestHandler {
-  const handler = GetCreateServiceHandler(client, ulidGenerator);
+  const handler = CreateServiceHandler(client, ulidGenerator, productName);
   const middlewaresWrap = withRequestMiddlewares(
     ContextMiddleware(),
     AzureApiAuthMiddleware(new Set([UserGroup.ApiServiceWrite])),

@@ -37,8 +37,10 @@ import {
 } from "io-functions-commons/dist/src/utils/source_ip_check";
 
 import { Context } from "@azure/functions";
+import { left, right } from "fp-ts/lib/Either";
 import { identity } from "fp-ts/lib/function";
 import {
+  fromEither,
   fromLeft,
   taskEither,
   TaskEither,
@@ -52,6 +54,7 @@ import { APIClient } from "../utils/clients/admin";
 import {
   ErrorResponses,
   IResponseErrorUnauthorized,
+  ResponseErrorUnauthorized,
   toErrorServerResponse
 } from "../utils/responses";
 
@@ -92,8 +95,8 @@ const uploadServiceLogoTask = (
     errs => ResponseErrorInternal(JSON.stringify(errs))
   ).foldTaskEither(
     err => fromLeft(err),
-    maybeResponse =>
-      maybeResponse.fold(
+    errorOResponse =>
+      errorOResponse.fold(
         errs => fromLeft(ResponseErrorInternal(JSON.stringify(errs))),
         responseType =>
           responseType.status !== 201
@@ -108,8 +111,18 @@ const uploadServiceLogoTask = (
 export function GetUploadServiceLogoHandler(
   apiClient: ReturnType<APIClient>
 ): IGetUploadServiceLogoHandler {
-  return (_, __, ___, ____, serviceId, logoPayload) => {
-    return uploadServiceLogoTask(apiClient, serviceId, logoPayload)
+  return (_, apiAuth, ___, ____, serviceId, logoPayload) => {
+    return fromEither<ErrorResponses, {}>(
+      serviceId !== apiAuth.subscriptionId
+        ? left(
+            ResponseErrorUnauthorized(
+              "Unauthorized",
+              "You are not allowed to upload a logo for this service"
+            )
+          )
+        : right({})
+    )
+      .chain(() => uploadServiceLogoTask(apiClient, serviceId, logoPayload))
       .fold<ResponseTypes>(identity, identity)
       .run();
   };

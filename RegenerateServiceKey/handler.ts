@@ -37,8 +37,10 @@ import {
 } from "io-functions-commons/dist/src/utils/source_ip_check";
 
 import { Context } from "@azure/functions";
+import { left, right } from "fp-ts/lib/Either";
 import { identity } from "fp-ts/lib/function";
 import {
+  fromEither,
   fromLeft,
   taskEither,
   TaskEither,
@@ -53,6 +55,7 @@ import { APIClient } from "../utils/clients/admin";
 import {
   ErrorResponses,
   IResponseErrorUnauthorized,
+  ResponseErrorUnauthorized,
   toErrorServerResponse
 } from "../utils/responses";
 
@@ -67,10 +70,10 @@ type ResponseTypes =
 /**
  * Type of a GetRegenerateServiceKeyHandler handler.
  *
- * GetRegenerateServiceKey expects a service ID and a subscriptionKeyType as input
+ * RegenerateServiceKey expects a service ID and a subscriptionKeyType as input
  * and returns regenerated subscriptionkeys as outcome
  */
-type IGetRegenerateServiceKeyHandler = (
+type IRegenerateServiceKeyHandler = (
   context: Context,
   auth: IAzureApiAuthorization,
   clientIp: ClientIp,
@@ -93,8 +96,8 @@ const regenerateServiceKeyTask = (
     errs => ResponseErrorInternal(JSON.stringify(errs))
   ).foldTaskEither(
     err => fromLeft(err),
-    maybeResponse =>
-      maybeResponse.fold(
+    errorOResponse =>
+      errorOResponse.fold(
         errs => fromLeft(ResponseErrorInternal(JSON.stringify(errs))),
         responseType =>
           responseType.status !== 200
@@ -106,28 +109,40 @@ const regenerateServiceKeyTask = (
 /**
  * Handles requests for upload a service logo by a service ID and a base64 logo' s string.
  */
-export function GetRegenerateServiceKeyHandler(
+export function RegenerateServiceKeyHandler(
   apiClient: ReturnType<APIClient>
-): IGetRegenerateServiceKeyHandler {
-  return (_, __, ___, ____, serviceId, subscriptionKeyTypePayload) => {
-    return regenerateServiceKeyTask(
-      apiClient,
-      serviceId,
-      subscriptionKeyTypePayload
+): IRegenerateServiceKeyHandler {
+  return (_, apiAuth, ___, ____, serviceId, subscriptionKeyTypePayload) => {
+    return fromEither<ErrorResponses, {}>(
+      serviceId !== apiAuth.subscriptionId
+        ? left(
+            ResponseErrorUnauthorized(
+              "Unauthorized",
+              "You are not allowed to regenerate keys for this service"
+            )
+          )
+        : right({})
     )
+      .chain(() =>
+        regenerateServiceKeyTask(
+          apiClient,
+          serviceId,
+          subscriptionKeyTypePayload
+        )
+      )
       .fold<ResponseTypes>(identity, identity)
       .run();
   };
 }
 
 /**
- * Wraps a GetRegenerateServiceKey handler inside an Express request handler.
+ * Wraps a RegenerateServiceKey handler inside an Express request handler.
  */
-export function GetRegenerateServiceKey(
+export function RegenerateServiceKey(
   serviceModel: ServiceModel,
   client: ReturnType<APIClient>
 ): express.RequestHandler {
-  const handler = GetRegenerateServiceKeyHandler(client);
+  const handler = RegenerateServiceKeyHandler(client);
   const middlewaresWrap = withRequestMiddlewares(
     ContextMiddleware(),
     AzureApiAuthMiddleware(new Set([UserGroup.ApiServiceWrite])),

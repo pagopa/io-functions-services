@@ -12,8 +12,9 @@ import { setAppContext } from "io-functions-commons/dist/src/utils/middlewares/c
 
 import createAzureFunctionHandler from "io-functions-express/dist/src/createAzureFunctionsHandler";
 
+import { getRequiredStringEnv } from "io-functions-commons/dist/src/utils/env";
 import { getApiClient } from "../utils/apiclient";
-import { GetCreateService } from "./handler";
+import { CreateService } from "./handler";
 
 // Setup Express
 const app = express();
@@ -24,11 +25,13 @@ app.use(cors());
 
 const client = getApiClient();
 
+const productName = getRequiredStringEnv("DEFAULT_SERVICE_PRODUCT_NAME");
+
 const serviceModel = new ServiceModel(
   cosmosdbInstance.container(SERVICE_COLLECTION_NAME)
 );
 
-app.post("/api/v1/services", GetCreateService(serviceModel, client));
+app.post("/api/v1/services", CreateService(serviceModel, client, productName));
 
 const azureFunctionHandler = createAzureFunctionHandler(app);
 

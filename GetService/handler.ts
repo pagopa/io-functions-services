@@ -50,7 +50,6 @@ import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWit
 import { APIClient } from "../utils/clients/admin";
 import {
   ErrorResponses,
-  IResponseErrorUnauthorized,
   ResponseErrorUnauthorized,
   toErrorServerResponse
 } from "../utils/responses";
@@ -74,37 +73,23 @@ type IGetServiceHandler = (
 
 const getServiceTask = (
   apiClient: ReturnType<APIClient>,
-  serviceId: string,
-  subscriptionId: string
+  serviceId: string
 ): TaskEither<ErrorResponses, Service> =>
-  fromEither<IResponseErrorUnauthorized, {}>(
-    serviceId !== subscriptionId
-      ? left(
-          ResponseErrorUnauthorized(
-            "Unauthorized",
-            "You are not allowed to get this service"
-          )
-        )
-      : right({})
+  tryCatch(
+    () =>
+      apiClient.getService({
+        service_id: serviceId
+      }),
+    errs => ResponseErrorInternal(JSON.stringify(errs))
   ).foldTaskEither(
-    e => fromLeft(e),
-    _ =>
-      tryCatch(
-        () =>
-          apiClient.getService({
-            service_id: serviceId
-          }),
-        errs => ResponseErrorInternal(JSON.stringify(errs))
-      ).foldTaskEither(
-        err => fromLeft(err),
-        maybeResponse =>
-          maybeResponse.fold(
-            errs => fromLeft(ResponseErrorInternal(JSON.stringify(errs))),
-            responseType =>
-              responseType.status !== 200
-                ? fromLeft(toErrorServerResponse(responseType))
-                : taskEither.of(responseType.value)
-          )
+    err => fromLeft(err),
+    errorOResponse =>
+      errorOResponse.fold(
+        errs => fromLeft(ResponseErrorInternal(JSON.stringify(errs))),
+        responseType =>
+          responseType.status !== 200
+            ? fromLeft(toErrorServerResponse(responseType))
+            : taskEither.of(responseType.value)
       )
   );
 
@@ -120,8 +105,8 @@ const getSubscriptionKeysTask = (
     errs => ResponseErrorInternal(JSON.stringify(errs))
   ).foldTaskEither(
     err => fromLeft(err),
-    maybeResponse =>
-      maybeResponse.fold(
+    errorOResponse =>
+      errorOResponse.fold(
         errs => fromLeft(ResponseErrorInternal(JSON.stringify(errs))),
         responseType =>
           responseType.status !== 200
@@ -137,13 +122,24 @@ export function GetServiceHandler(
   apiClient: ReturnType<APIClient>
 ): IGetServiceHandler {
   return (_, apiAuth, ___, ____, serviceId) => {
-    return getServiceTask(apiClient, serviceId, apiAuth.subscriptionId)
-      .chain(service =>
-        getSubscriptionKeysTask(apiClient, serviceId).map(subscriptionKeys =>
-          ResponseSuccessJson({
-            ...service,
-            ...subscriptionKeys
-          })
+    return fromEither<ErrorResponses, {}>(
+      serviceId !== apiAuth.subscriptionId
+        ? left(
+            ResponseErrorUnauthorized(
+              "Unauthorized",
+              "You are not allowed to get this service"
+            )
+          )
+        : right({})
+    )
+      .chain(() =>
+        getServiceTask(apiClient, serviceId).chain(service =>
+          getSubscriptionKeysTask(apiClient, serviceId).map(subscriptionKeys =>
+            ResponseSuccessJson({
+              ...service,
+              ...subscriptionKeys
+            })
+          )
         )
       )
       .fold<IResponseSuccessJson<ServiceWithSubscriptionKeys> | ErrorResponses>(
