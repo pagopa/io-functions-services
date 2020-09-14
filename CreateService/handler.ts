@@ -53,7 +53,7 @@ import { Subscription } from "../generated/api-admin/Subscription";
 import { ServicePayload } from "../generated/definitions/ServicePayload";
 import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWithSubscriptionKeys";
 import { APIClient } from "../utils/clients/admin";
-import { defaultErrsLog, ErrorsLogType } from "../utils/logging";
+import { getLogger, ILogger } from "../utils/logging";
 import {
   ErrorResponses,
   IResponseErrorUnauthorized,
@@ -86,7 +86,7 @@ type ICreateServiceHandler = (
 ) => Promise<ResponseTypes>;
 
 const createSubscriptionTask = (
-  errsLog: ErrorsLogType,
+  errsLog: ILogger,
   apiClient: ReturnType<APIClient>,
   userEmail: EmailString,
   subscriptionId: NonEmptyString,
@@ -102,7 +102,7 @@ const createSubscriptionTask = (
         subscription_id: subscriptionId
       }),
     errs => {
-      errsLog(errs);
+      errsLog.logUnknown(errs);
       return toDefaultResponseErrorInternal(errs);
     }
   ).foldTaskEither(
@@ -110,7 +110,7 @@ const createSubscriptionTask = (
     errorOrResponse =>
       errorOrResponse.fold(
         errs => {
-          errsLog(errs);
+          errsLog.logErrors(errs);
           return fromLeft(toDefaultResponseErrorInternal(errs));
         },
         responseType =>
@@ -120,7 +120,7 @@ const createSubscriptionTask = (
       )
   );
 const createServiceTask = (
-  errsLog: ErrorsLogType,
+  errsLog: ILogger,
   apiClient: ReturnType<APIClient>,
   servicePayload: ServicePayload,
   subscriptionId: NonEmptyString
@@ -135,7 +135,7 @@ const createServiceTask = (
         }
       }),
     errs => {
-      errsLog(errs);
+      errsLog.logUnknown(errs);
       return toDefaultResponseErrorInternal(errs);
     }
   ).foldTaskEither(
@@ -143,7 +143,7 @@ const createServiceTask = (
     errorOrResponse =>
       errorOrResponse.fold(
         errs => {
-          errsLog(errs);
+          errsLog.logErrors(errs);
           return fromLeft(toDefaultResponseErrorInternal(errs));
         },
         responseType =>
@@ -167,7 +167,7 @@ export function CreateServiceHandler(
       `${logPrefix}| Creating new service with subscriptionId=${subscriptionId}`
     );
     return createSubscriptionTask(
-      defaultErrsLog(context, logPrefix, "CreateSubscription"),
+      getLogger(context, logPrefix, "CreateSubscription"),
       apiClient,
       userAttributes.email,
       subscriptionId,
@@ -175,7 +175,7 @@ export function CreateServiceHandler(
     )
       .chain(subscription =>
         createServiceTask(
-          defaultErrsLog(context, logPrefix, "CreateService"),
+          getLogger(context, logPrefix, "CreateService"),
           apiClient,
           servicePayload,
           subscriptionId
