@@ -1,3 +1,5 @@
+import { toError } from "fp-ts/lib/Either";
+import { Errors } from "io-ts";
 import { IResponseType } from "italia-ts-commons/lib/requests";
 import {
   HttpStatusCodeEnum,
@@ -16,6 +18,8 @@ import {
 export const unhandledResponseStatus = (status: number) =>
   ResponseErrorInternal(`unhandled API response status [${status}]`);
 
+export const toDefaultResponseErrorInternal = (errs: unknown | Errors) =>
+  ResponseErrorInternal(toError(errs).message);
 /**
  * Interface for unauthorized error response.
  */
