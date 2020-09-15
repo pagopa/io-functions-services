@@ -3994,10 +3994,10 @@ italia-ts-commons@^7.0.1:
     node-fetch "^2.6.0"
     validator "^10.1.0"
 
-italia-ts-commons@^8.1.0:
-  version "8.1.0"
-  resolved "https://registry.yarnpkg.com/italia-ts-commons/-/italia-ts-commons-8.1.0.tgz#929c805a7d9e8877fef26436946bf3ee76a76c82"
-  integrity sha512-d03UKxjeIX+4otNgZaDoS8t1l+gVEHD/q/JsQox1CC3nAiKHQ9TFNv4BdHIiUIswgpx1szjT6lzeJQUCUL++YA==
+italia-ts-commons@^8.5.0:
+  version "8.5.0"
+  resolved "https://registry.yarnpkg.com/italia-ts-commons/-/italia-ts-commons-8.5.0.tgz#9967ec1b94745f482d5cc942a1bacf7de6f6461b"
+  integrity sha512-pTX90/WW987t7pdcbQngCFm35c3gQlDFIUCnDZ6VCo5vNMl8VwdZztGIcYyEaJw6xMjb1WjSRlltnDdSe0B9Eg==
   dependencies:
     abort-controller "^3.0.0"
     agentkeepalive "^4.1.2"
