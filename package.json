@@ -45,7 +45,7 @@
     "typescript": "^3.3.3"
   },
   "dependencies": {
-    "applicationinsights": "^1.7.4",
+    "applicationinsights": "^1.8.5",
     "azure-storage": "^2.10.3",
     "cors": "^2.8.4",
     "documentdb": "^1.12.2",
