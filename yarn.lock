@@ -7898,7 +7898,7 @@ write-file-atomic@2.4.1:
 
 write-file-atomic@^2.4.3:
   version "2.4.3"
-  resolved "http://localhost:4873/write-file-atomic/-/write-file-atomic-2.4.3.tgz#1fd2e9ae1df3e75b8d8c367443c692d4ca81f481"
+  resolved "https://registry.yarnpkg.com/write-file-atomic/-/write-file-atomic-2.4.3.tgz#1fd2e9ae1df3e75b8d8c367443c692d4ca81f481"
   integrity sha512-GaETH5wwsX+GcnzhPgKcKjJ6M2Cq3/iZp1WyY/X1CSqrW+jVNM9Y7D8EC2sM4ZG/V8wZlSniJnCKWPmBYAucRQ==
   dependencies:
     graceful-fs "^4.1.11"
@@ -7917,7 +7917,7 @@ write-file-atomic@^3.0.0:
 
 write-yaml-file@^4.1.0:
   version "4.1.0"
-  resolved "http://localhost:4873/write-yaml-file/-/write-yaml-file-4.1.0.tgz#8a8af90b608b0e0a91d7b1fc67d1c5f06d8092f0"
+  resolved "https://registry.yarnpkg.com/write-yaml-file/-/write-yaml-file-4.1.0.tgz#8a8af90b608b0e0a91d7b1fc67d1c5f06d8092f0"
   integrity sha512-jN421OlwO/MN/EwAykk5ic8AL9QAycpKGaHKFBlcr3aQ6RUX8ZbrreOPUuhoYSxj/o30FhOQLSH36WYldAFrUw==
   dependencies:
     graceful-fs "^4.2.3"
