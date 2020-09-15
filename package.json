@@ -51,7 +51,7 @@
     "documentdb": "^1.12.2",
     "durable-functions": "^1.4.1",
     "express": "^4.15.3",
-    "fp-ts": "1.17.4",
+    "fp-ts": "1.19.5",
     "html-to-text": "^4.0.0",
     "io-functions-commons": "^13.0.0",
     "io-functions-express": "^0.1.0",
