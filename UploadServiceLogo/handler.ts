@@ -91,7 +91,7 @@ const uploadServiceLogoTask = (
   tryCatch(
     () =>
       apiClient.uploadServiceLogo({
-        logo,
+        body: logo,
         service_id: serviceId
       }),
     errs => {

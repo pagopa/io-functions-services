@@ -4021,10 +4021,10 @@ italia-tslint-rules@^1.1.3:
     tslint-sonarts "^1.9.0"
     typestrict "^1.0.2"
 
-italia-utils@^5.0.0:
-  version "5.0.0"
-  resolved "https://registry.yarnpkg.com/italia-utils/-/italia-utils-5.0.0.tgz#e086fe88f12f2a13cfe878895eb3f75554020e5b"
-  integrity sha512-bR/ZGOuO/zy1EUSozieDep9YAhflsSAAN02LwhZ+azNRN1Y9JPXyLStcJuk7xDHw+3QCy0jaM2XxAPLaizGoLQ==
+italia-utils@^5.1.0:
+  version "5.1.0"
+  resolved "https://registry.yarnpkg.com/italia-utils/-/italia-utils-5.1.0.tgz#6c53609600925c8c1467889867e82840e2ebe7ff"
+  integrity sha512-MiwaB4z9RkZTWrcZmYfH25F+EJrMCjHyPEQuxGU/LIcx0AQqdQaaTcXadInN6RhS0tg3kGLRBRctu4++tFLHbA==
   dependencies:
     fs-extra "^6.0.0"
     italia-ts-commons "^5.0.1"

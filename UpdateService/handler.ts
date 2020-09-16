@@ -152,7 +152,7 @@ const updateServiceTask = (
   tryCatch(
     () =>
       apiClient.updateService({
-        service: {
+        body: {
           ...retrievedService,
           ...servicePayload,
           service_id: serviceId

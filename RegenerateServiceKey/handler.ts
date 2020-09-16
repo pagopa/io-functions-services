@@ -92,8 +92,8 @@ const regenerateServiceKeyTask = (
   tryCatch(
     () =>
       apiClient.RegenerateSubscriptionKeys({
-        service_id: serviceId,
-        subscriptionKeyTypePayload
+        body: subscriptionKeyTypePayload,
+        service_id: serviceId
       }),
     errs => {
       logger.logUnknown(errs);

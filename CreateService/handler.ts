@@ -99,10 +99,10 @@ const createSubscriptionTask = (
   tryCatch(
     () =>
       apiClient.createSubscription({
-        email: userEmail,
-        productNamePayload: {
+        body: {
           product_name: productName
         },
+        email: userEmail,
         subscription_id: subscriptionId
       }),
     errs => {
@@ -133,7 +133,7 @@ const createServiceTask = (
   tryCatch(
     () =>
       apiClient.createService({
-        service: {
+        body: {
           ...servicePayload,
           authorized_recipients: [sandboxFiscalCode],
           service_id: subscriptionId
