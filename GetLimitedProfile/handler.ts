@@ -94,7 +94,9 @@ export function GetLimitedProfileHandler(
     if (isRight(maybeProfileOrError)) {
       const maybeProfile = maybeProfileOrError.value;
 
-      if (isSome(maybeProfile)) {
+      // We also return ResponseErrorNotFound in case the profile is found
+      // but the inbox is not enabled (onboarding not completed).
+      if (isSome(maybeProfile) && maybeProfile.value.isInboxEnabled) {
         const profile = maybeProfile.value;
 
         return ResponseSuccessJson(

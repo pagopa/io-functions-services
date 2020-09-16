@@ -231,6 +231,7 @@ export const retrievedProfileArb = fc
         email: email as EmailString,
         fiscalCode,
         id: `${fiscalCodeArb}-0000000000000000` as NonEmptyString,
+        isInboxEnabled: true,
         kind: "IRetrievedProfile",
         preferredLanguages: [PreferredLanguageEnum.en_GB],
         version: version as NonNegativeInteger
