@@ -57,7 +57,7 @@ import {
   toDefaultResponseErrorInternal,
   toErrorServerResponse
 } from "../utils/responses";
-import { serviceOwnerCheck } from "../utils/subscription";
+import { serviceOwnerCheckTask } from "../utils/subscription";
 
 type ResponseTypes =
   | IResponseSuccessJson<ServiceWithSubscriptionKeys>
@@ -113,18 +113,48 @@ const getSubscriptionKeysTask = (
       )
   );
 
+const getServiceTask = (
+  logger: ILogger,
+  apiClient: ReturnType<APIClient>,
+  serviceId: NonEmptyString
+): TaskEither<ErrorResponses, Service> =>
+  tryCatch(
+    () =>
+      apiClient.getService({
+        service_id: serviceId
+      }),
+    errs => {
+      logger.logUnknown(errs);
+      return toDefaultResponseErrorInternal(errs);
+    }
+  ).foldTaskEither(
+    err => fromLeft(err),
+    errorOrResponse =>
+      errorOrResponse.fold(
+        errs => {
+          logger.logErrors(errs);
+          return fromLeft(toDefaultResponseErrorInternal(errs));
+        },
+        responseType =>
+          responseType.status !== 200
+            ? fromLeft(toErrorServerResponse(responseType))
+            : taskEither.of(responseType.value)
+      )
+  );
+
 const updateServiceTask = (
   logger: ILogger,
   apiClient: ReturnType<APIClient>,
   servicePayload: ServicePayload,
-  serviceId: NonEmptyString
+  serviceId: NonEmptyString,
+  retrievedService: Service
 ): TaskEither<ErrorResponses, Service> =>
   tryCatch(
     () =>
       apiClient.updateService({
         service: {
+          ...retrievedService,
           ...servicePayload,
-          authorized_recipients: [],
           service_id: serviceId
         },
         service_id: serviceId
@@ -155,27 +185,30 @@ export function UpdateServiceHandler(
   apiClient: ReturnType<APIClient>
 ): IUpdateServiceHandler {
   return (_, apiAuth, ___, ____, serviceId, servicePayload) => {
-    return serviceOwnerCheck(
-      serviceId,
-      apiAuth.subscriptionId,
-      "You are not allowed to update this service"
-    )
+    return serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId)
       .chain(() =>
-        updateServiceTask(
-          getLogger(_, logPrefix, "UpdateService"),
+        getServiceTask(
+          getLogger(_, logPrefix, "GetService"),
           apiClient,
-          servicePayload,
           serviceId
-        ).chain(service =>
-          getSubscriptionKeysTask(
-            getLogger(_, logPrefix, "GetSubscriptionKeys"),
+        ).chain(retrievedService =>
+          updateServiceTask(
+            getLogger(_, logPrefix, "UpdateService"),
             apiClient,
-            serviceId
-          ).map(subscriptionKeys =>
-            ResponseSuccessJson({
-              ...service,
-              ...subscriptionKeys
-            })
+            servicePayload,
+            serviceId,
+            retrievedService
+          ).chain(service =>
+            getSubscriptionKeysTask(
+              getLogger(_, logPrefix, "GetSubscriptionKeys"),
+              apiClient,
+              serviceId
+            ).map(subscriptionKeys =>
+              ResponseSuccessJson({
+                ...service,
+                ...subscriptionKeys
+              })
+            )
           )
         )
       )

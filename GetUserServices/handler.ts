@@ -64,7 +64,7 @@ type IGetUserServicesHandler = (
 
 const logPrefix = "GetUserServicesHandler";
 
-const getUserServicesTask = (
+const getUserTask = (
   logger: ILogger,
   apiClient: ReturnType<APIClient>,
   userEmail: EmailString
@@ -100,8 +100,8 @@ export function GetUserServicesHandler(
   apiClient: ReturnType<APIClient>
 ): IGetUserServicesHandler {
   return (_, __, ___, userAttributes) => {
-    return getUserServicesTask(
-      getLogger(_, logPrefix, "GetUserServices"),
+    return getUserTask(
+      getLogger(_, logPrefix, "GetUser"),
       apiClient,
       userAttributes.email
     )

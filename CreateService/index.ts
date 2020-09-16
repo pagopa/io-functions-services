@@ -25,13 +25,17 @@ app.use(cors());
 
 const client = getApiClient();
 
-const productName = getRequiredStringEnv("DEFAULT_SERVICE_PRODUCT_NAME");
+const productName = getRequiredStringEnv("DEFAULT_SUBSCRIPTION_PRODUCT_NAME");
+const sandboxFiscalCode = getRequiredStringEnv("SANDBOX_FISCAL_CODE");
 
 const serviceModel = new ServiceModel(
   cosmosdbInstance.container(SERVICE_COLLECTION_NAME)
 );
 
-app.post("/api/v1/services", CreateService(serviceModel, client, productName));
+app.post(
+  "/api/v1/services",
+  CreateService(serviceModel, client, productName, sandboxFiscalCode)
+);
 
 const azureFunctionHandler = createAzureFunctionHandler(app);
 

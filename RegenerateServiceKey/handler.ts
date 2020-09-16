@@ -56,7 +56,7 @@ import {
   toDefaultResponseErrorInternal,
   toErrorServerResponse
 } from "../utils/responses";
-import { serviceOwnerCheck } from "../utils/subscription";
+import { serviceOwnerCheckTask } from "../utils/subscription";
 
 type ResponseTypes =
   | IResponseSuccessJson<SubscriptionKeys>
@@ -121,11 +121,7 @@ export function RegenerateServiceKeyHandler(
   apiClient: ReturnType<APIClient>
 ): IRegenerateServiceKeyHandler {
   return (_, apiAuth, ___, ____, serviceId, subscriptionKeyTypePayload) => {
-    return serviceOwnerCheck(
-      serviceId,
-      apiAuth.subscriptionId,
-      "You are not allowed to regenerate keys for this service"
-    )
+    return serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId)
       .chain(() =>
         regenerateServiceKeyTask(
           getLogger(_, logPrefix, "UploadServiceLogo"),

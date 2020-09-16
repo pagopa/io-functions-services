@@ -123,12 +123,7 @@ describe("GetServiceHandler", () => {
 
     expect(apiClientMock.getService).not.toHaveBeenCalled();
 
-    expect(result.kind).toBe("IResponseErrorUnauthorized");
-    if (result.kind === "IResponseErrorUnauthorized") {
-      expect(result.detail).toEqual(
-        "Unauthorized: You are not allowed to get this service"
-      );
-    }
+    expect(result.kind).toBe("IResponseErrorForbiddenNotAuthorized");
   });
 
   it("should respond with an internal error if getService does not respond", async () => {
@@ -163,7 +158,7 @@ describe("GetServiceHandler", () => {
       )
     };
 
-    const readableMessages = jest
+    jest
       .spyOn(reporters, "errorsToReadableMessages")
       .mockImplementation(() => ["ValidationErrors"]);
 
@@ -263,7 +258,7 @@ describe("GetServiceHandler", () => {
       )
     };
 
-    const readableMessages = jest
+    jest
       .spyOn(reporters, "errorsToReadableMessages")
       .mockImplementation(() => ["ValidationErrors"]);
 

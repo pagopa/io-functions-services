@@ -51,7 +51,7 @@ import {
   toDefaultResponseErrorInternal,
   toErrorServerResponse
 } from "../utils/responses";
-import { serviceOwnerCheck } from "../utils/subscription";
+import { serviceOwnerCheckTask } from "../utils/subscription";
 
 /**
  * Type of a GetService handler.
@@ -137,11 +137,7 @@ export function GetServiceHandler(
   apiClient: ReturnType<APIClient>
 ): IGetServiceHandler {
   return (_, apiAuth, ___, ____, serviceId) => {
-    return serviceOwnerCheck(
-      serviceId,
-      apiAuth.subscriptionId,
-      "You are not allowed to get this service"
-    )
+    return serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId)
       .chain(() =>
         getServiceTask(
           getLogger(_, logPrefix, "GetService"),

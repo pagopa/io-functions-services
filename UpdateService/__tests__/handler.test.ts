@@ -22,7 +22,6 @@ import { MaxAllowedPaymentAmount } from "io-functions-commons/dist/generated/def
 
 import { left, right } from "fp-ts/lib/Either";
 import * as reporters from "italia-ts-commons/lib/reporters";
-import { Subscription } from "../../generated/api-admin/Subscription";
 import { ServicePayload } from "../../generated/definitions/ServicePayload";
 import { UpdateServiceHandler } from "../handler";
 
@@ -50,7 +49,7 @@ const aServicePayload: ServicePayload = {
 };
 
 const aService = {
-  authorizedCIDRs: toAuthorizedCIDRs([]),
+  authorizedCIDRs: new Set([]),
   authorizedRecipients: new Set([]),
   departmentName: "IT" as NonEmptyString,
   isVisible: true,
@@ -68,12 +67,6 @@ const someSubscriptionKeys = {
   secondary_key: "secondary_key"
 };
 
-const aSubscription: Subscription = {
-  id: aServiceId,
-  ...someSubscriptionKeys,
-  scope: "NATIONAL"
-};
-
 const someUserAttributes: IAzureUserAttributes = {
   email: anEmail,
   kind: "IAzureUserAttributes",
@@ -87,11 +80,12 @@ const aUserAuthenticationDeveloper: IAzureApiAuthorization = {
   userId: "u123" as NonEmptyString
 };
 
-const mockUlidGenerator = jest.fn(() => aServiceId);
-
 describe("UpdateServiceHandler", () => {
   it("should respond with an updated service with subscriptionKeys by providing a servicePayload", async () => {
     const apiClientMock = {
+      getService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aService }))
+      ),
       getSubscriptionKeys: jest.fn(() =>
         Promise.resolve(right({ status: 200, value: someSubscriptionKeys }))
       ),
@@ -123,6 +117,9 @@ describe("UpdateServiceHandler", () => {
 
   it("should respond with an Unauthorized error if service is not owned by current user", async () => {
     const apiClientMock = {
+      getService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aService }))
+      ),
       getSubscriptionKeys: jest.fn(() =>
         Promise.resolve(right({ status: 200, value: someSubscriptionKeys }))
       ),
@@ -144,16 +141,142 @@ describe("UpdateServiceHandler", () => {
     expect(apiClientMock.updateService).not.toHaveBeenCalled();
     expect(apiClientMock.getSubscriptionKeys).not.toHaveBeenCalled();
 
+    expect(result.kind).toBe("IResponseErrorForbiddenNotAuthorized");
+  });
+
+  it("should respond with an internal error if getService does not respond", async () => {
+    const apiClientMock = {
+      getService: jest.fn(() => Promise.reject(new Error("Timeout"))),
+      getSubscriptionKeys: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: someSubscriptionKeys }))
+      ),
+      updateService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aService }))
+      )
+    };
+
+    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const result = await updateServiceHandler(
+      mockContext,
+      aUserAuthenticationDeveloper,
+      undefined as any, // not used
+      someUserAttributes,
+      aServiceId,
+      aServicePayload
+    );
+
+    expect(apiClientMock.updateService).not.toHaveBeenCalled();
+    expect(apiClientMock.getSubscriptionKeys).not.toHaveBeenCalled();
+
+    expect(apiClientMock.getService).toHaveBeenCalledTimes(1);
+
+    expect(result.kind).toBe("IResponseErrorInternal");
+  });
+
+  it("should respond with an internal error if getService returns Errors", async () => {
+    const apiClientMock = {
+      getService: jest.fn(() =>
+        Promise.resolve(left({ err: "ValidationError" }))
+      ),
+      getSubscriptionKeys: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: someSubscriptionKeys }))
+      ),
+      updateService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aService }))
+      )
+    };
+
+    jest
+      .spyOn(reporters, "errorsToReadableMessages")
+      .mockImplementation(() => ["ValidationErrors"]);
+
+    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const result = await updateServiceHandler(
+      mockContext,
+      aUserAuthenticationDeveloper,
+      undefined as any, // not used
+      someUserAttributes,
+      aServiceId,
+      aServicePayload
+    );
+
+    expect(apiClientMock.updateService).not.toHaveBeenCalled();
+    expect(apiClientMock.getSubscriptionKeys).not.toHaveBeenCalled();
+
+    expect(apiClientMock.getService).toHaveBeenCalledTimes(1);
+
+    expect(result.kind).toBe("IResponseErrorInternal");
+  });
+
+  it("should respond with Unauthorized if getService returns unauthorized", async () => {
+    const apiClientMock = {
+      getService: jest.fn(() => Promise.resolve(right({ status: 401 }))),
+      getSubscriptionKeys: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: someSubscriptionKeys }))
+      ),
+      updateService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aService }))
+      )
+    };
+
+    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const result = await updateServiceHandler(
+      mockContext,
+      aUserAuthenticationDeveloper,
+      undefined as any, // not used
+      someUserAttributes,
+      aServiceId,
+      aServicePayload
+    );
+
+    expect(apiClientMock.updateService).not.toHaveBeenCalled();
+    expect(apiClientMock.getSubscriptionKeys).not.toHaveBeenCalled();
+
+    expect(apiClientMock.getService).toHaveBeenCalledTimes(1);
+
     expect(result.kind).toBe("IResponseErrorUnauthorized");
     if (result.kind === "IResponseErrorUnauthorized") {
-      expect(result.detail).toEqual(
-        "Unauthorized: You are not allowed to update this service"
-      );
+      expect(result.detail).toEqual("Unauthorized: Unauthorized");
+    }
+  });
+
+  it("should respond with Not found if no service was found for the given serviceid", async () => {
+    const apiClientMock = {
+      getService: jest.fn(() => Promise.resolve(right({ status: 404 }))),
+      getSubscriptionKeys: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: someSubscriptionKeys }))
+      ),
+      updateService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aService }))
+      )
+    };
+
+    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const result = await updateServiceHandler(
+      mockContext,
+      aUserAuthenticationDeveloper,
+      undefined as any, // not used
+      someUserAttributes,
+      aServiceId,
+      aServicePayload
+    );
+
+    expect(apiClientMock.updateService).not.toHaveBeenCalled();
+    expect(apiClientMock.getSubscriptionKeys).not.toHaveBeenCalled();
+
+    expect(apiClientMock.getService).toHaveBeenCalledTimes(1);
+
+    expect(result.kind).toBe("IResponseErrorNotFound");
+    if (result.kind === "IResponseErrorNotFound") {
+      expect(result.detail).toEqual("Not found: Resource not found");
     }
   });
 
   it("should respond with an internal error if updateService does not respond", async () => {
     const apiClientMock = {
+      getService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aService }))
+      ),
       getSubscriptionKeys: jest.fn(() =>
         Promise.resolve(right({ status: 200, value: someSubscriptionKeys }))
       ),
@@ -178,6 +301,9 @@ describe("UpdateServiceHandler", () => {
 
   it("should respond with an internal error if updateService returns Errors", async () => {
     const apiClientMock = {
+      getService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aService }))
+      ),
       getSubscriptionKeys: jest.fn(() =>
         Promise.resolve(right({ status: 200, value: someSubscriptionKeys }))
       ),
@@ -208,6 +334,9 @@ describe("UpdateServiceHandler", () => {
 
   it("should respond with Unauthorized error if updateService returns Unauthorized", async () => {
     const apiClientMock = {
+      getService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aService }))
+      ),
       getSubscriptionKeys: jest.fn(() =>
         Promise.resolve(right({ status: 200, value: someSubscriptionKeys }))
       ),
@@ -235,6 +364,9 @@ describe("UpdateServiceHandler", () => {
 
   it("should respond with Not Found if no service was found", async () => {
     const apiClientMock = {
+      getService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aService }))
+      ),
       getSubscriptionKeys: jest.fn(() =>
         Promise.resolve(right({ status: 200, value: someSubscriptionKeys }))
       ),
@@ -262,6 +394,9 @@ describe("UpdateServiceHandler", () => {
 
   it("should respond with an internal error if getSubscriptionKeys does not respond", async () => {
     const apiClientMock = {
+      getService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aService }))
+      ),
       getSubscriptionKeys: jest.fn(() => Promise.reject(new Error("Timeout"))),
       updateService: jest.fn(() =>
         Promise.resolve(right({ status: 200, value: aService }))
@@ -285,6 +420,9 @@ describe("UpdateServiceHandler", () => {
 
   it("should respond with an internal error if getSubscriptionKeys returns Errors", async () => {
     const apiClientMock = {
+      getService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aService }))
+      ),
       getSubscriptionKeys: jest.fn(() =>
         Promise.resolve(left({ err: "ValidationError" }))
       ),
@@ -314,6 +452,9 @@ describe("UpdateServiceHandler", () => {
 
   it("should respond with an internal error if getSubscriptionKeys returns Bad request", async () => {
     const apiClientMock = {
+      getService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aService }))
+      ),
       getSubscriptionKeys: jest.fn(() =>
         Promise.resolve(right({ status: 400 }))
       ),
@@ -340,6 +481,9 @@ describe("UpdateServiceHandler", () => {
 
   it("should respond with forbidden if getSubscriptionKeys returns Forbidden", async () => {
     const apiClientMock = {
+      getService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aService }))
+      ),
       getSubscriptionKeys: jest.fn(() =>
         Promise.resolve(right({ status: 403 }))
       ),
@@ -366,6 +510,9 @@ describe("UpdateServiceHandler", () => {
 
   it("should respond with Not found if no subscriptionKeys were found by the given serviceId", async () => {
     const apiClientMock = {
+      getService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aService }))
+      ),
       getSubscriptionKeys: jest.fn(() =>
         Promise.resolve(right({ status: 404 }))
       ),

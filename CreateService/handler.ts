@@ -47,7 +47,11 @@ import {
   ObjectIdGenerator,
   ulidGenerator
 } from "io-functions-commons/dist/src/utils/strings";
-import { EmailString, NonEmptyString } from "italia-ts-commons/lib/strings";
+import {
+  EmailString,
+  FiscalCode,
+  NonEmptyString
+} from "italia-ts-commons/lib/strings";
 import { Service } from "../generated/api-admin/Service";
 import { Subscription } from "../generated/api-admin/Subscription";
 import { ServicePayload } from "../generated/definitions/ServicePayload";
@@ -123,14 +127,15 @@ const createServiceTask = (
   logger: ILogger,
   apiClient: ReturnType<APIClient>,
   servicePayload: ServicePayload,
-  subscriptionId: NonEmptyString
+  subscriptionId: NonEmptyString,
+  sandboxFiscalCode: FiscalCode
 ): TaskEither<ErrorResponses, Service> =>
   tryCatch(
     () =>
       apiClient.createService({
         service: {
           ...servicePayload,
-          authorized_recipients: [],
+          authorized_recipients: [sandboxFiscalCode],
           service_id: subscriptionId
         }
       }),
@@ -159,7 +164,8 @@ const createServiceTask = (
 export function CreateServiceHandler(
   apiClient: ReturnType<APIClient>,
   generateObjectId: ObjectIdGenerator,
-  productName: NonEmptyString
+  productName: NonEmptyString,
+  sandboxFiscalCode: NonEmptyString
 ): ICreateServiceHandler {
   return (context, __, ___, userAttributes, servicePayload) => {
     const subscriptionId = generateObjectId();
@@ -178,7 +184,8 @@ export function CreateServiceHandler(
           getLogger(context, logPrefix, "CreateService"),
           apiClient,
           servicePayload,
-          subscriptionId
+          subscriptionId,
+          (sandboxFiscalCode as unknown) as FiscalCode
         ).map(service =>
           ResponseSuccessJson({
             ...service,
@@ -198,9 +205,15 @@ export function CreateServiceHandler(
 export function CreateService(
   serviceModel: ServiceModel,
   client: ReturnType<APIClient>,
-  productName: NonEmptyString
+  productName: NonEmptyString,
+  sandboxFiscalCode: NonEmptyString
 ): express.RequestHandler {
-  const handler = CreateServiceHandler(client, ulidGenerator, productName);
+  const handler = CreateServiceHandler(
+    client,
+    ulidGenerator,
+    productName,
+    sandboxFiscalCode
+  );
   const middlewaresWrap = withRequestMiddlewares(
     ContextMiddleware(),
     AzureApiAuthMiddleware(new Set([UserGroup.ApiServiceWrite])),

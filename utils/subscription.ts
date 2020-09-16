@@ -1,13 +1,13 @@
 import { fromPredicate } from "fp-ts/lib/TaskEither";
+import { ResponseErrorForbiddenNotAuthorized } from "italia-ts-commons/lib/responses";
 import { NonEmptyString } from "italia-ts-commons/lib/strings";
-import { ErrorResponses, ResponseErrorUnauthorized } from "./responses";
+import { ErrorResponses } from "./responses";
 
-export const serviceOwnerCheck = (
+export const serviceOwnerCheckTask = (
   serviceId: NonEmptyString,
-  ownerSubscriptionId: NonEmptyString,
-  msg: string
+  ownerSubscriptionId: NonEmptyString
 ) =>
   fromPredicate<ErrorResponses, NonEmptyString>(
     (svcId: NonEmptyString) => svcId === ownerSubscriptionId,
-    _ => ResponseErrorUnauthorized("Unauthorized", msg)
+    _ => ResponseErrorForbiddenNotAuthorized
   )(serviceId);

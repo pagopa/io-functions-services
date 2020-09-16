@@ -16,8 +16,6 @@ import {
   OrganizationFiscalCode
 } from "italia-ts-commons/lib/strings";
 
-import { toAuthorizedCIDRs } from "io-functions-commons/dist/src/models/service";
-
 import { MaxAllowedPaymentAmount } from "io-functions-commons/dist/generated/definitions/MaxAllowedPaymentAmount";
 
 import { left, right } from "fp-ts/lib/Either";
@@ -50,7 +48,7 @@ const aServicePayload: ServicePayload = {
 };
 
 const aService = {
-  authorizedCIDRs: toAuthorizedCIDRs([]),
+  authorizedCIDRs: new Set([]),
   authorizedRecipients: new Set([]),
   departmentName: "IT" as NonEmptyString,
   isVisible: true,
@@ -90,6 +88,7 @@ const aUserAuthenticationDeveloper: IAzureApiAuthorization = {
 const mockUlidGenerator = jest.fn(() => aServiceId);
 
 const productName = "IO_API_SERVICES" as NonEmptyString;
+const sandboxFiscalCode = "BBBCCC00A11B123X" as NonEmptyString;
 
 describe("CreateServiceHandler", () => {
   it("should respond with a created service with subscriptionKeys by providing a servicePayload", async () => {
@@ -105,7 +104,8 @@ describe("CreateServiceHandler", () => {
     const createServiceHandler = CreateServiceHandler(
       apiClientMock as any,
       mockUlidGenerator as any,
-      productName
+      productName,
+      sandboxFiscalCode
     );
     const result = await createServiceHandler(
       mockContext,
@@ -137,7 +137,8 @@ describe("CreateServiceHandler", () => {
     const createServiceHandler = CreateServiceHandler(
       apiClientMock as any,
       mockUlidGenerator as any,
-      productName
+      productName,
+      sandboxFiscalCode
     );
     const result = await createServiceHandler(
       mockContext,
@@ -170,7 +171,8 @@ describe("CreateServiceHandler", () => {
     const createServiceHandler = CreateServiceHandler(
       apiClientMock as any,
       mockUlidGenerator as any,
-      productName
+      productName,
+      sandboxFiscalCode
     );
     const result = await createServiceHandler(
       mockContext,
@@ -197,7 +199,8 @@ describe("CreateServiceHandler", () => {
     const createServiceHandler = CreateServiceHandler(
       apiClientMock as any,
       mockUlidGenerator as any,
-      productName
+      productName,
+      sandboxFiscalCode
     );
     const result = await createServiceHandler(
       mockContext,
@@ -224,7 +227,8 @@ describe("CreateServiceHandler", () => {
     const createServiceHandler = CreateServiceHandler(
       apiClientMock as any,
       mockUlidGenerator as any,
-      productName
+      productName,
+      sandboxFiscalCode
     );
     const result = await createServiceHandler(
       mockContext,
@@ -251,7 +255,8 @@ describe("CreateServiceHandler", () => {
     const createServiceHandler = CreateServiceHandler(
       apiClientMock as any,
       mockUlidGenerator as any,
-      productName
+      productName,
+      sandboxFiscalCode
     );
     const result = await createServiceHandler(
       mockContext,
@@ -281,7 +286,8 @@ describe("CreateServiceHandler", () => {
     const createServiceHandler = CreateServiceHandler(
       apiClientMock as any,
       mockUlidGenerator as any,
-      productName
+      productName,
+      sandboxFiscalCode
     );
     const result = await createServiceHandler(
       mockContext,
@@ -314,7 +320,8 @@ describe("CreateServiceHandler", () => {
     const createServiceHandler = CreateServiceHandler(
       apiClientMock as any,
       mockUlidGenerator as any,
-      productName
+      productName,
+      sandboxFiscalCode
     );
     const result = await createServiceHandler(
       mockContext,
@@ -340,7 +347,8 @@ describe("CreateServiceHandler", () => {
     const createServiceHandler = CreateServiceHandler(
       apiClientMock as any,
       mockUlidGenerator as any,
-      productName
+      productName,
+      sandboxFiscalCode
     );
     const result = await createServiceHandler(
       mockContext,

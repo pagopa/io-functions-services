@@ -119,12 +119,7 @@ describe("UploadServiceLogoHandler", () => {
       aLogoPayload
     );
 
-    expect(result.kind).toBe("IResponseErrorUnauthorized");
-    if (result.kind === "IResponseErrorUnauthorized") {
-      expect(result.detail).toEqual(
-        "Unauthorized: You are not allowed to upload a logo for this service"
-      );
-    }
+    expect(result.kind).toBe("IResponseErrorForbiddenNotAuthorized");
   });
 
   it("should respond with an internal error if upload service logo does not respond", async () => {

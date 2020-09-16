@@ -165,12 +165,7 @@ describe("RegenerateServiceKeyHandler", () => {
       { key_type: SubscriptionKeyTypeEnum.SECONDARY_KEY }
     );
 
-    expect(result.kind).toBe("IResponseErrorUnauthorized");
-    if (result.kind === "IResponseErrorUnauthorized") {
-      expect(result.detail).toEqual(
-        "Unauthorized: You are not allowed to regenerate keys for this service"
-      );
-    }
+    expect(result.kind).toBe("IResponseErrorForbiddenNotAuthorized");
   });
 
   it("should respond with an internal error if RegenerateSubscriptionKeys does not respond", async () => {

@@ -55,7 +55,7 @@ import {
   toDefaultResponseErrorInternal,
   toErrorServerResponse
 } from "../utils/responses";
-import { serviceOwnerCheck } from "../utils/subscription";
+import { serviceOwnerCheckTask } from "../utils/subscription";
 
 type ResponseTypes =
   | IResponseSuccessJson<undefined>
@@ -120,11 +120,7 @@ export function UploadServiceLogoHandler(
   apiClient: ReturnType<APIClient>
 ): IUploadServiceLogoHandler {
   return (_, apiAuth, ___, ____, serviceId, logoPayload) => {
-    return serviceOwnerCheck(
-      serviceId,
-      apiAuth.subscriptionId,
-      "You are not allowed to upload a logo for this service"
-    )
+    return serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId)
       .chain(() =>
         uploadServiceLogoTask(
           getLogger(_, logPrefix, "UploadServiceLogo"),
