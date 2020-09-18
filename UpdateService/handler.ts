@@ -155,7 +155,11 @@ const updateServiceTask = (
         body: {
           ...retrievedService,
           ...servicePayload,
-          service_id: serviceId
+          service_id: serviceId,
+          service_metadata: {
+            ...servicePayload.service_metadata,
+            token_name: retrievedService.service_metadata.token_name // TODO check on ADB2C with userInfo data
+          }
         },
         service_id: serviceId
       }),

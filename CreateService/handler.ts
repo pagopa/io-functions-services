@@ -54,6 +54,7 @@ import {
 } from "italia-ts-commons/lib/strings";
 import { Service } from "../generated/api-admin/Service";
 import { Subscription } from "../generated/api-admin/Subscription";
+import { UserInfo } from "../generated/api-admin/UserInfo";
 import { ServicePayload } from "../generated/definitions/ServicePayload";
 import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWithSubscriptionKeys";
 import { APIClient } from "../utils/clients/admin";
@@ -123,12 +124,43 @@ const createSubscriptionTask = (
             : taskEither.of(responseType.value)
       )
   );
+
+const getUserTask = (
+  logger: ILogger,
+  apiClient: ReturnType<APIClient>,
+  userEmail: EmailString
+): TaskEither<ErrorResponses, UserInfo> =>
+  tryCatch(
+    () =>
+      apiClient.getUser({
+        email: userEmail
+      }),
+    errs => {
+      logger.logUnknown(errs);
+      return toDefaultResponseErrorInternal(errs);
+    }
+  ).foldTaskEither(
+    err => fromLeft(err),
+    errorOrResponse =>
+      errorOrResponse.fold(
+        errs => {
+          logger.logErrors(errs);
+          return fromLeft(toDefaultResponseErrorInternal(errs));
+        },
+        responseType =>
+          responseType.status !== 200
+            ? fromLeft(toErrorServerResponse(responseType))
+            : taskEither.of(responseType.value)
+      )
+  );
+
 const createServiceTask = (
   logger: ILogger,
   apiClient: ReturnType<APIClient>,
   servicePayload: ServicePayload,
   subscriptionId: NonEmptyString,
-  sandboxFiscalCode: FiscalCode
+  sandboxFiscalCode: FiscalCode,
+  adb2cTokenName: NonEmptyString
 ): TaskEither<ErrorResponses, Service> =>
   tryCatch(
     () =>
@@ -136,7 +168,11 @@ const createServiceTask = (
         body: {
           ...servicePayload,
           authorized_recipients: [sandboxFiscalCode],
-          service_id: subscriptionId
+          service_id: subscriptionId,
+          service_metadata: {
+            ...servicePayload.service_metadata,
+            token_name: adb2cTokenName
+          }
         }
       }),
     errs => {
@@ -180,18 +216,25 @@ export function CreateServiceHandler(
       productName
     )
       .chain(subscription =>
-        createServiceTask(
-          getLogger(context, logPrefix, "CreateService"),
+        getUserTask(
+          getLogger(context, logPrefix, "GetUser"),
           apiClient,
-          servicePayload,
-          subscriptionId,
-          (sandboxFiscalCode as unknown) as FiscalCode
-        ).map(service =>
-          ResponseSuccessJson({
-            ...service,
-            primary_key: subscription.primary_key,
-            secondary_key: subscription.secondary_key
-          })
+          userAttributes.email
+        ).chain(userInfo =>
+          createServiceTask(
+            getLogger(context, logPrefix, "CreateService"),
+            apiClient,
+            servicePayload,
+            subscriptionId,
+            (sandboxFiscalCode as unknown) as FiscalCode,
+            userInfo.token_name
+          ).map(service =>
+            ResponseSuccessJson({
+              ...service,
+              primary_key: subscription.primary_key,
+              secondary_key: subscription.secondary_key
+            })
+          )
         )
       )
       .fold<ResponseTypes>(identity, identity)
