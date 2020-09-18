@@ -17,7 +17,7 @@
     "lint": "tslint -p .",
     "generate:definitions": "rimraf ./generated/definitions && shx mkdir -p ./generated/definitions && gen-api-models --api-spec ./openapi/index.yaml --no-strict --out-dir ./generated/definitions",
     "generate:api-notifications": "rimraf ./generated/notifications && shx mkdir -p ./generated/notifications && gen-api-models --api-spec https://raw.githubusercontent.com/pagopa/io-backend/master/api_notifications.yaml --out-dir ./generated/notifications --response-decoders --request-types",
-    "generate:api-admin": "rimraf generated/api-admin && shx mkdir -p generated/api-admin && gen-api-models --api-spec https://raw.githubusercontent.com/pagopa/io-functions-admin/174823724_get_token_name_from_azure_AD/openapi/index.yaml --no-strict --out-dir generated/api-admin --request-types --response-decoders --client",
+    "generate:api-admin": "rimraf generated/api-admin && shx mkdir -p generated/api-admin && gen-api-models --api-spec https://raw.githubusercontent.com/pagopa/io-functions-admin/master/openapi/index.yaml --no-strict --out-dir generated/api-admin --request-types --response-decoders --client",
     "dist:modules": "modclean -r -n default:safe && yarn install --production",
     "predeploy": "npm-run-all build dist:modules"
   },
