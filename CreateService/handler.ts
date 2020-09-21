@@ -34,12 +34,7 @@ import {
 
 import { Context } from "@azure/functions";
 import { identity } from "fp-ts/lib/function";
-import {
-  fromLeft,
-  taskEither,
-  TaskEither,
-  tryCatch
-} from "fp-ts/lib/TaskEither";
+import { TaskEither } from "fp-ts/lib/TaskEither";
 import { ServiceModel } from "io-functions-commons/dist/src/models/service";
 import { ContextMiddleware } from "io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { RequiredBodyPayloadMiddleware } from "io-functions-commons/dist/src/utils/middlewares/required_body_payload";
@@ -56,14 +51,10 @@ import { Service } from "../generated/api-admin/Service";
 import { Subscription } from "../generated/api-admin/Subscription";
 import { ServicePayload } from "../generated/definitions/ServicePayload";
 import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWithSubscriptionKeys";
+import { withApiRequestWrapper } from "../utils/api";
 import { APIClient } from "../utils/clients/admin";
 import { getLogger, ILogger } from "../utils/logging";
-import {
-  ErrorResponses,
-  IResponseErrorUnauthorized,
-  toDefaultResponseErrorInternal,
-  toErrorServerResponse
-} from "../utils/responses";
+import { ErrorResponses, IResponseErrorUnauthorized } from "../utils/responses";
 
 type ResponseTypes =
   | IResponseSuccessJson<ServiceWithSubscriptionKeys>
@@ -96,7 +87,8 @@ const createSubscriptionTask = (
   subscriptionId: NonEmptyString,
   productName: NonEmptyString
 ): TaskEither<ErrorResponses, Subscription> =>
-  tryCatch(
+  withApiRequestWrapper(
+    logger,
     () =>
       apiClient.createSubscription({
         body: {
@@ -105,24 +97,9 @@ const createSubscriptionTask = (
         email: userEmail,
         subscription_id: subscriptionId
       }),
-    errs => {
-      logger.logUnknown(errs);
-      return toDefaultResponseErrorInternal(errs);
-    }
-  ).foldTaskEither(
-    err => fromLeft(err),
-    errorOrResponse =>
-      errorOrResponse.fold(
-        errs => {
-          logger.logErrors(errs);
-          return fromLeft(toDefaultResponseErrorInternal(errs));
-        },
-        responseType =>
-          responseType.status !== 200
-            ? fromLeft(toErrorServerResponse(responseType))
-            : taskEither.of(responseType.value)
-      )
+    200
   );
+
 const createServiceTask = (
   logger: ILogger,
   apiClient: ReturnType<APIClient>,
@@ -130,7 +107,8 @@ const createServiceTask = (
   subscriptionId: NonEmptyString,
   sandboxFiscalCode: FiscalCode
 ): TaskEither<ErrorResponses, Service> =>
-  tryCatch(
+  withApiRequestWrapper(
+    logger,
     () =>
       apiClient.createService({
         body: {
@@ -139,23 +117,7 @@ const createServiceTask = (
           service_id: subscriptionId
         }
       }),
-    errs => {
-      logger.logUnknown(errs);
-      return toDefaultResponseErrorInternal(errs);
-    }
-  ).foldTaskEither(
-    err => fromLeft(err),
-    errorOrResponse =>
-      errorOrResponse.fold(
-        errs => {
-          logger.logErrors(errs);
-          return fromLeft(toDefaultResponseErrorInternal(errs));
-        },
-        responseType =>
-          responseType.status !== 200
-            ? fromLeft(toErrorServerResponse(responseType))
-            : taskEither.of(responseType.value)
-      )
+    200
   );
 
 /**

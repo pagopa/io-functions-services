@@ -33,24 +33,16 @@ import {
 
 import { Context } from "@azure/functions";
 import { identity } from "fp-ts/lib/function";
-import {
-  fromLeft,
-  taskEither,
-  TaskEither,
-  tryCatch
-} from "fp-ts/lib/TaskEither";
+import { TaskEither } from "fp-ts/lib/TaskEither";
 import { ServiceModel } from "io-functions-commons/dist/src/models/service";
 import { ContextMiddleware } from "io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { Service } from "../generated/api-admin/Service";
 import { SubscriptionKeys } from "../generated/api-admin/SubscriptionKeys";
 import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWithSubscriptionKeys";
+import { withApiRequestWrapper } from "../utils/api";
 import { APIClient } from "../utils/clients/admin";
 import { getLogger, ILogger } from "../utils/logging";
-import {
-  ErrorResponses,
-  toDefaultResponseErrorInternal,
-  toErrorServerResponse
-} from "../utils/responses";
+import { ErrorResponses } from "../utils/responses";
 import { serviceOwnerCheckTask } from "../utils/subscription";
 
 /**
@@ -77,28 +69,13 @@ const getServiceTask = (
   apiClient: ReturnType<APIClient>,
   serviceId: string
 ): TaskEither<ErrorResponses, Service> =>
-  tryCatch(
+  withApiRequestWrapper(
+    logger,
     () =>
       apiClient.getService({
         service_id: serviceId
       }),
-    errs => {
-      logger.logUnknown(errs);
-      return toDefaultResponseErrorInternal(errs);
-    }
-  ).foldTaskEither(
-    err => fromLeft(err),
-    errorOrResponse =>
-      errorOrResponse.fold(
-        errs => {
-          logger.logErrors(errs);
-          return fromLeft(toDefaultResponseErrorInternal(errs));
-        },
-        responseType =>
-          responseType.status !== 200
-            ? fromLeft(toErrorServerResponse(responseType))
-            : taskEither.of(responseType.value)
-      )
+    200
   );
 
 const getSubscriptionKeysTask = (
@@ -106,28 +83,13 @@ const getSubscriptionKeysTask = (
   apiClient: ReturnType<APIClient>,
   serviceId: string
 ): TaskEither<ErrorResponses, SubscriptionKeys> =>
-  tryCatch(
+  withApiRequestWrapper(
+    logger,
     () =>
       apiClient.getSubscriptionKeys({
         service_id: serviceId
       }),
-    errs => {
-      logger.logUnknown(errs);
-      return toDefaultResponseErrorInternal(errs);
-    }
-  ).foldTaskEither(
-    err => fromLeft(err),
-    errorOrResponse =>
-      errorOrResponse.fold(
-        errs => {
-          logger.logErrors(errs);
-          return fromLeft(toDefaultResponseErrorInternal(errs));
-        },
-        responseType =>
-          responseType.status !== 200
-            ? fromLeft(toErrorServerResponse(responseType))
-            : taskEither.of(responseType.value)
-      )
+    200
   );
 
 /**
