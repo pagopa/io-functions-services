@@ -106,7 +106,7 @@ const getServiceTask = (
 
 const getUserTask = (
   logger: ILogger,
-  apiClient: ReturnType<APIClient>,
+  apiClient: APIClient,
   userEmail: EmailString
 ): TaskEither<ErrorResponses, UserInfo> =>
   withApiRequestWrapper(
@@ -138,7 +138,6 @@ const updateServiceTask = (
             ...servicePayload.service_metadata,
             token_name: adb2cTokenName
           }
-          service_id: serviceId
         },
         service_id: serviceId
       }),

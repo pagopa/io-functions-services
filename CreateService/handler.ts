@@ -103,7 +103,7 @@ const createSubscriptionTask = (
 
 const getUserTask = (
   logger: ILogger,
-  apiClient: ReturnType<APIClient>,
+  apiClient: APIClient,
   userEmail: EmailString
 ): TaskEither<ErrorResponses, UserInfo> =>
   withApiRequestWrapper(
@@ -135,7 +135,6 @@ const createServiceTask = (
             ...servicePayload.service_metadata,
             token_name: adb2cTokenName
           }
-          service_id: subscriptionId
         }
       }),
     200
