@@ -12,7 +12,7 @@ import { setAppContext } from "io-functions-commons/dist/src/utils/middlewares/c
 
 import createAzureFunctionHandler from "io-functions-express/dist/src/createAzureFunctionsHandler";
 
-import { apiClient } from "../utils/clients/admin";
+import { apiClient } from "../clients/admin";
 import { GetService } from "./handler";
 
 // Setup Express

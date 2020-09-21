@@ -35,10 +35,10 @@ import { TaskEither } from "fp-ts/lib/TaskEither";
 import { ServiceId } from "io-functions-commons/dist/generated/definitions/ServiceId";
 import { ServiceModel } from "io-functions-commons/dist/src/models/service";
 import { ContextMiddleware } from "io-functions-commons/dist/src/utils/middlewares/context_middleware";
+import { APIClient } from "../clients/admin";
 import { UserInfo } from "../generated/api-admin/UserInfo";
 import { ServiceIdCollection } from "../generated/definitions/ServiceIdCollection";
 import { withApiRequestWrapper } from "../utils/api";
-import { APIClient } from "../utils/clients/admin";
 import { getLogger, ILogger } from "../utils/logging";
 import { ErrorResponses } from "../utils/responses";
 

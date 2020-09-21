@@ -11,7 +11,7 @@ import { setAppContext } from "io-functions-commons/dist/src/utils/middlewares/c
 
 import createAzureFunctionHandler from "io-functions-express/dist/src/createAzureFunctionsHandler";
 
-import { apiClient } from "../utils/clients/admin";
+import { apiClient } from "../clients/admin";
 import { RegenerateServiceKey } from "./handler";
 
 // Setup Express
