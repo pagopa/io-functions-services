@@ -77,7 +77,7 @@ const logPrefix = "UpdateServiceHandler";
 
 const getSubscriptionKeysTask = (
   logger: ILogger,
-  apiClient: ReturnType<APIClient>,
+  apiClient: APIClient,
   serviceId: NonEmptyString
 ): TaskEither<ErrorResponses, SubscriptionKeys> =>
   withApiRequestWrapper(
@@ -91,7 +91,7 @@ const getSubscriptionKeysTask = (
 
 const getServiceTask = (
   logger: ILogger,
-  apiClient: ReturnType<APIClient>,
+  apiClient: APIClient,
   serviceId: NonEmptyString
 ): TaskEither<ErrorResponses, Service> =>
   withApiRequestWrapper(
@@ -105,7 +105,7 @@ const getServiceTask = (
 
 const updateServiceTask = (
   logger: ILogger,
-  apiClient: ReturnType<APIClient>,
+  apiClient: APIClient,
   servicePayload: ServicePayload,
   serviceId: NonEmptyString,
   retrievedService: Service
@@ -117,7 +117,7 @@ const updateServiceTask = (
         body: {
           ...retrievedService,
           ...servicePayload,
-          service_id: serviceId
+          service_id: serviceId // TODO insert check on ADB2C token_name from Active Directory see: https://www.pivotaltracker.com/story/show/174823724
         },
         service_id: serviceId
       }),
@@ -128,7 +128,7 @@ const updateServiceTask = (
  * Handles requests for updating a service by given serviceId and a Service Payload.
  */
 export function UpdateServiceHandler(
-  apiClient: ReturnType<APIClient>
+  apiClient: APIClient
 ): IUpdateServiceHandler {
   return (_, apiAuth, ___, ____, serviceId, servicePayload) => {
     return serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId)
@@ -168,7 +168,7 @@ export function UpdateServiceHandler(
  */
 export function UpdateService(
   serviceModel: ServiceModel,
-  client: ReturnType<APIClient>
+  client: APIClient
 ): express.RequestHandler {
   const handler = UpdateServiceHandler(client);
   const middlewaresWrap = withRequestMiddlewares(

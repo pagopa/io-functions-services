@@ -12,14 +12,12 @@ import { setAppContext } from "io-functions-commons/dist/src/utils/middlewares/c
 
 import createAzureFunctionHandler from "io-functions-express/dist/src/createAzureFunctionsHandler";
 
-import { getApiClient } from "../utils/apiclient";
+import { apiClient } from "../utils/clients/admin";
 import { GetUserServices } from "./handler";
 
 // Setup Express
 const app = express();
 secureExpressApp(app);
-
-const client = getApiClient();
 
 const serviceModel = new ServiceModel(
   cosmosdbInstance.container(SERVICE_COLLECTION_NAME)
@@ -28,7 +26,7 @@ const serviceModel = new ServiceModel(
 // Set up CORS (free access to the API from browser clients)
 app.use(cors());
 
-app.get("/api/v1/services", GetUserServices(serviceModel, client));
+app.get("/api/v1/services", GetUserServices(serviceModel, apiClient));
 
 const azureFunctionHandler = createAzureFunctionHandler(app);
 

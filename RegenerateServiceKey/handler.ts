@@ -76,7 +76,7 @@ type IRegenerateServiceKeyHandler = (
 
 const regenerateServiceKeyTask = (
   logger: ILogger,
-  apiClient: ReturnType<APIClient>,
+  apiClient: APIClient,
   serviceId: NonEmptyString,
   subscriptionKeyTypePayload: SubscriptionKeyTypePayload
 ): TaskEither<ErrorResponses, IResponseSuccessJson<SubscriptionKeys>> =>
@@ -94,7 +94,7 @@ const regenerateServiceKeyTask = (
  * Handles requests for upload a service logo by a service ID and a base64 logo' s string.
  */
 export function RegenerateServiceKeyHandler(
-  apiClient: ReturnType<APIClient>
+  apiClient: APIClient
 ): IRegenerateServiceKeyHandler {
   return (_, apiAuth, ___, ____, serviceId, subscriptionKeyTypePayload) => {
     return serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId)
@@ -116,7 +116,7 @@ export function RegenerateServiceKeyHandler(
  */
 export function RegenerateServiceKey(
   serviceModel: ServiceModel,
-  client: ReturnType<APIClient>
+  client: APIClient
 ): express.RequestHandler {
   const handler = RegenerateServiceKeyHandler(client);
   const middlewaresWrap = withRequestMiddlewares(

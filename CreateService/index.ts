@@ -13,7 +13,7 @@ import { setAppContext } from "io-functions-commons/dist/src/utils/middlewares/c
 import createAzureFunctionHandler from "io-functions-express/dist/src/createAzureFunctionsHandler";
 
 import { getRequiredStringEnv } from "io-functions-commons/dist/src/utils/env";
-import { getApiClient } from "../utils/apiclient";
+import { apiClient } from "../utils/clients/admin";
 import { CreateService } from "./handler";
 
 // Setup Express
@@ -22,8 +22,6 @@ secureExpressApp(app);
 
 // Set up CORS (free access to the API from browser clients)
 app.use(cors());
-
-const client = getApiClient();
 
 const productName = getRequiredStringEnv("DEFAULT_SUBSCRIPTION_PRODUCT_NAME");
 const sandboxFiscalCode = getRequiredStringEnv("SANDBOX_FISCAL_CODE");
@@ -34,7 +32,7 @@ const serviceModel = new ServiceModel(
 
 app.post(
   "/api/v1/services",
-  CreateService(serviceModel, client, productName, sandboxFiscalCode)
+  CreateService(serviceModel, apiClient, productName, sandboxFiscalCode)
 );
 
 const azureFunctionHandler = createAzureFunctionHandler(app);
