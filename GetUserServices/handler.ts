@@ -58,7 +58,7 @@ const logPrefix = "GetUserServicesHandler";
 
 const getUserTask = (
   logger: ILogger,
-  apiClient: ReturnType<APIClient>,
+  apiClient: APIClient,
   userEmail: EmailString
 ): TaskEither<ErrorResponses, UserInfo> =>
   withApiRequestWrapper(
@@ -74,7 +74,7 @@ const getUserTask = (
  * Handles requests for getting an array of serviceID by providing the current user email.
  */
 export function GetUserServicesHandler(
-  apiClient: ReturnType<APIClient>
+  apiClient: APIClient
 ): IGetUserServicesHandler {
   return (_, __, ___, userAttributes) => {
     return getUserTask(
@@ -102,7 +102,7 @@ export function GetUserServicesHandler(
  */
 export function GetUserServices(
   serviceModel: ServiceModel,
-  client: ReturnType<APIClient>
+  client: APIClient
 ): express.RequestHandler {
   const handler = GetUserServicesHandler(client);
   const middlewaresWrap = withRequestMiddlewares(

@@ -78,7 +78,7 @@ const logPrefix = "UpdateServiceHandler";
 
 const getSubscriptionKeysTask = (
   logger: ILogger,
-  apiClient: ReturnType<APIClient>,
+  apiClient: APIClient,
   serviceId: NonEmptyString
 ): TaskEither<ErrorResponses, SubscriptionKeys> =>
   withApiRequestWrapper(
@@ -92,7 +92,7 @@ const getSubscriptionKeysTask = (
 
 const getServiceTask = (
   logger: ILogger,
-  apiClient: ReturnType<APIClient>,
+  apiClient: APIClient,
   serviceId: NonEmptyString
 ): TaskEither<ErrorResponses, Service> =>
   withApiRequestWrapper(
@@ -120,7 +120,7 @@ const getUserTask = (
 
 const updateServiceTask = (
   logger: ILogger,
-  apiClient: ReturnType<APIClient>,
+  apiClient: APIClient,
   servicePayload: ServicePayload,
   serviceId: NonEmptyString,
   retrievedService: Service,
@@ -138,6 +138,7 @@ const updateServiceTask = (
             ...servicePayload.service_metadata,
             token_name: adb2cTokenName
           }
+          service_id: serviceId
         },
         service_id: serviceId
       }),
@@ -148,7 +149,7 @@ const updateServiceTask = (
  * Handles requests for updating a service by given serviceId and a Service Payload.
  */
 export function UpdateServiceHandler(
-  apiClient: ReturnType<APIClient>
+  apiClient: APIClient
 ): IUpdateServiceHandler {
   return (_, apiAuth, ___, userAttributes, serviceId, servicePayload) => {
     return serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId)
@@ -197,7 +198,7 @@ export function UpdateServiceHandler(
  */
 export function UpdateService(
   serviceModel: ServiceModel,
-  client: ReturnType<APIClient>
+  client: APIClient
 ): express.RequestHandler {
   const handler = UpdateServiceHandler(client);
   const middlewaresWrap = withRequestMiddlewares(

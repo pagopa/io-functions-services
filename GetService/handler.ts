@@ -66,7 +66,7 @@ const logPrefix = "GetServiceHandler";
 
 const getServiceTask = (
   logger: ILogger,
-  apiClient: ReturnType<APIClient>,
+  apiClient: APIClient,
   serviceId: string
 ): TaskEither<ErrorResponses, Service> =>
   withApiRequestWrapper(
@@ -80,7 +80,7 @@ const getServiceTask = (
 
 const getSubscriptionKeysTask = (
   logger: ILogger,
-  apiClient: ReturnType<APIClient>,
+  apiClient: APIClient,
   serviceId: string
 ): TaskEither<ErrorResponses, SubscriptionKeys> =>
   withApiRequestWrapper(
@@ -95,9 +95,7 @@ const getSubscriptionKeysTask = (
 /**
  * Handles requests for getting a single service by a service ID.
  */
-export function GetServiceHandler(
-  apiClient: ReturnType<APIClient>
-): IGetServiceHandler {
+export function GetServiceHandler(apiClient: APIClient): IGetServiceHandler {
   return (_, apiAuth, ___, ____, serviceId) => {
     return serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId)
       .chain(() =>
@@ -131,7 +129,7 @@ export function GetServiceHandler(
  */
 export function GetService(
   serviceModel: ServiceModel,
-  client: ReturnType<APIClient>
+  client: APIClient
 ): express.RequestHandler {
   const handler = GetServiceHandler(client);
   const middlewaresWrap = withRequestMiddlewares(

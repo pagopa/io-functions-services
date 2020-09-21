@@ -83,7 +83,7 @@ type ICreateServiceHandler = (
 
 const createSubscriptionTask = (
   logger: ILogger,
-  apiClient: ReturnType<APIClient>,
+  apiClient: APIClient,
   userEmail: EmailString,
   subscriptionId: NonEmptyString,
   productName: NonEmptyString
@@ -117,7 +117,7 @@ const getUserTask = (
 
 const createServiceTask = (
   logger: ILogger,
-  apiClient: ReturnType<APIClient>,
+  apiClient: APIClient,
   servicePayload: ServicePayload,
   subscriptionId: NonEmptyString,
   sandboxFiscalCode: FiscalCode,
@@ -135,6 +135,7 @@ const createServiceTask = (
             ...servicePayload.service_metadata,
             token_name: adb2cTokenName
           }
+          service_id: subscriptionId
         }
       }),
     200
@@ -144,7 +145,7 @@ const createServiceTask = (
  * Handles requests for create a service by a Service Payload.
  */
 export function CreateServiceHandler(
-  apiClient: ReturnType<APIClient>,
+  apiClient: APIClient,
   generateObjectId: ObjectIdGenerator,
   productName: NonEmptyString,
   sandboxFiscalCode: NonEmptyString
@@ -193,7 +194,7 @@ export function CreateServiceHandler(
  */
 export function CreateService(
   serviceModel: ServiceModel,
-  client: ReturnType<APIClient>,
+  client: APIClient,
   productName: NonEmptyString,
   sandboxFiscalCode: NonEmptyString
 ): express.RequestHandler {

@@ -75,7 +75,7 @@ type IUploadServiceLogoHandler = (
 
 const uploadServiceLogoTask = (
   logger: ILogger,
-  apiClient: ReturnType<APIClient>,
+  apiClient: APIClient,
   serviceId: string,
   logo: Logo
 ): TaskEither<ErrorResponses, IResponseSuccessJson<undefined>> =>
@@ -93,7 +93,7 @@ const uploadServiceLogoTask = (
  * Handles requests for upload a service logo by a service ID and a base64 logo' s string.
  */
 export function UploadServiceLogoHandler(
-  apiClient: ReturnType<APIClient>
+  apiClient: APIClient
 ): IUploadServiceLogoHandler {
   return (_, apiAuth, ___, ____, serviceId, logoPayload) => {
     return serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId)
@@ -115,7 +115,7 @@ export function UploadServiceLogoHandler(
  */
 export function UploadServiceLogo(
   serviceModel: ServiceModel,
-  client: ReturnType<APIClient>
+  client: APIClient
 ): express.RequestHandler {
   const handler = UploadServiceLogoHandler(client);
   const middlewaresWrap = withRequestMiddlewares(
