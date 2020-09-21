@@ -37,25 +37,16 @@ import {
 
 import { Context } from "@azure/functions";
 import { identity } from "fp-ts/lib/function";
-import {
-  fromLeft,
-  taskEither,
-  TaskEither,
-  tryCatch
-} from "fp-ts/lib/TaskEither";
+import { TaskEither } from "fp-ts/lib/TaskEither";
 import { ServiceModel } from "io-functions-commons/dist/src/models/service";
 import { ContextMiddleware } from "io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { RequiredBodyPayloadMiddleware } from "io-functions-commons/dist/src/utils/middlewares/required_body_payload";
 import { SubscriptionKeys } from "../generated/definitions/SubscriptionKeys";
 import { SubscriptionKeyTypePayload } from "../generated/definitions/SubscriptionKeyTypePayload";
+import { withApiRequestWrapper } from "../utils/api";
 import { APIClient } from "../utils/clients/admin";
 import { getLogger, ILogger } from "../utils/logging";
-import {
-  ErrorResponses,
-  IResponseErrorUnauthorized,
-  toDefaultResponseErrorInternal,
-  toErrorServerResponse
-} from "../utils/responses";
+import { ErrorResponses, IResponseErrorUnauthorized } from "../utils/responses";
 import { serviceOwnerCheckTask } from "../utils/subscription";
 
 type ResponseTypes =
@@ -89,30 +80,15 @@ const regenerateServiceKeyTask = (
   serviceId: NonEmptyString,
   subscriptionKeyTypePayload: SubscriptionKeyTypePayload
 ): TaskEither<ErrorResponses, IResponseSuccessJson<SubscriptionKeys>> =>
-  tryCatch(
+  withApiRequestWrapper(
+    logger,
     () =>
       apiClient.RegenerateSubscriptionKeys({
         body: subscriptionKeyTypePayload,
         service_id: serviceId
       }),
-    errs => {
-      logger.logUnknown(errs);
-      return toDefaultResponseErrorInternal(errs);
-    }
-  ).foldTaskEither(
-    err => fromLeft(err),
-    errorOrResponse =>
-      errorOrResponse.fold(
-        errs => {
-          logger.logErrors(errs);
-          return fromLeft(toDefaultResponseErrorInternal(errs));
-        },
-        responseType =>
-          responseType.status !== 200
-            ? fromLeft(toErrorServerResponse(responseType))
-            : taskEither.of(ResponseSuccessJson(responseType.value))
-      )
-  );
+    200
+  ).map(ResponseSuccessJson);
 
 /**
  * Handles requests for upload a service logo by a service ID and a base64 logo' s string.

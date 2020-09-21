@@ -35,12 +35,7 @@ import {
 
 import { Context } from "@azure/functions";
 import { identity } from "fp-ts/lib/function";
-import {
-  fromLeft,
-  taskEither,
-  TaskEither,
-  tryCatch
-} from "fp-ts/lib/TaskEither";
+import { TaskEither } from "fp-ts/lib/TaskEither";
 import { ServiceModel } from "io-functions-commons/dist/src/models/service";
 import { ContextMiddleware } from "io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { RequiredParamMiddleware } from "io-functions-commons/dist/src/utils/middlewares/required_param";
@@ -50,14 +45,10 @@ import { SubscriptionKeys } from "../generated/api-admin/SubscriptionKeys";
 import { UserInfo } from "../generated/api-admin/UserInfo";
 import { ServicePayload } from "../generated/definitions/ServicePayload";
 import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWithSubscriptionKeys";
+import { withApiRequestWrapper } from "../utils/api";
 import { APIClient } from "../utils/clients/admin";
 import { getLogger, ILogger } from "../utils/logging";
-import {
-  ErrorResponses,
-  IResponseErrorUnauthorized,
-  toDefaultResponseErrorInternal,
-  toErrorServerResponse
-} from "../utils/responses";
+import { ErrorResponses, IResponseErrorUnauthorized } from "../utils/responses";
 import { serviceOwnerCheckTask } from "../utils/subscription";
 
 type ResponseTypes =
@@ -90,28 +81,13 @@ const getSubscriptionKeysTask = (
   apiClient: ReturnType<APIClient>,
   serviceId: NonEmptyString
 ): TaskEither<ErrorResponses, SubscriptionKeys> =>
-  tryCatch(
+  withApiRequestWrapper(
+    logger,
     () =>
       apiClient.getSubscriptionKeys({
         service_id: serviceId
       }),
-    errs => {
-      logger.logUnknown(errs);
-      return toDefaultResponseErrorInternal(errs);
-    }
-  ).foldTaskEither(
-    err => fromLeft(err),
-    errorOrResponse =>
-      errorOrResponse.fold(
-        errs => {
-          logger.logErrors(errs);
-          return fromLeft(toDefaultResponseErrorInternal(errs));
-        },
-        responseType =>
-          responseType.status !== 200
-            ? fromLeft(toErrorServerResponse(responseType))
-            : taskEither.of(responseType.value)
-      )
+    200
   );
 
 const getServiceTask = (
@@ -119,28 +95,13 @@ const getServiceTask = (
   apiClient: ReturnType<APIClient>,
   serviceId: NonEmptyString
 ): TaskEither<ErrorResponses, Service> =>
-  tryCatch(
+  withApiRequestWrapper(
+    logger,
     () =>
       apiClient.getService({
         service_id: serviceId
       }),
-    errs => {
-      logger.logUnknown(errs);
-      return toDefaultResponseErrorInternal(errs);
-    }
-  ).foldTaskEither(
-    err => fromLeft(err),
-    errorOrResponse =>
-      errorOrResponse.fold(
-        errs => {
-          logger.logErrors(errs);
-          return fromLeft(toDefaultResponseErrorInternal(errs));
-        },
-        responseType =>
-          responseType.status !== 200
-            ? fromLeft(toErrorServerResponse(responseType))
-            : taskEither.of(responseType.value)
-      )
+    200
   );
 
 const getUserTask = (
@@ -148,28 +109,13 @@ const getUserTask = (
   apiClient: ReturnType<APIClient>,
   userEmail: EmailString
 ): TaskEither<ErrorResponses, UserInfo> =>
-  tryCatch(
+  withApiRequestWrapper(
+    logger,
     () =>
       apiClient.getUser({
         email: userEmail
       }),
-    errs => {
-      logger.logUnknown(errs);
-      return toDefaultResponseErrorInternal(errs);
-    }
-  ).foldTaskEither(
-    err => fromLeft(err),
-    errorOrResponse =>
-      errorOrResponse.fold(
-        errs => {
-          logger.logErrors(errs);
-          return fromLeft(toDefaultResponseErrorInternal(errs));
-        },
-        responseType =>
-          responseType.status !== 200
-            ? fromLeft(toErrorServerResponse(responseType))
-            : taskEither.of(responseType.value)
-      )
+    200
   );
 
 const updateServiceTask = (
@@ -180,7 +126,8 @@ const updateServiceTask = (
   retrievedService: Service,
   adb2cTokenName: NonEmptyString
 ): TaskEither<ErrorResponses, Service> =>
-  tryCatch(
+  withApiRequestWrapper(
+    logger,
     () =>
       apiClient.updateService({
         body: {
@@ -194,23 +141,7 @@ const updateServiceTask = (
         },
         service_id: serviceId
       }),
-    errs => {
-      logger.logUnknown(errs);
-      return toDefaultResponseErrorInternal(errs);
-    }
-  ).foldTaskEither(
-    err => fromLeft(err),
-    errorOrResponse =>
-      errorOrResponse.fold(
-        errs => {
-          logger.logErrors(errs);
-          return fromLeft(toDefaultResponseErrorInternal(errs));
-        },
-        responseType =>
-          responseType.status !== 200
-            ? fromLeft(toErrorServerResponse(responseType))
-            : taskEither.of(responseType.value)
-      )
+    200
   );
 
 /**
