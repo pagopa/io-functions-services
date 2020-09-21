@@ -18,7 +18,7 @@ export const withApiRequestWrapper = <T>(
   apiCallWithParams: () => Promise<
     t.Validation<IResponseType<number, T, never>>
   >,
-  successStatusCode: number
+  successStatusCode: 200 | 201 | 202 = 200
 ): TaskEither<ErrorResponses, T> =>
   tryCatch(
     () => apiCallWithParams(),
