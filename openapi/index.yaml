@@ -1,4 +1,4 @@
-swagger: "2.0"
+swagger: "3.0"
 info:
   version: 1.0.0
   title: IO API for Public Administration Services
@@ -438,14 +438,14 @@ paths:
     put:
       operationId: updateService
       summary: Update Service
-      description: Update a previously created service with the provided service ID
+      description: |-
+        Update a previously created service with the provided service ID
+        This API operation needs the same API key of the service being retrieved
+        otherwise 403 forbidden will be returned to the caller.
       parameters:
         - in: body
           name: body
-          description: |-
-            The updated service payload.
-            This API operation needs the same API key of the service being updated
-            otherwise 403 forbidden will be returned to the caller.
+          description: The updated service payload.
           schema:
             "$ref": "#/definitions/ServicePayload"
       responses:
@@ -476,6 +476,8 @@ paths:
       summary: Upload service logo.
       description: |
         Upsert a logo for an existing service.
+        This API operation needs the same API key of the service being retrieved
+        otherwise 403 forbidden will be returned to the caller.
       operationId: uploadServiceLogo
       parameters:
         - name: body
@@ -505,7 +507,10 @@ paths:
   "/services/{service_id}/keys":
     put:
       summary: Regenerate Service Key
-      description: Regenerate the specified key for the Service identified by the provided id.
+      description: |-
+        Regenerate the specified key for the Service identified by the provided id.
+        This API operation needs the same API key of the service being retrieved
+        otherwise 403 forbidden will be returned to the caller.
       operationId: regenerateServiceKey
       parameters:
         - name: service_id
@@ -578,39 +583,39 @@ definitions:
     pattern: "[0-9]{4}-[0-9]{2}-[0-9]{2}"
     x-example: "2019-09-15"
   ProblemJson:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/ProblemJson"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/ProblemJson"
   NotificationChannelStatusValue:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/NotificationChannelStatusValue"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/NotificationChannelStatusValue"
   MessageResponseWithContent:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/MessageResponseWithContent"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/MessageResponseWithContent"
   FiscalCode:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/FiscalCode"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/FiscalCode"
   LimitedProfile:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/LimitedProfile"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/LimitedProfile"
   Timestamp:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/Timestamp"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/Timestamp"
   TimeToLiveSeconds:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/TimeToLiveSeconds"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/TimeToLiveSeconds"
   MessageContent:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/MessageContent"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/MessageContent"
   NewMessage:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/NewMessage"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/NewMessage"
   ServicePayload:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/ServicePayload"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/ServicePayload"
   Service:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/Service"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/Service"
   ServiceMetadata:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/ServiceMetadata"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/ServiceMetadata"
   ServiceScope:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/ServiceScope"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/ServiceScope"
   ServiceId:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/ServiceId"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/ServiceId"
   ServiceName:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/ServiceName"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/ServiceName"
   OrganizationName:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/OrganizationName"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/OrganizationName"
   DepartmentName:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.5.0/openapi/definitions.yaml#/DepartmentName"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/DepartmentName"
   SubscriptionKeys:
     type: object
     properties:
@@ -686,4 +691,4 @@ securityDefinitions:
     type: apiKey
     name: Ocp-Apim-Subscription-Key
     in: header
-    description: The API key obtained through the developer portal.
+    description: The API key obtained through the developer portal or the getService operation.
