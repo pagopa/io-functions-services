@@ -3535,10 +3535,10 @@ invert-kv@^1.0.0:
   resolved "https://registry.yarnpkg.com/invert-kv/-/invert-kv-1.0.0.tgz#104a8e4aaca6d3d8cd157a8ef8bfab2d7a3ffdb6"
   integrity sha1-EEqOSqym09jNFXqO+L+rLXo//bY=
 
-io-functions-commons@^14.4.0:
-  version "14.4.0"
-  resolved "https://registry.yarnpkg.com/io-functions-commons/-/io-functions-commons-14.4.0.tgz#900f1e9108c622b739006a06e2b860de5c5ff00d"
-  integrity sha512-+nyKVmEnfRJsaWngegtt6O9uvshyCzZBC5033DRVSjUgkOhSfI3gYutM1PyCOYLf4V8DplGF/U1eqg5m5spl9A==
+io-functions-commons@^14.6.0:
+  version "14.6.0"
+  resolved "https://registry.yarnpkg.com/io-functions-commons/-/io-functions-commons-14.6.0.tgz#c420cba54a7b4d01a97e5f75e295a3668a14cf6c"
+  integrity sha512-8vWY2aZgjCMZvQGKeiII+8wQYH7be1ghDG/jTu6+yE9/SDR90L2BFSwb4n1KihX5wugM3h5ne3UVhWVRV/S+tw==
   dependencies:
     "@azure/cosmos" "^3.7.2"
     "@types/node-fetch" "^2.5.6"
@@ -3563,7 +3563,7 @@ io-functions-commons@^14.4.0:
     unified "^9.0.0"
     winston "^3.1.0"
 
-io-functions-express@^0.1.0, io-functions-express@^0.1.1:
+io-functions-express@^0.1.1:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/io-functions-express/-/io-functions-express-0.1.1.tgz#6ae954fe89ec1d797c5e5d10eca5e77f08ff4a4d"
   integrity sha512-Co7sovRyB0lxgU6NFh5v72Apude3XbgKQtqA7slryvKoEqLAvlnLU7DtsYVoF62O3ZJdtSHYf9JWuhDc/di1mg==
