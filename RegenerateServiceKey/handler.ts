@@ -100,7 +100,7 @@ export function RegenerateServiceKeyHandler(
     return serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId)
       .chain(() =>
         regenerateServiceKeyTask(
-          getLogger(_, logPrefix, "UploadServiceLogo"),
+          getLogger(_, logPrefix, "RegenerateServiceKey"),
           apiClient,
           serviceId,
           subscriptionKeyTypePayload
