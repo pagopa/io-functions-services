@@ -1,6 +1,6 @@
-swagger: '2.0'
+swagger: "2.0"
 info:
-  version: 1.0.0
+  version: 1.1.0
   title: IO API for Public Administration Services
   contact:
     name: Digital Transformation Team
@@ -94,9 +94,9 @@ info:
 host: api.io.italia.it
 basePath: "/api/v1"
 schemes:
-- https
+  - https
 security:
-- SubscriptionKey: []
+  - SubscriptionKey: []
 paths:
   "/messages":
     post:
@@ -110,22 +110,22 @@ paths:
         (for the specified fiscal code) and that the `sender_allowed` field
         of the user's profile it set to `true`.
       parameters:
-      - name: message
-        in: body
-        schema:
-          $ref: "#/definitions/NewMessage"
-        x-examples:
-          application/json:
-            time_to_live: 3600
-            content:
-              subject: ipsum labore deserunt fugiat
-              markdown:  |-
-                Nullam dapibus metus sed elementum efficitur. Curabitur facilisis sagittis risus nec sodales.
-                Vestibulum in eros sapien. Donec ac odio sit amet dui semper ornare eget nec odio. Pellentesque habitant
-                morbi tristique senectus et netus et malesuada fames ac turpis egestas. Praesent nibh ex, mattis sit amet
-                felis id, sodales euismod velit. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+        - name: message
+          in: body
+          schema:
+            $ref: "#/definitions/NewMessage"
+          x-examples:
+            application/json:
+              time_to_live: 3600
+              content:
+                subject: ipsum labore deserunt fugiat
+                markdown: |-
+                  Nullam dapibus metus sed elementum efficitur. Curabitur facilisis sagittis risus nec sodales.
+                  Vestibulum in eros sapien. Donec ac odio sit amet dui semper ornare eget nec odio. Pellentesque habitant
+                  morbi tristique senectus et netus et malesuada fames ac turpis egestas. Praesent nibh ex, mattis sit amet
+                  felis id, sodales euismod velit. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
       responses:
-        '201':
+        "201":
           description: Message created.
           schema:
             type: object
@@ -142,16 +142,16 @@ paths:
           examples:
             application/json:
               id: 01BX9NSMKVXXS5PSP2FATZMYYY
-        '400':
+        "400":
           description: Invalid payload.
           schema:
             $ref: "#/definitions/ProblemJson"
           examples: {}
-        '401':
+        "401":
           description: Unauthorized
-        '429':
+        "429":
           description: Too many requests
-        '500':
+        "500":
           description: The message cannot be delivered.
           schema:
             $ref: "#/definitions/ProblemJson"
@@ -167,23 +167,23 @@ paths:
         (for the specified fiscal code) and that the `sender_allowed` field
         of the user's profile it set to `true`.
       parameters:
-      - $ref: "#/parameters/FiscalCode"
-      - name: message
-        in: body
-        schema:
-          $ref: "#/definitions/NewMessage"
-        x-examples:
-          application/json:
-            time_to_live: 3600
-            content:
-              subject: ipsum labore deserunt fugiat
-              markdown:  |-
-                Nullam dapibus metus sed elementum efficitur. Curabitur facilisis sagittis risus nec sodales.
-                Vestibulum in eros sapien. Donec ac odio sit amet dui semper ornare eget nec odio. Pellentesque habitant
-                morbi tristique senectus et netus et malesuada fames ac turpis egestas. Praesent nibh ex, mattis sit amet
-                felis id, sodales euismod velit. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+        - $ref: "#/parameters/FiscalCode"
+        - name: message
+          in: body
+          schema:
+            $ref: "#/definitions/NewMessage"
+          x-examples:
+            application/json:
+              time_to_live: 3600
+              content:
+                subject: ipsum labore deserunt fugiat
+                markdown: |-
+                  Nullam dapibus metus sed elementum efficitur. Curabitur facilisis sagittis risus nec sodales.
+                  Vestibulum in eros sapien. Donec ac odio sit amet dui semper ornare eget nec odio. Pellentesque habitant
+                  morbi tristique senectus et netus et malesuada fames ac turpis egestas. Praesent nibh ex, mattis sit amet
+                  felis id, sodales euismod velit. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
       responses:
-        '201':
+        "201":
           description: Message created.
           schema:
             type: object
@@ -200,16 +200,16 @@ paths:
           examples:
             application/json:
               id: 01BX9NSMKVXXS5PSP2FATZMYYY
-        '400':
+        "400":
           description: Invalid payload.
           schema:
             $ref: "#/definitions/ProblemJson"
           examples: {}
-        '401':
+        "401":
           description: Unauthorized
-        '429':
+        "429":
           description: Too many requests
-        '500':
+        "500":
           description: The message cannot be delivered.
           schema:
             $ref: "#/definitions/ProblemJson"
@@ -221,14 +221,14 @@ paths:
         The previously created message with the provided message ID is
         returned.
       parameters:
-      - $ref: "#/parameters/FiscalCode"
-      - name: id
-        in: path
-        type: string
-        required: true
-        description: The ID of the message.
+        - $ref: "#/parameters/FiscalCode"
+        - name: id
+          in: path
+          type: string
+          required: true
+          description: The ID of the message.
       responses:
-        '200':
+        "200":
           description: Message found.
           schema:
             $ref: "#/definitions/MessageResponseWithContent"
@@ -240,7 +240,7 @@ paths:
                 time_to_live: 3600
                 content:
                   subject: message subject, aliquip sint nulla in estinut
-                  markdown:  |-
+                  markdown: |-
                     Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas et mollis felis.
                     Vivamus orci nisl, commodo ut sodales ut, eleifend a libero. Donec dapibus, turpis in mattis tempor,
                     risus nunc malesuada ex, non aliquet metus nunc a lacus. Aenean in arcu vitae nisl porta
@@ -249,24 +249,24 @@ paths:
                 sender_service_id: 01BX9NSMKVXXS5PSP2FATZM6QX
               notification:
                 email: QUEUED
-        '401':
+        "401":
           description: Unauthorized
-        '404':
+        "404":
           description: No message found for the provided ID.
           schema:
             $ref: "#/definitions/ProblemJson"
-        '429':
+        "429":
           description: Too many requests
   "/profiles":
     post:
       operationId: getProfileByPOST
       summary: Get a User Profile using POST
-      description:  |-
+      description: |-
         Returns the preferences for the user identified by the
         fiscal code provided in the request body. The field `sender_allowed` is set fo `false` in case
         the service which is calling the API has been disabled by the user.
       responses:
-        '200':
+        "200":
           description: Found.
           schema:
             $ref: "#/definitions/LimitedProfile"
@@ -274,13 +274,13 @@ paths:
             application/json:
               email: foobar@example.com
               version: 1
-        '401':
+        "401":
           description: Unauthorized
-        '404':
+        "404":
           description: No user found for the provided fiscal code.
           schema:
             $ref: "#/definitions/ProblemJson"
-        '429':
+        "429":
           description: Too many requests
       parameters:
         - name: payload
@@ -291,12 +291,12 @@ paths:
     get:
       operationId: getProfile
       summary: Get a User Profile
-      description:  |-
+      description: |-
         Returns the preferences for the user identified by the provided
         fiscal code. The field `sender_allowed` is set fo `false` in case
         the service which is calling the API has been disabled by the user.
       responses:
-        '200':
+        "200":
           description: Found.
           schema:
             $ref: "#/definitions/LimitedProfile"
@@ -304,21 +304,21 @@ paths:
             application/json:
               email: foobar@example.com
               version: 1
-        '401':
+        "401":
           description: Unauthorized
-        '404':
+        "404":
           description: No user found for the provided fiscal code.
           schema:
             $ref: "#/definitions/ProblemJson"
-        '429':
+        "429":
           description: Too many requests
       parameters:
-      - $ref: "#/parameters/FiscalCode"
+        - $ref: "#/parameters/FiscalCode"
   "/subscriptions-feed/{date}":
     get:
       operationId: getSubscriptionsFeedForDate
       summary: Get Subscriptions Feed
-      description:  |-
+      description: |-
         Returns the **hashed fiscal codes** of users that **subscribed to** or
         **unsubscribed from** your service **on the provided date** (UTC).
 
@@ -338,25 +338,209 @@ paths:
         Note that this is an optimization for those services that need to send very high
         volumes of messages per day, to avoid having to make two API calls for each message.
       responses:
-        '200':
+        "200":
           description: Found.
           schema:
             $ref: "#/definitions/SubscriptionsFeed"
           examples:
             application/json:
               dateUTC: "2019-09-03"
-              subscriptions: [ "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" ]
-              unsubscriptions: [ ]
-        '401':
+              subscriptions:
+                [
+                  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                ]
+              unsubscriptions: []
+        "401":
           description: Unauthorized
-        '404':
+        "404":
           description: Subscriptions feed not available yet.
           schema:
             $ref: "#/definitions/ProblemJson"
-        '429':
+        "429":
           description: Too many requests
       parameters:
-      - $ref: "#/parameters/DateUTC"
+        - $ref: "#/parameters/DateUTC"
+  "/services":
+    post:
+      operationId: createService
+      summary: Create Service
+      description: |
+        Create a new Service with the attributes provided in the request payload.
+      parameters:
+        - in: body
+          name: body
+          description: |-
+            A service can invoke the IO API by providing the relative API key
+            (every service has an associated primary and secondary API key).
+            Through the API a service can send messages to the IO users
+            that haven't opted out from it. Service metadata are used
+            to qualify the sender of these messages to the recipient.
+          schema:
+            "$ref": "#/definitions/ServicePayload"
+      responses:
+        "200":
+          description: Service created.
+          schema:
+            "$ref": "#/definitions/ServiceWithSubscriptionKeys"
+        "400":
+          description: Invalid payload.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+        "401":
+          description: Unauthorized.
+        "429":
+          description: Too many requests.
+        "500":
+          description: The service cannot be created.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+    get:
+      operationId: getUserServices
+      summary: Get User Services
+      description: |
+        Retrieve the identifiers of the services owned by the calling user
+      responses:
+        "200":
+          description: The list of service ids.
+          schema:
+            "$ref": "#/definitions/ServiceIdCollection"
+        "401":
+          description: Unauthorized.
+        "429":
+          description: Too many requests.
+  "/services/{service_id}":
+    parameters:
+      - name: service_id
+        in: path
+        type: string
+        required: true
+        description: The ID of an existing Service.
+    get:
+      operationId: getService
+      summary: Get Service
+      description: |
+        Retrieve a previously created service with the provided service ID.
+        This API operation needs the same API key of the service being retrieved
+        otherwise 403 forbidden will be returned to the caller.
+      responses:
+        "200":
+          description: Service found.
+          schema:
+            "$ref": "#/definitions/ServiceWithSubscriptionKeys"
+        "401":
+          description: Unauthorized.
+        "403":
+          description: Forbidden.
+        "404":
+          description: No service found for the provided ID.
+        "429":
+          description: Too many requests.
+    put:
+      operationId: updateService
+      summary: Update Service
+      description: |-
+        Update a previously created service with the provided service ID
+        This API operation needs the same API key of the service being retrieved
+        otherwise 403 forbidden will be returned to the caller.
+      parameters:
+        - in: body
+          name: body
+          description: The updated service payload.
+          schema:
+            "$ref": "#/definitions/ServicePayload"
+      responses:
+        "200":
+          description: Service updated.
+          schema:
+            "$ref": "#/definitions/ServiceWithSubscriptionKeys"
+        "401":
+          description: Unauthorized.
+        "403":
+          description: Forbidden.
+        "404":
+          description: No service found for the provided ID.
+        "429":
+          description: Too many requests.
+        "500":
+          description: The service cannot be updated.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+  "/services/{service_id}/logo":
+    parameters:
+      - name: service_id
+        in: path
+        type: string
+        required: true
+        description: The ID of an existing Service.
+    put:
+      summary: Upload service logo.
+      description: |
+        Upsert a logo for an existing service.
+        This API operation needs the same API key of the service being retrieved
+        otherwise 403 forbidden will be returned to the caller.
+      operationId: uploadServiceLogo
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: "#/definitions/Logo"
+          description: A base64 string's representation of the service's logo PNG image.
+            It can be a service's own logo or an organization's logo.
+      responses:
+        "200":
+          description: Logo uploaded.
+        "400":
+          description: Invalid payload.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+        "401":
+          description: Unauthorized.
+        "403":
+          description: Forbidden.
+        "404":
+          description: No service found for the provided ID.
+        "500":
+          description: The service logo cannot be uploaded.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+  "/services/{service_id}/keys":
+    put:
+      summary: Regenerate Service Key
+      description: |-
+        Regenerate the specified key for the Service identified by the provided id.
+        This API operation needs the same API key of the service being retrieved
+        otherwise 403 forbidden will be returned to the caller.
+      operationId: regenerateServiceKey
+      parameters:
+        - name: service_id
+          in: path
+          type: string
+          required: true
+          description: The ID of an existing Service.
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: "#/definitions/SubscriptionKeyTypePayload"
+          description: The type of the key to be regenerated (PRIMARY_KEY or SECONDARY_KEY).
+      responses:
+        "200":
+          description: The subscription keys for the service.
+          schema:
+            $ref: "#/definitions/SubscriptionKeys"
+        "400":
+          description: Invalid payload.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+        "403":
+          description: Forbidden.
+        "404":
+          description: Service not found.
+        "500":
+          description: Cannot regenerate service key.
+          schema:
+            $ref: "#/definitions/ProblemJson"
 definitions:
   GetLimitedProfileByPOSTPayload:
     type: object
@@ -399,23 +583,83 @@ definitions:
     pattern: "[0-9]{4}-[0-9]{2}-[0-9]{2}"
     x-example: "2019-09-15"
   ProblemJson:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v7.3.0/openapi/definitions.yaml#/ProblemJson"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/ProblemJson"
   NotificationChannelStatusValue:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v7.3.0/openapi/definitions.yaml#/NotificationChannelStatusValue"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/NotificationChannelStatusValue"
   MessageResponseWithContent:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v7.3.0/openapi/definitions.yaml#/MessageResponseWithContent"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/MessageResponseWithContent"
   FiscalCode:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v7.3.0/openapi/definitions.yaml#/FiscalCode"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/FiscalCode"
   LimitedProfile:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v7.3.0/openapi/definitions.yaml#/LimitedProfile"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/LimitedProfile"
   Timestamp:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v7.3.0/openapi/definitions.yaml#/Timestamp"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/Timestamp"
   TimeToLiveSeconds:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v7.3.0/openapi/definitions.yaml#/TimeToLiveSeconds"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/TimeToLiveSeconds"
   MessageContent:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v7.3.0/openapi/definitions.yaml#/MessageContent"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/MessageContent"
   NewMessage:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v7.3.0/openapi/definitions.yaml#/NewMessage"
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/NewMessage"
+  ServicePayload:
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/ServicePayload"
+  Service:
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/Service"
+  ServiceMetadata:
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/ServiceMetadata"
+  ServiceScope:
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/ServiceScope"
+  ServiceId:
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/ServiceId"
+  ServiceName:
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/ServiceName"
+  OrganizationName:
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/OrganizationName"
+  DepartmentName:
+    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v14.6.0/openapi/definitions.yaml#/DepartmentName"
+  SubscriptionKeys:
+    type: object
+    properties:
+      primary_key:
+        type: string
+      secondary_key:
+        type: string
+    required:
+      - primary_key
+      - secondary_key
+  ServiceWithSubscriptionKeys:
+    allOf:
+      - $ref: "#/definitions/Service"
+      - $ref: "#/definitions/SubscriptionKeys"
+  ServiceIdCollection:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/definitions/ServiceId"
+    required:
+      - items
+  Logo:
+    type: object
+    properties:
+      logo:
+        type: string
+        format: byte
+        minLength: 1
+    required:
+      - logo
+  SubscriptionKeyTypePayload:
+    type: object
+    properties:
+      key_type:
+        $ref: "#/definitions/SubscriptionKeyType"
+    required:
+      - key_type
+  SubscriptionKeyType:
+    type: string
+    x-extensible-enum:
+      - PRIMARY_KEY
+      - SECONDARY_KEY
 responses: {}
 parameters:
   FiscalCode:
@@ -439,12 +683,12 @@ parameters:
     pattern: "[0-9]{4}-[0-9]{2}-[0-9]{2}"
     x-example: "2019-09-15"
 consumes:
-- application/json
+  - application/json
 produces:
-- application/json
+  - application/json
 securityDefinitions:
   SubscriptionKey:
     type: apiKey
     name: Ocp-Apim-Subscription-Key
     in: header
-    description: The API key obtained through the developer portal.
+    description: The API key obtained through the developer portal or the getService operation.
