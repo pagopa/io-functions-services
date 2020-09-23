@@ -1,7 +1,10 @@
 import * as fc from "fast-check";
 import { left, right } from "fp-ts/lib/Either";
 import { none, some } from "fp-ts/lib/Option";
-import { ProfileModel } from "io-functions-commons/dist/src/models/profile";
+import {
+  ProfileModel,
+  RetrievedProfile
+} from "io-functions-commons/dist/src/models/profile";
 import {
   IAzureApiAuthorization,
   UserGroup
@@ -83,6 +86,48 @@ describe("GetLimitedProfileHandler", () => {
         async (clientIp, fiscalCode) => {
           const mockProfileModel = ({
             findLastVersionByModelId: jest.fn(() => taskEither.of(none))
+          } as unknown) as ProfileModel;
+          const limitedProfileHandler = GetLimitedProfileHandler(
+            mockProfileModel
+          );
+
+          const response = await limitedProfileHandler(
+            {
+              ...mockAzureApiAuthorization,
+              groups: new Set([UserGroup.ApiMessageWrite])
+            },
+            clientIp,
+            mockAzureUserAttributes,
+            fiscalCode
+          );
+
+          expect(
+            mockProfileModel.findLastVersionByModelId
+          ).toHaveBeenCalledTimes(1);
+          expect(mockProfileModel.findLastVersionByModelId).toBeCalledWith([
+            fiscalCode
+          ]);
+          expect(response.kind).toBe("IResponseErrorNotFound");
+        }
+      )
+    );
+  });
+
+  it("should respond with ResponseErrorNotFound when the requested profile doesn't have the inbox enabled", async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        clientIpArb,
+        fiscalCodeArb,
+        retrievedProfileArb,
+        async (clientIp, fiscalCode, retrievedProfile) => {
+          const retrievedProfileWithInboxDisabled: RetrievedProfile = {
+            ...retrievedProfile,
+            isInboxEnabled: false
+          };
+          const mockProfileModel = ({
+            findLastVersionByModelId: jest.fn(() =>
+              taskEither.of(some(retrievedProfileWithInboxDisabled))
+            )
           } as unknown) as ProfileModel;
           const limitedProfileHandler = GetLimitedProfileHandler(
             mockProfileModel
