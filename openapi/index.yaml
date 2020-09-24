@@ -485,8 +485,8 @@ paths:
           required: true
           schema:
             $ref: "#/definitions/Logo"
-          description: A base64 string's representation of the service's logo PNG image.
-            It can be a service's own logo or an organization's logo.
+          description: A base64 string representation of the service logo PNG image.
+            It can be the service own logo or the organization logo.
       responses:
         "200":
           description: Logo uploaded.
