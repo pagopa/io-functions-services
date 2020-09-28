@@ -3563,7 +3563,7 @@ io-functions-commons@^14.6.0:
     unified "^9.0.0"
     winston "^3.1.0"
 
-io-functions-express@^0.1.0, io-functions-express@^0.1.1:
+io-functions-express@^0.1.1:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/io-functions-express/-/io-functions-express-0.1.1.tgz#6ae954fe89ec1d797c5e5d10eca5e77f08ff4a4d"
   integrity sha512-Co7sovRyB0lxgU6NFh5v72Apude3XbgKQtqA7slryvKoEqLAvlnLU7DtsYVoF62O3ZJdtSHYf9JWuhDc/di1mg==
