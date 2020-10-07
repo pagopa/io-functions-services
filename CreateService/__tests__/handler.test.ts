@@ -25,8 +25,11 @@ import { ServicePayload } from "../../generated/definitions/ServicePayload";
 import { CreateServiceHandler } from "../handler";
 
 const mockContext = {
-  // tslint:disable-next-line: no-console
-  log: console.log
+  // tslint:disable: no-console
+  log: {
+    error: console.error,
+    info: console.log
+  }
 } as any;
 
 afterEach(() => {

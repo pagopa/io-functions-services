@@ -9,11 +9,13 @@ export const getLogger = (
 ) => {
   return {
     logErrors: (errs: Errors) =>
-      context.log(
+      context.log.error(
         `${logPrefix}|${name}|ERROR=${errorsToReadableMessages(errs)}`
       ),
     logUnknown: (errs: unknown) =>
-      context.log(`${logPrefix}|${name}|ERROR=${JSON.stringify(errs)}`)
+      context.log.error(
+        `${logPrefix}|${name}|UNKNOWN_ERROR=${JSON.stringify(errs)}`
+      )
   };
 };
 
