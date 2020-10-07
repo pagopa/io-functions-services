@@ -25,8 +25,10 @@ import * as reporters from "italia-ts-commons/lib/reporters";
 import { GetServiceHandler } from "../handler";
 
 const mockContext = {
-  // tslint:disable-next-line: no-console
-  log: console.log
+  // tslint:disable: no-console
+  log: {
+    error: console.error
+  }
 } as any;
 
 afterEach(() => {
