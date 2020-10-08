@@ -18,13 +18,16 @@ import {
   NOTIFICATION_COLLECTION_NAME,
   NotificationModel
 } from "io-functions-commons/dist/src/models/notification";
-import { getRequiredStringEnv } from "io-functions-commons/dist/src/utils/env";
 
 import { getCreateNotificationActivityHandler } from "./handler";
 import { parseCommaSeparatedListOf } from "./utils";
 
+import { getConfigOrThrow } from "../utils/config";
+
+const config = getConfigOrThrow();
+
 const sandboxFiscalCode = FiscalCode.decode(
-  getRequiredStringEnv("SANDBOX_FISCAL_CODE")
+  config.SANDBOX_FISCAL_CODE
 ).getOrElseL(_ => {
   throw new Error(
     `Check that the environment variable SANDBOX_FISCAL_CODE is set to a valid FiscalCode`
@@ -32,7 +35,7 @@ const sandboxFiscalCode = FiscalCode.decode(
 });
 
 const emailNotificationServiceBlackList = parseCommaSeparatedListOf(ServiceId)(
-  process.env.EMAIL_NOTIFICATION_SERVICE_BLACKLIST
+  config.EMAIL_NOTIFICATION_SERVICE_BLACKLIST
 ).getOrElseL(_ => {
   throw new Error(
     `Check that the environment variable EMAIL_NOTIFICATION_SERVICE_BLACKLIST is either unset or set to a comma-separated list of valid ServiceId`
@@ -44,7 +47,7 @@ const notificationModel = new NotificationModel(
 );
 
 const defaultWebhookUrl = HttpsUrl.decode(
-  getRequiredStringEnv("WEBHOOK_CHANNEL_URL")
+  config.WEBHOOK_CHANNEL_URL
 ).getOrElseL(_ => {
   throw new Error(
     `Check that the environment variable WEBHOOK_CHANNEL_URL is set to a valid URL`

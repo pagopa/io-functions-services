@@ -19,7 +19,6 @@ import {
   NOTIFICATION_COLLECTION_NAME,
   NotificationModel
 } from "io-functions-commons/dist/src/models/notification";
-import { getRequiredStringEnv } from "io-functions-commons/dist/src/utils/env";
 import { MailUpTransport } from "io-functions-commons/dist/src/utils/mailup";
 
 import { getEmailNotificationActivityHandler } from "./handler";
@@ -33,10 +32,14 @@ import { NonEmptyString } from "italia-ts-commons/lib/strings";
 import { Millisecond } from "italia-ts-commons/lib/units";
 import nodemailerSendgrid = require("nodemailer-sendgrid");
 
+import { getConfigOrThrow } from "../utils/config";
+
+const config = getConfigOrThrow();
+
 //
 //  setup SendGrid
 //
-const SendgridTransport = NonEmptyString.decode(process.env.SENDGRID_API_KEY)
+const SendgridTransport = NonEmptyString.decode(config.SENDGRID_API_KEY)
   .map(sendgridApiKey =>
     nodemailerSendgrid({
       apiKey: sendgridApiKey
@@ -49,12 +52,6 @@ const notificationModel = new NotificationModel(
 );
 
 //
-// setup NodeMailer
-//
-const mailupUsername = getRequiredStringEnv("MAILUP_USERNAME");
-const mailupSecret = getRequiredStringEnv("MAILUP_SECRET");
-
-//
 // options used when converting an HTML message to pure text
 // see https://www.npmjs.com/package/html-to-text#options
 //
@@ -65,7 +62,7 @@ const HTML_TO_TEXT_OPTIONS: HtmlToTextOptions = {
 };
 
 // default sender for email
-const MAIL_FROM = getRequiredStringEnv("MAIL_FROM_DEFAULT");
+const MAIL_FROM = config.MAIL_FROM_DEFAULT;
 
 // 5 seconds timeout by default
 const DEFAULT_EMAIL_REQUEST_TIMEOUT_MS = 5000;
@@ -78,17 +75,16 @@ const fetchWithTimeout = setFetchTimeout(
 );
 
 // Whether we're in a production environment
-const isProduction = process.env.NODE_ENV === "production";
-const mailhogHostname: string = process.env.MAILHOG_HOSTNAME || "localhost";
+const mailhogHostname: string = config.MAILHOG_HOSTNAME || "localhost";
 
 const mailerTransporter = NodeMailer.createTransport(
-  isProduction
+  config.isProduction
     ? SendgridTransport !== undefined
       ? SendgridTransport
       : MailUpTransport({
           creds: {
-            Secret: mailupSecret,
-            Username: mailupUsername
+            Secret: config.MAILUP_SECRET,
+            Username: config.MAILUP_USERNAME
           },
           fetchAgent: toFetch(fetchWithTimeout)
         })

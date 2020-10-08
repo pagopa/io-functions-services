@@ -12,9 +12,12 @@ import { setAppContext } from "io-functions-commons/dist/src/utils/middlewares/c
 
 import createAzureFunctionHandler from "io-functions-express/dist/src/createAzureFunctionsHandler";
 
-import { getRequiredStringEnv } from "io-functions-commons/dist/src/utils/env";
 import { apiClient } from "../clients/admin";
 import { CreateService } from "./handler";
+
+import { getConfigOrThrow } from "../utils/config";
+
+const config = getConfigOrThrow();
 
 // Setup Express
 const app = express();
@@ -23,16 +26,18 @@ secureExpressApp(app);
 // Set up CORS (free access to the API from browser clients)
 app.use(cors());
 
-const productName = getRequiredStringEnv("DEFAULT_SUBSCRIPTION_PRODUCT_NAME");
-const sandboxFiscalCode = getRequiredStringEnv("SANDBOX_FISCAL_CODE");
-
 const serviceModel = new ServiceModel(
   cosmosdbInstance.container(SERVICE_COLLECTION_NAME)
 );
 
 app.post(
   "/api/v1/services",
-  CreateService(serviceModel, apiClient, productName, sandboxFiscalCode)
+  CreateService(
+    serviceModel,
+    apiClient,
+    config.DEFAULT_SUBSCRIPTION_PRODUCT_NAME,
+    config.SANDBOX_FISCAL_CODE
+  )
 );
 
 const azureFunctionHandler = createAzureFunctionHandler(app);

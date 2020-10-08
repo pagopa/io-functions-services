@@ -12,7 +12,6 @@ import {
   SERVICE_COLLECTION_NAME,
   ServiceModel
 } from "io-functions-commons/dist/src/models/service";
-import { getRequiredStringEnv } from "io-functions-commons/dist/src/utils/env";
 import { secureExpressApp } from "io-functions-commons/dist/src/utils/express";
 import { setAppContext } from "io-functions-commons/dist/src/utils/middlewares/context_middleware";
 
@@ -33,6 +32,10 @@ import {
 
 import { GetMessage } from "./handler";
 
+import { getConfigOrThrow } from "../utils/config";
+
+const config = getConfigOrThrow();
+
 // Setup Express
 const app = express();
 secureExpressApp(app);
@@ -40,11 +43,9 @@ secureExpressApp(app);
 // Set up CORS (free access to the API from browser clients)
 app.use(cors());
 
-const messageContainerName = getRequiredStringEnv("MESSAGE_CONTAINER_NAME");
-
 const messageModel = new MessageModel(
   cosmosdbInstance.container(MESSAGE_COLLECTION_NAME),
-  messageContainerName
+  config.MESSAGE_CONTAINER_NAME
 );
 
 const serviceModel = new ServiceModel(
@@ -63,8 +64,7 @@ const notificationStatusModel = new NotificationStatusModel(
   cosmosdbInstance.container(NOTIFICATION_STATUS_COLLECTION_NAME)
 );
 
-const storageConnectionString = getRequiredStringEnv("QueueStorageConnection");
-const blobService = createBlobService(storageConnectionString);
+const blobService = createBlobService(config.QueueStorageConnection);
 
 app.get(
   "/api/v1/messages/:fiscalcode/:id",
