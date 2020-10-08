@@ -25,7 +25,7 @@ const expectLeft = <L, R>(e: Either<L, R>, t: (l: L) => void = noop) =>
 describe("MailerConfig", () => {
   it("should decode configuration for sendgrid", () => {
     const rawConf = {
-      MAIL_FROM: aMailFrom,
+      MAIL_FROM_DEFAULT: aMailFrom,
       NODE_ENV: prodEnv,
       SENDGRID_API_KEY: "a-sg-key"
     };
@@ -41,7 +41,7 @@ describe("MailerConfig", () => {
     const rawConf = {
       MAILUP_SECRET: mailSecret,
       MAILUP_USERNAME: mailUsername,
-      MAIL_FROM: aMailFrom,
+      MAIL_FROM_DEFAULT: aMailFrom,
       NODE_ENV: prodEnv,
       SENDGRID_API_KEY: "a-sg-key"
     };
@@ -56,7 +56,7 @@ describe("MailerConfig", () => {
     const rawConf = {
       MAILUP_SECRET: mailSecret,
       MAILUP_USERNAME: mailUsername,
-      MAIL_FROM: aMailFrom,
+      MAIL_FROM_DEFAULT: aMailFrom,
       NODE_ENV: prodEnv
     };
     const result = MailerConfig.decode(rawConf);
@@ -80,7 +80,7 @@ describe("MailerConfig", () => {
     ].join(":");
 
     const rawConf = {
-      MAIL_FROM: aMailFrom,
+      MAIL_FROM_DEFAULT: aMailFrom,
       MAIL_TRANSPORTS: [aRawTrasport, aRawTrasport].join(";"),
       NODE_ENV: prodEnv
     };
@@ -94,7 +94,7 @@ describe("MailerConfig", () => {
   it("should decode configuration for mailhog", () => {
     const rawConf = {
       MAILHOG_HOSTNAME: "a-mh-host",
-      MAIL_FROM: aMailFrom,
+      MAIL_FROM_DEFAULT: aMailFrom,
       NODE_ENV: devEnv
     };
     const result = MailerConfig.decode(rawConf);
@@ -106,7 +106,7 @@ describe("MailerConfig", () => {
 
   it("should require mailhog if not in prod", () => {
     const rawConf = {
-      MAIL_FROM: aMailFrom,
+      MAIL_FROM_DEFAULT: aMailFrom,
       NODE_ENV: devEnv
     };
     const result = MailerConfig.decode(rawConf);
@@ -116,7 +116,7 @@ describe("MailerConfig", () => {
 
   it("should require at least on transporter if in prod", () => {
     const rawConf = {
-      MAIL_FROM: aMailFrom,
+      MAIL_FROM_DEFAULT: aMailFrom,
       NODE_ENV: prodEnv
     };
     const result = MailerConfig.decode(rawConf);
@@ -127,7 +127,7 @@ describe("MailerConfig", () => {
   it("should not allow mailhog if in prod", () => {
     const rawConf = {
       MAILHOG_HOSTNAME: "a-mh-host",
-      MAIL_FROM: aMailFrom,
+      MAIL_FROM_DEFAULT: aMailFrom,
       NODE_ENV: prodEnv
     };
     const result = MailerConfig.decode(rawConf);
@@ -137,7 +137,7 @@ describe("MailerConfig", () => {
 
   it("should not decode configuration with empty transport", () => {
     const rawConf = {
-      MAIL_FROM: aMailFrom,
+      MAIL_FROM_DEFAULT: aMailFrom,
       MAIL_TRANSPORTS: "",
       NODE_ENV: prodEnv
     };
@@ -148,7 +148,7 @@ describe("MailerConfig", () => {
 
   it("should not decode configuration when no transporter is specified", () => {
     const rawConf = {
-      MAIL_FROM: aMailFrom
+      MAIL_FROM_DEFAULT: aMailFrom
     };
     const result = MailerConfig.decode(rawConf);
 
@@ -167,7 +167,7 @@ describe("MailerConfig", () => {
       MAIL_TRANSPORTS: "a-trasnport-name"
     };
     const base = {
-      MAIL_FROM: aMailFrom,
+      MAIL_FROM_DEFAULT: aMailFrom,
       NODE_ENV: prodEnv
     };
 
