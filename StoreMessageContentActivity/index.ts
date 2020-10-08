@@ -10,21 +10,22 @@ import {
   PROFILE_COLLECTION_NAME,
   ProfileModel
 } from "io-functions-commons/dist/src/models/profile";
-import { getRequiredStringEnv } from "io-functions-commons/dist/src/utils/env";
 import { getStoreMessageContentActivityHandler } from "./handler";
+
+import { getConfigOrThrow } from "../utils/config";
+
+const config = getConfigOrThrow();
 
 const profileModel = new ProfileModel(
   cosmosdbInstance.container(PROFILE_COLLECTION_NAME)
 );
 
-const messageContainerName = getRequiredStringEnv("MESSAGE_CONTAINER_NAME");
 const messageModel = new MessageModel(
   cosmosdbInstance.container(MESSAGE_COLLECTION_NAME),
-  messageContainerName
+  config.MESSAGE_CONTAINER_NAME
 );
 
-const storageConnectionString = getRequiredStringEnv("QueueStorageConnection");
-const blobService = createBlobService(storageConnectionString);
+const blobService = createBlobService(config.QueueStorageConnection);
 
 const activityFunctionHandler: AzureFunction = getStoreMessageContentActivityHandler(
   profileModel,

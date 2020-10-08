@@ -1,4 +1,3 @@
-import { getRequiredStringEnv } from "io-functions-commons/dist/src/utils/env";
 import { agent } from "italia-ts-commons";
 import {
   AbortableFetch,
@@ -9,8 +8,12 @@ import { Millisecond } from "italia-ts-commons/lib/units";
 import nodeFetch from "node-fetch";
 import { createClient } from "../generated/api-admin/client";
 
-export const adminBaseUrl = getRequiredStringEnv("IO_FUNCTIONS_ADMIN_BASE_URL");
-export const adminToken = getRequiredStringEnv("IO_FUNCTIONS_ADMIN_API_TOKEN");
+import { getConfigOrThrow } from "../utils/config";
+
+const config = getConfigOrThrow();
+
+export const adminBaseUrl = config.IO_FUNCTIONS_ADMIN_BASE_URL;
+export const adminToken = config.IO_FUNCTIONS_ADMIN_API_TOKEN;
 
 // 5 seconds timeout by default
 const DEFAULT_REQUEST_TIMEOUT_MS = 10000;
