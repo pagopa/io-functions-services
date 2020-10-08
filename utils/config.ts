@@ -33,7 +33,7 @@ export type MailerConfig = t.TypeOf<typeof MailerConfig>;
 export const MailerConfig = t.intersection([
   // common required fields
   t.interface({
-    MAIL_FROM: NonEmptyString
+    MAIL_FROM_DEFAULT: NonEmptyString
   }),
   // the following union includes the possible configuration variants for different mail transports we use in prod
   // undefined values are kept for easy usage
@@ -103,7 +103,6 @@ export const IConfig = t.intersection([
     IO_FUNCTIONS_ADMIN_API_TOKEN: NonEmptyString,
     IO_FUNCTIONS_ADMIN_BASE_URL: NonEmptyString,
 
-    MAIL_FROM_DEFAULT: NonEmptyString,
     MESSAGE_CONTAINER_NAME: NonEmptyString,
 
     QueueStorageConnection: NonEmptyString,
