@@ -897,9 +897,9 @@ agentkeepalive@^4.1.2:
     depd "^1.1.2"
     humanize-ms "^1.2.1"
 
-"agentkeepalive@https://github.com/pagopa/agentkeepalive#v4.1.1":
+"agentkeepalive@git+https://github.com/pagopa/agentkeepalive.git#v4.1.1":
   version "4.1.0"
-  resolved "https://github.com/pagopa/agentkeepalive#91309bcab216dccbd08631e227a974afbfe807fb"
+  resolved "git+https://github.com/pagopa/agentkeepalive.git#91309bcab216dccbd08631e227a974afbfe807fb"
   dependencies:
     debug "^4.1.0"
     depd "^1.1.2"
@@ -3535,10 +3535,10 @@ invert-kv@^1.0.0:
   resolved "https://registry.yarnpkg.com/invert-kv/-/invert-kv-1.0.0.tgz#104a8e4aaca6d3d8cd157a8ef8bfab2d7a3ffdb6"
   integrity sha1-EEqOSqym09jNFXqO+L+rLXo//bY=
 
-io-functions-commons@^14.6.0:
-  version "14.6.0"
-  resolved "https://registry.yarnpkg.com/io-functions-commons/-/io-functions-commons-14.6.0.tgz#c420cba54a7b4d01a97e5f75e295a3668a14cf6c"
-  integrity sha512-8vWY2aZgjCMZvQGKeiII+8wQYH7be1ghDG/jTu6+yE9/SDR90L2BFSwb4n1KihX5wugM3h5ne3UVhWVRV/S+tw==
+io-functions-commons@^15.0.0:
+  version "15.0.0"
+  resolved "https://registry.yarnpkg.com/io-functions-commons/-/io-functions-commons-15.0.0.tgz#a0857853ad9f7da4a44ca8dbbcfa72a221789180"
+  integrity sha512-Fls5OMJNpMXX/p3O4Y644yUCWuHLY65+be7M2Yodo9x3JVBI5qZmpj+EOLb+HA0kjUZD0Z/vW1gD6kJiukXjlA==
   dependencies:
     "@azure/cosmos" "^3.7.2"
     "@types/node-fetch" "^2.5.6"
@@ -3972,9 +3972,9 @@ istanbul-reports@^2.2.6:
     html-escaper "^2.0.0"
 
 italia-ts-commons@^5.0.1:
-  version "5.1.9"
-  resolved "https://registry.yarnpkg.com/italia-ts-commons/-/italia-ts-commons-5.1.9.tgz#827b63d6f02c0c80ecb06bbf7991161bd1019870"
-  integrity sha512-mIh+cDpOJZ7S0Q6GmdHUAT0nKb9+HQ98wN8HHD0WQ9HlhWhJEKn9I0ryXqQHpiilFQS6ifAW0u9Cy8pLmMHlqg==
+  version "5.1.13"
+  resolved "https://registry.yarnpkg.com/italia-ts-commons/-/italia-ts-commons-5.1.13.tgz#7ae919374f9c03c04e38603b7f7e9681ebee79b7"
+  integrity sha512-mXtrNG/HR6lRCOTtBrEzsxGmkHccoDXKqoc9i+J2+yGhhxcznASu+0KMC05ZR1yJP4bWliC9rXJ3hnCw0rMSnQ==
   dependencies:
     fp-ts "1.12.0"
     io-ts "1.8.5"
@@ -3995,9 +3995,9 @@ italia-ts-commons@^7.0.1:
     validator "^10.1.0"
 
 italia-ts-commons@^8.1.0:
-  version "8.1.0"
-  resolved "https://registry.yarnpkg.com/italia-ts-commons/-/italia-ts-commons-8.1.0.tgz#929c805a7d9e8877fef26436946bf3ee76a76c82"
-  integrity sha512-d03UKxjeIX+4otNgZaDoS8t1l+gVEHD/q/JsQox1CC3nAiKHQ9TFNv4BdHIiUIswgpx1szjT6lzeJQUCUL++YA==
+  version "8.5.0"
+  resolved "https://registry.yarnpkg.com/italia-ts-commons/-/italia-ts-commons-8.5.0.tgz#9967ec1b94745f482d5cc942a1bacf7de6f6461b"
+  integrity sha512-pTX90/WW987t7pdcbQngCFm35c3gQlDFIUCnDZ6VCo5vNMl8VwdZztGIcYyEaJw6xMjb1WjSRlltnDdSe0B9Eg==
   dependencies:
     abort-controller "^3.0.0"
     agentkeepalive "^4.1.2"
