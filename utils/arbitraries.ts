@@ -96,23 +96,23 @@ export const newMessageWithDefaultEmailArb = fc
   }));
 
 export const messageTimeToLiveArb = fc
-  .integer(3600, 604801)
+  .integer(3600, 604800)
   // tslint:disable-next-line:no-useless-cast
-  .map(_ => _ as number & WithinRangeInteger<3600, 604801>);
+  .map(_ => _ as number & WithinRangeInteger<3600, 604800>);
 
 export const amountArb = fc
-  .integer(1, 10000000000)
+  .integer(1, 9999999999)
   .map(_ =>
-    WithinRangeInteger(1, 10000000000)
+    WithinRangeInteger(1, 9999999999)
       .decode(_)
       .getOrElse(undefined)
   )
   .filter(_ => _ !== undefined);
 
 export const maxAmountArb = fc
-  .integer(0, 10000000000)
+  .integer(0, 9999999999)
   // tslint:disable-next-line:no-useless-cast
-  .map(_ => _ as number & WithinRangeInteger<0, 10000000000>);
+  .map(_ => _ as number & WithinRangeInteger<0, 9999999999>);
 
 export const noticeNumberArb = fc
   .tuple(
