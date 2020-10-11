@@ -50,6 +50,7 @@ import {
 import { APIClient } from "../clients/admin";
 import { Service } from "../generated/api-admin/Service";
 import { Subscription } from "../generated/api-admin/Subscription";
+import { UserInfo } from "../generated/api-admin/UserInfo";
 import { ServicePayload } from "../generated/definitions/ServicePayload";
 import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWithSubscriptionKeys";
 import { withApiRequestWrapper } from "../utils/api";
@@ -100,12 +101,27 @@ const createSubscriptionTask = (
     200
   );
 
+const getUserTask = (
+  logger: ILogger,
+  apiClient: APIClient,
+  userEmail: EmailString
+): TaskEither<ErrorResponses, UserInfo> =>
+  withApiRequestWrapper(
+    logger,
+    () =>
+      apiClient.getUser({
+        email: userEmail
+      }),
+    200
+  );
+
 const createServiceTask = (
   logger: ILogger,
   apiClient: APIClient,
   servicePayload: ServicePayload,
   subscriptionId: NonEmptyString,
-  sandboxFiscalCode: FiscalCode
+  sandboxFiscalCode: FiscalCode,
+  adb2cTokenName: NonEmptyString
 ): TaskEither<ErrorResponses, Service> =>
   withApiRequestWrapper(
     logger,
@@ -114,7 +130,11 @@ const createServiceTask = (
         body: {
           ...servicePayload,
           authorized_recipients: [sandboxFiscalCode],
-          service_id: subscriptionId // TODO insert check on ADB2C token_name from Active Directory, see https://www.pivotaltracker.com/story/show/174823724
+          service_id: subscriptionId,
+          service_metadata: {
+            ...servicePayload.service_metadata,
+            token_name: adb2cTokenName
+          }
         }
       }),
     200
@@ -142,18 +162,25 @@ export function CreateServiceHandler(
       productName
     )
       .chain(subscription =>
-        createServiceTask(
-          getLogger(context, logPrefix, "CreateService"),
+        getUserTask(
+          getLogger(context, logPrefix, "GetUser"),
           apiClient,
-          servicePayload,
-          subscriptionId,
-          (sandboxFiscalCode as unknown) as FiscalCode
-        ).map(service =>
-          ResponseSuccessJson({
-            ...service,
-            primary_key: subscription.primary_key,
-            secondary_key: subscription.secondary_key
-          })
+          userAttributes.email
+        ).chain(userInfo =>
+          createServiceTask(
+            getLogger(context, logPrefix, "CreateService"),
+            apiClient,
+            servicePayload,
+            subscriptionId,
+            (sandboxFiscalCode as unknown) as FiscalCode,
+            userInfo.token_name
+          ).map(service =>
+            ResponseSuccessJson({
+              ...service,
+              primary_key: subscription.primary_key,
+              secondary_key: subscription.secondary_key
+            })
+          )
         )
       )
       .fold<ResponseTypes>(identity, identity)

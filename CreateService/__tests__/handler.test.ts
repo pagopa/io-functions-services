@@ -19,8 +19,11 @@ import {
 import { MaxAllowedPaymentAmount } from "io-functions-commons/dist/generated/definitions/MaxAllowedPaymentAmount";
 
 import { left, right } from "fp-ts/lib/Either";
+import { ServiceScopeEnum } from "io-functions-commons/dist/generated/definitions/ServiceScope";
+import { ServiceMetadata } from "io-functions-commons/dist/src/models/service";
 import * as reporters from "italia-ts-commons/lib/reporters";
 import { Subscription } from "../../generated/api-admin/Subscription";
+import { UserInfo } from "../../generated/api-admin/UserInfo";
 import { ServicePayload } from "../../generated/definitions/ServicePayload";
 import { CreateServiceHandler } from "../handler";
 
@@ -50,6 +53,13 @@ const aServicePayload: ServicePayload = {
   service_name: "Test" as NonEmptyString
 };
 
+const aTokenName = "TOKEN_NAME" as NonEmptyString;
+
+const someServicesMetadata: ServiceMetadata = {
+  scope: ServiceScopeEnum.NATIONAL,
+  tokenName: aTokenName
+};
+
 const aService = {
   authorizedCIDRs: new Set([]),
   authorizedRecipients: new Set([]),
@@ -60,6 +70,7 @@ const aService = {
   organizationName: "AgID" as NonEmptyString,
   requireSecureChannels: false,
   serviceId: aServiceId,
+  serviceMetadata: someServicesMetadata,
   serviceName: "Test" as NonEmptyString,
   version: 1 as NonNegativeInteger
 };
@@ -88,6 +99,14 @@ const aUserAuthenticationDeveloper: IAzureApiAuthorization = {
   userId: "u123" as NonEmptyString
 };
 
+const aUserInfo: UserInfo = {
+  subscriptions: [
+    aSubscription,
+    { ...aSubscription, id: "s234" as NonEmptyString }
+  ],
+  token_name: aTokenName
+};
+
 const mockUlidGenerator = jest.fn(() => aServiceId);
 
 const productName = "IO_API_SERVICES" as NonEmptyString;
@@ -101,6 +120,9 @@ describe("CreateServiceHandler", () => {
       ),
       createSubscription: jest.fn(() =>
         Promise.resolve(right({ status: 200, value: aSubscription }))
+      ),
+      getUser: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aUserInfo }))
       )
     };
 
@@ -120,6 +142,52 @@ describe("CreateServiceHandler", () => {
 
     expect(apiClientMock.createSubscription).toHaveBeenCalledTimes(1);
     expect(apiClientMock.createService).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+    expect(result.kind).toBe("IResponseSuccessJson");
+    if (result.kind === "IResponseSuccessJson") {
+      expect(result.value).toEqual({
+        ...aService,
+        ...someSubscriptionKeys
+      });
+    }
+  });
+
+  it("should create a service with token_name from ADB2C even if servicePayload metadata contains another token_name", async () => {
+    const apiClientMock = {
+      createService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aService }))
+      ),
+      createSubscription: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aSubscription }))
+      ),
+      getUser: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aUserInfo }))
+      )
+    };
+
+    const createServiceHandler = CreateServiceHandler(
+      apiClientMock as any,
+      mockUlidGenerator as any,
+      productName,
+      sandboxFiscalCode
+    );
+    const result = await createServiceHandler(
+      mockContext,
+      aUserAuthenticationDeveloper,
+      undefined as any, // not used
+      someUserAttributes,
+      {
+        ...aServicePayload,
+        serviceMetadata: {
+          ...someServicesMetadata,
+          token_name: "ANOTHER_TOKEN_NAME" as NonEmptyString
+        }
+      } as ServicePayload
+    );
+
+    expect(apiClientMock.createSubscription).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.createService).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
     expect(result.kind).toBe("IResponseSuccessJson");
     if (result.kind === "IResponseSuccessJson") {
       expect(result.value).toEqual({
@@ -278,11 +346,179 @@ describe("CreateServiceHandler", () => {
     }
   });
 
+  it("should respond with an internal error if getUser does not respond", async () => {
+    const apiClientMock = {
+      createService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aService }))
+      ),
+      createSubscription: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aSubscription }))
+      ),
+      getUser: jest.fn(() => Promise.reject(new Error("Timeout")))
+    };
+
+    const createServiceHandler = CreateServiceHandler(
+      apiClientMock as any,
+      mockUlidGenerator as any,
+      productName,
+      sandboxFiscalCode
+    );
+    const result = await createServiceHandler(
+      mockContext,
+      aUserAuthenticationDeveloper,
+      undefined as any, // not used
+      someUserAttributes,
+      aServicePayload
+    );
+
+    expect(apiClientMock.createSubscription).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.createService).not.toHaveBeenCalled();
+    expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+
+    expect(result.kind).toBe("IResponseErrorInternal");
+  });
+
+  it("should respond with an internal error if getService returns Errors", async () => {
+    const apiClientMock = {
+      createService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aService }))
+      ),
+      createSubscription: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aSubscription }))
+      ),
+      getUser: jest.fn(() => Promise.resolve(left({ err: "ValidationError" })))
+    };
+
+    jest
+      .spyOn(reporters, "errorsToReadableMessages")
+      .mockImplementation(() => ["ValidationErrors"]);
+    const createServiceHandler = CreateServiceHandler(
+      apiClientMock as any,
+      mockUlidGenerator as any,
+      productName,
+      sandboxFiscalCode
+    );
+    const result = await createServiceHandler(
+      mockContext,
+      aUserAuthenticationDeveloper,
+      undefined as any, // not used
+      someUserAttributes,
+      aServicePayload
+    );
+
+    expect(apiClientMock.createSubscription).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.createService).not.toHaveBeenCalled();
+    expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+
+    expect(result.kind).toBe("IResponseErrorInternal");
+  });
+
+  it("should respond with Not found if no user was found", async () => {
+    const apiClientMock = {
+      createService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aService }))
+      ),
+      createSubscription: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aSubscription }))
+      ),
+      getUser: jest.fn(() => Promise.resolve(right({ status: 404 })))
+    };
+
+    const createServiceHandler = CreateServiceHandler(
+      apiClientMock as any,
+      mockUlidGenerator as any,
+      productName,
+      sandboxFiscalCode
+    );
+    const result = await createServiceHandler(
+      mockContext,
+      aUserAuthenticationDeveloper,
+      undefined as any, // not used
+      someUserAttributes,
+      aServicePayload
+    );
+
+    expect(apiClientMock.createSubscription).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.createService).not.toHaveBeenCalled();
+    expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+
+    expect(result.kind).toBe("IResponseErrorNotFound");
+    if (result.kind === "IResponseErrorNotFound") {
+      expect(result.detail).toEqual("Not found: Resource not found");
+    }
+  });
+
+  it("should respond with an internal error if getUser returns Bad request", async () => {
+    const apiClientMock = {
+      createService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aService }))
+      ),
+      createSubscription: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aSubscription }))
+      ),
+      getUser: jest.fn(() => Promise.resolve(right({ status: 400 })))
+    };
+
+    const createServiceHandler = CreateServiceHandler(
+      apiClientMock as any,
+      mockUlidGenerator as any,
+      productName,
+      sandboxFiscalCode
+    );
+    const result = await createServiceHandler(
+      mockContext,
+      aUserAuthenticationDeveloper,
+      undefined as any, // not used
+      someUserAttributes,
+      aServicePayload
+    );
+
+    expect(apiClientMock.createSubscription).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.createService).not.toHaveBeenCalled();
+    expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+
+    expect(result.kind).toBe("IResponseErrorInternal");
+  });
+
+  it("should respond with forbidden if getUser returns Forbidden", async () => {
+    const apiClientMock = {
+      createService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aService }))
+      ),
+      createSubscription: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aSubscription }))
+      ),
+      getUser: jest.fn(() => Promise.resolve(right({ status: 403 })))
+    };
+
+    const createServiceHandler = CreateServiceHandler(
+      apiClientMock as any,
+      mockUlidGenerator as any,
+      productName,
+      sandboxFiscalCode
+    );
+    const result = await createServiceHandler(
+      mockContext,
+      aUserAuthenticationDeveloper,
+      undefined as any, // not used
+      someUserAttributes,
+      aServicePayload
+    );
+
+    expect(apiClientMock.createSubscription).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.createService).not.toHaveBeenCalled();
+    expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+
+    expect(result.kind).toBe("IResponseErrorForbiddenNotAuthorized");
+  });
   it("should respond with an internal error if createService does not respond", async () => {
     const apiClientMock = {
       createService: jest.fn(() => Promise.reject(new Error("Timeout"))),
       createSubscription: jest.fn(() =>
         Promise.resolve(right({ status: 200, value: aSubscription }))
+      ),
+      getUser: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aUserInfo }))
       )
     };
 
@@ -302,6 +538,7 @@ describe("CreateServiceHandler", () => {
 
     expect(apiClientMock.createSubscription).toHaveBeenCalledTimes(1);
     expect(apiClientMock.createService).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
 
     expect(result.kind).toBe("IResponseErrorInternal");
   });
@@ -313,6 +550,9 @@ describe("CreateServiceHandler", () => {
       ),
       createSubscription: jest.fn(() =>
         Promise.resolve(right({ status: 200, value: aSubscription }))
+      ),
+      getUser: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aUserInfo }))
       )
     };
 
@@ -336,6 +576,7 @@ describe("CreateServiceHandler", () => {
 
     expect(apiClientMock.createSubscription).toHaveBeenCalledTimes(1);
     expect(apiClientMock.createService).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
     expect(result.kind).toBe("IResponseErrorInternal");
   });
 
@@ -344,6 +585,9 @@ describe("CreateServiceHandler", () => {
       createService: jest.fn(() => Promise.resolve(right({ status: 401 }))),
       createSubscription: jest.fn(() =>
         Promise.resolve(right({ status: 200, value: aSubscription }))
+      ),
+      getUser: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aUserInfo }))
       )
     };
 
@@ -363,6 +607,7 @@ describe("CreateServiceHandler", () => {
 
     expect(apiClientMock.createSubscription).toHaveBeenCalledTimes(1);
     expect(apiClientMock.createService).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
 
     expect(result.kind).toBe("IResponseErrorUnauthorized");
     if (result.kind === "IResponseErrorUnauthorized") {
