@@ -8,7 +8,6 @@ import {
   SERVICE_COLLECTION_NAME,
   ServiceModel
 } from "io-functions-commons/dist/src/models/service";
-import { getRequiredStringEnv } from "io-functions-commons/dist/src/utils/env";
 import { secureExpressApp } from "io-functions-commons/dist/src/utils/express";
 import { setAppContext } from "io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { cosmosdbInstance } from "../utils/cosmosdb";
@@ -16,6 +15,10 @@ import { cosmosdbInstance } from "../utils/cosmosdb";
 import createAzureFunctionHandler from "io-functions-express/dist/src/createAzureFunctionsHandler";
 
 import { GetSubscriptionsFeed } from "./handler";
+
+import { getConfigOrThrow } from "../utils/config";
+
+const config = getConfigOrThrow();
 
 // Setup Express
 const app = express();
@@ -28,14 +31,15 @@ const serviceModel = new ServiceModel(
   cosmosdbInstance.container(SERVICE_COLLECTION_NAME)
 );
 
-const storageConnectionString = getRequiredStringEnv("QueueStorageConnection");
-const tableService = createTableService(storageConnectionString);
-
-const subscriptionsFeedTable = getRequiredStringEnv("SUBSCRIPTIONS_FEED_TABLE");
+const tableService = createTableService(config.QueueStorageConnection);
 
 app.get(
   "/api/v1/subscriptions-feed/:date",
-  GetSubscriptionsFeed(serviceModel, tableService, subscriptionsFeedTable)
+  GetSubscriptionsFeed(
+    serviceModel,
+    tableService,
+    config.SUBSCRIPTIONS_FEED_TABLE
+  )
 );
 
 const azureFunctionHandler = createAzureFunctionHandler(app);

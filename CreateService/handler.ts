@@ -151,7 +151,7 @@ export function CreateServiceHandler(
 ): ICreateServiceHandler {
   return (context, __, ___, userAttributes, servicePayload) => {
     const subscriptionId = generateObjectId();
-    context.log(
+    context.log.info(
       `${logPrefix}| Creating new service with subscriptionId=${subscriptionId}`
     );
     return createSubscriptionTask(

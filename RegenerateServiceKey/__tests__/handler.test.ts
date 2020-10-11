@@ -27,8 +27,10 @@ import { SubscriptionKeyTypePayload } from "../../generated/api-admin/Subscripti
 import { RegenerateServiceKeyHandler } from "../handler";
 
 const mockContext = {
-  // tslint:disable-next-line: no-console
-  log: console.log
+  // tslint:disable: no-console
+  log: {
+    error: console.error
+  }
 } as any;
 
 afterEach(() => {
