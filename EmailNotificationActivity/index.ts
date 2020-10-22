@@ -19,7 +19,6 @@ import {
   NOTIFICATION_COLLECTION_NAME,
   NotificationModel
 } from "io-functions-commons/dist/src/models/notification";
-import { MailUpTransport } from "io-functions-commons/dist/src/utils/mailup";
 
 import { getEmailNotificationActivityHandler } from "./handler";
 
@@ -32,6 +31,7 @@ import { NonEmptyString } from "italia-ts-commons/lib/strings";
 import { Millisecond } from "italia-ts-commons/lib/units";
 import nodemailerSendgrid = require("nodemailer-sendgrid");
 
+import { MailUpTransport } from "io-functions-commons/dist/src/mailer/transports";
 import { getConfigOrThrow } from "../utils/config";
 
 const config = getConfigOrThrow();
@@ -62,7 +62,7 @@ const HTML_TO_TEXT_OPTIONS: HtmlToTextOptions = {
 };
 
 // default sender for email
-const MAIL_FROM = config.MAIL_FROM_DEFAULT;
+const MAIL_FROM = config.MAIL_FROM;
 
 // 5 seconds timeout by default
 const DEFAULT_EMAIL_REQUEST_TIMEOUT_MS = 5000;
