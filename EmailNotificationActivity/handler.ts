@@ -148,8 +148,7 @@ export const getEmailNotificationActivityHandler = (
 
   // trigger email delivery
   // see https://nodemailer.com/message/
-
-  sendMail(lMailerTransporter, {
+  const sendResult = await sendMail(lMailerTransporter, {
     from: notificationDefaultParams.MAIL_FROM,
     headers: {
       "X-Italia-Messages-MessageId": message.id,
@@ -163,12 +162,15 @@ export const getEmailNotificationActivityHandler = (
     // priority: "high", // TODO: set based on kind of notification
     // disableFileAccess: true,
     // disableUrlAccess: true,
-  })
-    .map(() => context.log.verbose(`${logPrefix}|RESULT=SUCCESS`))
-    .mapLeft(error => {
+  }).run();
+
+  sendResult.bimap(
+    error => {
       context.log.error(`${logPrefix}|ERROR=${error.message}`);
       throw new Error(`Error while sending email: ${error.message}`);
-    });
+    },
+    () => context.log.verbose(`${logPrefix}|RESULT=SUCCESS`)
+  );
 
   // TODO: handling bounces and delivery updates
   // see https://nodemailer.com/usage/#sending-mail
