@@ -80,7 +80,7 @@ const aLogoPayload: Logo = {
 };
 
 describe("UploadOrganizationLogo", () => {
-  it("should respond with 200 if logo upload was successfull", async () => {
+  it("should respond with 201 if logo upload was successfull", async () => {
     const apiClientMock = {
       uploadOrganizationLogo: jest.fn(() =>
         Promise.resolve(right({ status: 201 }))
@@ -156,56 +156,5 @@ describe("UploadOrganizationLogo", () => {
     expect(apiClientMock.uploadOrganizationLogo).toHaveBeenCalledTimes(1);
 
     expect(result.kind).toBe("IResponseErrorInternal");
-  });
-
-  it("should respond with Not found if no service was found", async () => {
-    const apiClientMock = {
-      uploadOrganizationLogo: jest.fn(() =>
-        Promise.resolve(right({ status: 404 }))
-      )
-    };
-
-    const uploadOrganizationLogoHandler = UploadOrganizationLogoHandler(
-      apiClientMock as any
-    );
-    const result = await uploadOrganizationLogoHandler(
-      mockContext,
-      aUserAuthenticationDeveloper,
-      undefined as any, // not used
-      someUserAttributes,
-      anOrganizationFiscalCode,
-      aLogoPayload
-    );
-
-    expect(apiClientMock.uploadOrganizationLogo).toHaveBeenCalledTimes(1);
-
-    expect(result.kind).toBe("IResponseErrorNotFound");
-    if (result.kind === "IResponseErrorNotFound") {
-      expect(result.detail).toEqual("Not found: Resource not found");
-    }
-  });
-
-  it("should respond with forbidden if getUser returns Forbidden", async () => {
-    const apiClientMock = {
-      uploadOrganizationLogo: jest.fn(() =>
-        Promise.resolve(right({ status: 403 }))
-      )
-    };
-
-    const uploadOrganizationLogoHandler = UploadOrganizationLogoHandler(
-      apiClientMock as any
-    );
-    const result = await uploadOrganizationLogoHandler(
-      mockContext,
-      aUserAuthenticationDeveloper,
-      undefined as any, // not used
-      someUserAttributes,
-      anOrganizationFiscalCode,
-      aLogoPayload
-    );
-
-    expect(apiClientMock.uploadOrganizationLogo).toHaveBeenCalledTimes(1);
-
-    expect(result.kind).toBe("IResponseErrorForbiddenNotAuthorized");
   });
 });
