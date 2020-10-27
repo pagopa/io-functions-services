@@ -54,7 +54,10 @@ export const getEmailNotificationActivityHandler = (
   lMailerTransporter: NodeMailer.Transporter,
   lNotificationModel: NotificationModel,
   notificationDefaultParams: INotificationDefaults
-) => async (context: Context, input: unknown): Promise<unknown> => {
+) => async (
+  context: Context,
+  input: unknown
+): Promise<EmailNotificationActivityResult> => {
   const inputOrError = EmailNotificationActivityInput.decode(input);
 
   if (inputOrError.isLeft()) {

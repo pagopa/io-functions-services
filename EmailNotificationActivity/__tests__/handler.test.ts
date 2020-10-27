@@ -10,12 +10,11 @@ import {
 
 import {
   EmailNotificationActivityInput,
-  EmailNotificationActivityResult,
   getEmailNotificationActivityHandler
 } from "../handler";
 
 import { some } from "fp-ts/lib/Option";
-import { taskEither } from "fp-ts/lib/TaskEither";
+import { fromLeft, taskEither } from "fp-ts/lib/TaskEither";
 
 import { EmailAddress } from "io-functions-commons/dist/generated/definitions/EmailAddress";
 import { MessageBodyMarkdown } from "io-functions-commons/dist/generated/definitions/MessageBodyMarkdown";
@@ -24,7 +23,7 @@ import { MessageSubject } from "io-functions-commons/dist/generated/definitions/
 import { TimeToLiveSeconds } from "io-functions-commons/dist/generated/definitions/TimeToLiveSeconds";
 
 import { NotificationChannelEnum } from "io-functions-commons/dist/generated/definitions/NotificationChannel";
-import { MailerTransporter } from "io-functions-commons/dist/src/mailer";
+import * as mail from "io-functions-commons/dist/src/mailer";
 import { CreatedMessageEventSenderMetadata } from "io-functions-commons/dist/src/models/created_message_sender_metadata";
 import {
   NewNotification,
@@ -125,10 +124,10 @@ describe("getEmailNotificationActivityHandler", () => {
     }
   };
 
+  const lMailerTransporterMock = ({} as unknown) as mail.MailerTransporter;
+
   it("should respond with 'SUCCESS' if the mail is sent", async () => {
-    const lMailerTransporterMock = ({
-      sendMail: jest.fn((_, f) => f(null, taskEither.of("SUCCESS")))
-    } as unknown) as MailerTransporter;
+    jest.spyOn(mail, "sendMail").mockReturnValue(taskEither.of("SUCCESS"));
 
     const GetEmailNotificationActivityHandler = getEmailNotificationActivityHandler(
       lMailerTransporterMock,
@@ -136,11 +135,31 @@ describe("getEmailNotificationActivityHandler", () => {
       defaultNotificationParams
     );
 
-    const result = (await GetEmailNotificationActivityHandler(
+    const result = await GetEmailNotificationActivityHandler(
       mockContext,
       input
-    )) as EmailNotificationActivityResult;
+    );
 
     expect(result.kind).toBe("SUCCESS");
+  });
+
+  it("should respond with 'ERROR' if the mail is not sent", async () => {
+    const errorMessage: string = "Test Error";
+
+    jest
+      .spyOn(mail, "sendMail")
+      .mockReturnValue(fromLeft(new Error(errorMessage)));
+
+    const GetEmailNotificationActivityHandler = getEmailNotificationActivityHandler(
+      lMailerTransporterMock,
+      notificationModelMock,
+      defaultNotificationParams
+    );
+
+    try {
+      await GetEmailNotificationActivityHandler(mockContext, input);
+    } catch (e) {
+      expect(e.message).toBe("Error while sending email: " + errorMessage);
+    }
   });
 });
