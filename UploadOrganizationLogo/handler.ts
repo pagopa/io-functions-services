@@ -23,10 +23,9 @@ import {
 import {
   IResponseErrorForbiddenNotAuthorized,
   IResponseErrorInternal,
-  IResponseErrorNotFound,
   IResponseErrorTooManyRequests,
-  IResponseSuccessJson,
-  ResponseSuccessJson
+  IResponseSuccessAccepted,
+  ResponseSuccessAccepted
 } from "italia-ts-commons/lib/responses";
 import { OrganizationFiscalCode } from "italia-ts-commons/lib/strings";
 
@@ -45,13 +44,16 @@ import { APIClient } from "../clients/admin";
 import { Logo } from "../generated/api-admin/Logo";
 import { withApiRequestWrapper } from "../utils/api";
 import { getLogger, ILogger } from "../utils/logging";
-import { ErrorResponses, IResponseErrorUnauthorized } from "../utils/responses";
+import {
+  ErrorResponses,
+  IResponseErrorUnauthorized,
+  toDefaultResponseErrorInternal
+} from "../utils/responses";
 
 type ResponseTypes =
-  | IResponseSuccessJson<undefined>
+  | IResponseSuccessAccepted
   | IResponseErrorUnauthorized
   | IResponseErrorForbiddenNotAuthorized
-  | IResponseErrorNotFound
   | IResponseErrorTooManyRequests
   | IResponseErrorInternal;
 
@@ -77,7 +79,7 @@ const uploadOrganizationLogoTask = (
   apiClient: APIClient,
   organizationFiscalCode: OrganizationFiscalCode,
   logo: Logo
-): TaskEither<ErrorResponses, IResponseSuccessJson<undefined>> =>
+): TaskEither<ErrorResponses, IResponseSuccessAccepted> =>
   withApiRequestWrapper(
     logger,
     () =>
@@ -86,7 +88,7 @@ const uploadOrganizationLogoTask = (
         organization_fiscal_code: organizationFiscalCode
       }),
     201
-  ).map(_ => ResponseSuccessJson(undefined));
+  ).map(_ => ResponseSuccessAccepted());
 
 /**
  * Handles requests for upload a service logo by a service ID and a base64 logo' s string.
@@ -101,6 +103,12 @@ export function UploadOrganizationLogoHandler(
       organizationFiscalCode,
       logoPayload
     )
+      .mapLeft(errs =>
+        // Not found is never returned by uploadOrganizationLogo but, due to request wrapping return type, we have to wrap it
+        errs.kind !== "IResponseErrorNotFound"
+          ? errs
+          : toDefaultResponseErrorInternal(errs)
+      )
       .fold<ResponseTypes>(identity, identity)
       .run();
   };

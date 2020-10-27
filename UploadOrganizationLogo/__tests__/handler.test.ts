@@ -80,7 +80,7 @@ const aLogoPayload: Logo = {
 };
 
 describe("UploadOrganizationLogo", () => {
-  it("should respond with 201 if logo upload was successfull", async () => {
+  it("should respond with 202 if logo upload was successfull", async () => {
     const apiClientMock = {
       uploadOrganizationLogo: jest.fn(() =>
         Promise.resolve(right({ status: 201 }))
@@ -99,10 +99,9 @@ describe("UploadOrganizationLogo", () => {
       aLogoPayload
     );
 
-    expect(apiClientMock.uploadOrganizationLogo).toHaveBeenCalledTimes(1);
-    expect(result.kind).toBe("IResponseSuccessJson");
-    if (result.kind === "IResponseSuccessJson") {
-      expect(result.value).toBeUndefined();
+    expect(result.kind).toBe("IResponseSuccessAccepted");
+    if (result.kind === "IResponseSuccessAccepted") {
+      expect(result.detail).toBeUndefined();
     }
   });
 
@@ -124,8 +123,6 @@ describe("UploadOrganizationLogo", () => {
       anOrganizationFiscalCode,
       aLogoPayload
     );
-
-    expect(apiClientMock.uploadOrganizationLogo).toHaveBeenCalledTimes(1);
 
     expect(result.kind).toBe("IResponseErrorInternal");
   });
@@ -152,8 +149,6 @@ describe("UploadOrganizationLogo", () => {
       anOrganizationFiscalCode,
       aLogoPayload
     );
-
-    expect(apiClientMock.uploadOrganizationLogo).toHaveBeenCalledTimes(1);
 
     expect(result.kind).toBe("IResponseErrorInternal");
   });

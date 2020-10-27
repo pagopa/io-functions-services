@@ -543,11 +543,7 @@ paths:
             $ref: "#/definitions/ProblemJson"
   "/organizations/{organization_fiscal_code}/logo":
     parameters:
-      - name: organization_fiscal_code
-        in: path
-        type: string
-        required: true
-        description: The Organization Fiscal Code.
+      - $ref: "#/parameters/OrganizationFiscalCode"
     put:
       summary: Upload organization logo.
       description: |
@@ -563,7 +559,7 @@ paths:
             $ref: "#/definitions/Logo"
           description: A base64 string representation of the organization logo PNG image.
       responses:
-        "200":
+        "202":
           description: Logo uploaded.
         "400":
           description: Invalid payload.
@@ -573,8 +569,10 @@ paths:
           description: Unauthorized.
         "403":
           description: Forbidden.
+        "429":
+          description: Too many requests.
         "500":
-          description: The service logo cannot be uploaded.
+          description: The organization logo cannot be uploaded.
           schema:
             $ref: "#/definitions/ProblemJson"
 definitions:
@@ -720,6 +718,17 @@ parameters:
     description: A date in the format YYYY-MM-DD.
     pattern: "[0-9]{4}-[0-9]{2}-[0-9]{2}"
     x-example: "2019-09-15"
+  OrganizationFiscalCode:
+    name: organization_fiscal_code
+    in: path
+    type: string
+    description: Organization fiscal code.
+    format: OrganizationFiscalCode
+    minLength: 11
+    maxLength: 11
+    pattern: "^[0-9]{11}$"
+    required: true
+    x-example: "12345678901"
 consumes:
   - application/json
 produces:
