@@ -46,18 +46,27 @@ const anEmail = "test@example.com" as EmailString;
 
 const aServiceId = "s123" as NonEmptyString;
 
+const aTokenName = "TOKEN_NAME" as NonEmptyString;
+const someServicesMetadata: ServiceMetadata = {
+  scope: ServiceScopeEnum.NATIONAL,
+  tokenName: aTokenName
+};
+
 const aServicePayload: ServicePayload = {
   authorized_cidrs: [],
   department_name: "IT" as NonEmptyString,
   organization_fiscal_code: anOrganizationFiscalCode,
   organization_name: "AgID" as NonEmptyString,
+  service_metadata: someServicesMetadata,
   service_name: "Test" as NonEmptyString
 };
 
-const aTokenName = "TOKEN_NAME" as NonEmptyString;
-const someServicesMetadata: ServiceMetadata = {
-  scope: ServiceScopeEnum.NATIONAL,
-  tokenName: aTokenName
+const aServicePayloadWithoutMetadata: ServicePayload = {
+  authorized_cidrs: [],
+  department_name: "IT" as NonEmptyString,
+  organization_fiscal_code: anOrganizationFiscalCode,
+  organization_name: "AgID" as NonEmptyString,
+  service_name: "Test" as NonEmptyString
 };
 
 const aService = {
@@ -75,11 +84,41 @@ const aService = {
   version: 1 as NonNegativeInteger
 };
 
+const aNotVisibleService = {
+  authorizedCIDRs: new Set([]),
+  authorizedRecipients: new Set([]),
+  departmentName: "IT" as NonEmptyString,
+  isVisible: false,
+  maxAllowedPaymentAmount: 0 as MaxAllowedPaymentAmount,
+  organizationFiscalCode: anOrganizationFiscalCode,
+  organizationName: "AgID" as NonEmptyString,
+  requireSecureChannels: false,
+  serviceId: aServiceId,
+  serviceMetadata: someServicesMetadata,
+  serviceName: "Test" as NonEmptyString,
+  version: 1 as NonNegativeInteger
+};
+
 const aRetrievedService: Service = {
   authorized_cidrs: [],
   authorized_recipients: [],
   department_name: "IT" as NonEmptyString,
   is_visible: true,
+  max_allowed_payment_amount: 0 as MaxAllowedPaymentAmount,
+  organization_fiscal_code: anOrganizationFiscalCode,
+  organization_name: "AgID" as NonEmptyString,
+  require_secure_channels: false,
+  service_id: aServiceId,
+  service_metadata: someServicesMetadata,
+  service_name: "Test" as NonEmptyString,
+  version: 1 as NonNegativeInteger
+};
+
+const aRetrievedNotVisibleService: Service = {
+  authorized_cidrs: [],
+  authorized_recipients: [],
+  department_name: "IT" as NonEmptyString,
+  is_visible: false,
   max_allowed_payment_amount: 0 as MaxAllowedPaymentAmount,
   organization_fiscal_code: anOrganizationFiscalCode,
   organization_name: "AgID" as NonEmptyString,
@@ -800,5 +839,79 @@ describe("UpdateServiceHandler", () => {
     expect(apiClientMock.getService).toHaveBeenCalledTimes(1);
     expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
     expect(result.kind).toBe("IResponseErrorNotFound");
+  });
+
+  it("should respond with ValidationError if for a visible service the metadata are undefined", async () => {
+    const apiClientMock = {
+      getService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aRetrievedService }))
+      ),
+      getSubscriptionKeys: jest.fn(() =>
+        Promise.resolve(right({ status: 404 }))
+      ),
+      getUser: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aUserInfo }))
+      ),
+      updateService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aService }))
+      )
+    };
+
+    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const result = await updateServiceHandler(
+      mockContext,
+      aUserAuthenticationDeveloper,
+      undefined as any, // not used
+      someUserAttributes,
+      aServiceId,
+      aServicePayloadWithoutMetadata
+    );
+
+    expect(apiClientMock.getService).toHaveBeenCalledTimes(1);
+    expect(result.kind).toBe("IResponseErrorValidation");
+    expect(result.detail).toBe(
+      "ValidationError: Metadata required for visible service"
+    );
+  });
+
+  it("should respond with an updated service for a not visible service without metadata", async () => {
+    const apiClientMock = {
+      getService: jest.fn(() =>
+        Promise.resolve(
+          right({ status: 200, value: aRetrievedNotVisibleService })
+        )
+      ),
+      getSubscriptionKeys: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: someSubscriptionKeys }))
+      ),
+      getUser: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aUserInfo }))
+      ),
+      updateService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aNotVisibleService }))
+      )
+    };
+
+    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const result = await updateServiceHandler(
+      mockContext,
+      aUserAuthenticationDeveloper,
+      undefined as any, // not used
+      someUserAttributes,
+      aServiceId,
+      aServicePayload
+    );
+
+    expect(apiClientMock.updateService).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.getSubscriptionKeys).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.getService).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+    expect(result.kind).toBe("IResponseSuccessJson");
+    if (result.kind === "IResponseSuccessJson") {
+      expect(result.value).toEqual({
+        ...aNotVisibleService,
+        ...someSubscriptionKeys
+      });
+    }
   });
 });

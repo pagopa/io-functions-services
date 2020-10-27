@@ -45,14 +45,6 @@ const anEmail = "test@example.com" as EmailString;
 
 const aServiceId = "s123" as NonEmptyString;
 
-const aServicePayload: ServicePayload = {
-  authorized_cidrs: [],
-  department_name: "IT" as NonEmptyString,
-  organization_fiscal_code: anOrganizationFiscalCode,
-  organization_name: "AgID" as NonEmptyString,
-  service_name: "Test" as NonEmptyString
-};
-
 const aTokenName = "TOKEN_NAME" as NonEmptyString;
 
 const someServicesMetadata: ServiceMetadata = {
@@ -60,11 +52,54 @@ const someServicesMetadata: ServiceMetadata = {
   tokenName: aTokenName
 };
 
+const aServicePayload: ServicePayload = {
+  authorized_cidrs: [],
+  department_name: "IT" as NonEmptyString,
+  is_visible: true,
+  organization_fiscal_code: anOrganizationFiscalCode,
+  organization_name: "AgID" as NonEmptyString,
+  service_metadata: someServicesMetadata,
+  service_name: "Test" as NonEmptyString
+};
+
+const aServicePayloadWithoutMetadata: ServicePayload = {
+  authorized_cidrs: [],
+  department_name: "IT" as NonEmptyString,
+  is_visible: true,
+  organization_fiscal_code: anOrganizationFiscalCode,
+  organization_name: "AgID" as NonEmptyString,
+  service_name: "Test" as NonEmptyString
+};
+
+const aNotVisibleServicePayloadWithoutMetadata: ServicePayload = {
+  authorized_cidrs: [],
+  department_name: "IT" as NonEmptyString,
+  is_visible: false,
+  organization_fiscal_code: anOrganizationFiscalCode,
+  organization_name: "AgID" as NonEmptyString,
+  service_name: "Test" as NonEmptyString
+};
+
 const aService = {
   authorizedCIDRs: new Set([]),
   authorizedRecipients: new Set([]),
   departmentName: "IT" as NonEmptyString,
   isVisible: true,
+  maxAllowedPaymentAmount: 0 as MaxAllowedPaymentAmount,
+  organizationFiscalCode: anOrganizationFiscalCode,
+  organizationName: "AgID" as NonEmptyString,
+  requireSecureChannels: false,
+  serviceId: aServiceId,
+  serviceMetadata: someServicesMetadata,
+  serviceName: "Test" as NonEmptyString,
+  version: 1 as NonNegativeInteger
+};
+
+const aNotVisibleServiceWithoutMetadata = {
+  authorizedCIDRs: new Set([]),
+  authorizedRecipients: new Set([]),
+  departmentName: "IT" as NonEmptyString,
+  isVisible: false,
   maxAllowedPaymentAmount: 0 as MaxAllowedPaymentAmount,
   organizationFiscalCode: anOrganizationFiscalCode,
   organizationName: "AgID" as NonEmptyString,
@@ -612,6 +647,73 @@ describe("CreateServiceHandler", () => {
     expect(result.kind).toBe("IResponseErrorUnauthorized");
     if (result.kind === "IResponseErrorUnauthorized") {
       expect(result.detail).toEqual("Unauthorized: Unauthorized");
+    }
+  });
+
+  it("should respond with ValidationError if for a visible service without metadata", async () => {
+    const apiClientMock = {};
+
+    const createServiceHandler = CreateServiceHandler(
+      apiClientMock as any,
+      mockUlidGenerator as any,
+      productName,
+      sandboxFiscalCode
+    );
+    const result = await createServiceHandler(
+      mockContext,
+      aUserAuthenticationDeveloper,
+      undefined as any, // not used
+      someUserAttributes,
+      aServicePayloadWithoutMetadata
+    );
+
+    expect(result.kind).toBe("IResponseErrorValidation");
+    expect(result.detail).toBe(
+      "ValidationError: Metadata required for visible service"
+    );
+  });
+
+  it("should respond with a created service not visible and without metadata", async () => {
+    const apiClientMock = {
+      createService: jest.fn(() =>
+        Promise.resolve(
+          right({
+            status: 200,
+            value: aNotVisibleServiceWithoutMetadata
+          })
+        )
+      ),
+      createSubscription: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aSubscription }))
+      ),
+      getUser: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aUserInfo }))
+      )
+    };
+
+    const createServiceHandler = CreateServiceHandler(
+      apiClientMock as any,
+      mockUlidGenerator as any,
+      productName,
+      sandboxFiscalCode
+    );
+    const result = await createServiceHandler(
+      mockContext,
+      aUserAuthenticationDeveloper,
+      undefined as any, // not used
+      someUserAttributes,
+      aNotVisibleServicePayloadWithoutMetadata
+    );
+
+    expect(apiClientMock.createSubscription).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.createService).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+    expect(result.kind).toBe("IResponseSuccessJson");
+    if (result.kind === "IResponseSuccessJson") {
+      expect(result.value).toEqual({
+        ...aNotVisibleServiceWithoutMetadata,
+        ...someSubscriptionKeys
+      });
     }
   });
 });
