@@ -16,6 +16,14 @@ export const serviceOwnerCheckTask = (
     _ => ResponseErrorForbiddenNotAuthorized
   )(serviceId);
 
+/**
+ * This check verifies that:
+ *  - isVisible === false || (isVisible === true && svcMetadata !== undefined)
+ * @param isVisible
+ * @param serviceMetadata
+ * @returns serviceMetadata if the check is successful; otherwise ResponseErrorValidation.
+ *
+ */
 export const serviceVisibleMetadataCheckTask = (
   serviceMetadata: ServiceMetadata,
   isVisible: boolean

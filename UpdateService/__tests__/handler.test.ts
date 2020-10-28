@@ -841,7 +841,7 @@ describe("UpdateServiceHandler", () => {
     expect(result.kind).toBe("IResponseErrorNotFound");
   });
 
-  it("should respond with ValidationError if for a visible service the metadata are undefined", async () => {
+  it("should respond with ValidationError if the visible service is without metadata", async () => {
     const apiClientMock = {
       getService: jest.fn(() =>
         Promise.resolve(right({ status: 200, value: aRetrievedService }))

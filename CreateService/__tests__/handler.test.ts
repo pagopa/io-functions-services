@@ -650,7 +650,7 @@ describe("CreateServiceHandler", () => {
     }
   });
 
-  it("should respond with ValidationError if for a visible service without metadata", async () => {
+  it("should respond with ValidationError if the visible service is without metadata", async () => {
     const apiClientMock = {};
 
     const createServiceHandler = CreateServiceHandler(

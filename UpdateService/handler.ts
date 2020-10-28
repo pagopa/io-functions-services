@@ -165,7 +165,7 @@ export function UpdateServiceHandler(
         ).chain(retrievedService =>
           serviceVisibleMetadataCheckTask(
             servicePayload.service_metadata,
-            retrievedService.is_visible
+            servicePayload.is_visible
           ).chain(() =>
             getUserTask(
               getLogger(_, logPrefix, "GetUser"),
