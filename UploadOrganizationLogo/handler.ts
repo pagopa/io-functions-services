@@ -91,7 +91,7 @@ const uploadOrganizationLogoTask = (
   ).map(_ => ResponseSuccessAccepted());
 
 /**
- * Handles requests for upload a service logo by a service ID and a base64 logo' s string.
+ * Handles requests for upload an organization logo.
  */
 export function UploadOrganizationLogoHandler(
   apiClient: APIClient

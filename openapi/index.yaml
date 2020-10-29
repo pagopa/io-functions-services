@@ -548,8 +548,6 @@ paths:
       summary: Upload organization logo.
       description: |
         Upsert a logo for an Organization.
-        This API operation needs a valid API key
-        otherwise 403 forbidden will be returned to the caller.
       operationId: uploadOrganizationLogo
       parameters:
         - name: body
@@ -722,13 +720,10 @@ parameters:
     name: organization_fiscal_code
     in: path
     type: string
+    required: true
     description: Organization fiscal code.
     format: OrganizationFiscalCode
-    minLength: 11
-    maxLength: 11
-    pattern: "^[0-9]{11}$"
-    required: true
-    x-example: "12345678901"
+    x-import: italia-ts-commons/lib/strings
 consumes:
   - application/json
 produces:
