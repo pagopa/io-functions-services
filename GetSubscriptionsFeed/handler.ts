@@ -107,6 +107,9 @@ export function GetSubscriptionsFeedHandler(
     const profileSubscriptionsQuery: PagedQuery = pagedQuery(
       queryFilterForKey(`P-${subscriptionsDateUTC}-S`)
     );
+    const profileUnsubscriptionsQuery: PagedQuery = pagedQuery(
+      queryFilterForKey(`P-${subscriptionsDateUTC}-U`)
+    );
     const serviceSubscriptionsQuery: PagedQuery = pagedQuery(
       queryFilterForKey(`S-${subscriptionsDateUTC}-${serviceId}-S`)
     );
@@ -116,6 +119,11 @@ export function GetSubscriptionsFeedHandler(
 
     // users that created their account on date
     const profileSubscriptionsSet = await queryUsers(profileSubscriptionsQuery);
+
+    // users that deleted their account on date
+    const profileUnsubscriptionsSet = await queryUsers(
+      profileUnsubscriptionsQuery
+    );
 
     // users that subscribed to the client service on date
     const serviceSubscriptionsSet = await queryUsers(serviceSubscriptionsQuery);
@@ -127,14 +135,20 @@ export function GetSubscriptionsFeedHandler(
 
     const subscriptions = new Array<FiscalCodeHash>();
     profileSubscriptionsSet.forEach(ps => {
-      if (!serviceUnsubscriptionsSet.has(ps)) {
+      if (
+        !serviceUnsubscriptionsSet.has(ps) &&
+        !profileUnsubscriptionsSet.has(ps)
+      ) {
         // add new users to the new subscriptions, skipping those that
-        // unsubscribed from this service
+        // unsubscribed from this service or deleted its account
         subscriptions.push(ps);
       }
     });
     serviceSubscriptionsSet.forEach(ss => {
-      if (!profileSubscriptionsSet.has(ss)) {
+      if (
+        !profileSubscriptionsSet.has(ss) &&
+        !profileUnsubscriptionsSet.has(ss)
+      ) {
         // add all users that subscribed to this service, skipping those that
         // are new users as they're yet counted in as new subscribers in the
         // previous step
@@ -143,11 +157,20 @@ export function GetSubscriptionsFeedHandler(
     });
 
     const unsubscriptions = new Array<FiscalCodeHash>();
+
+    profileUnsubscriptionsSet.forEach(pu =>
+      // add all users that deleted its own account
+      unsubscriptions.push(pu)
+    );
+
     serviceUnsubscriptionsSet.forEach(su => {
-      if (!profileSubscriptionsSet.has(su)) {
+      if (
+        !profileSubscriptionsSet.has(su) &&
+        !profileUnsubscriptionsSet.has(su)
+      ) {
         // add all users that unsubscribed from this service, skipping those
         // that created the profile on the same day as the service will not
-        // yet know they exist
+        // yet know they exist or deleted its account
         unsubscriptions.push(su);
       }
     });
