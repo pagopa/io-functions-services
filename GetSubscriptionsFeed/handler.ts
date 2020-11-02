@@ -135,12 +135,9 @@ export function GetSubscriptionsFeedHandler(
 
     const subscriptions = new Array<FiscalCodeHash>();
     profileSubscriptionsSet.forEach(ps => {
-      if (
-        !serviceUnsubscriptionsSet.has(ps) &&
-        !profileUnsubscriptionsSet.has(ps)
-      ) {
+      if (!serviceUnsubscriptionsSet.has(ps)) {
         // add new users to the new subscriptions, skipping those that
-        // unsubscribed from this service or deleted its account
+        // unsubscribed from this service
         subscriptions.push(ps);
       }
     });
@@ -170,7 +167,7 @@ export function GetSubscriptionsFeedHandler(
       ) {
         // add all users that unsubscribed from this service, skipping those
         // that created the profile on the same day as the service will not
-        // yet know they exist or deleted its account
+        // yet know they exist or deleted their account
         unsubscriptions.push(su);
       }
     });
