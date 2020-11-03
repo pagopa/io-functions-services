@@ -5,16 +5,15 @@
 
 import { TableService } from "azure-storage";
 import * as dateFmt from "date-fns";
+import * as endOfTomorrow from "date-fns/end_of_tomorrow";
+import * as startOfYesterday from "date-fns/start_of_yesterday";
 import { ServiceId } from "io-functions-commons/dist/generated/definitions/ServiceId";
 import { FiscalCodeHash } from "../../generated/definitions/FiscalCodeHash";
 import { GetSubscriptionsFeedHandler } from "../handler";
 
-const today = new Date();
-const tomorrow = new Date(today);
-tomorrow.setDate(tomorrow.getDate() + 1);
+const tomorrow = endOfTomorrow();
 
-const yesterday = new Date(today);
-yesterday.setDate(yesterday.getDate() - 1);
+const yesterday = startOfYesterday();
 const aServiceId = "MyServiceId" as ServiceId;
 
 const yesterdayUTC = dateFmt.format(yesterday, "YYYY-MM-DD");
