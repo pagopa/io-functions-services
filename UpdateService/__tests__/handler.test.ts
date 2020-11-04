@@ -122,6 +122,10 @@ const aUserInfo: UserInfo = {
   token_name: aTokenName
 };
 
+const mockAppinsights = {
+  trackEvent: jest.fn()
+};
+
 describe("UpdateServiceHandler", () => {
   it("should respond with an updated service with subscriptionKeys by providing a servicePayload", async () => {
     const apiClientMock = {
@@ -139,7 +143,10 @@ describe("UpdateServiceHandler", () => {
       )
     };
 
-    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const updateServiceHandler = UpdateServiceHandler(
+      mockAppinsights as any,
+      apiClientMock as any
+    );
     const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
@@ -153,6 +160,7 @@ describe("UpdateServiceHandler", () => {
     expect(apiClientMock.getSubscriptionKeys).toHaveBeenCalledTimes(1);
     expect(apiClientMock.getService).toHaveBeenCalledTimes(1);
     expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+    expect(mockAppinsights.trackEvent).toHaveBeenCalledTimes(1);
     expect(result.kind).toBe("IResponseSuccessJson");
     if (result.kind === "IResponseSuccessJson") {
       expect(result.value).toEqual({
@@ -178,7 +186,10 @@ describe("UpdateServiceHandler", () => {
       )
     };
 
-    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const updateServiceHandler = UpdateServiceHandler(
+      mockAppinsights as any,
+      apiClientMock as any
+    );
     const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
@@ -192,6 +203,7 @@ describe("UpdateServiceHandler", () => {
     expect(apiClientMock.getSubscriptionKeys).not.toHaveBeenCalled();
     expect(apiClientMock.getService).not.toHaveBeenCalled();
     expect(apiClientMock.getUser).not.toHaveBeenCalled();
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
     expect(result.kind).toBe("IResponseErrorForbiddenNotAuthorized");
   });
 
@@ -209,7 +221,10 @@ describe("UpdateServiceHandler", () => {
       )
     };
 
-    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const updateServiceHandler = UpdateServiceHandler(
+      mockAppinsights as any,
+      apiClientMock as any
+    );
     const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
@@ -223,6 +238,7 @@ describe("UpdateServiceHandler", () => {
     expect(apiClientMock.getSubscriptionKeys).not.toHaveBeenCalled();
     expect(apiClientMock.getService).toHaveBeenCalledTimes(1);
     expect(apiClientMock.getUser).not.toHaveBeenCalled();
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
     expect(result.kind).toBe("IResponseErrorInternal");
   });
 
@@ -246,7 +262,10 @@ describe("UpdateServiceHandler", () => {
       .spyOn(reporters, "errorsToReadableMessages")
       .mockImplementation(() => ["ValidationErrors"]);
 
-    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const updateServiceHandler = UpdateServiceHandler(
+      mockAppinsights as any,
+      apiClientMock as any
+    );
     const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
@@ -260,7 +279,7 @@ describe("UpdateServiceHandler", () => {
     expect(apiClientMock.getSubscriptionKeys).not.toHaveBeenCalled();
     expect(apiClientMock.getUser).not.toHaveBeenCalled();
     expect(apiClientMock.getService).toHaveBeenCalledTimes(1);
-
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
     expect(result.kind).toBe("IResponseErrorInternal");
   });
 
@@ -278,7 +297,10 @@ describe("UpdateServiceHandler", () => {
       )
     };
 
-    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const updateServiceHandler = UpdateServiceHandler(
+      mockAppinsights as any,
+      apiClientMock as any
+    );
     const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
@@ -292,7 +314,7 @@ describe("UpdateServiceHandler", () => {
     expect(apiClientMock.getSubscriptionKeys).not.toHaveBeenCalled();
     expect(apiClientMock.getUser).not.toHaveBeenCalled();
     expect(apiClientMock.getService).toHaveBeenCalledTimes(1);
-
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
     expect(result.kind).toBe("IResponseErrorUnauthorized");
     if (result.kind === "IResponseErrorUnauthorized") {
       expect(result.detail).toEqual("Unauthorized: Unauthorized");
@@ -313,7 +335,10 @@ describe("UpdateServiceHandler", () => {
       )
     };
 
-    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const updateServiceHandler = UpdateServiceHandler(
+      mockAppinsights as any,
+      apiClientMock as any
+    );
     const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
@@ -327,7 +352,7 @@ describe("UpdateServiceHandler", () => {
     expect(apiClientMock.getSubscriptionKeys).not.toHaveBeenCalled();
     expect(apiClientMock.getUser).not.toHaveBeenCalled();
     expect(apiClientMock.getService).toHaveBeenCalledTimes(1);
-
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
     expect(result.kind).toBe("IResponseErrorNotFound");
     if (result.kind === "IResponseErrorNotFound") {
       expect(result.detail).toEqual("Not found: Resource not found");
@@ -348,7 +373,10 @@ describe("UpdateServiceHandler", () => {
       )
     };
 
-    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const updateServiceHandler = UpdateServiceHandler(
+      mockAppinsights as any,
+      apiClientMock as any
+    );
     const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
@@ -362,7 +390,7 @@ describe("UpdateServiceHandler", () => {
     expect(apiClientMock.getSubscriptionKeys).not.toHaveBeenCalled();
     expect(apiClientMock.getService).toHaveBeenCalledTimes(1);
     expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
-
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
     expect(result.kind).toBe("IResponseErrorInternal");
   });
 
@@ -383,7 +411,10 @@ describe("UpdateServiceHandler", () => {
     jest
       .spyOn(reporters, "errorsToReadableMessages")
       .mockImplementation(() => ["ValidationErrors"]);
-    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const updateServiceHandler = UpdateServiceHandler(
+      mockAppinsights as any,
+      apiClientMock as any
+    );
     const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
@@ -397,7 +428,7 @@ describe("UpdateServiceHandler", () => {
     expect(apiClientMock.getSubscriptionKeys).not.toHaveBeenCalled();
     expect(apiClientMock.getService).toHaveBeenCalledTimes(1);
     expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
-
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
     expect(result.kind).toBe("IResponseErrorInternal");
   });
 
@@ -415,7 +446,10 @@ describe("UpdateServiceHandler", () => {
       )
     };
 
-    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const updateServiceHandler = UpdateServiceHandler(
+      mockAppinsights as any,
+      apiClientMock as any
+    );
     const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
@@ -429,7 +463,7 @@ describe("UpdateServiceHandler", () => {
     expect(apiClientMock.getSubscriptionKeys).not.toHaveBeenCalled();
     expect(apiClientMock.getService).toHaveBeenCalledTimes(1);
     expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
-
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
     expect(result.kind).toBe("IResponseErrorNotFound");
     if (result.kind === "IResponseErrorNotFound") {
       expect(result.detail).toEqual("Not found: Resource not found");
@@ -450,7 +484,10 @@ describe("UpdateServiceHandler", () => {
       )
     };
 
-    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const updateServiceHandler = UpdateServiceHandler(
+      mockAppinsights as any,
+      apiClientMock as any
+    );
     const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
@@ -464,7 +501,7 @@ describe("UpdateServiceHandler", () => {
     expect(apiClientMock.getSubscriptionKeys).not.toHaveBeenCalled();
     expect(apiClientMock.getService).toHaveBeenCalledTimes(1);
     expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
-
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
     expect(result.kind).toBe("IResponseErrorInternal");
   });
 
@@ -482,7 +519,10 @@ describe("UpdateServiceHandler", () => {
       )
     };
 
-    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const updateServiceHandler = UpdateServiceHandler(
+      mockAppinsights as any,
+      apiClientMock as any
+    );
     const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
@@ -496,7 +536,7 @@ describe("UpdateServiceHandler", () => {
     expect(apiClientMock.getSubscriptionKeys).not.toHaveBeenCalled();
     expect(apiClientMock.getService).toHaveBeenCalledTimes(1);
     expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
-
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
     expect(result.kind).toBe("IResponseErrorForbiddenNotAuthorized");
   });
 
@@ -514,7 +554,10 @@ describe("UpdateServiceHandler", () => {
       updateService: jest.fn(() => Promise.reject(new Error("Timeout")))
     };
 
-    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const updateServiceHandler = UpdateServiceHandler(
+      mockAppinsights as any,
+      apiClientMock as any
+    );
     const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
@@ -528,6 +571,7 @@ describe("UpdateServiceHandler", () => {
     expect(apiClientMock.getSubscriptionKeys).not.toHaveBeenCalled();
     expect(apiClientMock.getService).toHaveBeenCalledTimes(1);
     expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
     expect(result.kind).toBe("IResponseErrorInternal");
   });
 
@@ -551,7 +595,10 @@ describe("UpdateServiceHandler", () => {
       .spyOn(reporters, "errorsToReadableMessages")
       .mockImplementation(() => ["ValidationErrors"]);
 
-    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const updateServiceHandler = UpdateServiceHandler(
+      mockAppinsights as any,
+      apiClientMock as any
+    );
     const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
@@ -565,6 +612,7 @@ describe("UpdateServiceHandler", () => {
     expect(apiClientMock.getSubscriptionKeys).not.toHaveBeenCalled();
     expect(apiClientMock.getService).toHaveBeenCalledTimes(1);
     expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
     expect(result.kind).toBe("IResponseErrorInternal");
   });
 
@@ -582,7 +630,10 @@ describe("UpdateServiceHandler", () => {
       updateService: jest.fn(() => Promise.resolve(right({ status: 401 })))
     };
 
-    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const updateServiceHandler = UpdateServiceHandler(
+      mockAppinsights as any,
+      apiClientMock as any
+    );
     const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
@@ -596,6 +647,7 @@ describe("UpdateServiceHandler", () => {
     expect(apiClientMock.getSubscriptionKeys).not.toHaveBeenCalled();
     expect(apiClientMock.getService).toHaveBeenCalledTimes(1);
     expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
     expect(result.kind).toBe("IResponseErrorUnauthorized");
     if (result.kind === "IResponseErrorUnauthorized") {
       expect(result.detail).toEqual("Unauthorized: Unauthorized");
@@ -616,7 +668,10 @@ describe("UpdateServiceHandler", () => {
       updateService: jest.fn(() => Promise.resolve(right({ status: 404 })))
     };
 
-    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const updateServiceHandler = UpdateServiceHandler(
+      mockAppinsights as any,
+      apiClientMock as any
+    );
     const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
@@ -630,6 +685,7 @@ describe("UpdateServiceHandler", () => {
     expect(apiClientMock.getSubscriptionKeys).not.toHaveBeenCalled();
     expect(apiClientMock.getService).toHaveBeenCalledTimes(1);
     expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
     expect(result.kind).toBe("IResponseErrorNotFound");
     if (result.kind === "IResponseErrorNotFound") {
       expect(result.detail).toEqual("Not found: Resource not found");
@@ -650,7 +706,10 @@ describe("UpdateServiceHandler", () => {
       )
     };
 
-    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const updateServiceHandler = UpdateServiceHandler(
+      mockAppinsights as any,
+      apiClientMock as any
+    );
     const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
@@ -664,6 +723,7 @@ describe("UpdateServiceHandler", () => {
     expect(apiClientMock.getSubscriptionKeys).toHaveBeenCalledTimes(1);
     expect(apiClientMock.getService).toHaveBeenCalledTimes(1);
     expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+    expect(mockAppinsights.trackEvent).toHaveBeenCalledTimes(1);
     expect(result.kind).toBe("IResponseErrorInternal");
   });
 
@@ -686,7 +746,10 @@ describe("UpdateServiceHandler", () => {
       .spyOn(reporters, "errorsToReadableMessages")
       .mockImplementation(() => ["ValidationErrors"]);
 
-    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const updateServiceHandler = UpdateServiceHandler(
+      mockAppinsights as any,
+      apiClientMock as any
+    );
     const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
@@ -700,6 +763,7 @@ describe("UpdateServiceHandler", () => {
     expect(apiClientMock.getSubscriptionKeys).toHaveBeenCalledTimes(1);
     expect(apiClientMock.getService).toHaveBeenCalledTimes(1);
     expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+    expect(mockAppinsights.trackEvent).toHaveBeenCalledTimes(1);
     expect(result.kind).toBe("IResponseErrorInternal");
   });
 
@@ -719,7 +783,10 @@ describe("UpdateServiceHandler", () => {
       )
     };
 
-    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const updateServiceHandler = UpdateServiceHandler(
+      mockAppinsights as any,
+      apiClientMock as any
+    );
     const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
@@ -733,6 +800,7 @@ describe("UpdateServiceHandler", () => {
     expect(apiClientMock.getSubscriptionKeys).toHaveBeenCalledTimes(1);
     expect(apiClientMock.getService).toHaveBeenCalledTimes(1);
     expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+    expect(mockAppinsights.trackEvent).toHaveBeenCalledTimes(1);
     expect(result.kind).toBe("IResponseErrorInternal");
   });
 
@@ -752,7 +820,10 @@ describe("UpdateServiceHandler", () => {
       )
     };
 
-    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const updateServiceHandler = UpdateServiceHandler(
+      mockAppinsights as any,
+      apiClientMock as any
+    );
     const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
@@ -766,6 +837,7 @@ describe("UpdateServiceHandler", () => {
     expect(apiClientMock.getSubscriptionKeys).toHaveBeenCalledTimes(1);
     expect(apiClientMock.getService).toHaveBeenCalledTimes(1);
     expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+    expect(mockAppinsights.trackEvent).toHaveBeenCalledTimes(1);
     expect(result.kind).toBe("IResponseErrorForbiddenNotAuthorized");
   });
 
@@ -785,7 +857,10 @@ describe("UpdateServiceHandler", () => {
       )
     };
 
-    const updateServiceHandler = UpdateServiceHandler(apiClientMock as any);
+    const updateServiceHandler = UpdateServiceHandler(
+      mockAppinsights as any,
+      apiClientMock as any
+    );
     const result = await updateServiceHandler(
       mockContext,
       aUserAuthenticationDeveloper,
@@ -799,6 +874,7 @@ describe("UpdateServiceHandler", () => {
     expect(apiClientMock.getSubscriptionKeys).toHaveBeenCalledTimes(1);
     expect(apiClientMock.getService).toHaveBeenCalledTimes(1);
     expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+    expect(mockAppinsights.trackEvent).toHaveBeenCalledTimes(1);
     expect(result.kind).toBe("IResponseErrorNotFound");
   });
 });

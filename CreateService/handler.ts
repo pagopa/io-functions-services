@@ -35,6 +35,7 @@ import {
 import { Context } from "@azure/functions";
 import { identity } from "fp-ts/lib/function";
 import { TaskEither } from "fp-ts/lib/TaskEither";
+import { ServiceId } from "io-functions-commons/dist/generated/definitions/ServiceId";
 import { ServiceModel } from "io-functions-commons/dist/src/models/service";
 import { ContextMiddleware } from "io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { RequiredBodyPayloadMiddleware } from "io-functions-commons/dist/src/utils/middlewares/required_body_payload";
@@ -42,6 +43,7 @@ import {
   ObjectIdGenerator,
   ulidGenerator
 } from "io-functions-commons/dist/src/utils/strings";
+import { initAppInsights } from "italia-ts-commons/lib/appinsights";
 import {
   EmailString,
   FiscalCode,
@@ -144,6 +146,7 @@ const createServiceTask = (
  * Handles requests for create a service by a Service Payload.
  */
 export function CreateServiceHandler(
+  telemetryClient: ReturnType<typeof initAppInsights>,
   apiClient: APIClient,
   generateObjectId: ObjectIdGenerator,
   productName: NonEmptyString,
@@ -154,6 +157,19 @@ export function CreateServiceHandler(
     context.log.info(
       `${logPrefix}| Creating new service with subscriptionId=${subscriptionId}`
     );
+
+    const trackUpdateServiceVisibility = (
+      isVisible: boolean,
+      serviceId: ServiceId
+    ): void =>
+      telemetryClient.trackEvent({
+        name: "api.services.create",
+        properties: {
+          isVisible: isVisible ? "false" : String(isVisible),
+          requesterUserEmail: userAttributes.email,
+          serviceId
+        }
+      });
     return createSubscriptionTask(
       getLogger(context, logPrefix, "CreateSubscription"),
       apiClient,
@@ -174,13 +190,14 @@ export function CreateServiceHandler(
             subscriptionId,
             (sandboxFiscalCode as unknown) as FiscalCode,
             userInfo.token_name
-          ).map(service =>
-            ResponseSuccessJson({
+          ).map(service => {
+            trackUpdateServiceVisibility(service.is_visible, subscriptionId);
+            return ResponseSuccessJson({
               ...service,
               primary_key: subscription.primary_key,
               secondary_key: subscription.secondary_key
-            })
-          )
+            });
+          })
         )
       )
       .fold<ResponseTypes>(identity, identity)
@@ -192,12 +209,14 @@ export function CreateServiceHandler(
  * Wraps a CreateService handler inside an Express request handler.
  */
 export function CreateService(
+  telemetryClient: ReturnType<typeof initAppInsights>,
   serviceModel: ServiceModel,
   client: APIClient,
   productName: NonEmptyString,
   sandboxFiscalCode: NonEmptyString
 ): express.RequestHandler {
   const handler = CreateServiceHandler(
+    telemetryClient,
     client,
     ulidGenerator,
     productName,
