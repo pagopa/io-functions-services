@@ -161,7 +161,7 @@ export function UpdateServiceHandler(
       telemetryClient.trackEvent({
         name: "api.services.update",
         properties: {
-          isVisible: isVisible ? "false" : String(isVisible),
+          isVisible: isVisible ? String(isVisible) : "false",
           requesterUserEmail: userAttributes.email,
           serviceId: svcId
         }
