@@ -36,7 +36,6 @@ import {
 import { Context } from "@azure/functions";
 import { identity } from "fp-ts/lib/function";
 import { TaskEither } from "fp-ts/lib/TaskEither";
-import { ServiceId } from "io-functions-commons/dist/generated/definitions/ServiceId";
 import { ServiceModel } from "io-functions-commons/dist/src/models/service";
 import { ContextMiddleware } from "io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { RequiredParamMiddleware } from "io-functions-commons/dist/src/utils/middlewares/required_param";
