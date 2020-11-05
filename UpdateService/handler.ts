@@ -154,18 +154,6 @@ export function UpdateServiceHandler(
   apiClient: APIClient
 ): IUpdateServiceHandler {
   return (_, apiAuth, ___, userAttributes, serviceId, servicePayload) => {
-    const trackUpdateServiceVisibility = (
-      isVisible: boolean,
-      svcId: ServiceId
-    ): void =>
-      telemetryClient.trackEvent({
-        name: "api.services.update",
-        properties: {
-          isVisible: String(isVisible),
-          requesterUserEmail: userAttributes.email,
-          serviceId: svcId
-        }
-      });
     return serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId)
       .chain(() =>
         getServiceTask(
@@ -190,7 +178,14 @@ export function UpdateServiceHandler(
             )
             .chain(service => {
               if (retrievedService.is_visible !== service.is_visible) {
-                trackUpdateServiceVisibility(service.is_visible, serviceId);
+                telemetryClient.trackEvent({
+                  name: "api.services.update",
+                  properties: {
+                    isVisible: String(service.is_visible),
+                    requesterUserEmail: userAttributes.email,
+                    serviceId
+                  }
+                });
               }
               return getSubscriptionKeysTask(
                 getLogger(_, logPrefix, "GetSubscriptionKeys"),

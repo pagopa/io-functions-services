@@ -157,19 +157,6 @@ export function CreateServiceHandler(
     context.log.info(
       `${logPrefix}| Creating new service with subscriptionId=${subscriptionId}`
     );
-
-    const trackUpdateServiceVisibility = (
-      isVisible: boolean,
-      serviceId: ServiceId
-    ): void =>
-      telemetryClient.trackEvent({
-        name: "api.services.create",
-        properties: {
-          isVisible: String(isVisible),
-          requesterUserEmail: userAttributes.email,
-          serviceId
-        }
-      });
     return createSubscriptionTask(
       getLogger(context, logPrefix, "CreateSubscription"),
       apiClient,
@@ -191,7 +178,14 @@ export function CreateServiceHandler(
             (sandboxFiscalCode as unknown) as FiscalCode,
             userInfo.token_name
           ).map(service => {
-            trackUpdateServiceVisibility(service.is_visible, subscriptionId);
+            telemetryClient.trackEvent({
+              name: "api.services.create",
+              properties: {
+                isVisible: String(service.is_visible),
+                requesterUserEmail: userAttributes.email,
+                subscriptionId
+              }
+            });
             return ResponseSuccessJson({
               ...service,
               primary_key: subscription.primary_key,
