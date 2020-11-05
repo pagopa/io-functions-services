@@ -15,7 +15,9 @@ import {
 } from "io-functions-commons/dist/src/models/notification";
 import { NotificationEvent } from "io-functions-commons/dist/src/models/notification_event";
 
-import { generateDocumentHtml, sendMail } from "./utils";
+import { generateDocumentHtml } from "./utils";
+
+import { sendMail } from "io-functions-commons/dist/src/mailer";
 
 export interface INotificationDefaults {
   readonly HTML_TO_TEXT_OPTIONS: HtmlToTextOptions;
@@ -52,7 +54,10 @@ export const getEmailNotificationActivityHandler = (
   lMailerTransporter: NodeMailer.Transporter,
   lNotificationModel: NotificationModel,
   notificationDefaultParams: INotificationDefaults
-) => async (context: Context, input: unknown): Promise<unknown> => {
+) => async (
+  context: Context,
+  input: unknown
+): Promise<EmailNotificationActivityResult> => {
   const inputOrError = EmailNotificationActivityInput.decode(input);
 
   if (inputOrError.isLeft()) {
@@ -146,7 +151,7 @@ export const getEmailNotificationActivityHandler = (
 
   // trigger email delivery
   // see https://nodemailer.com/message/
-  const sendResult = await sendMail(lMailerTransporter, {
+  await sendMail(lMailerTransporter, {
     from: notificationDefaultParams.MAIL_FROM,
     headers: {
       "X-Italia-Messages-MessageId": message.id,
@@ -160,16 +165,15 @@ export const getEmailNotificationActivityHandler = (
     // priority: "high", // TODO: set based on kind of notification
     // disableFileAccess: true,
     // disableUrlAccess: true,
-  });
-
-  if (sendResult.isLeft()) {
-    const error = sendResult.value;
-    // track the event of failed delivery
-    context.log.error(`${logPrefix}|ERROR=${error.message}`);
-    throw new Error(`Error while sending email: ${error.message}`);
-  }
-
-  context.log.verbose(`${logPrefix}|RESULT=SUCCESS`);
+  })
+    .bimap(
+      error => {
+        context.log.error(`${logPrefix}|ERROR=${error.message}`);
+        throw new Error(`Error while sending email: ${error.message}`);
+      },
+      () => context.log.verbose(`${logPrefix}|RESULT=SUCCESS`)
+    )
+    .run();
 
   // TODO: handling bounces and delivery updates
   // see https://nodemailer.com/usage/#sending-mail
