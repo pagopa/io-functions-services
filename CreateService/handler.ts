@@ -165,7 +165,7 @@ export function CreateServiceHandler(
       telemetryClient.trackEvent({
         name: "api.services.create",
         properties: {
-          isVisible: isVisible ? String(isVisible) : "false",
+          isVisible: String(isVisible),
           requesterUserEmail: userAttributes.email,
           serviceId
         }
