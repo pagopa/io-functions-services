@@ -39,6 +39,7 @@ import { TaskEither } from "fp-ts/lib/TaskEither";
 import { ServiceModel } from "io-functions-commons/dist/src/models/service";
 import { ContextMiddleware } from "io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { RequiredParamMiddleware } from "io-functions-commons/dist/src/utils/middlewares/required_param";
+import { initAppInsights } from "italia-ts-commons/lib/appinsights";
 import { EmailString, NonEmptyString } from "italia-ts-commons/lib/strings";
 import { APIClient } from "../clients/admin";
 import { Service } from "../generated/api-admin/Service";
@@ -148,6 +149,7 @@ const updateServiceTask = (
  * Handles requests for updating a service by given serviceId and a Service Payload.
  */
 export function UpdateServiceHandler(
+  telemetryClient: ReturnType<typeof initAppInsights>,
   apiClient: APIClient
 ): IUpdateServiceHandler {
   return (_, apiAuth, ___, userAttributes, serviceId, servicePayload) => {
@@ -173,8 +175,18 @@ export function UpdateServiceHandler(
                 userInfo.token_name
               )
             )
-            .chain(service =>
-              getSubscriptionKeysTask(
+            .chain(service => {
+              if (retrievedService.is_visible !== service.is_visible) {
+                telemetryClient.trackEvent({
+                  name: "api.services.update",
+                  properties: {
+                    isVisible: String(service.is_visible),
+                    requesterUserEmail: userAttributes.email,
+                    serviceId
+                  }
+                });
+              }
+              return getSubscriptionKeysTask(
                 getLogger(_, logPrefix, "GetSubscriptionKeys"),
                 apiClient,
                 serviceId
@@ -183,8 +195,8 @@ export function UpdateServiceHandler(
                   ...service,
                   ...subscriptionKeys
                 })
-              )
-            )
+              );
+            })
         )
       )
       .fold<ResponseTypes>(identity, identity)
@@ -196,10 +208,11 @@ export function UpdateServiceHandler(
  * Wraps a UpdateService handler inside an Express request handler.
  */
 export function UpdateService(
+  telemetryClient: ReturnType<typeof initAppInsights>,
   serviceModel: ServiceModel,
   client: APIClient
 ): express.RequestHandler {
-  const handler = UpdateServiceHandler(client);
+  const handler = UpdateServiceHandler(telemetryClient, client);
   const middlewaresWrap = withRequestMiddlewares(
     ContextMiddleware(),
     AzureApiAuthMiddleware(new Set([UserGroup.ApiServiceWrite])),

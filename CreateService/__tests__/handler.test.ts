@@ -147,6 +147,10 @@ const mockUlidGenerator = jest.fn(() => aServiceId);
 const productName = "IO_API_SERVICES" as NonEmptyString;
 const sandboxFiscalCode = "BBBCCC00A11B123X" as NonEmptyString;
 
+const mockAppinsights = {
+  trackEvent: jest.fn()
+};
+
 describe("CreateServiceHandler", () => {
   it("should respond with a created service with subscriptionKeys by providing a servicePayload", async () => {
     const apiClientMock = {
@@ -162,6 +166,7 @@ describe("CreateServiceHandler", () => {
     };
 
     const createServiceHandler = CreateServiceHandler(
+      mockAppinsights as any,
       apiClientMock as any,
       mockUlidGenerator as any,
       productName,
@@ -178,6 +183,7 @@ describe("CreateServiceHandler", () => {
     expect(apiClientMock.createSubscription).toHaveBeenCalledTimes(1);
     expect(apiClientMock.createService).toHaveBeenCalledTimes(1);
     expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+    expect(mockAppinsights.trackEvent).toHaveBeenCalledTimes(1);
     expect(result.kind).toBe("IResponseSuccessJson");
     if (result.kind === "IResponseSuccessJson") {
       expect(result.value).toEqual({
@@ -201,6 +207,7 @@ describe("CreateServiceHandler", () => {
     };
 
     const createServiceHandler = CreateServiceHandler(
+      mockAppinsights as any,
       apiClientMock as any,
       mockUlidGenerator as any,
       productName,
@@ -241,6 +248,7 @@ describe("CreateServiceHandler", () => {
     };
 
     const createServiceHandler = CreateServiceHandler(
+      mockAppinsights as any,
       apiClientMock as any,
       mockUlidGenerator as any,
       productName,
@@ -256,7 +264,7 @@ describe("CreateServiceHandler", () => {
 
     expect(apiClientMock.createSubscription).toHaveBeenCalledTimes(1);
     expect(apiClientMock.createService).not.toHaveBeenCalled();
-
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
     expect(result.kind).toBe("IResponseErrorInternal");
   });
 
@@ -275,6 +283,7 @@ describe("CreateServiceHandler", () => {
       .mockImplementation(() => ["ValidationErrors"]);
 
     const createServiceHandler = CreateServiceHandler(
+      mockAppinsights as any,
       apiClientMock as any,
       mockUlidGenerator as any,
       productName,
@@ -290,7 +299,7 @@ describe("CreateServiceHandler", () => {
 
     expect(apiClientMock.createSubscription).toHaveBeenCalledTimes(1);
     expect(apiClientMock.createService).not.toHaveBeenCalled();
-
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
     expect(result.kind).toBe("IResponseErrorInternal");
   });
 
@@ -303,6 +312,7 @@ describe("CreateServiceHandler", () => {
     };
 
     const createServiceHandler = CreateServiceHandler(
+      mockAppinsights as any,
       apiClientMock as any,
       mockUlidGenerator as any,
       productName,
@@ -318,6 +328,7 @@ describe("CreateServiceHandler", () => {
 
     expect(apiClientMock.createSubscription).toHaveBeenCalledTimes(1);
     expect(apiClientMock.createService).not.toHaveBeenCalled();
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
 
     expect(result.kind).toBe("IResponseErrorInternal");
   });
@@ -331,6 +342,7 @@ describe("CreateServiceHandler", () => {
     };
 
     const createServiceHandler = CreateServiceHandler(
+      mockAppinsights as any,
       apiClientMock as any,
       mockUlidGenerator as any,
       productName,
@@ -346,7 +358,7 @@ describe("CreateServiceHandler", () => {
 
     expect(apiClientMock.createSubscription).toHaveBeenCalledTimes(1);
     expect(apiClientMock.createService).not.toHaveBeenCalled();
-
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
     expect(result.kind).toBe("IResponseErrorForbiddenNotAuthorized");
   });
 
@@ -359,6 +371,7 @@ describe("CreateServiceHandler", () => {
     };
 
     const createServiceHandler = CreateServiceHandler(
+      mockAppinsights as any,
       apiClientMock as any,
       mockUlidGenerator as any,
       productName,
@@ -374,7 +387,7 @@ describe("CreateServiceHandler", () => {
 
     expect(apiClientMock.createSubscription).toHaveBeenCalledTimes(1);
     expect(apiClientMock.createService).not.toHaveBeenCalled();
-
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
     expect(result.kind).toBe("IResponseErrorNotFound");
     if (result.kind === "IResponseErrorNotFound") {
       expect(result.detail).toEqual("Not found: Resource not found");
@@ -393,6 +406,7 @@ describe("CreateServiceHandler", () => {
     };
 
     const createServiceHandler = CreateServiceHandler(
+      mockAppinsights as any,
       apiClientMock as any,
       mockUlidGenerator as any,
       productName,
@@ -409,7 +423,7 @@ describe("CreateServiceHandler", () => {
     expect(apiClientMock.createSubscription).toHaveBeenCalledTimes(1);
     expect(apiClientMock.createService).not.toHaveBeenCalled();
     expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
-
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
     expect(result.kind).toBe("IResponseErrorInternal");
   });
 
@@ -428,6 +442,7 @@ describe("CreateServiceHandler", () => {
       .spyOn(reporters, "errorsToReadableMessages")
       .mockImplementation(() => ["ValidationErrors"]);
     const createServiceHandler = CreateServiceHandler(
+      mockAppinsights as any,
       apiClientMock as any,
       mockUlidGenerator as any,
       productName,
@@ -444,7 +459,7 @@ describe("CreateServiceHandler", () => {
     expect(apiClientMock.createSubscription).toHaveBeenCalledTimes(1);
     expect(apiClientMock.createService).not.toHaveBeenCalled();
     expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
-
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
     expect(result.kind).toBe("IResponseErrorInternal");
   });
 
@@ -460,6 +475,7 @@ describe("CreateServiceHandler", () => {
     };
 
     const createServiceHandler = CreateServiceHandler(
+      mockAppinsights as any,
       apiClientMock as any,
       mockUlidGenerator as any,
       productName,
@@ -476,7 +492,7 @@ describe("CreateServiceHandler", () => {
     expect(apiClientMock.createSubscription).toHaveBeenCalledTimes(1);
     expect(apiClientMock.createService).not.toHaveBeenCalled();
     expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
-
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
     expect(result.kind).toBe("IResponseErrorNotFound");
     if (result.kind === "IResponseErrorNotFound") {
       expect(result.detail).toEqual("Not found: Resource not found");
@@ -495,6 +511,7 @@ describe("CreateServiceHandler", () => {
     };
 
     const createServiceHandler = CreateServiceHandler(
+      mockAppinsights as any,
       apiClientMock as any,
       mockUlidGenerator as any,
       productName,
@@ -511,7 +528,7 @@ describe("CreateServiceHandler", () => {
     expect(apiClientMock.createSubscription).toHaveBeenCalledTimes(1);
     expect(apiClientMock.createService).not.toHaveBeenCalled();
     expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
-
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
     expect(result.kind).toBe("IResponseErrorInternal");
   });
 
@@ -527,6 +544,7 @@ describe("CreateServiceHandler", () => {
     };
 
     const createServiceHandler = CreateServiceHandler(
+      mockAppinsights as any,
       apiClientMock as any,
       mockUlidGenerator as any,
       productName,
@@ -543,7 +561,7 @@ describe("CreateServiceHandler", () => {
     expect(apiClientMock.createSubscription).toHaveBeenCalledTimes(1);
     expect(apiClientMock.createService).not.toHaveBeenCalled();
     expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
-
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
     expect(result.kind).toBe("IResponseErrorForbiddenNotAuthorized");
   });
   it("should respond with an internal error if createService does not respond", async () => {
@@ -558,6 +576,7 @@ describe("CreateServiceHandler", () => {
     };
 
     const createServiceHandler = CreateServiceHandler(
+      mockAppinsights as any,
       apiClientMock as any,
       mockUlidGenerator as any,
       productName,
@@ -574,7 +593,7 @@ describe("CreateServiceHandler", () => {
     expect(apiClientMock.createSubscription).toHaveBeenCalledTimes(1);
     expect(apiClientMock.createService).toHaveBeenCalledTimes(1);
     expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
-
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
     expect(result.kind).toBe("IResponseErrorInternal");
   });
 
@@ -596,6 +615,7 @@ describe("CreateServiceHandler", () => {
       .mockImplementation(() => ["ValidationErrors"]);
 
     const createServiceHandler = CreateServiceHandler(
+      mockAppinsights as any,
       apiClientMock as any,
       mockUlidGenerator as any,
       productName,
@@ -612,6 +632,7 @@ describe("CreateServiceHandler", () => {
     expect(apiClientMock.createSubscription).toHaveBeenCalledTimes(1);
     expect(apiClientMock.createService).toHaveBeenCalledTimes(1);
     expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
     expect(result.kind).toBe("IResponseErrorInternal");
   });
 
@@ -627,6 +648,7 @@ describe("CreateServiceHandler", () => {
     };
 
     const createServiceHandler = CreateServiceHandler(
+      mockAppinsights as any,
       apiClientMock as any,
       mockUlidGenerator as any,
       productName,
@@ -643,7 +665,7 @@ describe("CreateServiceHandler", () => {
     expect(apiClientMock.createSubscription).toHaveBeenCalledTimes(1);
     expect(apiClientMock.createService).toHaveBeenCalledTimes(1);
     expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
-
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
     expect(result.kind).toBe("IResponseErrorUnauthorized");
     if (result.kind === "IResponseErrorUnauthorized") {
       expect(result.detail).toEqual("Unauthorized: Unauthorized");
