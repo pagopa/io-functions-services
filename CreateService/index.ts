@@ -15,6 +15,7 @@ import createAzureFunctionHandler from "io-functions-express/dist/src/createAzur
 import { apiClient } from "../clients/admin";
 import { CreateService } from "./handler";
 
+import { initTelemetryClient } from "../utils/appinsights";
 import { getConfigOrThrow } from "../utils/config";
 
 const config = getConfigOrThrow();
@@ -30,9 +31,14 @@ const serviceModel = new ServiceModel(
   cosmosdbInstance.container(SERVICE_COLLECTION_NAME)
 );
 
+const telemetryClient = initTelemetryClient(
+  config.APPINSIGHTS_INSTRUMENTATIONKEY
+);
+
 app.post(
   "/api/v1/services",
   CreateService(
+    telemetryClient,
     serviceModel,
     apiClient,
     config.DEFAULT_SUBSCRIPTION_PRODUCT_NAME,

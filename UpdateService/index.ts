@@ -13,7 +13,11 @@ import { setAppContext } from "io-functions-commons/dist/src/utils/middlewares/c
 import createAzureFunctionHandler from "io-functions-express/dist/src/createAzureFunctionsHandler";
 
 import { apiClient } from "../clients/admin";
+import { initTelemetryClient } from "../utils/appinsights";
+import { getConfigOrThrow } from "../utils/config";
 import { UpdateService } from "./handler";
+
+const config = getConfigOrThrow();
 
 // Setup Express
 const app = express();
@@ -26,7 +30,14 @@ const serviceModel = new ServiceModel(
   cosmosdbInstance.container(SERVICE_COLLECTION_NAME)
 );
 
-app.put("/api/v1/services/:service_id", UpdateService(serviceModel, apiClient));
+const telemetryClient = initTelemetryClient(
+  config.APPINSIGHTS_INSTRUMENTATIONKEY
+);
+
+app.put(
+  "/api/v1/services/:service_id",
+  UpdateService(telemetryClient, serviceModel, apiClient)
+);
 
 const azureFunctionHandler = createAzureFunctionHandler(app);
 

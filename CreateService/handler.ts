@@ -42,6 +42,7 @@ import {
   ObjectIdGenerator,
   ulidGenerator
 } from "io-functions-commons/dist/src/utils/strings";
+import { initAppInsights } from "italia-ts-commons/lib/appinsights";
 import {
   EmailString,
   FiscalCode,
@@ -144,6 +145,7 @@ const createServiceTask = (
  * Handles requests for create a service by a Service Payload.
  */
 export function CreateServiceHandler(
+  telemetryClient: ReturnType<typeof initAppInsights>,
   apiClient: APIClient,
   generateObjectId: ObjectIdGenerator,
   productName: NonEmptyString,
@@ -174,13 +176,21 @@ export function CreateServiceHandler(
             subscriptionId,
             (sandboxFiscalCode as unknown) as FiscalCode,
             userInfo.token_name
-          ).map(service =>
-            ResponseSuccessJson({
+          ).map(service => {
+            telemetryClient.trackEvent({
+              name: "api.services.create",
+              properties: {
+                isVisible: String(service.is_visible),
+                requesterUserEmail: userAttributes.email,
+                subscriptionId
+              }
+            });
+            return ResponseSuccessJson({
               ...service,
               primary_key: subscription.primary_key,
               secondary_key: subscription.secondary_key
-            })
-          )
+            });
+          })
         )
       )
       .fold<ResponseTypes>(identity, identity)
@@ -192,12 +202,14 @@ export function CreateServiceHandler(
  * Wraps a CreateService handler inside an Express request handler.
  */
 export function CreateService(
+  telemetryClient: ReturnType<typeof initAppInsights>,
   serviceModel: ServiceModel,
   client: APIClient,
   productName: NonEmptyString,
   sandboxFiscalCode: NonEmptyString
 ): express.RequestHandler {
   const handler = CreateServiceHandler(
+    telemetryClient,
     client,
     ulidGenerator,
     productName,
