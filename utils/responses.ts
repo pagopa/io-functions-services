@@ -8,7 +8,6 @@ import {
   IResponseErrorInternal,
   IResponseErrorNotFound,
   IResponseErrorTooManyRequests,
-  IResponseErrorValidation,
   ResponseErrorForbiddenNotAuthorized,
   ResponseErrorGeneric,
   ResponseErrorInternal,
@@ -50,8 +49,7 @@ export type ErrorResponses =
   | IResponseErrorUnauthorized
   | IResponseErrorForbiddenNotAuthorized
   | IResponseErrorInternal
-  | IResponseErrorTooManyRequests
-  | IResponseErrorValidation;
+  | IResponseErrorTooManyRequests;
 
 export const toErrorServerResponse = <S extends number, T>(
   response: IResponseType<S, T>

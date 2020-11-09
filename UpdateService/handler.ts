@@ -24,7 +24,6 @@ import {
   IResponseErrorInternal,
   IResponseErrorNotFound,
   IResponseErrorTooManyRequests,
-  IResponseErrorValidation,
   IResponseSuccessJson,
   ResponseSuccessJson
 } from "italia-ts-commons/lib/responses";
@@ -50,10 +49,7 @@ import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWit
 import { withApiRequestWrapper } from "../utils/api";
 import { getLogger, ILogger } from "../utils/logging";
 import { ErrorResponses, IResponseErrorUnauthorized } from "../utils/responses";
-import {
-  serviceOwnerCheckTask,
-  serviceVisibleMetadataCheckTask
-} from "../utils/subscription";
+import { serviceOwnerCheckTask } from "../utils/subscription";
 
 type ResponseTypes =
   | IResponseSuccessJson<ServiceWithSubscriptionKeys>
@@ -61,8 +57,7 @@ type ResponseTypes =
   | IResponseErrorForbiddenNotAuthorized
   | IResponseErrorNotFound
   | IResponseErrorTooManyRequests
-  | IResponseErrorInternal
-  | IResponseErrorValidation;
+  | IResponseErrorInternal;
 
 /**
  * Type of a UpdateService handler.
@@ -163,38 +158,33 @@ export function UpdateServiceHandler(
           apiClient,
           serviceId
         ).chain(retrievedService =>
-          serviceVisibleMetadataCheckTask(
-            servicePayload.service_metadata,
-            servicePayload.is_visible
-          ).chain(() =>
-            getUserTask(
-              getLogger(_, logPrefix, "GetUser"),
-              apiClient,
-              userAttributes.email
-            )
-              .chain(userInfo =>
-                updateServiceTask(
-                  getLogger(_, logPrefix, "UpdateService"),
-                  apiClient,
-                  servicePayload,
-                  serviceId,
-                  retrievedService,
-                  userInfo.token_name
-                )
-              )
-              .chain(service =>
-                getSubscriptionKeysTask(
-                  getLogger(_, logPrefix, "GetSubscriptionKeys"),
-                  apiClient,
-                  serviceId
-                ).map(subscriptionKeys =>
-                  ResponseSuccessJson({
-                    ...service,
-                    ...subscriptionKeys
-                  })
-                )
-              )
+          getUserTask(
+            getLogger(_, logPrefix, "GetUser"),
+            apiClient,
+            userAttributes.email
           )
+            .chain(userInfo =>
+              updateServiceTask(
+                getLogger(_, logPrefix, "UpdateService"),
+                apiClient,
+                servicePayload,
+                serviceId,
+                retrievedService,
+                userInfo.token_name
+              )
+            )
+            .chain(service =>
+              getSubscriptionKeysTask(
+                getLogger(_, logPrefix, "GetSubscriptionKeys"),
+                apiClient,
+                serviceId
+              ).map(subscriptionKeys =>
+                ResponseSuccessJson({
+                  ...service,
+                  ...subscriptionKeys
+                })
+              )
+            )
         )
       )
       .fold<ResponseTypes>(identity, identity)

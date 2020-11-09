@@ -25,7 +25,6 @@ import {
   IResponseErrorInternal,
   IResponseErrorNotFound,
   IResponseErrorTooManyRequests,
-  IResponseErrorValidation,
   IResponseSuccessJson,
   ResponseSuccessJson
 } from "italia-ts-commons/lib/responses";
@@ -56,8 +55,7 @@ type ResponseTypes =
   | IResponseErrorForbiddenNotAuthorized
   | IResponseErrorNotFound
   | IResponseErrorTooManyRequests
-  | IResponseErrorInternal
-  | IResponseErrorValidation;
+  | IResponseErrorInternal;
 
 const logPrefix = "RegenerateServiceKeyHandler";
 

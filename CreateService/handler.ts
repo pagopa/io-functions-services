@@ -23,7 +23,6 @@ import {
   IResponseErrorInternal,
   IResponseErrorNotFound,
   IResponseErrorTooManyRequests,
-  IResponseErrorValidation,
   IResponseSuccessJson,
   ResponseSuccessJson
 } from "italia-ts-commons/lib/responses";
@@ -57,7 +56,6 @@ import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWit
 import { withApiRequestWrapper } from "../utils/api";
 import { getLogger, ILogger } from "../utils/logging";
 import { ErrorResponses, IResponseErrorUnauthorized } from "../utils/responses";
-import { serviceVisibleMetadataCheckTask } from "../utils/subscription";
 
 type ResponseTypes =
   | IResponseSuccessJson<ServiceWithSubscriptionKeys>
@@ -65,8 +63,7 @@ type ResponseTypes =
   | IResponseErrorForbiddenNotAuthorized
   | IResponseErrorNotFound
   | IResponseErrorTooManyRequests
-  | IResponseErrorInternal
-  | IResponseErrorValidation;
+  | IResponseErrorInternal;
 
 const logPrefix = "CreateServiceHandler";
 
@@ -157,37 +154,32 @@ export function CreateServiceHandler(
     context.log.info(
       `${logPrefix}| Creating new service with subscriptionId=${subscriptionId}`
     );
-    return serviceVisibleMetadataCheckTask(
-      servicePayload.service_metadata,
-      servicePayload.is_visible
+    return createSubscriptionTask(
+      getLogger(context, logPrefix, "CreateSubscription"),
+      apiClient,
+      userAttributes.email,
+      subscriptionId,
+      productName
     )
-      .chain(() =>
-        createSubscriptionTask(
-          getLogger(context, logPrefix, "CreateSubscription"),
+      .chain(subscription =>
+        getUserTask(
+          getLogger(context, logPrefix, "GetUser"),
           apiClient,
-          userAttributes.email,
-          subscriptionId,
-          productName
-        ).chain(subscription =>
-          getUserTask(
-            getLogger(context, logPrefix, "GetUser"),
+          userAttributes.email
+        ).chain(userInfo =>
+          createServiceTask(
+            getLogger(context, logPrefix, "CreateService"),
             apiClient,
-            userAttributes.email
-          ).chain(userInfo =>
-            createServiceTask(
-              getLogger(context, logPrefix, "CreateService"),
-              apiClient,
-              servicePayload,
-              subscriptionId,
-              (sandboxFiscalCode as unknown) as FiscalCode,
-              userInfo.token_name
-            ).map(service =>
-              ResponseSuccessJson({
-                ...service,
-                primary_key: subscription.primary_key,
-                secondary_key: subscription.secondary_key
-              })
-            )
+            servicePayload,
+            subscriptionId,
+            (sandboxFiscalCode as unknown) as FiscalCode,
+            userInfo.token_name
+          ).map(service =>
+            ResponseSuccessJson({
+              ...service,
+              primary_key: subscription.primary_key,
+              secondary_key: subscription.secondary_key
+            })
           )
         )
       )
