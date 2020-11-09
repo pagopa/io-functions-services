@@ -9,6 +9,13 @@ import { markdownToHtml } from "io-functions-commons/dist/src/utils/markdown";
 // TODO: import generation script from digital-citizenship-functions
 import defaultEmailTemplate from "./templates/html/default";
 
+const defaultEmailFooterMarkdown = `Questa è una comunicazione automatica inviata da un indirizzo che non supporta risposte, ti preghiamo di non rispondere.
+
+Hai ricevuto questa comunicazione perchè le tue preferenze nell’[App IO](https://io.italia.it/) indicano che hai abilitato l’inoltro via email dei messaggi relativi al servizio in oggetto. 
+Se non vuoi più ricevere le comunicazioni relative a questo servizio, puoi modificare le tue preferenze nella relativa scheda servizio all’interno dell’App IO. 
+Puoi anche disattivare l’inoltro dei messaggi via email per tutti i servizi, selezionando l'opzione “Disabilita per tutti i servizi” che trovi in "Profilo" > "Preferenze" > "Inoltro dei messaggi via email".
+`;
+
 /**
  * Generates the HTML for the email from the Markdown content and the subject
  */
@@ -29,6 +36,11 @@ export async function generateDocumentHtml(
     ""
   );
 
+  // converts the markdown footer to HTML
+  const footerHtml = (
+    await markdownToHtml.process(defaultEmailFooterMarkdown)
+  ).toString();
+
   // wrap the generated HTML into an email template
   return defaultEmailTemplate(
     subject, // title
@@ -38,7 +50,7 @@ export async function generateDocumentHtml(
     organizationFiscalCode,
     subject,
     bodyHtml,
-    "" // TODO: footer
+    footerHtml
   );
 }
 
