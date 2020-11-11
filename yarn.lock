@@ -3527,10 +3527,10 @@ invert-kv@^1.0.0:
   resolved "https://registry.yarnpkg.com/invert-kv/-/invert-kv-1.0.0.tgz#104a8e4aaca6d3d8cd157a8ef8bfab2d7a3ffdb6"
   integrity sha1-EEqOSqym09jNFXqO+L+rLXo//bY=
 
-io-functions-commons@^16.0.0:
-  version "16.0.0"
-  resolved "https://registry.yarnpkg.com/io-functions-commons/-/io-functions-commons-16.0.0.tgz#71e93180fbadd7810ea2d95f96b8321efe5986a7"
-  integrity sha512-T7+xJT24q3Vs/Gm9nBjPviNW/Kjb6tBKDV4lK76fzbCnkIKjWaWSHixvne7boWaElLbPbhM727KlZh6YFNaDtA==
+io-functions-commons@^16.3.1:
+  version "16.3.1"
+  resolved "https://registry.yarnpkg.com/io-functions-commons/-/io-functions-commons-16.3.1.tgz#5c5ef11e6f7b816c126be93e6e301db3170378f6"
+  integrity sha512-+5IlAYuqsMfaYu/v8x4dUh8QW6/sBlHwVDF0rNCKtqjjCIQr2BoZ3J3JvLbuH8LOK74a5U3Zv2r3PEvaf6GrRg==
   dependencies:
     "@azure/cosmos" "^3.7.2"
     applicationinsights "^1.7.3"
