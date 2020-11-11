@@ -6,13 +6,12 @@ import { MessageSubject } from "io-functions-commons/dist/generated/definitions/
 import { CreatedMessageEventSenderMetadata } from "io-functions-commons/dist/src/models/created_message_sender_metadata";
 import { markdownToHtml } from "io-functions-commons/dist/src/utils/markdown";
 
-// TODO: import generation script from digital-citizenship-functions
-import defaultEmailTemplate from "./templates/html/default";
+import defaultEmailTemplate from "io-functions-commons/dist/src/templates/html/default";
 
-const defaultEmailFooterMarkdown = `Questa è una comunicazione automatica inviata da un indirizzo che non supporta risposte, ti preghiamo di non rispondere.
+const defaultEmailFooterMarkdown = `**Non rispondere a questa email. Questa casella di posta è utilizzata solo per l'invio della presente mail e, non essendo monitorata, non riceveresti risposta.**
 
-Hai ricevuto questa comunicazione perchè le tue preferenze nell’[App IO](https://io.italia.it/) indicano che hai abilitato l’inoltro via email dei messaggi relativi al servizio in oggetto. 
-Se non vuoi più ricevere le comunicazioni relative a questo servizio, puoi modificare le tue preferenze nella relativa scheda servizio all’interno dell’App IO. 
+Hai ricevuto questa comunicazione perché le tue preferenze nell’[App IO](https://io.italia.it/) indicano che hai abilitato l’inoltro via email dei messaggi relativi al servizio in oggetto.  
+Se non vuoi più ricevere le comunicazioni relative a questo servizio, puoi modificare le tue preferenze nella relativa scheda servizio all’interno dell’App IO.  
 Puoi anche disattivare l’inoltro dei messaggi via email per tutti i servizi, selezionando l'opzione “Disabilita per tutti i servizi” che trovi in "Profilo" > "Preferenze" > "Inoltro dei messaggi via email".
 `;
 
