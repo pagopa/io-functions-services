@@ -62,44 +62,11 @@ const aServicePayload: ServicePayload = {
   service_name: "Test" as NonEmptyString
 };
 
-const aServicePayloadWithoutMetadata: ServicePayload = {
-  authorized_cidrs: [],
-  department_name: "IT" as NonEmptyString,
-  is_visible: false,
-  organization_fiscal_code: anOrganizationFiscalCode,
-  organization_name: "AgID" as NonEmptyString,
-  service_name: "Test" as NonEmptyString
-};
-
-const aNotVisibleServicePayloadWithoutMetadata: ServicePayload = {
-  authorized_cidrs: [],
-  department_name: "IT" as NonEmptyString,
-  is_visible: false,
-  organization_fiscal_code: anOrganizationFiscalCode,
-  organization_name: "AgID" as NonEmptyString,
-  service_name: "Test" as NonEmptyString
-};
-
 const aService = {
   authorizedCIDRs: new Set([]),
   authorizedRecipients: new Set([]),
   departmentName: "IT" as NonEmptyString,
   isVisible: true,
-  maxAllowedPaymentAmount: 0 as MaxAllowedPaymentAmount,
-  organizationFiscalCode: anOrganizationFiscalCode,
-  organizationName: "AgID" as NonEmptyString,
-  requireSecureChannels: false,
-  serviceId: aServiceId,
-  serviceMetadata: someServicesMetadata,
-  serviceName: "Test" as NonEmptyString,
-  version: 1 as NonNegativeInteger
-};
-
-const aNotVisibleServiceWithoutMetadata = {
-  authorizedCIDRs: new Set([]),
-  authorizedRecipients: new Set([]),
-  departmentName: "IT" as NonEmptyString,
-  isVisible: false,
   maxAllowedPaymentAmount: 0 as MaxAllowedPaymentAmount,
   organizationFiscalCode: anOrganizationFiscalCode,
   organizationName: "AgID" as NonEmptyString,
@@ -220,7 +187,7 @@ describe("CreateServiceHandler", () => {
       someUserAttributes,
       {
         ...aServicePayload,
-        serviceMetadata: {
+        service_metadata: {
           ...someServicesMetadata,
           token_name: "ANOTHER_TOKEN_NAME" as NonEmptyString
         }
