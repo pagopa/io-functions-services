@@ -65,7 +65,7 @@ const aServicePayload: ServicePayload = {
 const aServicePayloadWithoutMetadata: ServicePayload = {
   authorized_cidrs: [],
   department_name: "IT" as NonEmptyString,
-  is_visible: true,
+  is_visible: false,
   organization_fiscal_code: anOrganizationFiscalCode,
   organization_name: "AgID" as NonEmptyString,
   service_name: "Test" as NonEmptyString
