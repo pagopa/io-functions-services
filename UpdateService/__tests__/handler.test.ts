@@ -46,18 +46,28 @@ const anEmail = "test@example.com" as EmailString;
 
 const aServiceId = "s123" as NonEmptyString;
 
+const aTokenName = "TOKEN_NAME" as NonEmptyString;
+const someServicesMetadata: ServiceMetadata = {
+  scope: ServiceScopeEnum.NATIONAL,
+  tokenName: aTokenName
+};
+
 const aServicePayload: ServicePayload = {
+  authorized_cidrs: [],
+  department_name: "IT" as NonEmptyString,
+  is_visible: true,
+  organization_fiscal_code: anOrganizationFiscalCode,
+  organization_name: "AgID" as NonEmptyString,
+  service_metadata: someServicesMetadata,
+  service_name: "Test" as NonEmptyString
+};
+
+const aServicePayloadWithoutMetadata: ServicePayload = {
   authorized_cidrs: [],
   department_name: "IT" as NonEmptyString,
   organization_fiscal_code: anOrganizationFiscalCode,
   organization_name: "AgID" as NonEmptyString,
   service_name: "Test" as NonEmptyString
-};
-
-const aTokenName = "TOKEN_NAME" as NonEmptyString;
-const someServicesMetadata: ServiceMetadata = {
-  scope: ServiceScopeEnum.NATIONAL,
-  tokenName: aTokenName
 };
 
 const aService = {
@@ -75,11 +85,41 @@ const aService = {
   version: 1 as NonNegativeInteger
 };
 
+const aNotVisibleService = {
+  authorizedCIDRs: new Set([]),
+  authorizedRecipients: new Set([]),
+  departmentName: "IT" as NonEmptyString,
+  isVisible: false,
+  maxAllowedPaymentAmount: 0 as MaxAllowedPaymentAmount,
+  organizationFiscalCode: anOrganizationFiscalCode,
+  organizationName: "AgID" as NonEmptyString,
+  requireSecureChannels: false,
+  serviceId: aServiceId,
+  serviceMetadata: someServicesMetadata,
+  serviceName: "Test" as NonEmptyString,
+  version: 1 as NonNegativeInteger
+};
+
 const aRetrievedService: Service = {
   authorized_cidrs: [],
   authorized_recipients: [],
   department_name: "IT" as NonEmptyString,
   is_visible: true,
+  max_allowed_payment_amount: 0 as MaxAllowedPaymentAmount,
+  organization_fiscal_code: anOrganizationFiscalCode,
+  organization_name: "AgID" as NonEmptyString,
+  require_secure_channels: false,
+  service_id: aServiceId,
+  service_metadata: someServicesMetadata,
+  service_name: "Test" as NonEmptyString,
+  version: 1 as NonNegativeInteger
+};
+
+const aRetrievedNotVisibleService: Service = {
+  authorized_cidrs: [],
+  authorized_recipients: [],
+  department_name: "IT" as NonEmptyString,
+  is_visible: false,
   max_allowed_payment_amount: 0 as MaxAllowedPaymentAmount,
   organization_fiscal_code: anOrganizationFiscalCode,
   organization_name: "AgID" as NonEmptyString,
