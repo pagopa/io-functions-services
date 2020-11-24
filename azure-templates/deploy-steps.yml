@@ -26,6 +26,22 @@ parameters:
   - name: 'appName'
     type: string
     default: ''
+
+  # full endpoint to perform healthcheck against, 
+  - name: 'healthcheckEndpoint'
+    type: string
+
+  # the resource group must be the same where vnet is created
+  - name: 'containerInstanceResourceGroup'
+    type: string
+
+  # attached vnet to the container instance
+  - name: 'containerInstanceVNet'
+    type: string
+
+  # container instance subnet
+  - name: 'containerInstanceSubnet'
+    type: string
     
 steps:
   - template: ./make-build-steps.yml
@@ -87,7 +103,8 @@ steps:
   
   # Option 3: deployment with two slots ('staging' and 'production')
   - ${{ if eq(parameters.deployType, 'deployToStagingSlotAndSwap') }}:
-    - task: AzureFunctionApp@1  # First step: deploy to 'staging' slot 
+    # First step: deploy to 'staging' slot 
+    - task: AzureFunctionApp@1  
       inputs:
         azureSubscription: '${{ parameters.azureSubscription }}'
         resourceGroupName: '${{ parameters.resourceGroupName }}'
@@ -98,8 +115,19 @@ steps:
         deployToSlotOrASE: true
         slotName: 'staging'
       displayName: Deploy to staging slot
+
+    # Second step: check the app is working
+    - template: templates/rest-healthcheck/template.yaml@pagopaCommons 
+      parameters:
+        azureSubscription: '${{ parameters.azureSubscription }}'
+        appName: '${{ parameters.appName }}'
+        endpoint: '${{ parameters.healthcheckEndpoint }}'
+        containerInstanceResourceGroup: '${{ parameters.containerInstanceResourceGroup }}'
+        containerInstanceVNet: '${{ parameters.containerInstanceVNet }}'
+        containerInstanceSubnet: '${{ parameters.containerInstanceSubnet }}'
       
-    - task: AzureAppServiceManage@0   # Second step: swap 'staging' with 'production' slot
+    # Third step: swap 'staging' with 'production' slot
+    - task: AzureAppServiceManage@0   
       inputs:
         azureSubscription: '${{ parameters.azureSubscription }}'
         resourceGroupName: '${{ parameters.resourceGroupName }}'
