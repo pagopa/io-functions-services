@@ -45,19 +45,21 @@ const anEmail = "test@example.com" as EmailString;
 
 const aServiceId = "s123" as NonEmptyString;
 
-const aServicePayload: ServicePayload = {
-  authorized_cidrs: [],
-  department_name: "IT" as NonEmptyString,
-  organization_fiscal_code: anOrganizationFiscalCode,
-  organization_name: "AgID" as NonEmptyString,
-  service_name: "Test" as NonEmptyString
-};
-
 const aTokenName = "TOKEN_NAME" as NonEmptyString;
 
 const someServicesMetadata: ServiceMetadata = {
   scope: ServiceScopeEnum.NATIONAL,
   tokenName: aTokenName
+};
+
+const aServicePayload: ServicePayload = {
+  authorized_cidrs: [],
+  department_name: "IT" as NonEmptyString,
+  is_visible: true,
+  organization_fiscal_code: anOrganizationFiscalCode,
+  organization_name: "AgID" as NonEmptyString,
+  service_metadata: someServicesMetadata,
+  service_name: "Test" as NonEmptyString
 };
 
 const aService = {
@@ -185,7 +187,7 @@ describe("CreateServiceHandler", () => {
       someUserAttributes,
       {
         ...aServicePayload,
-        serviceMetadata: {
+        service_metadata: {
           ...someServicesMetadata,
           token_name: "ANOTHER_TOKEN_NAME" as NonEmptyString
         }
