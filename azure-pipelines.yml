@@ -63,7 +63,7 @@ parameters:
   - name: 'PRODUCTION_DEPLOY_TYPE'
     displayName: 'Method to achieve deployment in Production (if enabled):'
     type: string
-    default: deployToStagingSlot
+    default: deployToStagingSlotAndSwap
     values:
       - deployToStagingSlot  
       - deployToProductionSlot
@@ -89,6 +89,14 @@ trigger:
 # the build and deploy.
 pool:
   vmImage: 'windows-2019'
+
+resources:
+  repositories:
+    - repository: pagopaCommons
+      type: github
+      name: pagopa/azure-pipeline-templates
+      ref: refs/tags/v1
+      endpoint: 'pagopa'
 
 stages:
   # A) Build and code validation
@@ -200,6 +208,10 @@ stages:
               azureSubscription: '$(TEST_AZURE_SUBSCRIPTION)'
               resourceGroupName: '$(TEST_RESOURCE_GROUP_NAME)'
               appName: '$(TEST_APP_NAME)'
+              healthcheckEndpoint: 'https://$(TEST_APP_NAME).staging.azurewebsites.net/info'
+              containerInstanceResourceGroup: 'io-p-rg-common'
+              containerInstanceVNet: 'io-p-vnet-common'
+              containerInstanceSubnet: 'azure-devops'
 
 
   # D) Deploy to PRODUCTION environment if one of the following conditions apply:
@@ -233,3 +245,7 @@ stages:
               azureSubscription: '$(PRODUCTION_AZURE_SUBSCRIPTION)'
               resourceGroupName: '$(PRODUCTION_RESOURCE_GROUP_NAME)'
               appName: '$(PRODUCTION_APP_NAME)'
+              healthcheckEndpoint: 'https://$(PRODUCTION_APP_NAME).staging.azurewebsites.net/info'
+              containerInstanceResourceGroup: 'io-p-rg-common'
+              containerInstanceVNet: 'io-p-vnet-common'
+              containerInstanceSubnet: 'azure-devops'
