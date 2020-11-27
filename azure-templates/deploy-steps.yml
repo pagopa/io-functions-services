@@ -8,7 +8,7 @@
 parameters:
   - name: 'deployType'
     type: string
-    default: deployToStagingSlot
+    default: deployToStagingSlotAndSwap
     values:
     - deployToProductionSlot
     - deployToStagingSlotAndSwap
