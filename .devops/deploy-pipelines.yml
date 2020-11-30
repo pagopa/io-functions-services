@@ -80,7 +80,7 @@ stages:
       - job: 'make_artifact'
         steps:
           # Build application
-          - template: ./make-build-steps.yml
+          - template: azure-templates/make-build-steps.yml
             parameters:
               make: predeploy_build
           # Install functions extensions
