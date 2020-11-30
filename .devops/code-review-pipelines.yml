@@ -10,13 +10,8 @@ variables:
   NODE_VERSION: '10.14.1'
   YARN_CACHE_FOLDER: $(Pipeline.Workspace)/.yarn
 
-# This pipeline can be manually run or is automatically triggered whenever one 
-# of the following conditions is true:
-# - a push is made to any branch in the repository (not only 'master')
-# - a pull request is created
-# - a tag named 'latest' is pushed
-# Note. In the last case, the tag can be (re-)created using the Git CLI, e.g.:
-#    git push -f origin <abfb967>:refs/tags/latest
+# Automatically triggered on PR
+# https://docs.microsoft.com/en-us/azure/devops/pipelines/yaml-schema?view=azure-devops&tabs=schema%2Cparameter-schema#pr-trigger
 trigger: none
 
 # This pipeline has been implemented to be run on hosted agent pools based both

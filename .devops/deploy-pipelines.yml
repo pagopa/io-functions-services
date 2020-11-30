@@ -14,13 +14,7 @@ parameters:
       - patch
     default: minor
 
-# This pipeline can be manually run or is automatically triggered whenever one 
-# of the following conditions is true:
-# - a push is made to any branch in the repository (not only 'master')
-# - a pull request is created
-# - a tag named 'latest' is pushed
-# Note. In the last case, the tag can be (re-)created using the Git CLI, e.g.:
-#    git push -f origin <abfb967>:refs/tags/latest
+# Only manual activations are intended
 trigger: none
 pr: none
 
@@ -135,7 +129,7 @@ stages:
             parameters:
               azureSubscription: '$(PRODUCTION_AZURE_SUBSCRIPTION)'
               appName: '$(PRODUCTION_APP_NAME)'
-              endpoint: 'https://$(PRODUCTION_APP_NAME)-staging.azurewebsites.net/info'
+              endpoint: 'https://$(PRODUCTION_APP_NAME)-staging.azurewebsites.net/api/info'
               endpointType: 'private'
               containerInstanceResourceGroup: 'io-p-rg-common'
               containerInstanceVNet: 'io-p-vnet-common'
@@ -149,4 +143,3 @@ stages:
               sourceSlot: staging
               swapWithProduction: true
             displayName: Swap with production slot
-
