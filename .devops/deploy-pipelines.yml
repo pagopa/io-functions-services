@@ -1,0 +1,151 @@
+# Azure DevOps pipeline to release a new version and deploy to production.
+
+variables:
+  NODE_VERSION: '10.14.1'
+  YARN_CACHE_FOLDER: $(Pipeline.Workspace)/.yarn
+
+parameters:
+  - name: 'RELEASE_SEMVER'
+    displayName: 'When packing a release, define the version bump to apply'
+    type: string
+    values:
+      - major
+      - minor
+      - patch
+    default: minor
+
+# This pipeline can be manually run or is automatically triggered whenever one 
+# of the following conditions is true:
+# - a push is made to any branch in the repository (not only 'master')
+# - a pull request is created
+# - a tag named 'latest' is pushed
+# Note. In the last case, the tag can be (re-)created using the Git CLI, e.g.:
+#    git push -f origin <abfb967>:refs/tags/latest
+trigger: none
+
+# This pipeline has been implemented to be run on hosted agent pools based both
+# on 'windows' and 'ubuntu' virtual machine images and using the scripts defined
+# in the package.json file. Since we are deploying on Azure functions on Windows
+# runtime, the pipeline is currently configured to use a Windows hosted image for
+# the build and deploy.
+pool:
+  vmImage: 'windows-2019'
+
+resources:
+  repositories:
+    - repository: pagopaCommons
+      type: github
+      name: pagopa/azure-pipeline-templates
+      ref: refs/tags/v2
+      endpoint: 'pagopa'
+
+stages:
+
+  # Create a relase
+  # Activated when ONE OF these are met:
+  # - is on branch master 
+  # - is a tag in the form v{version}-RELEASE
+  - stage: Release
+    condition:
+      and(
+        succeeded(),
+        or(
+          eq(variables['Build.SourceBranch'], 'refs/heads/master'),
+          and(
+            startsWith(variables['Build.SourceBranch'], 'refs/tags'),
+            endsWith(variables['Build.SourceBranch'], '-RELEASE')
+          )
+        )
+      )
+    pool:
+      vmImage: 'ubuntu-latest'
+    jobs:
+      - job: make_release
+        steps:
+        - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/master') }}:
+          - template: azure-templates/make-release-steps.yml
+            parameters:
+              semver: '${{ parameters.RELEASE_SEMVER }}'
+              gitEmail: $(GIT_EMAIL)
+              gitUsername: $(GIT_USERNAME)
+              gitHubConnection: $(GITHUB_CONNECTION)
+        - ${{ if ne(variables['Build.SourceBranch'], 'refs/heads/master') }}:
+          - script: |
+              echo "We assume this reference to be a valid release: $(Build.SourceBranch). Therefore, there is no need to bundle a new release."
+            displayName: 'Skip release bundle'
+
+
+  # Prepare Artifact
+  - stage: Prepare_artifact
+    jobs:
+     - job: 'make_artifact'
+        steps:
+          # Build application
+          - template: ./make-build-steps.yml
+            parameters:
+              make: predeploy_build
+          # Install functions extensions
+          - task: DotNetCoreCLI@2
+            inputs:
+              command: "build"
+              arguments: "-o bin"   
+          # Copy application to  
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: '$(System.DefaultWorkingDirectory)'
+              TargetFolder: '$(Build.ArtifactStagingDirectory)'
+              Contents: |
+                **/*
+                !.git/**/*
+                !**/*.js.map
+                !**/*.ts
+                !.vscode/**/*
+                !azure-templates/**/*
+                !azure-pipelines.yml
+                !.prettierrc
+                !.gitignore
+                !README.md
+                !jest.config.js
+                !local.settings.json
+                !test
+                !tsconfig.json
+            displayName: 'Copy deploy files'
+
+  # Deploy to PRODUCTION environment
+  - stage: Deploy_production
+    dependsOn:
+      - Release
+    jobs:
+        - job: 'do_deploy'         
+           # First step: deploy to 'staging' slot 
+          - task: AzureFunctionApp@1  
+            inputs:
+              azureSubscription: '$(PRODUCTION_AZURE_SUBSCRIPTION)'
+              resourceGroupName: '$(PRODUCTION_RESOURCE_GROUP_NAME)'
+              appType: 'functionApp'
+              appName: '$(PRODUCTION_APP_NAME)'
+              package: '$(Build.ArtifactStagingDirectory)/'
+              deploymentMethod: 'auto'
+              deployToSlotOrASE: true
+              slotName: 'staging'
+            displayName: Deploy to staging slot
+           # Second step: check the app is working
+          - template: templates/rest-healthcheck/template.yaml@pagopaCommons 
+            parameters:
+              azureSubscription: '$(PRODUCTION_AZURE_SUBSCRIPTION)'
+              appName: '$(PRODUCTION_APP_NAME)'
+              endpoint: 'https://$(PRODUCTION_APP_NAME)-staging.azurewebsites.net/info'
+              endpointType: 'private'
+              containerInstanceResourceGroup: 'io-p-rg-common'
+              containerInstanceVNet: 'io-p-vnet-common'
+              containerInstanceSubnet: 'azure-devops' 
+          # Third step: swap 'staging' with 'production' slot
+          - task: AzureAppServiceManage@0   
+            inputs:
+              azureSubscription: '$(PRODUCTION_AZURE_SUBSCRIPTION)'
+              resourceGroupName: '$(PRODUCTION_RESOURCE_GROUP_NAME)'
+              webAppName: '$(PRODUCTION_APP_NAME)'
+              sourceSlot: staging
+              swapWithProduction: true
+            displayName: Swap with production slot
+
