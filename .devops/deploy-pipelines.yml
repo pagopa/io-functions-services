@@ -114,35 +114,36 @@ stages:
     dependsOn:
       - Release
     jobs:
-      - job: 'do_deploy'         
-        # First step: deploy to 'staging' slot 
-        - task: AzureFunctionApp@1  
-          inputs:
-            azureSubscription: '$(PRODUCTION_AZURE_SUBSCRIPTION)'
-            resourceGroupName: '$(PRODUCTION_RESOURCE_GROUP_NAME)'
-            appType: 'functionApp'
-            appName: '$(PRODUCTION_APP_NAME)'
-            package: '$(Build.ArtifactStagingDirectory)/'
-            deploymentMethod: 'auto'
-            deployToSlotOrASE: true
-            slotName: 'staging'
-          displayName: Deploy to staging slot
-         # Second step: check the app is working
-        - template: templates/rest-healthcheck/template.yaml@pagopaCommons 
-          parameters:
-            azureSubscription: '$(PRODUCTION_AZURE_SUBSCRIPTION)'
-            appName: '$(PRODUCTION_APP_NAME)'
-            endpoint: 'https://$(PRODUCTION_APP_NAME)-staging.azurewebsites.net/api/info'
-            endpointType: 'private'
-            containerInstanceResourceGroup: 'io-p-rg-common'
-            containerInstanceVNet: 'io-p-vnet-common'
-            containerInstanceSubnet: 'azure-devops' 
-        # Third step: swap 'staging' with 'production' slot
-        - task: AzureAppServiceManage@0   
-          inputs:
-            azureSubscription: '$(PRODUCTION_AZURE_SUBSCRIPTION)'
-            resourceGroupName: '$(PRODUCTION_RESOURCE_GROUP_NAME)'
-            webAppName: '$(PRODUCTION_APP_NAME)'
-            sourceSlot: staging
-            swapWithProduction: true
-          displayName: Swap with production slot
+      - job: 'do_deploy'       
+        steps:  
+          # First step: deploy to 'staging' slot 
+          - task: AzureFunctionApp@1  
+            inputs:
+              azureSubscription: '$(PRODUCTION_AZURE_SUBSCRIPTION)'
+              resourceGroupName: '$(PRODUCTION_RESOURCE_GROUP_NAME)'
+              appType: 'functionApp'
+              appName: '$(PRODUCTION_APP_NAME)'
+              package: '$(Build.ArtifactStagingDirectory)/'
+              deploymentMethod: 'auto'
+              deployToSlotOrASE: true
+              slotName: 'staging'
+            displayName: Deploy to staging slot
+          # Second step: check the app is working
+          - template: templates/rest-healthcheck/template.yaml@pagopaCommons 
+            parameters:
+              azureSubscription: '$(PRODUCTION_AZURE_SUBSCRIPTION)'
+              appName: '$(PRODUCTION_APP_NAME)'
+              endpoint: 'https://$(PRODUCTION_APP_NAME)-staging.azurewebsites.net/api/info'
+              endpointType: 'private'
+              containerInstanceResourceGroup: 'io-p-rg-common'
+              containerInstanceVNet: 'io-p-vnet-common'
+              containerInstanceSubnet: 'azure-devops' 
+          # Third step: swap 'staging' with 'production' slot
+          - task: AzureAppServiceManage@0   
+            inputs:
+              azureSubscription: '$(PRODUCTION_AZURE_SUBSCRIPTION)'
+              resourceGroupName: '$(PRODUCTION_RESOURCE_GROUP_NAME)'
+              webAppName: '$(PRODUCTION_APP_NAME)'
+              sourceSlot: staging
+              swapWithProduction: true
+            displayName: Swap with production slot
