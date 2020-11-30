@@ -19,7 +19,9 @@
     "generate:api-notifications": "rimraf ./generated/notifications && shx mkdir -p ./generated/notifications && gen-api-models --api-spec https://raw.githubusercontent.com/pagopa/io-backend/master/api_notifications.yaml --out-dir ./generated/notifications --response-decoders --request-types",
     "generate:api-admin": "rimraf generated/api-admin && shx mkdir -p generated/api-admin && gen-api-models --api-spec https://raw.githubusercontent.com/pagopa/io-functions-admin/master/openapi/index.yaml --no-strict --out-dir generated/api-admin --request-types --response-decoders --client",
     "dist:modules": "modclean -r -n default:safe && yarn install --production",
-    "predeploy": "npm-run-all build dist:modules"
+    "predeploy": "npm-run-all build dist:modules",
+    "preversion": "auto-changelog  --config .auto-changelog.json --unreleased --commit-limit false --stdout --template preview.hbs",
+    "version": "auto-changelog -p --config .auto-changelog.json --unreleased && git add CHANGELOG.md"
   },
   "description": "",
   "devDependencies": {
@@ -30,6 +32,7 @@
     "@types/html-to-text": "^1.4.31",
     "@types/jest": "^24.0.15",
     "@types/nodemailer": "^4.6.2",
+    "auto-changelog": "^2.2.1",
     "danger": "^4.0.2",
     "danger-plugin-digitalcitizenship": "^0.3.1",
     "fast-check": "^1.16.0",
@@ -39,7 +42,6 @@
     "modclean": "^3.0.0-beta.1",
     "npm-run-all": "^4.1.5",
     "prettier": "^1.18.2",
-    "release-it": "^13.1.1",
     "shx": "^0.3.2",
     "ts-jest": "^24.0.2",
     "tslint": "^5.17.0",
