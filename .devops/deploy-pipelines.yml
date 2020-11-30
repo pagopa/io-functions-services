@@ -76,6 +76,8 @@ stages:
 
   # Prepare Artifact
   - stage: Prepare_artifact
+    dependsOn:
+      - Release
     jobs:
       - job: 'make_artifact'
         steps:
@@ -83,6 +85,13 @@ stages:
           - template: azure-templates/make-build-steps.yml
             parameters:
               make: predeploy_build
+              # On the assumption that this stage is executed only when Relase stage is,
+              #  with this parameter we set the reference the deploy script must pull changes from.
+              # The branch/tag name is calculated from the source branch
+              #  ex: Build.SourceBranch=refs/heads/master --> master
+              #  ex: Build.SourceBranch=refs/tags/v1.2.3-RELEASE --> v1.2.3-RELEASE
+              gitReference: ${{ replace(replace(variables['Build.SourceBranch'], 'refs/tags/', ''), 'refs/heads/', '') }}
+
           # Install functions extensions
           - task: DotNetCoreCLI@2
             inputs:
@@ -113,7 +122,7 @@ stages:
   # Deploy to PRODUCTION environment
   - stage: Deploy_production
     dependsOn:
-      - Release
+      - Prepare_artifact
     jobs:
       - job: 'do_deploy'       
         steps:  
