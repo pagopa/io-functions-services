@@ -19,9 +19,7 @@ trigger:
   batch: true
   exclude:
     - '*'
-pr: 
-  exclude:
-    - '*'
+pr: none
 
 # This pipeline has been implemented to be run on hosted agent pools based both
 # on 'windows' and 'ubuntu' virtual machine images and using the scripts defined
@@ -78,7 +76,7 @@ stages:
   # Prepare Artifact
   - stage: Prepare_artifact
     jobs:
-     - job: 'make_artifact'
+      - job: 'make_artifact'
         steps:
           # Build application
           - template: ./make-build-steps.yml
