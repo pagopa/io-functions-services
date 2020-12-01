@@ -15,11 +15,7 @@ parameters:
     default: minor
 
 # Only manual activations are intended
-trigger: 
-  batch: true
-  branches: 
-    exclude:
-      - '*'
+trigger: none
 pr: none
 
 # This pipeline has been implemented to be run on hosted agent pools based both
