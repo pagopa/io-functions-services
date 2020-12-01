@@ -1,6 +1,6 @@
 {
   "name": "io-functions-services",
-  "version": "1.11.4",
+  "version": "1.11.5",
   "license": "MIT",
   "scripts": {
     "prebuild": "npm-run-all generate:*",
