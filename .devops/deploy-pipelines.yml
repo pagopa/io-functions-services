@@ -64,8 +64,9 @@ stages:
               gitEmail: $(GIT_EMAIL)
               gitUsername: $(GIT_USERNAME)
               gitHubConnection: $(GITHUB_CONNECTION)
-              pkg_cache_version_id: 'v1'
-              pkg_cache_folder: $(Pipeline.Workspace)/.yarn
+              nodeVersion: $(NODE_VERSION)
+              pkg_cache_version_id: $(CACHE_VERSION_ID)
+              pkg_cache_folder: $(YARN_CACHE_FOLDER)
 
         - ${{ if ne(variables['Build.SourceBranch'], 'refs/heads/master') }}:
           - script: |
