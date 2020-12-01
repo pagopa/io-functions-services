@@ -1,0 +1,96 @@
+# Azure DevOps pipeline to build, check source codes and run tests.
+#
+# To make Danger JS run on a pull request you need to add the following pipeline 
+# variable and set it with a GitHub access token (scope public_repo); otherwise 
+# set its value to 'skip' without marking it secret: 
+# - DANGER_GITHUB_API_TOKEN
+# 
+
+variables:
+  NODE_VERSION: '10.14.1'
+  YARN_CACHE_FOLDER: $(Pipeline.Workspace)/.yarn
+
+# Automatically triggered on PR
+# https://docs.microsoft.com/en-us/azure/devops/pipelines/yaml-schema?view=azure-devops&tabs=schema%2Cparameter-schema#pr-trigger
+trigger: none
+
+# This pipeline has been implemented to be run on hosted agent pools based both
+# on 'windows' and 'ubuntu' virtual machine images and using the scripts defined
+# in the package.json file. Since we are deploying on Azure functions on Windows
+# runtime, the pipeline is currently configured to use a Windows hosted image for
+# the build and deploy.
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+  # A) Build and code validation
+  - stage: Build
+    dependsOn: []
+    jobs:
+      # A1) Checkout, install module and build code
+      - job: make_build
+        pool:
+          # As we deploy on Wondows machines, we use Windows to build
+          vmImage: 'windows-2019'         
+        steps:
+        - template: azure-templates/make-build-steps.yml
+          parameters:
+            make: build
+            
+      # A2) Analyze source code to find errors with lint
+      - job: lint     
+        steps:
+        - template: azure-templates/make-build-steps.yml
+          parameters:
+            make: install_dependencies
+
+        - script: |
+            yarn lint
+          displayName: 'Lint'
+
+      # A3) Validate API definition
+      - job: lint_api     
+        steps:
+        - script: |
+            npx oval validate -p openapi/index.yaml
+          displayName: 'Validate openAPI'
+
+      # A4) Run Danger (skipping if not executing on a PR)
+      - job: danger
+        condition: 
+          and(
+            succeeded(), 
+            and(
+              eq(variables['Build.Reason'], 'PullRequest'),
+              ne(variables['DANGER_GITHUB_API_TOKEN'], 'skip')
+            )
+          )
+        steps:
+          - template: azure-templates/make-build-steps.yml
+            parameters:
+              make: install_dependencies
+
+          - bash: |
+              yarn danger ci
+            env:
+              DANGER_GITHUB_API_TOKEN: '$(DANGER_GITHUB_API_TOKEN)'
+            displayName: 'Danger CI'
+
+
+  # B) Run unit tests if there is a push or pull request on any branch.
+  - stage: Test
+    dependsOn: []
+    jobs:
+      - job: unit_tests
+        steps:
+        - template: azure-templates/make-build-steps.yml
+          parameters:
+            make: install_dependencies
+
+        - script: |
+            yarn test:coverage
+          displayName: 'Unit tests exec'
+
+        - bash: |
+            bash <(curl -s https://codecov.io/bash)
+          displayName: 'Code coverage'
