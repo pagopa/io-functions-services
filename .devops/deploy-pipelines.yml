@@ -58,12 +58,15 @@ stages:
       - job: make_release
         steps:
         - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/master') }}:
-          - template: azure-templates/make-release-steps.yml
+          - template: templates/node-github-release/template.yaml@pagopaCommons 
             parameters:
               semver: '${{ parameters.RELEASE_SEMVER }}'
               gitEmail: $(GIT_EMAIL)
               gitUsername: $(GIT_USERNAME)
               gitHubConnection: $(GITHUB_CONNECTION)
+              pkg_cache_version_id: 'v1'
+              pkg_cache_folder: $(Pipeline.Workspace)/.yarn
+
         - ${{ if ne(variables['Build.SourceBranch'], 'refs/heads/master') }}:
           - script: |
               echo "We assume this reference to be a valid release: $(Build.SourceBranch). Therefore, there is no need to bundle a new release."
