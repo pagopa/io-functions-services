@@ -75,11 +75,11 @@ stages:
 
 
   # Prepare Artifact
-  - stage: Prepare_artifact
+  - stage: Deploy_staging
     dependsOn:
       - Release
     jobs:
-      - job: 'make_artifact'
+      - job: 'prepare_artifact_and_deploy'
         steps:
           # Build application
           - template: azure-templates/make-build-steps.yml
@@ -118,14 +118,7 @@ stages:
                 !test
                 !tsconfig.json
             displayName: 'Copy deploy files'
-
-  # Deploy to staging environment
-  - stage: Deploy_staging
-    dependsOn:
-      - Prepare_artifact
-    jobs:
-      - job: 'do_deploy'       
-        steps:  
+            
           - task: AzureFunctionApp@1  
             inputs:
               azureSubscription: '$(PRODUCTION_AZURE_SUBSCRIPTION)'
