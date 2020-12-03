@@ -3,7 +3,7 @@
   "version": "1.11.7",
   "license": "MIT",
   "scripts": {
-    "prebuild": "npm-run-all generate:*",
+    "prebuild": "npm run generate",
     "build": "tsc",
     "build:production": "npm run prestart && yarn install --production",
     "watch": "tsc --w",
@@ -15,6 +15,7 @@
     "pretest:coverage": "npm-run-all generate:*",
     "test:coverage": "jest --coverage",
     "lint": "tslint -p .",
+    "generate": "npm-run-all generate:*",
     "generate:definitions": "rimraf ./generated/definitions && shx mkdir -p ./generated/definitions && gen-api-models --api-spec ./openapi/index.yaml --no-strict --out-dir ./generated/definitions",
     "generate:api-notifications": "rimraf ./generated/notifications && shx mkdir -p ./generated/notifications && gen-api-models --api-spec https://raw.githubusercontent.com/pagopa/io-backend/master/api_notifications.yaml --out-dir ./generated/notifications --response-decoders --request-types",
     "generate:api-admin": "rimraf generated/api-admin && shx mkdir -p generated/api-admin && gen-api-models --api-spec https://raw.githubusercontent.com/pagopa/io-functions-admin/master/openapi/index.yaml --no-strict --out-dir generated/api-admin --request-types --response-decoders --client",
