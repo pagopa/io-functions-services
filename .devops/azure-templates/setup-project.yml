@@ -23,16 +23,6 @@ steps:
   - script: |
       git fetch && git checkout ${{ parameters.gitReference }}
     displayName: 'Checkout reference'  
-
-- task: Cache@2
-  inputs:
-    key: 'yarn-${{ parameters.cache_version_id }} | "$(Agent.OS)" | yarn.lock'
-    restoreKeys: |
-      yarn-${{ parameters.cache_version_id }} | "$(Agent.OS)"
-    path: $(YARN_CACHE_FOLDER)
-    cacheHitVar: 'CACHE_RESTORED'
-  displayName: 'Cache yarn packages'
-
   
 - task: UseNode@1
   inputs:
@@ -42,4 +32,3 @@ steps:
 - script: |
     yarn install --frozen-lockfile --no-progress --non-interactive --network-concurrency 1
   displayName: 'Install node modules'
-  condition: ne(variables.CACHE_RESTORED, 'true')
