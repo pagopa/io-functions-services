@@ -23,6 +23,7 @@ import {
   WebhookNotificationActivityInput,
   WebhookNotificationActivityResult
 } from "../WebhookNotificationActivity/handler";
+import { MessageProcessingEventNames, trackMessageProcessing } from "./utils";
 
 /**
  * Durable Functions Orchestrator that handles CreatedMessage events
@@ -46,6 +47,14 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
         errorOrCreatedMessageEvent.value
       )}`
     );
+    trackMessageProcessing({
+      name: MessageProcessingEventNames.DECODE_INPUT,
+      properties: {
+        details: readableReport(errorOrCreatedMessageEvent.value),
+        isSuccess: "false",
+        messageId: ""
+      }
+    });
     // we will never be able to recover from this, so don't trigger a retry
     return [];
   }
@@ -80,6 +89,17 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
           storeMessageContentActivityResultOrError.value
         )}`
       );
+
+      trackMessageProcessing({
+        name: MessageProcessingEventNames.STORE_MESSAGE_DECODE,
+        properties: {
+          details: readableReport(
+            storeMessageContentActivityResultOrError.value
+          ),
+          isSuccess: "false",
+          messageId: newMessageWithContent.id
+        }
+      });
       // we will never be able to recover from this, so don't trigger a retry
       return [];
     }
@@ -113,6 +133,15 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
         messageStatusUpdaterActivityInputRejected
       );
 
+      trackMessageProcessing({
+        name: MessageProcessingEventNames.UPDATE_MESSAGE_STATUS,
+        properties: {
+          details: `${MessageStatusValueEnum.REJECTED}-${storeMessageContentActivityResult.reason}`,
+          isSuccess: "true",
+          messageId: newMessageWithContent.id
+        }
+      });
+
       return [];
     }
 
@@ -138,8 +167,27 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
           createNotificationActivityResultOrError.value
         )}`
       );
+      trackMessageProcessing({
+        name: MessageProcessingEventNames.UPDATE_NOTIFICATION_STATUS,
+        properties: {
+          details: readableReport(
+            createNotificationActivityResultOrError.value
+          ),
+          isSuccess: "false",
+          messageId: newMessageWithContent.id
+        }
+      });
       return [];
     }
+
+    trackMessageProcessing({
+      name: MessageProcessingEventNames.UPDATE_NOTIFICATION_STATUS,
+      properties: {
+        details: "",
+        isSuccess: "true",
+        messageId: newMessageWithContent.id
+      }
+    });
 
     const createNotificationActivityResult =
       createNotificationActivityResultOrError.value;
@@ -147,6 +195,14 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
     if (createNotificationActivityResult.kind === "none") {
       // no channel configured, no notifications need to be delivered
       context.log.verbose(`${logPrefix}|No notifications will be delivered`);
+      trackMessageProcessing({
+        name: MessageProcessingEventNames.NO_CHANNEL,
+        properties: {
+          details: "No notifications will be delivered",
+          isSuccess: "true",
+          messageId: newMessageWithContent.id
+        }
+      });
       return [];
     }
 
@@ -189,7 +245,23 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
             context.log.error(
               `${logPrefix}|EmailNotificationActivity failed|REASON=${emailNotificationActivityResult.reason}`
             );
+            trackMessageProcessing({
+              name: MessageProcessingEventNames.EMAIL_SENT,
+              properties: {
+                details: emailNotificationActivityResult.reason,
+                isSuccess: "false",
+                messageId: newMessageWithContent.id
+              }
+            });
           } else {
+            trackMessageProcessing({
+              name: MessageProcessingEventNames.EMAIL_SENT,
+              properties: {
+                details: "",
+                isSuccess: "true",
+                messageId: newMessageWithContent.id
+              }
+            });
             // once the email has been sent, update the notification status
             const emailNotificationStatusUpdaterActivityInput = {
               channel: NotificationChannelEnum.EMAIL,
@@ -208,12 +280,29 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
                   emailNotificationStatusUpdaterActivityInput
                 )
               );
+
+              trackMessageProcessing({
+                name: MessageProcessingEventNames.UPDATE_NOTIFICATION_STATUS,
+                properties: {
+                  details: "email",
+                  isSuccess: "true",
+                  messageId: newMessageWithContent.id
+                }
+              });
             } catch (e) {
               // Too many failures while updating the notification status.
               // We can't do much about it, we just log it and continue.
               context.log.error(
                 `${logPrefix}|NotificationStatusUpdaterActivity failed too many times|CHANNEL=email|ERROR=${e}`
               );
+              trackMessageProcessing({
+                name: MessageProcessingEventNames.UPDATE_NOTIFICATION_STATUS,
+                properties: {
+                  details: "email",
+                  isSuccess: "false",
+                  messageId: newMessageWithContent.id
+                }
+              });
             }
           }
         }
@@ -263,7 +352,23 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
             context.log.error(
               `${logPrefix}|webhookNotificationActivity failed|REASON=${webhookNotificationActivityResult.reason}`
             );
+            trackMessageProcessing({
+              name: MessageProcessingEventNames.WEBHOOK,
+              properties: {
+                details: webhookNotificationActivityResult.reason,
+                isSuccess: "false",
+                messageId: newMessageWithContent.id
+              }
+            });
           } else {
+            trackMessageProcessing({
+              name: MessageProcessingEventNames.WEBHOOK,
+              properties: {
+                details: "",
+                isSuccess: "true",
+                messageId: newMessageWithContent.id
+              }
+            });
             // once the push notification has been sent, update the notification status
             const webhookNotificationStatusUpdaterActivityInput = {
               channel: NotificationChannelEnum.WEBHOOK,
@@ -282,12 +387,29 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
                   webhookNotificationStatusUpdaterActivityInput
                 )
               );
+
+              trackMessageProcessing({
+                name: MessageProcessingEventNames.UPDATE_NOTIFICATION_STATUS,
+                properties: {
+                  details: "webhook",
+                  isSuccess: "true",
+                  messageId: newMessageWithContent.id
+                }
+              });
             } catch (e) {
               // Too many failures while updating the notification status.
               // We can't do much about it, we just log it and continue.
               context.log.error(
                 `${logPrefix}|NotificationStatusUpdaterActivity failed too many times|CHANNEL=webhook|ERROR=${e}`
               );
+              trackMessageProcessing({
+                name: MessageProcessingEventNames.UPDATE_NOTIFICATION_STATUS,
+                properties: {
+                  details: "webhook",
+                  isSuccess: "false",
+                  messageId: newMessageWithContent.id
+                }
+              });
             }
           }
         }
@@ -314,6 +436,15 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
       retryOptions,
       messageStatusUpdaterActivityInputProcessed
     );
+
+    trackMessageProcessing({
+      name: MessageProcessingEventNames.UPDATE_MESSAGE_STATUS,
+      properties: {
+        details: MessageStatusValueEnum.PROCESSED,
+        isSuccess: "true",
+        messageId: newMessageWithContent.id
+      }
+    });
   } catch (e) {
     // FIXME: no exceptions reach this point?
     // too many retries
