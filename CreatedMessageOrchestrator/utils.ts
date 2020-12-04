@@ -30,12 +30,17 @@ const telemetryClient = initTelemetryClient(
   config.APPINSIGHTS_INSTRUMENTATIONKEY
 );
 
-export const trackMessageProcessing = (event: MessageProcessingEvent): void =>
-  telemetryClient.trackEvent({
-    name: event.name,
-    properties: event.properties,
-    tagOverrides: { samplingEnabled: "false" }
-  });
+export const trackMessageProcessing = (
+  event: MessageProcessingEvent,
+  isReplaying: boolean
+): void =>
+  !isReplaying
+    ? telemetryClient.trackEvent({
+        name: event.name,
+        properties: event.properties,
+        tagOverrides: { samplingEnabled: "false" }
+      })
+    : null;
 
 export enum MessageProcessingEventNames {
   DECODE_INPUT = "api.messages.create.decodeinput",

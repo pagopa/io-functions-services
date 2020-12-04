@@ -3221,10 +3221,10 @@ italia-ts-commons@^7.0.1:
     node-fetch "^2.6.0"
     validator "^10.1.0"
 
-italia-ts-commons@^8.1.0:
-  version "8.5.0"
-  resolved "https://registry.yarnpkg.com/italia-ts-commons/-/italia-ts-commons-8.5.0.tgz#9967ec1b94745f482d5cc942a1bacf7de6f6461b"
-  integrity sha512-pTX90/WW987t7pdcbQngCFm35c3gQlDFIUCnDZ6VCo5vNMl8VwdZztGIcYyEaJw6xMjb1WjSRlltnDdSe0B9Eg==
+italia-ts-commons@^8.6.0:
+  version "8.6.0"
+  resolved "https://registry.yarnpkg.com/italia-ts-commons/-/italia-ts-commons-8.6.0.tgz#d0e944ae7fb52d63ec016e172e6950529924f2fb"
+  integrity sha512-fMBhaqcGa5GD7/PmXWbjnCVUGcUWuRnZ5wF0hswkh0UMCGSozg3t3neSAqZGTF3eZaUEUk9WLkYSpTNxfeH1jw==
   dependencies:
     abort-controller "^3.0.0"
     agentkeepalive "^4.1.2"
