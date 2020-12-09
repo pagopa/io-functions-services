@@ -60,7 +60,7 @@
     "io-functions-commons": "^17.0.0",
     "io-functions-express": "^0.1.1",
     "io-ts": "1.8.5",
-    "italia-ts-commons": "^8.1.0",
+    "italia-ts-commons": "^8.6.0",
     "nodemailer": "^4.6.7",
     "nodemailer-sendgrid": "^1.0.3"
   },

@@ -381,10 +381,12 @@ export function CreateMessageHandler(
             messagePayload.default_addresses &&
               messagePayload.default_addresses.email
           ).toString(),
+          messageId,
           senderServiceId: serviceId,
           senderUserId: auth.userId,
           success: isSuccess ? "true" : "false"
-        }
+        },
+        tagOverrides: { samplingEnabled: "false" }
       });
 
     // helper function that logs the result of the handler
