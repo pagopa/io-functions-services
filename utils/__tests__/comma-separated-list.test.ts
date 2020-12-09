@@ -1,9 +1,9 @@
 import * as t from "io-ts";
 import { readableReport } from "italia-ts-commons/lib/reporters";
 import { FiscalCode } from "italia-ts-commons/lib/strings";
-import { parseCommaSeparatedListOf } from "../utils";
+import { CommaSeparatedListOf } from "../comma-separated-list";
 
-describe("parseCommaSeparatedListOf", () => {
+describe("CommaSeparatedListOf", () => {
   it.each`
     title                                 | input                 | expected                | decoder
     ${"undefined into an empty array"}    | ${undefined}          | ${[]}                   | ${t.any}
@@ -14,14 +14,16 @@ describe("parseCommaSeparatedListOf", () => {
     ${"trim elements"}                    | ${"a , b, c "}        | ${["a", "b", "c"]}      | ${t.string}
     ${"fiscal codes"}                     | ${"AAABBB80A01C123D"} | ${["AAABBB80A01C123D"]} | ${FiscalCode}
   `("should parse $title", ({ input, expected, decoder }) => {
-    parseCommaSeparatedListOf(decoder)(input).fold(
-      err => {
-        fail(`cannot decode input: ${readableReport(err)}`);
-      },
-      value => {
-        expect(value).toEqual(expected);
-      }
-    );
+    CommaSeparatedListOf(decoder)
+      .decode(input)
+      .fold(
+        err => {
+          fail(`cannot decode input: ${readableReport(err)}`);
+        },
+        value => {
+          expect(value).toEqual(expected);
+        }
+      );
   });
 
   it.each`
@@ -30,7 +32,7 @@ describe("parseCommaSeparatedListOf", () => {
     ${"invalid fiscal codes"} | ${"invalid"} | ${FiscalCode}
     ${"'1,2,3' into [1,2,3]"} | ${"1,2,3"}   | ${t.number}
   `("should fail to parse $title", ({ input, decoder }) => {
-    const result = parseCommaSeparatedListOf(decoder)(input);
+    const result = CommaSeparatedListOf(decoder).decode(input);
     expect(result.isLeft()).toBeTruthy();
   });
 });

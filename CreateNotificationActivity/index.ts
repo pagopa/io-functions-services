@@ -13,14 +13,13 @@ import { cosmosdbInstance } from "../utils/cosmosdb";
 
 import { FiscalCode } from "io-functions-commons/dist/generated/definitions/FiscalCode";
 import { HttpsUrl } from "io-functions-commons/dist/generated/definitions/HttpsUrl";
-import { ServiceId } from "io-functions-commons/dist/generated/definitions/ServiceId";
+
 import {
   NOTIFICATION_COLLECTION_NAME,
   NotificationModel
 } from "io-functions-commons/dist/src/models/notification";
 
 import { getCreateNotificationActivityHandler } from "./handler";
-import { parseCommaSeparatedListOf } from "./utils";
 
 import { getConfigOrThrow } from "../utils/config";
 
@@ -34,13 +33,11 @@ const sandboxFiscalCode = FiscalCode.decode(
   );
 });
 
-const emailNotificationServiceBlackList = parseCommaSeparatedListOf(ServiceId)(
-  config.EMAIL_NOTIFICATION_SERVICE_BLACKLIST
-).getOrElseL(_ => {
-  throw new Error(
-    `Check that the environment variable EMAIL_NOTIFICATION_SERVICE_BLACKLIST is either unset or set to a comma-separated list of valid ServiceId`
-  );
-});
+const emailNotificationServiceBlackList =
+  config.EMAIL_NOTIFICATION_SERVICE_BLACKLIST;
+
+const webhookNotificationServiceBlackList =
+  config.WEBHOOK_NOTIFICATION_SERVICE_BLACKLIST;
 
 const notificationModel = new NotificationModel(
   cosmosdbInstance.container(NOTIFICATION_COLLECTION_NAME)
@@ -58,7 +55,8 @@ const activityFunctionHandler: AzureFunction = getCreateNotificationActivityHand
   notificationModel,
   defaultWebhookUrl,
   sandboxFiscalCode,
-  emailNotificationServiceBlackList
+  emailNotificationServiceBlackList,
+  webhookNotificationServiceBlackList
 );
 
 export default activityFunctionHandler;

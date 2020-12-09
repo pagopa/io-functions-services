@@ -117,7 +117,8 @@ export const getCreateNotificationActivityHandler = (
   lNotificationModel: NotificationModel,
   lDefaultWebhookUrl: HttpsUrl,
   lSandboxFiscalCode: FiscalCode,
-  lEmailNotificationServiceBlackList: ReadonlyArray<ServiceId>
+  lEmailNotificationServiceBlackList: ReadonlyArray<ServiceId>,
+  lWebhookNotificationServiceBlackList: ReadonlyArray<ServiceId>
 ) => async (context: Context, input: unknown): Promise<unknown> => {
   const inputOrError = CreateNotificationActivityInput.decode(input);
   if (inputOrError.isLeft()) {
@@ -221,14 +222,22 @@ export const getCreateNotificationActivityHandler = (
   const isWebhookBlockedForService =
     blockedInboxOrChannels.indexOf(BlockedInboxOrChannelEnum.WEBHOOK) >= 0;
 
+  // wether the service is in our blacklist for sending push notifications
+  const isWebhookDisabledForService = lWebhookNotificationServiceBlackList.includes(
+    createdMessageEvent.message.senderServiceId
+  );
+
   // finally we decide whether we should send the webhook notification or not -
   // we send a webhook notification when all the following conditions are met:
   //
   // * webhook notifications are enabled in the user profile (isWebhookEnabledInProfile)
   // * webhook notifications are not blocked for the sender service (!isWebhookBlockedForService)
+  // * webhook notifications are not blacklisted for the sender service (!isWebhookDisabledForService)
   //
   const maybeWebhookNotificationUrl =
-    isWebhookEnabledInProfile && !isWebhookBlockedForService
+    isWebhookEnabledInProfile &&
+    !isWebhookBlockedForService &&
+    !isWebhookDisabledForService
       ? some({
           url: lDefaultWebhookUrl
         })
