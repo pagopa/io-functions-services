@@ -47,6 +47,8 @@ import { TimeToLiveSeconds } from "io-functions-commons/dist/generated/definitio
 import { fromLeft, taskEither, TaskEither } from "fp-ts/lib/TaskEither";
 import { GetMessageHandler } from "../handler";
 
+jest.useFakeTimers();
+
 const mockContext = {
   log: {
     // tslint:disable-next-line: no-console

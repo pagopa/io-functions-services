@@ -5,10 +5,12 @@
  * The configuration is evaluate eagerly at the first access to the module. The module exposes convenient methods to access such value.
  */
 
+import { ServiceId } from "io-functions-commons/dist/generated/definitions/ServiceId";
 import { MailerConfig } from "io-functions-commons/dist/src/mailer";
 import * as t from "io-ts";
 import { readableReport } from "italia-ts-commons/lib/reporters";
 import { NonEmptyString } from "italia-ts-commons/lib/strings";
+import { CommaSeparatedListOf } from "./comma-separated-list";
 
 // global app configuration
 export type IConfig = t.TypeOf<typeof IConfig>;
@@ -22,7 +24,8 @@ export const IConfig = t.intersection([
 
     DEFAULT_SUBSCRIPTION_PRODUCT_NAME: NonEmptyString,
 
-    EMAIL_NOTIFICATION_SERVICE_BLACKLIST: NonEmptyString,
+    EMAIL_NOTIFICATION_SERVICE_BLACKLIST: CommaSeparatedListOf(ServiceId),
+    WEBHOOK_NOTIFICATION_SERVICE_BLACKLIST: CommaSeparatedListOf(ServiceId),
 
     IO_FUNCTIONS_ADMIN_API_TOKEN: NonEmptyString,
     IO_FUNCTIONS_ADMIN_BASE_URL: NonEmptyString,
