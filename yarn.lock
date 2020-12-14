@@ -696,14 +696,6 @@ agentkeepalive@^4.1.2:
     depd "^1.1.2"
     humanize-ms "^1.2.1"
 
-"agentkeepalive@https://github.com/pagopa/agentkeepalive#v4.1.1":
-  version "4.1.0"
-  resolved "https://github.com/pagopa/agentkeepalive#91309bcab216dccbd08631e227a974afbfe807fb"
-  dependencies:
-    debug "^4.1.0"
-    depd "^1.1.2"
-    humanize-ms "^1.2.1"
-
 ajv@^6.5.5:
   version "6.12.1"
   resolved "https://registry.yarnpkg.com/ajv/-/ajv-6.12.1.tgz#cce4d7dfcd62d3c57b1cd772e688eff5f5cd3839"
@@ -2834,10 +2826,10 @@ invert-kv@^1.0.0:
   resolved "https://registry.yarnpkg.com/invert-kv/-/invert-kv-1.0.0.tgz#104a8e4aaca6d3d8cd157a8ef8bfab2d7a3ffdb6"
   integrity sha1-EEqOSqym09jNFXqO+L+rLXo//bY=
 
-io-functions-commons@^17.0.0:
-  version "17.0.0"
-  resolved "https://registry.yarnpkg.com/io-functions-commons/-/io-functions-commons-17.0.0.tgz#4757e8579f11cd5910b55f5ae57f3692aef94553"
-  integrity sha512-eVUYm3t9e4sAcfJLY03XBl9Ojj9DR+J2pHjjeBydMS53m5vh+2WPC+Ft81TWDzlFwCRuElVGDa3cmOb/JJBs8w==
+io-functions-commons@^17.3.0:
+  version "17.3.0"
+  resolved "https://registry.yarnpkg.com/io-functions-commons/-/io-functions-commons-17.3.0.tgz#4aac0f5ad92df0a3796bfb07c7be2a91a396fbf2"
+  integrity sha512-MiZANOb5daooMHavf9cEIp8Z/dA/yc7UAFM+kl7Gu7jXO3Y+5lHi5bdKElfvSYila5q2QmDcP6zi8SMSnItK3g==
   dependencies:
     "@azure/cosmos" "^3.7.2"
     applicationinsights "^1.7.3"
@@ -2848,7 +2840,7 @@ io-functions-commons@^17.0.0:
     helmet-csp "^2.5.1"
     io-functions-express "^0.1.1"
     io-ts "1.8.5"
-    italia-ts-commons "^7.0.1"
+    italia-ts-commons "^8.6.0"
     node-fetch "^2.6.1"
     nodemailer "^6.4.13"
     nodemailer-sendgrid "^1.0.3"
@@ -3206,19 +3198,6 @@ italia-ts-commons@^5.0.1:
     fp-ts "1.12.0"
     io-ts "1.8.5"
     json-set-map "^1.0.2"
-    validator "^10.1.0"
-
-italia-ts-commons@^7.0.1:
-  version "7.0.1"
-  resolved "https://registry.yarnpkg.com/italia-ts-commons/-/italia-ts-commons-7.0.1.tgz#7068643b09f069f4c96627e609d5dc578a64a04a"
-  integrity sha512-IIZYim8LydSA3nbeCxbR23marXhx3Z/FLUh7cV6XxNrB5OpKeVMmQhXV42oErP+g/vsrCQ/LRSrLX8cpi1Nghg==
-  dependencies:
-    agentkeepalive "https://github.com/pagopa/agentkeepalive#v4.1.1"
-    applicationinsights "^1.7.4"
-    fp-ts "1.17.4"
-    io-ts "1.8.5"
-    json-set-map "^1.0.2"
-    node-fetch "^2.6.0"
     validator "^10.1.0"
 
 italia-ts-commons@^8.6.0:
