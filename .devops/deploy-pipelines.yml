@@ -34,6 +34,12 @@ resources:
       ref: refs/tags/v4
       endpoint: 'pagopa'
 
+    - repository: templates
+      type: github
+      name: pagopa/azure-pipeline-templates
+      ref: refs/tags/v9
+      endpoint: 'pagopa'
+
 stages:
 
   # Create a relase
@@ -72,6 +78,20 @@ stages:
           - script: |
               echo "We assume this reference to be a valid release: $(Build.SourceBranch). Therefore, there is no need to bundle a new release."
             displayName: 'Skip release bundle'
+
+
+  # Publish client SDK to NPM
+  - stage: PublishClientSDKtoNPM
+    dependsOn: Release
+    pool:
+      vmImage: 'ubuntu-latest'
+    jobs:
+      - job: publish_SDK   
+        steps:
+        # Template for generating and deploying client SDk to NPM
+        - template: templates/client-sdk-publish/template.yaml@templates
+          parameters:
+            openapiSpecPath: 'openapi/index.yaml'
 
 
   # Prepare Artifact
