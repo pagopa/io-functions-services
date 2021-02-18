@@ -1,5 +1,5 @@
 {
-  "name": "io-functions-services",
+  "name": "@pagopa/io-functions-services",
   "version": "1.13.1",
   "license": "MIT",
   "scripts": {
