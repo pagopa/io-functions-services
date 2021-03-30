@@ -2,7 +2,7 @@ import { AzureFunction } from "@azure/functions";
 import {
   NOTIFICATION_COLLECTION_NAME,
   NotificationModel
-} from "io-functions-commons/dist/src/models/notification";
+} from "@pagopa/io-functions-commons/dist/src/models/notification";
 import { cosmosdbInstance } from "../utils/cosmosdb";
 
 import { agent } from "italia-ts-commons";

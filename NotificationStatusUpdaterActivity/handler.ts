@@ -4,12 +4,12 @@ import { Context } from "@azure/functions";
 
 import { NonEmptyString } from "italia-ts-commons/lib/strings";
 
-import { NotificationChannel } from "io-functions-commons/dist/generated/definitions/NotificationChannel";
-import { NotificationChannelStatusValue } from "io-functions-commons/dist/generated/definitions/NotificationChannelStatusValue";
+import { NotificationChannel } from "@pagopa/io-functions-commons/dist/generated/definitions/NotificationChannel";
+import { NotificationChannelStatusValue } from "@pagopa/io-functions-commons/dist/generated/definitions/NotificationChannelStatusValue";
 import {
   getNotificationStatusUpdater,
   NotificationStatusModel
-} from "io-functions-commons/dist/src/models/notification_status";
+} from "@pagopa/io-functions-commons/dist/src/models/notification_status";
 import { ReadableReporter } from "italia-ts-commons/lib/reporters";
 
 type INotificationStatusUpdaterResult =

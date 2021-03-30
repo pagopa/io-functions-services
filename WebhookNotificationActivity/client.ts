@@ -1,4 +1,4 @@
-import { HttpsUrl } from "io-functions-commons/dist/generated/definitions/HttpsUrl";
+import { HttpsUrl } from "@pagopa/io-functions-commons/dist/generated/definitions/HttpsUrl";
 import {
   ApiHeaderJson,
   createFetchRequestForApi,

@@ -17,25 +17,25 @@ import { Context } from "@azure/functions";
 import {
   NotificationModel,
   WebhookNotification
-} from "io-functions-commons/dist/src/models/notification";
-import { NotificationEvent } from "io-functions-commons/dist/src/models/notification_event";
+} from "@pagopa/io-functions-commons/dist/src/models/notification";
+import { NotificationEvent } from "@pagopa/io-functions-commons/dist/src/models/notification_event";
 
 import {
   isTransientError,
   PermanentError,
   RuntimeError,
   TransientError
-} from "io-functions-commons/dist/src/utils/errors";
+} from "@pagopa/io-functions-commons/dist/src/utils/errors";
 
-import { CreatedMessageEventSenderMetadata } from "io-functions-commons/dist/src/models/created_message_sender_metadata";
+import { CreatedMessageEventSenderMetadata } from "@pagopa/io-functions-commons/dist/src/models/created_message_sender_metadata";
 import {
   ActiveMessage,
   NewMessageWithoutContent
-} from "io-functions-commons/dist/src/models/message";
+} from "@pagopa/io-functions-commons/dist/src/models/message";
 
-import { HttpsUrl } from "io-functions-commons/dist/generated/definitions/HttpsUrl";
-import { MessageContent } from "io-functions-commons/dist/generated/definitions/MessageContent";
-import { SenderMetadata } from "io-functions-commons/dist/generated/definitions/SenderMetadata";
+import { HttpsUrl } from "@pagopa/io-functions-commons/dist/generated/definitions/HttpsUrl";
+import { MessageContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageContent";
+import { SenderMetadata } from "@pagopa/io-functions-commons/dist/generated/definitions/SenderMetadata";
 
 import { fromEither, TaskEither, tryCatch } from "fp-ts/lib/TaskEither";
 import {

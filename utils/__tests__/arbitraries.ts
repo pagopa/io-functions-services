@@ -1,13 +1,13 @@
 import * as assert from "assert";
 import * as fc from "fast-check";
 import { some } from "fp-ts/lib/Option";
-import { BlockedInboxOrChannelEnum } from "io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
-import { NewMessage } from "io-functions-commons/dist/generated/definitions/NewMessage";
-import { PreferredLanguageEnum } from "io-functions-commons/dist/generated/definitions/PreferredLanguage";
-import { NewMessageWithoutContent } from "io-functions-commons/dist/src/models/message";
-import { RetrievedProfile } from "io-functions-commons/dist/src/models/profile";
-import { Service } from "io-functions-commons/dist/src/models/service";
-import { ClientIp } from "io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
+import { BlockedInboxOrChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
+import { NewMessage } from "@pagopa/io-functions-commons/dist/generated/definitions/NewMessage";
+import { PreferredLanguageEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/PreferredLanguage";
+import { NewMessageWithoutContent } from "@pagopa/io-functions-commons/dist/src/models/message";
+import { RetrievedProfile } from "@pagopa/io-functions-commons/dist/src/models/profile";
+import { Service } from "@pagopa/io-functions-commons/dist/src/models/service";
+import { ClientIp } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
 import {
   NonNegativeInteger,
   WithinRangeInteger

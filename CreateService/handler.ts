@@ -3,21 +3,21 @@ import * as express from "express";
 import {
   ClientIp,
   ClientIpMiddleware
-} from "io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
 
 import {
   AzureApiAuthMiddleware,
   IAzureApiAuthorization,
   UserGroup
-} from "io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
 import {
   AzureUserAttributesMiddleware,
   IAzureUserAttributes
-} from "io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
 import {
   withRequestMiddlewares,
   wrapRequestHandler
-} from "io-functions-commons/dist/src/utils/request_middleware";
+} from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
 import {
   IResponseErrorForbiddenNotAuthorized,
   IResponseErrorInternal,
@@ -30,18 +30,18 @@ import {
 import {
   checkSourceIpForHandler,
   clientIPAndCidrTuple as ipTuple
-} from "io-functions-commons/dist/src/utils/source_ip_check";
+} from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
 
 import { Context } from "@azure/functions";
 import { identity } from "fp-ts/lib/function";
 import { TaskEither } from "fp-ts/lib/TaskEither";
-import { ServiceModel } from "io-functions-commons/dist/src/models/service";
-import { ContextMiddleware } from "io-functions-commons/dist/src/utils/middlewares/context_middleware";
-import { RequiredBodyPayloadMiddleware } from "io-functions-commons/dist/src/utils/middlewares/required_body_payload";
+import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
+import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
+import { RequiredBodyPayloadMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_body_payload";
 import {
   ObjectIdGenerator,
   ulidGenerator
-} from "io-functions-commons/dist/src/utils/strings";
+} from "@pagopa/io-functions-commons/dist/src/utils/strings";
 import { initAppInsights } from "italia-ts-commons/lib/appinsights";
 import {
   EmailString,

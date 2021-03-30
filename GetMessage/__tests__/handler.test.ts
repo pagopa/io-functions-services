@@ -9,8 +9,8 @@ import { QueryError } from "documentdb";
 import {
   IAzureApiAuthorization,
   UserGroup
-} from "io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
-import { IAzureUserAttributes } from "io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
+import { IAzureUserAttributes } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
 
 import { NonNegativeInteger } from "italia-ts-commons/lib/numbers";
 import {
@@ -23,26 +23,26 @@ import {
 import {
   NewMessageWithoutContent,
   RetrievedMessageWithoutContent
-} from "io-functions-commons/dist/src/models/message";
-import { MessageStatus } from "io-functions-commons/dist/src/models/message_status";
+} from "@pagopa/io-functions-commons/dist/src/models/message";
+import { MessageStatus } from "@pagopa/io-functions-commons/dist/src/models/message_status";
 import {
   NotificationAddressSourceEnum,
   RetrievedNotification
-} from "io-functions-commons/dist/src/models/notification";
+} from "@pagopa/io-functions-commons/dist/src/models/notification";
 import {
   makeStatusId,
   RetrievedNotificationStatus
-} from "io-functions-commons/dist/src/models/notification_status";
-import { toAuthorizedCIDRs } from "io-functions-commons/dist/src/models/service";
+} from "@pagopa/io-functions-commons/dist/src/models/notification_status";
+import { toAuthorizedCIDRs } from "@pagopa/io-functions-commons/dist/src/models/service";
 
-import { CreatedMessageWithoutContent } from "io-functions-commons/dist/generated/definitions/CreatedMessageWithoutContent";
-import { MaxAllowedPaymentAmount } from "io-functions-commons/dist/generated/definitions/MaxAllowedPaymentAmount";
-import { MessageResponseWithoutContent } from "io-functions-commons/dist/generated/definitions/MessageResponseWithoutContent";
-import { MessageStatusValueEnum } from "io-functions-commons/dist/generated/definitions/MessageStatusValue";
-import { NotificationChannelEnum } from "io-functions-commons/dist/generated/definitions/NotificationChannel";
-import { NotificationChannelStatusValueEnum } from "io-functions-commons/dist/generated/definitions/NotificationChannelStatusValue";
-import { ServiceId } from "io-functions-commons/dist/generated/definitions/ServiceId";
-import { TimeToLiveSeconds } from "io-functions-commons/dist/generated/definitions/TimeToLiveSeconds";
+import { CreatedMessageWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/CreatedMessageWithoutContent";
+import { MaxAllowedPaymentAmount } from "@pagopa/io-functions-commons/dist/generated/definitions/MaxAllowedPaymentAmount";
+import { MessageResponseWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageResponseWithoutContent";
+import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
+import { NotificationChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/NotificationChannel";
+import { NotificationChannelStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/NotificationChannelStatusValue";
+import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
+import { TimeToLiveSeconds } from "@pagopa/io-functions-commons/dist/generated/definitions/TimeToLiveSeconds";
 
 import { fromLeft, taskEither, TaskEither } from "fp-ts/lib/TaskEither";
 import { GetMessageHandler } from "../handler";
