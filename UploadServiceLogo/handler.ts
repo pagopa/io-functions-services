@@ -36,11 +36,11 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
 
 import { Context } from "@azure/functions";
-import { identity } from "fp-ts/lib/function";
-import { TaskEither } from "fp-ts/lib/TaskEither";
 import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { RequiredBodyPayloadMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_body_payload";
+import { identity } from "fp-ts/lib/function";
+import { TaskEither } from "fp-ts/lib/TaskEither";
 import { APIClient } from "../clients/admin";
 import { Logo } from "../generated/api-admin/Logo";
 import { withApiRequestWrapper } from "../utils/api";

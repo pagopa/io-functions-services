@@ -1,6 +1,3 @@
-import * as express from "express";
-import { isLeft, isRight } from "fp-ts/lib/Either";
-import { isSome } from "fp-ts/lib/Option";
 import { LimitedProfile } from "@pagopa/io-functions-commons/dist/generated/definitions/LimitedProfile";
 import { ProfileModel } from "@pagopa/io-functions-commons/dist/src/models/profile";
 import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
@@ -30,6 +27,9 @@ import {
   checkSourceIpForHandler,
   clientIPAndCidrTuple as ipTuple
 } from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
+import * as express from "express";
+import { isLeft, isRight } from "fp-ts/lib/Either";
+import { isSome } from "fp-ts/lib/Option";
 import {
   IResponseErrorForbiddenNotAuthorizedForRecipient,
   IResponseErrorNotFound,

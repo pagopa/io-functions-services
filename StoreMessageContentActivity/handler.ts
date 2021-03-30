@@ -1,9 +1,6 @@
 import * as t from "io-ts";
 
 import { Context } from "@azure/functions";
-import { BlobService } from "azure-storage";
-import { isLeft } from "fp-ts/lib/Either";
-import { fromNullable, isNone } from "fp-ts/lib/Option";
 import {
   BlockedInboxOrChannel,
   BlockedInboxOrChannelEnum
@@ -14,6 +11,9 @@ import {
   ProfileModel,
   RetrievedProfile
 } from "@pagopa/io-functions-commons/dist/src/models/profile";
+import { BlobService } from "azure-storage";
+import { isLeft } from "fp-ts/lib/Either";
+import { fromNullable, isNone } from "fp-ts/lib/Option";
 import { readableReport } from "italia-ts-commons/lib/reporters";
 
 export const SuccessfulStoreMessageContentActivityResult = t.interface({

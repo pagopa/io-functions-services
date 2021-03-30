@@ -1,5 +1,5 @@
-import * as express from "express";
 import { wrapRequestHandler } from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
+import * as express from "express";
 import {
   IResponseErrorInternal,
   IResponseSuccessJson,
