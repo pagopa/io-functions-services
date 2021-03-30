@@ -52,6 +52,10 @@ import { getLogger, ILogger } from "../utils/logging";
 import { ErrorResponses, IResponseErrorUnauthorized } from "../utils/responses";
 import { serviceOwnerCheckTask } from "../utils/subscription";
 
+import { ServiceMetadata } from "../generated/api-admin/ServiceMetadata";
+import { IResponseType } from "italia-ts-commons/lib/requests";
+import * as t from "io-ts";
+
 type ResponseTypes =
   | IResponseSuccessJson<ServiceWithSubscriptionKeys>
   | IResponseErrorUnauthorized
@@ -87,7 +91,7 @@ const getSubscriptionKeysTask = (
     () =>
       apiClient.getSubscriptionKeys({
         service_id: serviceId
-      }),
+      }) as Promise<t.Validation<IResponseType<number, any, never>>>,
     200
   );
 
@@ -101,7 +105,7 @@ const getServiceTask = (
     () =>
       apiClient.getService({
         service_id: serviceId
-      }),
+      }) as Promise<t.Validation<IResponseType<number, any, never>>>,
     200
   );
 
@@ -115,7 +119,7 @@ const getUserTask = (
     () =>
       apiClient.getUser({
         email: userEmail
-      }),
+      }) as Promise<t.Validation<IResponseType<number, any, never>>>,
     200
   );
 
@@ -138,10 +142,10 @@ const updateServiceTask = (
           service_metadata: {
             ...servicePayload.service_metadata,
             token_name: adb2cTokenName
-          }
+          } as ServiceMetadata
         },
         service_id: serviceId
-      }),
+      }) as Promise<t.Validation<IResponseType<number, any, never>>>,
     200
   );
 
@@ -172,7 +176,7 @@ export function UpdateServiceHandler(
                 servicePayload,
                 serviceId,
                 retrievedService,
-                userInfo.token_name
+                userInfo.token_name as NonEmptyString
               )
             )
             .chain(service => {

@@ -376,7 +376,7 @@ export function CreateMessageHandler(
       telemetryClient.trackEvent({
         name: "api.messages.create",
         properties: {
-          error: isSuccess ? undefined : r.kind,
+          error: isSuccess ? "" : r.kind,
           hasDefaultEmail: Boolean(
             messagePayload.default_addresses &&
               messagePayload.default_addresses.email

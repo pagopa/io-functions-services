@@ -36,11 +36,15 @@ import { ServiceId } from "io-functions-commons/dist/generated/definitions/Servi
 import { ServiceModel } from "io-functions-commons/dist/src/models/service";
 import { ContextMiddleware } from "io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { APIClient } from "../clients/admin";
-import { UserInfo } from "../generated/api-admin/UserInfo";
+import { UserInfo} from "../generated/api-admin/UserInfo";
+import { Subscription } from "../generated/api-admin/Subscription";
 import { ServiceIdCollection } from "../generated/definitions/ServiceIdCollection";
 import { withApiRequestWrapper } from "../utils/api";
 import { getLogger, ILogger } from "../utils/logging";
 import { ErrorResponses } from "../utils/responses";
+
+import * as t from "io-ts";
+import { IResponseType } from "italia-ts-commons/lib/requests";
 
 /**
  * Type of a GetUserServices handler.
@@ -66,7 +70,7 @@ const getUserTask = (
     () =>
       apiClient.getUser({
         email: userEmail
-      }),
+      }) as Promise<t.Validation<IResponseType<number, any, never>>>,
     200
   );
 
@@ -84,7 +88,7 @@ export function GetUserServicesHandler(
     )
       .map(userInfo =>
         ResponseSuccessJson({
-          items: userInfo.subscriptions.map(it =>
+          items: (userInfo.subscriptions as Subscription[]).map(it =>
             ServiceId.encode(it.id as NonEmptyString)
           )
         })

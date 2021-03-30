@@ -49,6 +49,9 @@ import { getLogger, ILogger } from "../utils/logging";
 import { ErrorResponses, IResponseErrorUnauthorized } from "../utils/responses";
 import { serviceOwnerCheckTask } from "../utils/subscription";
 
+import { IResponseType } from "italia-ts-commons/lib/requests";
+import * as t from "io-ts";
+
 type ResponseTypes =
   | IResponseSuccessJson<SubscriptionKeys>
   | IResponseErrorUnauthorized
@@ -86,7 +89,7 @@ const regenerateServiceKeyTask = (
       apiClient.RegenerateSubscriptionKeys({
         body: subscriptionKeyTypePayload,
         service_id: serviceId
-      }),
+      }) as Promise<t.Validation<IResponseType<number, any, never>>>,
     200
   ).map(ResponseSuccessJson);
 

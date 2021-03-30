@@ -108,7 +108,7 @@ describe("GetUserServicesHandler", () => {
     expect(result.kind).toBe("IResponseSuccessJson");
     if (result.kind === "IResponseSuccessJson") {
       expect(result.value).toEqual({
-        items: aUserInfo.subscriptions.map(it => it.id)
+        items: (aUserInfo.subscriptions as Subscription[]).map(it => it.id)
       });
     }
   });

@@ -50,6 +50,7 @@ import {
 } from "italia-ts-commons/lib/strings";
 import { APIClient } from "../clients/admin";
 import { Service } from "../generated/api-admin/Service";
+import { ServiceMetadata } from "../generated/api-admin/ServiceMetadata";
 import { Subscription } from "../generated/api-admin/Subscription";
 import { UserInfo } from "../generated/api-admin/UserInfo";
 import { ServicePayload } from "../generated/definitions/ServicePayload";
@@ -57,6 +58,9 @@ import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWit
 import { withApiRequestWrapper } from "../utils/api";
 import { getLogger, ILogger } from "../utils/logging";
 import { ErrorResponses, IResponseErrorUnauthorized } from "../utils/responses";
+
+import { IResponseType } from "italia-ts-commons/lib/requests";
+import * as t from "io-ts";
 
 type ResponseTypes =
   | IResponseSuccessJson<ServiceWithSubscriptionKeys>
@@ -91,14 +95,13 @@ const createSubscriptionTask = (
 ): TaskEither<ErrorResponses, Subscription> =>
   withApiRequestWrapper(
     logger,
-    () =>
-      apiClient.createSubscription({
-        body: {
-          product_name: productName
-        },
-        email: userEmail,
-        subscription_id: subscriptionId
-      }),
+    () => apiClient.createSubscription({
+      body: {
+        product_name: productName
+      },
+      email: userEmail,
+      subscription_id: subscriptionId
+    }) as Promise<t.Validation<IResponseType<number, any, never>>>,
     200
   );
 
@@ -112,7 +115,7 @@ const getUserTask = (
     () =>
       apiClient.getUser({
         email: userEmail
-      }),
+      }) as Promise<t.Validation<IResponseType<number, any, never>>>,
     200
   );
 
@@ -135,9 +138,9 @@ const createServiceTask = (
           service_metadata: {
             ...servicePayload.service_metadata,
             token_name: adb2cTokenName
-          }
+          } as ServiceMetadata
         }
-      }),
+      }) as Promise<t.Validation<IResponseType<number, any, never>>>,
     200
   );
 
@@ -175,7 +178,7 @@ export function CreateServiceHandler(
             servicePayload,
             subscriptionId,
             (sandboxFiscalCode as unknown) as FiscalCode,
-            userInfo.token_name
+            userInfo.token_name as NonEmptyString
           ).map(service => {
             telemetryClient.trackEvent({
               name: "api.services.create",
