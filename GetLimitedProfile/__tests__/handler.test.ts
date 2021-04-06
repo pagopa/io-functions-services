@@ -22,7 +22,7 @@ import {
   clientIpArb,
   fiscalCodeArb,
   retrievedProfileArb
-} from "../../utils/arbitraries";
+} from "../../utils/__tests__/arbitraries";
 import { retrievedProfileToLimitedProfile } from "../../utils/profile";
 import { GetLimitedProfileHandler } from "../handler";
 

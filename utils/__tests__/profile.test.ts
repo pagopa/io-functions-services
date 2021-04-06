@@ -5,7 +5,7 @@ import { NonEmptyString } from "italia-ts-commons/lib/strings";
 import { BlockedInboxOrChannelEnum } from "io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
 
 import { RetrievedProfile } from "io-functions-commons/dist/src/models/profile";
-import { retrievedProfileArb } from "../arbitraries";
+import { retrievedProfileArb } from "./arbitraries";
 import { isSenderAllowed, retrievedProfileToLimitedProfile } from "../profile";
 
 describe("isSenderAllowed", () => {
