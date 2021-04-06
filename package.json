@@ -50,6 +50,7 @@
     "typescript": "^3.3.3"
   },
   "dependencies": {
+    "@pagopa/ts-commons": "^9.1.0",
     "applicationinsights": "^1.7.4",
     "azure-storage": "^2.10.3",
     "cors": "^2.8.4",
