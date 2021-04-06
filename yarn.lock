@@ -2275,12 +2275,12 @@ extsprintf@^1.2.0:
   integrity sha1-4mifjzVvrWLMplo6kcXfX5VRaS8=
 
 fast-check@^1.16.0:
-  version "1.24.1"
-  resolved "https://registry.yarnpkg.com/fast-check/-/fast-check-1.24.1.tgz#42a153e664122b1a2defdaea4e9b8311635fa7e7"
-  integrity sha512-ECF5LDbt4F8sJyTDI62fRLn0BdHDAdBacxlEsxaYbtqwbsdWofoYZUSaUp9tJrLsqCQ8jG28SkNvPZpDfNo3tw==
+  version "1.26.0"
+  resolved "https://registry.yarnpkg.com/fast-check/-/fast-check-1.26.0.tgz#3a85998a9c30ed7f58976276e06046645e0de18a"
+  integrity sha512-B1AjSfe0bmi6FdFIzmrrGSjrsF6e2MCmZiM6zJaRbBMP+gIvdNakle5FIMKi0xbS9KlN9BZho1R7oB/qoNIQuA==
   dependencies:
     pure-rand "^2.0.0"
-    tslib "^1.10.0"
+    tslib "^2.0.0"
 
 fast-deep-equal@^3.1.1:
   version "3.1.1"
@@ -6185,7 +6185,7 @@ tslib@1.9.0, tslib@^1.7.1:
   resolved "https://registry.yarnpkg.com/tslib/-/tslib-1.9.0.tgz#e37a86fda8cbbaf23a057f473c9f4dc64e5fc2e8"
   integrity sha512-f/qGG2tUkrISBlQZEjEqoZ3B2+npJjIf04H1wuAv9iA8i04Icp+61KRXxFdha22670NJopsZCIjhC3SnjPRKrQ==
 
-tslib@^1.10.0, tslib@^1.8.0, tslib@^1.8.1:
+tslib@^1.8.0, tslib@^1.8.1:
   version "1.11.1"
   resolved "https://registry.yarnpkg.com/tslib/-/tslib-1.11.1.tgz#eb15d128827fbee2841549e171f45ed338ac7e35"
   integrity sha512-aZW88SY8kQbU7gpV19lN24LtXh/yD4ZZg6qieAJDDg+YBsJcSmLGK9QpnUjAKVG/xefmvJGd1WUmfpT/g6AJGA==
