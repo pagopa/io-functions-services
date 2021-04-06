@@ -1,6 +1,3 @@
-import * as fc from "fast-check";
-import { right } from "fp-ts/lib/Either";
-import { none, some } from "fp-ts/lib/Option";
 import {
   ProfileModel,
   RetrievedProfile
@@ -10,6 +7,8 @@ import {
   UserGroup
 } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
 import { IAzureUserAttributes } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
+import * as fc from "fast-check";
+import { none, some } from "fp-ts/lib/Option";
 import {
   EmailString,
   FiscalCode,

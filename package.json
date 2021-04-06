@@ -3,7 +3,7 @@
   "version": "1.13.1",
   "license": "MIT",
   "scripts": {
-    "prebuild": "npm run generate",
+    "prebuild": "shx rm -rf dist && yarn generate",
     "build": "tsc",
     "build:production": "npm run prestart && yarn install --production",
     "postbuild": "dependency-check package.json --no-dev --missing ./dist/**/*.js",
