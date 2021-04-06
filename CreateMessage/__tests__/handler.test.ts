@@ -30,7 +30,7 @@ import {
   newMessageWithoutContentArb,
   newMessageWithPaymentDataArb,
   versionedServiceArb
-} from "../../utils/arbitraries";
+} from "../../utils/__tests__/arbitraries";
 
 //
 // tests
