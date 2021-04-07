@@ -1,12 +1,12 @@
 import { Either, left, right } from "fp-ts/lib/Either";
 import * as NodeMailer from "nodemailer";
 
-import { MessageBodyMarkdown } from "io-functions-commons/dist/generated/definitions/MessageBodyMarkdown";
-import { MessageSubject } from "io-functions-commons/dist/generated/definitions/MessageSubject";
-import { CreatedMessageEventSenderMetadata } from "io-functions-commons/dist/src/models/created_message_sender_metadata";
-import { markdownToHtml } from "io-functions-commons/dist/src/utils/markdown";
+import { MessageBodyMarkdown } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageBodyMarkdown";
+import { MessageSubject } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageSubject";
+import { CreatedMessageEventSenderMetadata } from "@pagopa/io-functions-commons/dist/src/models/created_message_sender_metadata";
+import { markdownToHtml } from "@pagopa/io-functions-commons/dist/src/utils/markdown";
 
-import defaultEmailTemplate from "io-functions-commons/dist/src/templates/html/default";
+import defaultEmailTemplate from "@pagopa/io-functions-commons/dist/src/templates/html/default";
 
 const defaultEmailFooterMarkdown = `**Non rispondere a questa email. Questa casella di posta è utilizzata solo per l'invio della presente mail e, non essendo monitorata, non riceveresti risposta.**
 

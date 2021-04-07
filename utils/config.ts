@@ -5,8 +5,8 @@
  * The configuration is evaluate eagerly at the first access to the module. The module exposes convenient methods to access such value.
  */
 
-import { ServiceId } from "io-functions-commons/dist/generated/definitions/ServiceId";
-import { MailerConfig } from "io-functions-commons/dist/src/mailer";
+import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
+import { MailerConfig } from "@pagopa/io-functions-commons/dist/src/mailer";
 import * as t from "io-ts";
 import { readableReport } from "italia-ts-commons/lib/reporters";
 import { NonEmptyString } from "italia-ts-commons/lib/strings";

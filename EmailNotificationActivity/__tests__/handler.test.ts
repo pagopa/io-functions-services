@@ -16,21 +16,21 @@ import {
 import { some } from "fp-ts/lib/Option";
 import { fromLeft, taskEither } from "fp-ts/lib/TaskEither";
 
-import { EmailAddress } from "io-functions-commons/dist/generated/definitions/EmailAddress";
-import { MessageBodyMarkdown } from "io-functions-commons/dist/generated/definitions/MessageBodyMarkdown";
-import { MessageContent } from "io-functions-commons/dist/generated/definitions/MessageContent";
-import { MessageSubject } from "io-functions-commons/dist/generated/definitions/MessageSubject";
-import { TimeToLiveSeconds } from "io-functions-commons/dist/generated/definitions/TimeToLiveSeconds";
+import { EmailAddress } from "@pagopa/io-functions-commons/dist/generated/definitions/EmailAddress";
+import { MessageBodyMarkdown } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageBodyMarkdown";
+import { MessageContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageContent";
+import { MessageSubject } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageSubject";
+import { TimeToLiveSeconds } from "@pagopa/io-functions-commons/dist/generated/definitions/TimeToLiveSeconds";
 
-import { NotificationChannelEnum } from "io-functions-commons/dist/generated/definitions/NotificationChannel";
-import * as mail from "io-functions-commons/dist/src/mailer";
-import { CreatedMessageEventSenderMetadata } from "io-functions-commons/dist/src/models/created_message_sender_metadata";
+import { NotificationChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/NotificationChannel";
+import * as mail from "@pagopa/io-functions-commons/dist/src/mailer";
+import { CreatedMessageEventSenderMetadata } from "@pagopa/io-functions-commons/dist/src/models/created_message_sender_metadata";
 import {
   NewNotification,
   NotificationAddressSourceEnum,
   NotificationModel,
   RetrievedNotification
-} from "io-functions-commons/dist/src/models/notification";
+} from "@pagopa/io-functions-commons/dist/src/models/notification";
 
 beforeEach(() => jest.clearAllMocks());
 

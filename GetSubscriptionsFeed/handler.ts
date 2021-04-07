@@ -5,25 +5,25 @@ import * as t from "io-ts";
 import {
   ClientIp,
   ClientIpMiddleware
-} from "io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
 
-import { RequiredParamMiddleware } from "io-functions-commons/dist/src/utils/middlewares/required_param";
+import { RequiredParamMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_param";
 
-import { IResponseErrorQuery } from "io-functions-commons/dist/src/utils/response";
+import { IResponseErrorQuery } from "@pagopa/io-functions-commons/dist/src/utils/response";
 
 import {
   AzureApiAuthMiddleware,
   IAzureApiAuthorization,
   UserGroup
-} from "io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
 import {
   AzureUserAttributesMiddleware,
   IAzureUserAttributes
-} from "io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
 import {
   withRequestMiddlewares,
   wrapRequestHandler
-} from "io-functions-commons/dist/src/utils/request_middleware";
+} from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
 import {
   IResponseErrorForbiddenNotAuthorized,
   IResponseErrorInternal,
@@ -38,9 +38,9 @@ import { PatternString } from "italia-ts-commons/lib/strings";
 import {
   checkSourceIpForHandler,
   clientIPAndCidrTuple as ipTuple
-} from "io-functions-commons/dist/src/utils/source_ip_check";
+} from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
 
-import { ServiceModel } from "io-functions-commons/dist/src/models/service";
+import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
 
 import { TableService } from "azure-storage";
 

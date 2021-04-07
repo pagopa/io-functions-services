@@ -6,8 +6,8 @@
 import {
   IAzureApiAuthorization,
   UserGroup
-} from "io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
-import { IAzureUserAttributes } from "io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
+import { IAzureUserAttributes } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
 
 import { NonNegativeInteger } from "italia-ts-commons/lib/numbers";
 import {
@@ -16,12 +16,12 @@ import {
   OrganizationFiscalCode
 } from "italia-ts-commons/lib/strings";
 
-import { ServiceMetadata } from "io-functions-commons/dist/src/models/service";
+import { ServiceMetadata } from "@pagopa/io-functions-commons/dist/src/models/service";
 
-import { MaxAllowedPaymentAmount } from "io-functions-commons/dist/generated/definitions/MaxAllowedPaymentAmount";
+import { MaxAllowedPaymentAmount } from "@pagopa/io-functions-commons/dist/generated/definitions/MaxAllowedPaymentAmount";
 
 import { left, right } from "fp-ts/lib/Either";
-import { ServiceScopeEnum } from "io-functions-commons/dist/generated/definitions/ServiceScope";
+import { ServiceScopeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceScope";
 import * as reporters from "italia-ts-commons/lib/reporters";
 import { Service } from "../../generated/api-admin/Service";
 import { Subscription } from "../../generated/api-admin/Subscription";

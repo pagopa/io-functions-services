@@ -15,7 +15,7 @@ import { AzureFunction } from "@azure/functions";
 import {
   NOTIFICATION_STATUS_COLLECTION_NAME,
   NotificationStatusModel
-} from "io-functions-commons/dist/src/models/notification_status";
+} from "@pagopa/io-functions-commons/dist/src/models/notification_status";
 import { cosmosdbInstance } from "../utils/cosmosdb";
 import { getNotificationStatusUpdaterActivityHandler } from "./handler";
 

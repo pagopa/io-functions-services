@@ -14,11 +14,11 @@ import {
   OrganizationFiscalCode
 } from "italia-ts-commons/lib/strings";
 
-import { CreatedMessageEventSenderMetadata } from "io-functions-commons/dist/src/models/created_message_sender_metadata";
-import { Notification } from "io-functions-commons/dist/src/models/notification";
-import { isTransientError } from "io-functions-commons/dist/src/utils/errors";
+import { CreatedMessageEventSenderMetadata } from "@pagopa/io-functions-commons/dist/src/models/created_message_sender_metadata";
+import { Notification } from "@pagopa/io-functions-commons/dist/src/models/notification";
+import { isTransientError } from "@pagopa/io-functions-commons/dist/src/utils/errors";
 
-import { NotificationEvent } from "io-functions-commons/dist/src/models/notification_event";
+import { NotificationEvent } from "@pagopa/io-functions-commons/dist/src/models/notification_event";
 
 import { readableReport } from "italia-ts-commons/lib/reporters";
 
@@ -27,12 +27,12 @@ import {
   sendToWebhook
 } from "../handler";
 
-import { HttpsUrl } from "io-functions-commons/dist/generated/definitions/HttpsUrl";
-import { MessageBodyMarkdown } from "io-functions-commons/dist/generated/definitions/MessageBodyMarkdown";
-import { MessageContent } from "io-functions-commons/dist/generated/definitions/MessageContent";
-import { MessageSubject } from "io-functions-commons/dist/generated/definitions/MessageSubject";
-import { NotificationChannelEnum } from "io-functions-commons/dist/generated/definitions/NotificationChannel";
-import { TimeToLiveSeconds } from "io-functions-commons/dist/generated/definitions/TimeToLiveSeconds";
+import { HttpsUrl } from "@pagopa/io-functions-commons/dist/generated/definitions/HttpsUrl";
+import { MessageBodyMarkdown } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageBodyMarkdown";
+import { MessageContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageContent";
+import { MessageSubject } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageSubject";
+import { NotificationChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/NotificationChannel";
+import { TimeToLiveSeconds } from "@pagopa/io-functions-commons/dist/generated/definitions/TimeToLiveSeconds";
 import { getNotifyClient } from "../client";
 
 import { agent } from "italia-ts-commons";
