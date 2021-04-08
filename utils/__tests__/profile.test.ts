@@ -2,11 +2,11 @@ import * as fc from "fast-check";
 
 import { NonEmptyString } from "italia-ts-commons/lib/strings";
 
-import { BlockedInboxOrChannelEnum } from "io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
+import { BlockedInboxOrChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
 
-import { RetrievedProfile } from "io-functions-commons/dist/src/models/profile";
-import { retrievedProfileArb } from "../arbitraries";
+import { RetrievedProfile } from "@pagopa/io-functions-commons/dist/src/models/profile";
 import { isSenderAllowed, retrievedProfileToLimitedProfile } from "../profile";
+import { retrievedProfileArb } from "./arbitraries";
 
 describe("isSenderAllowed", () => {
   it("should return false if the service is not allowed to send notifications to the user", () => {

@@ -14,48 +14,48 @@ import { fromEither, TaskEither, tryCatch } from "fp-ts/lib/TaskEither";
 
 import * as t from "io-ts";
 
-import { FiscalCode } from "io-functions-commons/dist/generated/definitions/FiscalCode";
-import { NewMessage as ApiNewMessage } from "io-functions-commons/dist/generated/definitions/NewMessage";
-import { TimeToLiveSeconds } from "io-functions-commons/dist/generated/definitions/TimeToLiveSeconds";
-import { CreatedMessageEvent } from "io-functions-commons/dist/src/models/created_message_event";
+import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
+import { NewMessage as ApiNewMessage } from "@pagopa/io-functions-commons/dist/generated/definitions/NewMessage";
+import { TimeToLiveSeconds } from "@pagopa/io-functions-commons/dist/generated/definitions/TimeToLiveSeconds";
+import { CreatedMessageEvent } from "@pagopa/io-functions-commons/dist/src/models/created_message_event";
 import {
   Message,
   MessageModel,
   NewMessageWithoutContent
-} from "io-functions-commons/dist/src/models/message";
-import { ServiceModel } from "io-functions-commons/dist/src/models/service";
+} from "@pagopa/io-functions-commons/dist/src/models/message";
+import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
 import {
   AzureApiAuthMiddleware,
   IAzureApiAuthorization,
   UserGroup
-} from "io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
 import {
   AzureUserAttributesMiddleware,
   IAzureUserAttributes
-} from "io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
 import {
   ClientIp,
   ClientIpMiddleware
-} from "io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
-import { ContextMiddleware } from "io-functions-commons/dist/src/utils/middlewares/context_middleware";
-import { OptionalFiscalCodeMiddleware } from "io-functions-commons/dist/src/utils/middlewares/fiscalcode";
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
+import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
+import { OptionalFiscalCodeMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/fiscalcode";
 import {
   IRequestMiddleware,
   withRequestMiddlewares,
   wrapRequestHandler
-} from "io-functions-commons/dist/src/utils/request_middleware";
+} from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
 import {
   IResponseErrorQuery,
   ResponseErrorQuery
-} from "io-functions-commons/dist/src/utils/response";
+} from "@pagopa/io-functions-commons/dist/src/utils/response";
 import {
   checkSourceIpForHandler,
   clientIPAndCidrTuple as ipTuple
-} from "io-functions-commons/dist/src/utils/source_ip_check";
+} from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
 import {
   ObjectIdGenerator,
   ulidGenerator
-} from "io-functions-commons/dist/src/utils/strings";
+} from "@pagopa/io-functions-commons/dist/src/utils/strings";
 
 import { initAppInsights } from "italia-ts-commons/lib/appinsights";
 import { readableReport } from "italia-ts-commons/lib/reporters";

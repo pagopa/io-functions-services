@@ -3,23 +3,23 @@ import * as express from "express";
 import {
   ClientIp,
   ClientIpMiddleware
-} from "io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
 
-import { RequiredParamMiddleware } from "io-functions-commons/dist/src/utils/middlewares/required_param";
+import { RequiredParamMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_param";
 
 import {
   AzureApiAuthMiddleware,
   IAzureApiAuthorization,
   UserGroup
-} from "io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
 import {
   AzureUserAttributesMiddleware,
   IAzureUserAttributes
-} from "io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
 import {
   withRequestMiddlewares,
   wrapRequestHandler
-} from "io-functions-commons/dist/src/utils/request_middleware";
+} from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
 import {
   IResponseSuccessJson,
   ResponseSuccessJson
@@ -29,13 +29,13 @@ import { NonEmptyString } from "italia-ts-commons/lib/strings";
 import {
   checkSourceIpForHandler,
   clientIPAndCidrTuple as ipTuple
-} from "io-functions-commons/dist/src/utils/source_ip_check";
+} from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
 
 import { Context } from "@azure/functions";
+import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
+import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { identity } from "fp-ts/lib/function";
 import { TaskEither } from "fp-ts/lib/TaskEither";
-import { ServiceModel } from "io-functions-commons/dist/src/models/service";
-import { ContextMiddleware } from "io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { APIClient } from "../clients/admin";
 import { Service } from "../generated/api-admin/Service";
 import { SubscriptionKeys } from "../generated/api-admin/SubscriptionKeys";

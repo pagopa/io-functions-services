@@ -1,35 +1,35 @@
-import * as express from "express";
-import { isLeft, isRight } from "fp-ts/lib/Either";
-import { isSome } from "fp-ts/lib/Option";
-import { LimitedProfile } from "io-functions-commons/dist/generated/definitions/LimitedProfile";
-import { ProfileModel } from "io-functions-commons/dist/src/models/profile";
-import { ServiceModel } from "io-functions-commons/dist/src/models/service";
+import { LimitedProfile } from "@pagopa/io-functions-commons/dist/generated/definitions/LimitedProfile";
+import { ProfileModel } from "@pagopa/io-functions-commons/dist/src/models/profile";
+import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
 import {
   AzureApiAuthMiddleware,
   IAzureApiAuthorization,
   UserGroup
-} from "io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
 import {
   AzureUserAttributesMiddleware,
   IAzureUserAttributes
-} from "io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
 import {
   ClientIp,
   ClientIpMiddleware
-} from "io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
-import { FiscalCodeMiddleware } from "io-functions-commons/dist/src/utils/middlewares/fiscalcode";
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
+import { FiscalCodeMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/fiscalcode";
 import {
   withRequestMiddlewares,
   wrapRequestHandler
-} from "io-functions-commons/dist/src/utils/request_middleware";
+} from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
 import {
   IResponseErrorQuery,
   ResponseErrorQuery
-} from "io-functions-commons/dist/src/utils/response";
+} from "@pagopa/io-functions-commons/dist/src/utils/response";
 import {
   checkSourceIpForHandler,
   clientIPAndCidrTuple as ipTuple
-} from "io-functions-commons/dist/src/utils/source_ip_check";
+} from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
+import * as express from "express";
+import { isLeft, isRight } from "fp-ts/lib/Either";
+import { isSome } from "fp-ts/lib/Option";
 import {
   IResponseErrorForbiddenNotAuthorizedForRecipient,
   IResponseErrorNotFound,

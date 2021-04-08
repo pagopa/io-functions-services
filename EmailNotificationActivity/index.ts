@@ -14,11 +14,11 @@ import { cosmosdbInstance } from "../utils/cosmosdb";
 import {
   NOTIFICATION_COLLECTION_NAME,
   NotificationModel
-} from "io-functions-commons/dist/src/models/notification";
+} from "@pagopa/io-functions-commons/dist/src/models/notification";
 
 import { getEmailNotificationActivityHandler } from "./handler";
 
-import { getMailerTransporter } from "io-functions-commons/dist/src/mailer";
+import { getMailerTransporter } from "@pagopa/io-functions-commons/dist/src/mailer";
 import { getConfigOrThrow } from "../utils/config";
 
 const config = getConfigOrThrow();

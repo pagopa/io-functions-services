@@ -9,26 +9,26 @@ import { fromNullable, none, Option, some } from "fp-ts/lib/Option";
 
 import { readableReport } from "italia-ts-commons/lib/reporters";
 
-import { BlockedInboxOrChannelEnum } from "io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
-import { FiscalCode } from "io-functions-commons/dist/generated/definitions/FiscalCode";
-import { HttpsUrl } from "io-functions-commons/dist/generated/definitions/HttpsUrl";
-import { MessageContent } from "io-functions-commons/dist/generated/definitions/MessageContent";
-import { NotificationChannelEnum } from "io-functions-commons/dist/generated/definitions/NotificationChannel";
-import { CreatedMessageEvent } from "io-functions-commons/dist/src/models/created_message_event";
-import { CreatedMessageEventSenderMetadata } from "io-functions-commons/dist/src/models/created_message_sender_metadata";
-import { NewMessageWithoutContent } from "io-functions-commons/dist/src/models/message";
+import { BlockedInboxOrChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
+import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
+import { HttpsUrl } from "@pagopa/io-functions-commons/dist/generated/definitions/HttpsUrl";
+import { MessageContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageContent";
+import { NotificationChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/NotificationChannel";
+import { CreatedMessageEvent } from "@pagopa/io-functions-commons/dist/src/models/created_message_event";
+import { CreatedMessageEventSenderMetadata } from "@pagopa/io-functions-commons/dist/src/models/created_message_sender_metadata";
+import { NewMessageWithoutContent } from "@pagopa/io-functions-commons/dist/src/models/message";
 import {
   createNewNotification,
   NewNotification,
   NotificationAddressSourceEnum,
   NotificationChannelEmail,
   NotificationModel
-} from "io-functions-commons/dist/src/models/notification";
-import { NotificationEvent } from "io-functions-commons/dist/src/models/notification_event";
-import { RetrievedProfile } from "io-functions-commons/dist/src/models/profile";
-import { ulidGenerator } from "io-functions-commons/dist/src/utils/strings";
+} from "@pagopa/io-functions-commons/dist/src/models/notification";
+import { NotificationEvent } from "@pagopa/io-functions-commons/dist/src/models/notification_event";
+import { RetrievedProfile } from "@pagopa/io-functions-commons/dist/src/models/profile";
+import { ulidGenerator } from "@pagopa/io-functions-commons/dist/src/utils/strings";
 
-import { ServiceId } from "io-functions-commons/dist/generated/definitions/ServiceId";
+import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { SuccessfulStoreMessageContentActivityResult } from "../StoreMessageContentActivity/handler";
 
 /**

@@ -3,29 +3,29 @@ import * as express from "express";
 import {
   ClientIp,
   ClientIpMiddleware
-} from "io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
 
-import { RequiredParamMiddleware } from "io-functions-commons/dist/src/utils/middlewares/required_param";
+import { RequiredParamMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_param";
 
 import {
   IResponseErrorQuery,
   ResponseErrorQuery
-} from "io-functions-commons/dist/src/utils/response";
+} from "@pagopa/io-functions-commons/dist/src/utils/response";
 
 import {
   AzureApiAuthMiddleware,
   IAzureApiAuthorization,
   UserGroup
-} from "io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
 import {
   AzureUserAttributesMiddleware,
   IAzureUserAttributes
-} from "io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
-import { FiscalCodeMiddleware } from "io-functions-commons/dist/src/utils/middlewares/fiscalcode";
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
+import { FiscalCodeMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/fiscalcode";
 import {
   withRequestMiddlewares,
   wrapRequestHandler
-} from "io-functions-commons/dist/src/utils/request_middleware";
+} from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
 import {
   IResponseErrorForbiddenNotAuthorized,
   IResponseErrorInternal,
@@ -43,31 +43,31 @@ import { FiscalCode, NonEmptyString } from "italia-ts-commons/lib/strings";
 import {
   checkSourceIpForHandler,
   clientIPAndCidrTuple as ipTuple
-} from "io-functions-commons/dist/src/utils/source_ip_check";
+} from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
 
-import { NotificationModel } from "io-functions-commons/dist/src/models/notification";
-import { ServiceModel } from "io-functions-commons/dist/src/models/service";
+import { NotificationModel } from "@pagopa/io-functions-commons/dist/src/models/notification";
+import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
 
 import { BlobService } from "azure-storage";
 
-import { MessageModel } from "io-functions-commons/dist/src/models/message";
+import { MessageModel } from "@pagopa/io-functions-commons/dist/src/models/message";
 
 import { isLeft } from "fp-ts/lib/Either";
 import { isNone } from "fp-ts/lib/Option";
 
-import { MessageStatusModel } from "io-functions-commons/dist/src/models/message_status";
-import { NotificationStatusModel } from "io-functions-commons/dist/src/models/notification_status";
+import { MessageStatusModel } from "@pagopa/io-functions-commons/dist/src/models/message_status";
+import { NotificationStatusModel } from "@pagopa/io-functions-commons/dist/src/models/notification_status";
 
 import {
   getMessageNotificationStatuses,
   retrievedMessageToPublic
-} from "io-functions-commons/dist/src/utils/messages";
+} from "@pagopa/io-functions-commons/dist/src/utils/messages";
 
 import { Context } from "@azure/functions";
-import { MessageResponseWithContent } from "io-functions-commons/dist/generated/definitions/MessageResponseWithContent";
-import { MessageResponseWithoutContent } from "io-functions-commons/dist/generated/definitions/MessageResponseWithoutContent";
-import { MessageStatusValueEnum } from "io-functions-commons/dist/generated/definitions/MessageStatusValue";
-import { ContextMiddleware } from "io-functions-commons/dist/src/utils/middlewares/context_middleware";
+import { MessageResponseWithContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageResponseWithContent";
+import { MessageResponseWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageResponseWithoutContent";
+import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
+import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { readableReport } from "italia-ts-commons/lib/reporters";
 
 /**

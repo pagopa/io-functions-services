@@ -2,8 +2,8 @@
 
 import * as fc from "fast-check";
 
-import { MessageModel } from "io-functions-commons/dist/src/models/message";
-import { UserGroup } from "io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
+import { MessageModel } from "@pagopa/io-functions-commons/dist/src/models/message";
+import { UserGroup } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
 
 import { none, some } from "fp-ts/lib/Option";
 
@@ -30,7 +30,7 @@ import {
   newMessageWithoutContentArb,
   newMessageWithPaymentDataArb,
   versionedServiceArb
-} from "../../utils/arbitraries";
+} from "../../utils/__tests__/arbitraries";
 
 //
 // tests

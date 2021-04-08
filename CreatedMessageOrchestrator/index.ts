@@ -3,11 +3,11 @@ import { IOrchestrationFunctionContext } from "durable-functions/lib/src/classes
 
 import { readableReport } from "italia-ts-commons/lib/reporters";
 
-import { NotificationChannelEnum } from "io-functions-commons/dist/generated/definitions/NotificationChannel";
-import { NotificationChannelStatusValueEnum } from "io-functions-commons/dist/generated/definitions/NotificationChannelStatusValue";
-import { CreatedMessageEvent } from "io-functions-commons/dist/src/models/created_message_event";
+import { NotificationChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/NotificationChannel";
+import { NotificationChannelStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/NotificationChannelStatusValue";
+import { CreatedMessageEvent } from "@pagopa/io-functions-commons/dist/src/models/created_message_event";
 
-import { MessageStatusValueEnum } from "io-functions-commons/dist/generated/definitions/MessageStatusValue";
+import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
 import {
   CreateNotificationActivityInput,
   CreateNotificationActivityResult

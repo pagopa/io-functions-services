@@ -5,11 +5,11 @@ import { cosmosdbInstance } from "../utils/cosmosdb";
 import {
   MESSAGE_COLLECTION_NAME,
   MessageModel
-} from "io-functions-commons/dist/src/models/message";
+} from "@pagopa/io-functions-commons/dist/src/models/message";
 import {
   PROFILE_COLLECTION_NAME,
   ProfileModel
-} from "io-functions-commons/dist/src/models/profile";
+} from "@pagopa/io-functions-commons/dist/src/models/profile";
 import { getStoreMessageContentActivityHandler } from "./handler";
 
 import { getConfigOrThrow } from "../utils/config";

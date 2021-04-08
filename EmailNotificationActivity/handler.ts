@@ -8,16 +8,16 @@ import * as NodeMailer from "nodemailer";
 import { readableReport } from "italia-ts-commons/lib/reporters";
 import { NonEmptyString } from "italia-ts-commons/lib/strings";
 
-import { ActiveMessage } from "io-functions-commons/dist/src/models/message";
+import { ActiveMessage } from "@pagopa/io-functions-commons/dist/src/models/message";
 import {
   EmailNotification,
   NotificationModel
-} from "io-functions-commons/dist/src/models/notification";
-import { NotificationEvent } from "io-functions-commons/dist/src/models/notification_event";
+} from "@pagopa/io-functions-commons/dist/src/models/notification";
+import { NotificationEvent } from "@pagopa/io-functions-commons/dist/src/models/notification_event";
 
 import { generateDocumentHtml } from "./utils";
 
-import { sendMail } from "io-functions-commons/dist/src/mailer";
+import { sendMail } from "@pagopa/io-functions-commons/dist/src/mailer";
 
 export interface INotificationDefaults {
   readonly HTML_TO_TEXT_OPTIONS: HtmlToTextOptions;

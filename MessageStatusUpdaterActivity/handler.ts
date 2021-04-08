@@ -4,11 +4,11 @@ import * as t from "io-ts";
 
 import { NonEmptyString } from "italia-ts-commons/lib/strings";
 
-import { MessageStatusValue } from "io-functions-commons/dist/generated/definitions/MessageStatusValue";
+import { MessageStatusValue } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
 import {
   getMessageStatusUpdater,
   MessageStatusModel
-} from "io-functions-commons/dist/src/models/message_status";
+} from "@pagopa/io-functions-commons/dist/src/models/message_status";
 import { ReadableReporter } from "italia-ts-commons/lib/reporters";
 
 export const Input = t.interface({

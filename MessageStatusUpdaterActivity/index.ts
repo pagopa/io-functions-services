@@ -2,7 +2,7 @@ import { AzureFunction } from "@azure/functions";
 import {
   MESSAGE_STATUS_COLLECTION_NAME,
   MessageStatusModel
-} from "io-functions-commons/dist/src/models/message_status";
+} from "@pagopa/io-functions-commons/dist/src/models/message_status";
 
 import { cosmosdbInstance } from "../utils/cosmosdb";
 import { getMessageStatusUpdaterActivityHandler } from "./handler";

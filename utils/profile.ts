@@ -1,8 +1,8 @@
-import { BlockedInboxOrChannelEnum } from "io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
-import { LimitedProfile } from "io-functions-commons/dist/generated/definitions/LimitedProfile";
-import { ServiceId } from "io-functions-commons/dist/generated/definitions/ServiceId";
-import { RetrievedProfile } from "io-functions-commons/dist/src/models/profile";
-import { IRequestMiddleware } from "io-functions-commons/dist/src/utils/request_middleware";
+import { BlockedInboxOrChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
+import { LimitedProfile } from "@pagopa/io-functions-commons/dist/generated/definitions/LimitedProfile";
+import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
+import { RetrievedProfile } from "@pagopa/io-functions-commons/dist/src/models/profile";
+import { IRequestMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
 import { ResponseErrorFromValidationErrors } from "italia-ts-commons/lib/responses";
 import { GetLimitedProfileByPOSTPayload } from "../generated/definitions/GetLimitedProfileByPOSTPayload";
 
