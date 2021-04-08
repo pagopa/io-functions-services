@@ -4,12 +4,12 @@ import { none, some } from "fp-ts/lib/Option";
 import {
   ProfileModel,
   RetrievedProfile
-} from "io-functions-commons/dist/src/models/profile";
+} from "@pagopa/io-functions-commons/dist/src/models/profile";
 import {
   IAzureApiAuthorization,
   UserGroup
-} from "io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
-import { IAzureUserAttributes } from "io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
+import { IAzureUserAttributes } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
 import {
   EmailString,
   FiscalCode,
@@ -22,7 +22,7 @@ import {
   clientIpArb,
   fiscalCodeArb,
   retrievedProfileArb
-} from "../../utils/arbitraries";
+} from "../../utils/__tests__/arbitraries";
 import { retrievedProfileToLimitedProfile } from "../../utils/profile";
 import { GetLimitedProfileHandler } from "../handler";
 

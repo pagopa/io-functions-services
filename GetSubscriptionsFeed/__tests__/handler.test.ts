@@ -7,7 +7,7 @@ import { TableService } from "azure-storage";
 import * as dateFmt from "date-fns";
 import * as endOfTomorrow from "date-fns/end_of_tomorrow";
 import * as startOfYesterday from "date-fns/start_of_yesterday";
-import { ServiceId } from "io-functions-commons/dist/generated/definitions/ServiceId";
+import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { FiscalCodeHash } from "../../generated/definitions/FiscalCodeHash";
 import { GetSubscriptionsFeedHandler } from "../handler";
 

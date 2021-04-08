@@ -11,13 +11,13 @@
 import { AzureFunction } from "@azure/functions";
 import { cosmosdbInstance } from "../utils/cosmosdb";
 
-import { FiscalCode } from "io-functions-commons/dist/generated/definitions/FiscalCode";
-import { HttpsUrl } from "io-functions-commons/dist/generated/definitions/HttpsUrl";
+import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
+import { HttpsUrl } from "@pagopa/io-functions-commons/dist/generated/definitions/HttpsUrl";
 
 import {
   NOTIFICATION_COLLECTION_NAME,
   NotificationModel
-} from "io-functions-commons/dist/src/models/notification";
+} from "@pagopa/io-functions-commons/dist/src/models/notification";
 
 import { getCreateNotificationActivityHandler } from "./handler";
 

@@ -7,17 +7,17 @@ import * as express from "express";
 import {
   MESSAGE_COLLECTION_NAME,
   MessageModel
-} from "io-functions-commons/dist/src/models/message";
+} from "@pagopa/io-functions-commons/dist/src/models/message";
 import {
   SERVICE_COLLECTION_NAME,
   ServiceModel
-} from "io-functions-commons/dist/src/models/service";
-import { secureExpressApp } from "io-functions-commons/dist/src/utils/express";
-import { setAppContext } from "io-functions-commons/dist/src/utils/middlewares/context_middleware";
+} from "@pagopa/io-functions-commons/dist/src/models/service";
+import { secureExpressApp } from "@pagopa/io-functions-commons/dist/src/utils/express";
+import { setAppContext } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 
 import createAzureFunctionHandler from "io-functions-express/dist/src/createAzureFunctionsHandler";
 
-import { withAppInsightsContext } from "io-functions-commons/dist/src/utils/application_insights";
+import { withAppInsightsContext } from "@pagopa/io-functions-commons/dist/src/utils/application_insights";
 import { initTelemetryClient } from "../utils/appinsights";
 import { CreateMessage } from "./handler";
 

@@ -7,28 +7,28 @@ import { cosmosdbInstance } from "../utils/cosmosdb";
 import {
   MESSAGE_COLLECTION_NAME,
   MessageModel
-} from "io-functions-commons/dist/src/models/message";
+} from "@pagopa/io-functions-commons/dist/src/models/message";
 import {
   SERVICE_COLLECTION_NAME,
   ServiceModel
-} from "io-functions-commons/dist/src/models/service";
-import { secureExpressApp } from "io-functions-commons/dist/src/utils/express";
-import { setAppContext } from "io-functions-commons/dist/src/utils/middlewares/context_middleware";
+} from "@pagopa/io-functions-commons/dist/src/models/service";
+import { secureExpressApp } from "@pagopa/io-functions-commons/dist/src/utils/express";
+import { setAppContext } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 
 import createAzureFunctionHandler from "io-functions-express/dist/src/createAzureFunctionsHandler";
 
 import {
   MESSAGE_STATUS_COLLECTION_NAME,
   MessageStatusModel
-} from "io-functions-commons/dist/src/models/message_status";
+} from "@pagopa/io-functions-commons/dist/src/models/message_status";
 import {
   NOTIFICATION_COLLECTION_NAME,
   NotificationModel
-} from "io-functions-commons/dist/src/models/notification";
+} from "@pagopa/io-functions-commons/dist/src/models/notification";
 import {
   NOTIFICATION_STATUS_COLLECTION_NAME,
   NotificationStatusModel
-} from "io-functions-commons/dist/src/models/notification_status";
+} from "@pagopa/io-functions-commons/dist/src/models/notification_status";
 
 import { GetMessage } from "./handler";
 

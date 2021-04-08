@@ -1,15 +1,14 @@
-import * as fc from "fast-check";
-import { right } from "fp-ts/lib/Either";
-import { none, some } from "fp-ts/lib/Option";
 import {
   ProfileModel,
   RetrievedProfile
-} from "io-functions-commons/dist/src/models/profile";
+} from "@pagopa/io-functions-commons/dist/src/models/profile";
 import {
   IAzureApiAuthorization,
   UserGroup
-} from "io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
-import { IAzureUserAttributes } from "io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
+import { IAzureUserAttributes } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
+import * as fc from "fast-check";
+import { none, some } from "fp-ts/lib/Option";
 import {
   EmailString,
   FiscalCode,
@@ -21,7 +20,7 @@ import {
   clientIpArb,
   fiscalCodeArb,
   retrievedProfileArb
-} from "../../utils/arbitraries";
+} from "../../utils/__tests__/arbitraries";
 import { retrievedProfileToLimitedProfile } from "../../utils/profile";
 import { GetLimitedProfileByPOSTHandler } from "../handler";
 
