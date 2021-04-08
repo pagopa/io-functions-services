@@ -1,4 +1,5 @@
 import {
+  fromEither,
   fromLeft,
   TaskEither,
   taskEither,
@@ -16,7 +17,7 @@ import {
 export const withApiRequestWrapper = <T>(
   logger: ILogger,
   apiCallWithParams: () => Promise<
-    t.Validation<IResponseType<number, T, never>>
+    t.Validation<IResponseType<number, T | undefined, never>>
   >,
   successStatusCode: 200 | 201 | 202 = 200
 ): TaskEither<ErrorResponses, T> =>
@@ -26,17 +27,20 @@ export const withApiRequestWrapper = <T>(
       logger.logUnknown(errs);
       return toDefaultResponseErrorInternal(errs);
     }
-  ).foldTaskEither(
-    err => fromLeft(err),
-    errorOrResponse =>
-      errorOrResponse.fold(
-        errs => {
-          logger.logErrors(errs);
-          return fromLeft(toDefaultResponseErrorInternal(errs));
-        },
-        responseType =>
-          responseType.status !== successStatusCode
-            ? fromLeft(toErrorServerResponse(responseType))
-            : taskEither.of(responseType.value)
-      )
-  );
+  )
+    .map(fromEither)
+    .foldTaskEither(
+      apiCallError => fromLeft<ErrorResponses, T>(apiCallError),
+      apiCallResponse =>
+        apiCallResponse.foldTaskEither<ErrorResponses, T>(
+          parseResponseError =>
+            fromLeft<ErrorResponses, T>(
+              toDefaultResponseErrorInternal(parseResponseError)
+            ),
+          response =>
+            response.status === successStatusCode &&
+            response.value !== undefined
+              ? taskEither.of(response.value)
+              : fromLeft<ErrorResponses, T>(toErrorServerResponse(response))
+        )
+    );

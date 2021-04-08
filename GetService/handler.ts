@@ -45,9 +45,6 @@ import { getLogger, ILogger } from "../utils/logging";
 import { ErrorResponses } from "../utils/responses";
 import { serviceOwnerCheckTask } from "../utils/subscription";
 
-import { IResponseType } from "italia-ts-commons/lib/requests";
-import * as t from "io-ts";
-
 /**
  * Type of a GetService handler.
  *
@@ -77,7 +74,7 @@ const getServiceTask = (
     () =>
       apiClient.getService({
         service_id: serviceId
-      }) as Promise<t.Validation<IResponseType<number, any, never>>>,
+      }),
     200
   );
 
@@ -91,7 +88,7 @@ const getSubscriptionKeysTask = (
     () =>
       apiClient.getSubscriptionKeys({
         service_id: serviceId
-      }) as Promise<t.Validation<IResponseType<number, any, never>>>,
+      }),
     200
   );
 
