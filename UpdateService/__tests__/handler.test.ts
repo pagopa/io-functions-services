@@ -1,7 +1,7 @@
-/* tslint:disable:no-any */
-/* tslint:disable:no-duplicate-string */
-/* tslint:disable:no-big-function */
-/* tslint:disable: no-identical-functions */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable sonarjs/no-duplicate-string */
+/* eslint-disable sonar/sonar-max-lines-per-function */
+/* eslint-disable sonarjs/no-identical-functions */
 
 import {
   IAzureApiAuthorization,
@@ -30,7 +30,7 @@ import { ServicePayload } from "../../generated/definitions/ServicePayload";
 import { UpdateServiceHandler } from "../handler";
 
 const mockContext = {
-  // tslint:disable: no-console
+  // eslint-disable no-console
   log: {
     error: console.error
   }

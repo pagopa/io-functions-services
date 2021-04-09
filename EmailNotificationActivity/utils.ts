@@ -18,6 +18,7 @@ Puoi anche disattivare l’inoltro dei messaggi via email per tutti i servizi, s
 /**
  * Generates the HTML for the email from the Markdown content and the subject
  */
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export async function generateDocumentHtml(
   subject: MessageSubject,
   markdown: MessageBodyMarkdown,
@@ -43,6 +44,7 @@ export async function generateDocumentHtml(
   // wrap the generated HTML into an email template
   return defaultEmailTemplate(
     subject, // title
+    // eslint-disable-next-line extra-rules/no-commented-out-code
     "", // TODO: headline
     senderMetadata.organizationName, // organization name
     senderServiceName, // service name
@@ -56,6 +58,7 @@ export async function generateDocumentHtml(
 /**
  * Promise wrapper around Transporter#sendMail
  */
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export async function sendMail(
   transporter: NodeMailer.Transporter,
   options: NodeMailer.SendMailOptions

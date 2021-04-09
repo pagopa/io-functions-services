@@ -14,7 +14,6 @@ export type WebhookNotifyT = r.IPostApiRequestType<
   { readonly notification: Notification; readonly webhookEndpoint: HttpsUrl },
   "Content-Type",
   never,
-  // tslint:disable-next-line: max-union-size
   | r.IResponseType<200, SuccessResponse>
   | r.IResponseType<400, ProblemJson>
   | r.IResponseType<401, undefined>
@@ -30,6 +29,7 @@ export const getNotifyClient = (
       headers: ApiHeaderJson,
       method: "post",
       query: _ => ({}),
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       response_decoder: notifyDefaultDecoder(),
       url: params => `${params.webhookEndpoint}`
     } as WebhookNotifyT,

@@ -73,6 +73,7 @@ const getServiceTask = (
     logger,
     () =>
       apiClient.getService({
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         service_id: serviceId
       }),
     200
@@ -87,6 +88,7 @@ const getSubscriptionKeysTask = (
     logger,
     () =>
       apiClient.getSubscriptionKeys({
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         service_id: serviceId
       }),
     200
@@ -95,9 +97,11 @@ const getSubscriptionKeysTask = (
 /**
  * Handles requests for getting a single service by a service ID.
  */
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
 export function GetServiceHandler(apiClient: APIClient): IGetServiceHandler {
-  return (_, apiAuth, ___, ____, serviceId) => {
-    return serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId)
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/naming-convention
+  return (_, apiAuth, ___, ____, serviceId) =>
+    serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId)
       .chain(() =>
         getServiceTask(
           getLogger(_, logPrefix, "GetService"),
@@ -121,12 +125,12 @@ export function GetServiceHandler(apiClient: APIClient): IGetServiceHandler {
         identity
       )
       .run();
-  };
 }
 
 /**
  * Wraps a GetService handler inside an Express request handler.
  */
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
 export function GetService(
   serviceModel: ServiceModel,
   client: APIClient
@@ -141,6 +145,7 @@ export function GetService(
   );
   return wrapRequestHandler(
     middlewaresWrap(
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       checkSourceIpForHandler(handler, (_, __, c, u, ___) => ipTuple(c, u))
     )
   );

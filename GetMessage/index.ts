@@ -2,7 +2,6 @@ import { Context } from "@azure/functions";
 import { createBlobService } from "azure-storage";
 import * as cors from "cors";
 import * as express from "express";
-import { cosmosdbInstance } from "../utils/cosmosdb";
 
 import {
   MESSAGE_COLLECTION_NAME,
@@ -29,10 +28,10 @@ import {
   NOTIFICATION_STATUS_COLLECTION_NAME,
   NotificationStatusModel
 } from "@pagopa/io-functions-commons/dist/src/models/notification_status";
-
-import { GetMessage } from "./handler";
+import { cosmosdbInstance } from "../utils/cosmosdb";
 
 import { getConfigOrThrow } from "../utils/config";
+import { GetMessage } from "./handler";
 
 const config = getConfigOrThrow();
 
@@ -81,6 +80,7 @@ app.get(
 const azureFunctionHandler = createAzureFunctionHandler(app);
 
 // Binds the express app to an Azure Function handler
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 function httpStart(context: Context): void {
   setAppContext(app, context);
   azureFunctionHandler(context);

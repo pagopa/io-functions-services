@@ -85,6 +85,7 @@ const uploadOrganizationLogoTask = (
     () =>
       apiClient.uploadOrganizationLogo({
         body: logo,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         organization_fiscal_code: organizationFiscalCode
       }),
     201
@@ -93,11 +94,13 @@ const uploadOrganizationLogoTask = (
 /**
  * Handles requests for upload an organization logo.
  */
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
 export function UploadOrganizationLogoHandler(
   apiClient: APIClient
 ): IUploadOrganizationLogoHandler {
-  return (_, __, ___, ____, organizationFiscalCode, logoPayload) => {
-    return uploadOrganizationLogoTask(
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/naming-convention, max-params
+  return (_, __, ___, ____, organizationFiscalCode, logoPayload) =>
+    uploadOrganizationLogoTask(
       getLogger(_, logPrefix, "UploadOrganizationLogo"),
       apiClient,
       organizationFiscalCode,
@@ -111,12 +114,12 @@ export function UploadOrganizationLogoHandler(
       )
       .fold<ResponseTypes>(identity, identity)
       .run();
-  };
 }
 
 /**
  * Wraps a UploadOrganizationLogo handler inside an Express request handler.
  */
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
 export function UploadOrganizationLogo(
   serviceModel: ServiceModel,
   client: APIClient
@@ -132,6 +135,7 @@ export function UploadOrganizationLogo(
   );
   return wrapRequestHandler(
     middlewaresWrap(
+      // eslint-disable-next-line @typescript-eslint/naming-convention, max-params
       checkSourceIpForHandler(handler, (_, __, c, u, ___, ____) =>
         ipTuple(c, u)
       )

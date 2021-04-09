@@ -32,7 +32,7 @@ import { MessageProcessingEventNames, trackMessageProcessing } from "./utils";
  * See https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-checkpointing-and-replay
  *
  */
-// tslint:disable-next-line: cognitive-complexity no-big-function
+// eslint-disable-next-line sonarjs/cognitive-complexity, max-lines-per-function
 function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
   const input = context.df.getInput();
 
@@ -70,6 +70,7 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
 
   context.log.verbose(`${logPrefix}|Starting`);
 
+  // eslint-disable-next-line extra-rules/no-commented-out-code
   // TODO: customize + backoff
   // see https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-error-handling#javascript-functions-2x-only-1
   const retryOptions = new df.RetryOptions(5000, 10);

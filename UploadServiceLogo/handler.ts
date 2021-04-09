@@ -84,6 +84,7 @@ const uploadServiceLogoTask = (
     () =>
       apiClient.uploadServiceLogo({
         body: logo,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         service_id: serviceId
       }),
     201
@@ -92,11 +93,13 @@ const uploadServiceLogoTask = (
 /**
  * Handles requests for upload a service logo by a service ID and a base64 logo' s string.
  */
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
 export function UploadServiceLogoHandler(
   apiClient: APIClient
 ): IUploadServiceLogoHandler {
-  return (_, apiAuth, ___, ____, serviceId, logoPayload) => {
-    return serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId)
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/naming-convention, max-params
+  return (_, apiAuth, ___, ____, serviceId, logoPayload) =>
+    serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId)
       .chain(() =>
         uploadServiceLogoTask(
           getLogger(_, logPrefix, "UploadServiceLogo"),
@@ -107,12 +110,12 @@ export function UploadServiceLogoHandler(
       )
       .fold<ResponseTypes>(identity, identity)
       .run();
-  };
 }
 
 /**
  * Wraps a UploadServiceLogo handler inside an Express request handler.
  */
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
 export function UploadServiceLogo(
   serviceModel: ServiceModel,
   client: APIClient
@@ -128,6 +131,7 @@ export function UploadServiceLogo(
   );
   return wrapRequestHandler(
     middlewaresWrap(
+      // eslint-disable-next-line @typescript-eslint/naming-convention, max-params
       checkSourceIpForHandler(handler, (_, __, c, u, ___, ____) =>
         ipTuple(c, u)
       )

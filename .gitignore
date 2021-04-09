@@ -49,3 +49,7 @@ generated
 docker*
 azure-functions-core-tools/**/*
 
+
+# eslint section
+!.eslintrc.js
+.eslintcache

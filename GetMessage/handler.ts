@@ -85,7 +85,6 @@ type IGetMessageHandler = (
   fiscalCode: FiscalCode,
   messageId: string
 ) => Promise<
-  // tslint:disable-next-line:max-union-size
   | IResponseSuccessJson<
       MessageResponseWithContent | MessageResponseWithoutContent
     >
@@ -99,6 +98,7 @@ type IGetMessageHandler = (
 /**
  * Handles requests for getting a single message for a recipient.
  */
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
 export function GetMessageHandler(
   messageModel: MessageModel,
   messageStatusModel: MessageStatusModel,
@@ -106,6 +106,7 @@ export function GetMessageHandler(
   notificationStatusModel: NotificationStatusModel,
   blobService: BlobService
 ): IGetMessageHandler {
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, max-params
   return async (context, _, __, userAttributes, fiscalCode, messageId) => {
     const errorOrMessageId = NonEmptyString.decode(messageId);
 
@@ -213,6 +214,7 @@ export function GetMessageHandler(
 /**
  * Wraps a GetMessage handler inside an Express request handler.
  */
+// eslint-disable-next-line max-params, prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
 export function GetMessage(
   serviceModel: ServiceModel,
   messageModel: MessageModel,
@@ -238,6 +240,7 @@ export function GetMessage(
   );
   return wrapRequestHandler(
     middlewaresWrap(
+      // eslint-disable-next-line @typescript-eslint/naming-convention, max-params
       checkSourceIpForHandler(handler, (_, __, c, u, ___, ____) =>
         ipTuple(c, u)
       )

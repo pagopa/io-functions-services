@@ -1,7 +1,7 @@
-/* tslint:disable:no-any */
-/* tslint:disable:no-duplicate-string */
-/* tslint:disable:no-big-function */
-/* tslint:disable: no-identical-functions */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable sonarjs/no-duplicate-string */
+/* eslint-disable sonar/sonar-max-lines-per-function */
+/* eslint-disable sonarjs/no-identical-functions */
 
 import { TableService } from "azure-storage";
 import * as dateFmt from "date-fns";

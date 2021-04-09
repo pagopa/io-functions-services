@@ -1,4 +1,4 @@
-/* tslint:disable: no-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import * as fc from "fast-check";
 
@@ -214,7 +214,7 @@ describe("forkOrchestrator", () => {
           };
           const getDfClient = jest.fn(() => mockDfClient);
           const response = await forkOrchestrator(
-            // tslint:disable-next-line: no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             getDfClient as any,
             newMessage.content,
             service,

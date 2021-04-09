@@ -15,9 +15,11 @@ import {
   ResponseErrorTooManyRequests
 } from "italia-ts-commons/lib/responses";
 
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export const unhandledResponseStatus = (status: number) =>
   ResponseErrorInternal(`unhandled API response status [${status}]`);
 
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export const toDefaultResponseErrorInternal = (errs: unknown | Errors) =>
   ResponseErrorInternal(toError(errs).message);
 
@@ -31,6 +33,7 @@ export interface IResponseErrorUnauthorized
 /**
  * Returns an unauthorized error response with status code 401.
  */
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
 export function ResponseErrorUnauthorized(
   title: string,
   detail: string
@@ -51,6 +54,7 @@ export type ErrorResponses =
   | IResponseErrorInternal
   | IResponseErrorTooManyRequests;
 
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export const toErrorServerResponse = <S extends number, T>(
   response: IResponseType<S, T>
 ) => {

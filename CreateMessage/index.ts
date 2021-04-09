@@ -1,5 +1,4 @@
 import { Context } from "@azure/functions";
-import { cosmosdbInstance } from "../utils/cosmosdb";
 
 import * as cors from "cors";
 import * as express from "express";
@@ -18,10 +17,11 @@ import { setAppContext } from "@pagopa/io-functions-commons/dist/src/utils/middl
 import createAzureFunctionHandler from "io-functions-express/dist/src/createAzureFunctionsHandler";
 
 import { withAppInsightsContext } from "@pagopa/io-functions-commons/dist/src/utils/application_insights";
+import { cosmosdbInstance } from "../utils/cosmosdb";
 import { initTelemetryClient } from "../utils/appinsights";
-import { CreateMessage } from "./handler";
 
 import { getConfigOrThrow } from "../utils/config";
+import { CreateMessage } from "./handler";
 
 const config = getConfigOrThrow();
 
@@ -53,6 +53,7 @@ app.post(
 const azureFunctionHandler = createAzureFunctionHandler(app);
 
 // Binds the express app to an Azure Function handler
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 function httpStart(context: Context): void {
   setAppContext(app, context);
   withAppInsightsContext(context, () => azureFunctionHandler(context));

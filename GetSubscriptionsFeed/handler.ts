@@ -64,7 +64,6 @@ type IGetSubscriptionsFeedHandler = (
   attrs: IAzureUserAttributes,
   date: string
 ) => Promise<
-  // tslint:disable-next-line:max-union-size
   | IResponseSuccessJson<SubscriptionsFeed>
   | IResponseErrorNotFound
   | IResponseErrorQuery
@@ -76,10 +75,12 @@ type IGetSubscriptionsFeedHandler = (
 /**
  * Handles requests for getting a single message for a recipient.
  */
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
 export function GetSubscriptionsFeedHandler(
   tableService: TableService,
   subscriptionsFeedTable: string
 ): IGetSubscriptionsFeedHandler {
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   return async (_, __, userAttributes, subscriptionsDateUTC) => {
     // subscription data for a certain day becomes available at the begining of
     // the next day
@@ -138,6 +139,7 @@ export function GetSubscriptionsFeedHandler(
       if (!serviceUnsubscriptionsSet.has(ps)) {
         // add new users to the new subscriptions, skipping those that
         // unsubscribed from this service
+        // eslint-disable-next-line functional/immutable-data
         subscriptions.push(ps);
       }
     });
@@ -149,6 +151,7 @@ export function GetSubscriptionsFeedHandler(
         // add all users that subscribed to this service, skipping those that
         // are new users as they're yet counted in as new subscribers in the
         // previous step
+        // eslint-disable-next-line functional/immutable-data
         subscriptions.push(ss);
       }
     });
@@ -157,6 +160,7 @@ export function GetSubscriptionsFeedHandler(
 
     profileUnsubscriptionsSet.forEach(pu =>
       // add all users that deleted its own account
+      // eslint-disable-next-line functional/immutable-data
       unsubscriptions.push(pu)
     );
 
@@ -168,6 +172,7 @@ export function GetSubscriptionsFeedHandler(
         // add all users that unsubscribed from this service, skipping those
         // that created the profile on the same day as the service will not
         // yet know they exist or deleted their account
+        // eslint-disable-next-line functional/immutable-data
         unsubscriptions.push(su);
       }
     });
@@ -185,6 +190,7 @@ export function GetSubscriptionsFeedHandler(
 /**
  * A string that represents a date in the format YYYY-MM-DD
  */
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const ShortDateString = t.refinement(
   PatternString("\\d\\d\\d\\d-\\d\\d-\\d\\d"),
   s => !isNaN(new Date(s).getTime()),
@@ -194,6 +200,7 @@ const ShortDateString = t.refinement(
 /**
  * Wraps a GetMessage handler inside an Express request handler.
  */
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
 export function GetSubscriptionsFeed(
   serviceModel: ServiceModel,
   tableService: TableService,

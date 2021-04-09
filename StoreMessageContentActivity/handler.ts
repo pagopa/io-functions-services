@@ -16,6 +16,7 @@ import { isLeft } from "fp-ts/lib/Either";
 import { fromNullable, isNone } from "fp-ts/lib/Option";
 import { readableReport } from "italia-ts-commons/lib/reporters";
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const SuccessfulStoreMessageContentActivityResult = t.interface({
   blockedInboxOrChannels: t.readonlyArray(BlockedInboxOrChannel),
   kind: t.literal("SUCCESS"),
@@ -26,14 +27,20 @@ export type SuccessfulStoreMessageContentActivityResult = t.TypeOf<
   typeof SuccessfulStoreMessageContentActivityResult
 >;
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const FailedStoreMessageContentActivityResult = t.interface({
   kind: t.literal("FAILURE"),
   reason: t.keyof({
     // see https://github.com/gcanti/io-ts#union-of-string-literals
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     BAD_DATA: null,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     MASTER_INBOX_DISABLED: null,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     PERMANENT_ERROR: null,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     PROFILE_NOT_FOUND: null,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     SENDER_BLOCKED: null
   })
 });
@@ -42,6 +49,7 @@ export type FailedStoreMessageContentActivityResult = t.TypeOf<
   typeof FailedStoreMessageContentActivityResult
 >;
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const StoreMessageContentActivityResult = t.taggedUnion("kind", [
   SuccessfulStoreMessageContentActivityResult,
   FailedStoreMessageContentActivityResult

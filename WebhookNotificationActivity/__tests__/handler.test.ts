@@ -1,6 +1,6 @@
-/* tslint:disable:no-any */
-/* tslint:disable:no-null-keyword */
-/* tslint:disable:no-big-function */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable no-null/no-null */
+/* eslint-disable sonar/sonar-max-lines-per-function */
 
 jest.mock("applicationinsights");
 jest.mock("azure-storage");
@@ -131,11 +131,11 @@ const aNotification: Notification = {
 };
 
 const nullLog = {
-  // tslint:disable-next-line: no-console
+  // eslint-disable-next-line no-console
   error: console.error,
-  // tslint:disable-next-line: no-console
+  // eslint-disable-next-line no-console
   verbose: console.log,
-  // tslint:disable-next-line: no-console
+  // eslint-disable-next-line no-console
   warn: console.warn
 };
 

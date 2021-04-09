@@ -57,7 +57,6 @@ type IGetLimitedProfileHandler = (
   userAttributes: IAzureUserAttributes,
   fiscalCode: FiscalCode
 ) => Promise<
-  // tslint:disable-next-line: max-union-size
   | IResponseSuccessJson<LimitedProfile>
   | IResponseErrorNotFound
   | IResponseErrorQuery
@@ -67,9 +66,11 @@ type IGetLimitedProfileHandler = (
 /**
  * Returns a type safe GetLimitedProfile handler.
  */
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
 export function GetLimitedProfileHandler(
   profileModel: ProfileModel
 ): IGetLimitedProfileHandler {
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   return async (auth, __, userAttributes, fiscalCode) => {
     // Sandboxed accounts will receive 403
     // if they're not authorized to send a messages to this fiscal code.
@@ -126,6 +127,7 @@ export function GetLimitedProfileHandler(
 /**
  * Wraps a GetLimitedProfile handler inside an Express request handler.
  */
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
 export function GetLimitedProfile(
   serviceModel: ServiceModel,
   profileModel: ProfileModel

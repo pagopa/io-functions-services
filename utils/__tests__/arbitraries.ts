@@ -97,7 +97,7 @@ export const newMessageWithDefaultEmailArb = fc
 
 export const messageTimeToLiveArb = fc
   .integer(3600, 604800)
-  // tslint:disable-next-line:no-useless-cast
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
   .map(_ => _ as number & WithinRangeInteger<3600, 604800>);
 
 export const amountArb = fc
@@ -111,7 +111,7 @@ export const amountArb = fc
 
 export const maxAmountArb = fc
   .integer(0, 9999999999)
-  // tslint:disable-next-line:no-useless-cast
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
   .map(_ => _ as number & WithinRangeInteger<0, 9999999999>);
 
 export const noticeNumberArb = fc

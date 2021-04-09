@@ -1,6 +1,5 @@
 import { AzureFunction } from "@azure/functions";
 import { createBlobService } from "azure-storage";
-import { cosmosdbInstance } from "../utils/cosmosdb";
 
 import {
   MESSAGE_COLLECTION_NAME,
@@ -10,9 +9,9 @@ import {
   PROFILE_COLLECTION_NAME,
   ProfileModel
 } from "@pagopa/io-functions-commons/dist/src/models/profile";
-import { getStoreMessageContentActivityHandler } from "./handler";
-
+import { cosmosdbInstance } from "../utils/cosmosdb";
 import { getConfigOrThrow } from "../utils/config";
+import { getStoreMessageContentActivityHandler } from "./handler";
 
 const config = getConfigOrThrow();
 
