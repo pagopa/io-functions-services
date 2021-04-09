@@ -123,7 +123,7 @@ export function sendToWebhook(
         webhookEndpoint
       }),
     err =>
-      // tslint:disable-next-line: no-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (err as any).name === "AbortError"
         ? (TransientError(`Timeout calling webhook: ${err}`) as RuntimeError)
         : (PermanentError(

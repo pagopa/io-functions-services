@@ -8,7 +8,7 @@ import * as t from "io-ts";
 /**
  * Extracts the input type of an activity handler
  */
-// tslint:disable-next-line: no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type HandlerInputType<T> = T extends Function2<any, infer A, any>
   ? A
   : never;

@@ -26,7 +26,7 @@ import {
 import { retrievedProfileToLimitedProfile } from "../../utils/profile";
 import { GetLimitedProfileHandler } from "../handler";
 
-// tslint:disable-next-line: no-big-function
+// eslint-disable-next-line sonar/sonar-max-lines-per-function
 describe("GetLimitedProfileHandler", () => {
   const mockAzureApiAuthorization: IAzureApiAuthorization = {
     groups: new Set(),

@@ -1,6 +1,6 @@
-/* tslint:disable:no-any */
-/* tslint:disable:no-duplicate-string */
-/* tslint:disable:no-big-function */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable sonarjs/no-duplicate-string */
+/* eslint-disable sonar/sonar-max-lines-per-function */
 
 import { none, Option, some } from "fp-ts/lib/Option";
 
@@ -51,13 +51,13 @@ jest.useFakeTimers();
 
 const mockContext = {
   log: {
-    // tslint:disable-next-line: no-console
+    // eslint-disable-next-line no-console
     error: console.error,
-    // tslint:disable-next-line: no-console
+    // eslint-disable-next-line no-console
     info: console.log,
-    // tslint:disable-next-line: no-console
+    // eslint-disable-next-line no-console
     verbose: console.log,
-    // tslint:disable-next-line: no-console
+    // eslint-disable-next-line no-console
     warn: console.warn
   }
 } as any;

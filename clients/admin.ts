@@ -23,7 +23,7 @@ const abortableFetch = AbortableFetch(agent.getHttpFetch(process.env));
 const fetchWithTimeout = toFetch(
   setFetchTimeout(DEFAULT_REQUEST_TIMEOUT_MS as Millisecond, abortableFetch)
 );
-// tslint:disable-next-line: no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const fetchApi: typeof fetchWithTimeout = (nodeFetch as any) as typeof fetchWithTimeout;
 
 export const apiClient = createClient<"SubscriptionKey">({

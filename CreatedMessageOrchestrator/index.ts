@@ -32,7 +32,7 @@ import { MessageProcessingEventNames, trackMessageProcessing } from "./utils";
  * See https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-checkpointing-and-replay
  *
  */
-// tslint:disable-next-line: cognitive-complexity no-big-function
+// eslint-disable-next-line sonarjs/cognitive-complexity, sonar/sonar-max-lines-per-function
 function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
   const input = context.df.getInput();
 

@@ -64,7 +64,7 @@ type IGetSubscriptionsFeedHandler = (
   attrs: IAzureUserAttributes,
   date: string
 ) => Promise<
-  // tslint:disable-next-line:max-union-size
+  // eslint-disable-next-line sonar/max-union-size
   | IResponseSuccessJson<SubscriptionsFeed>
   | IResponseErrorNotFound
   | IResponseErrorQuery

@@ -117,7 +117,7 @@ type ICreateMessageHandler = (
   messagePayload: ApiNewMessageWithDefaults,
   maybeFiscalCode: Option<FiscalCode>
 ) => Promise<
-  // tslint:disable-next-line:max-union-size
+  // eslint-disable-next-line sonar/max-union-size
   | IResponseSuccessRedirectToResource<Message, {}>
   | IResponseErrorInternal
   | IResponseErrorQuery
@@ -298,7 +298,7 @@ export const forkOrchestrator = (
 
   // queue the message to the created messages queue by setting
   // the message to the output binding of this function
-  // tslint:disable-next-line:no-object-mutation
+  // eslint-disable-next-line functional/immutable-data
   // context.bindings.createdMessage = createdMessageEventOrError.value;
   const dfClient = getDfClient();
   return tryCatch(

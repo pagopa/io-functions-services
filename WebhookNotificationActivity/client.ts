@@ -14,7 +14,7 @@ export type WebhookNotifyT = r.IPostApiRequestType<
   { readonly notification: Notification; readonly webhookEndpoint: HttpsUrl },
   "Content-Type",
   never,
-  // tslint:disable-next-line: max-union-size
+  // eslint-disable-next-line sonar/max-union-size
   | r.IResponseType<200, SuccessResponse>
   | r.IResponseType<400, ProblemJson>
   | r.IResponseType<401, undefined>

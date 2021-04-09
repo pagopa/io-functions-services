@@ -59,7 +59,7 @@ type IGetLimitedProfileByPOSTHandler = (
   userAttributes: IAzureUserAttributes,
   payload: GetLimitedProfileByPOSTPayload
 ) => Promise<
-  // tslint:disable-next-line: max-union-size
+  // eslint-disable-next-line sonar/max-union-size
   | IResponseSuccessJson<LimitedProfile>
   | IResponseErrorNotFound
   | IResponseErrorQuery

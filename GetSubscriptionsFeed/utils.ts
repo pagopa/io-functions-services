@@ -50,7 +50,7 @@ export const getPagedQuery = (tableService: TableService, table: string) => (
 async function* iterateOnPages(
   pagedQuery: PagedQuery
 ): AsyncIterableIterator<ReadonlyArray<TableEntry>> {
-  // tslint:disable-next-line: no-let
+  // eslint-disable-next-line functional/no-let
   let token: TableService.TableContinuationToken = null;
   do {
     // query for a page of entries

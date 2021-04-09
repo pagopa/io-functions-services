@@ -85,7 +85,7 @@ type IGetMessageHandler = (
   fiscalCode: FiscalCode,
   messageId: string
 ) => Promise<
-  // tslint:disable-next-line:max-union-size
+  // eslint-disable-next-line sonar/max-union-size
   | IResponseSuccessJson<
       MessageResponseWithContent | MessageResponseWithoutContent
     >
