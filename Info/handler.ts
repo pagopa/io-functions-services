@@ -18,7 +18,9 @@ type InfoHandler = () => Promise<
   IResponseSuccessJson<IInfo> | IResponseErrorInternal
 >;
 
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
 export function InfoHandler(healthCheck: HealthCheck): InfoHandler {
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   return () =>
     healthCheck
       .fold<IResponseSuccessJson<IInfo> | IResponseErrorInternal>(
@@ -32,6 +34,7 @@ export function InfoHandler(healthCheck: HealthCheck): InfoHandler {
       .run();
 }
 
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
 export function Info(): express.RequestHandler {
   const handler = InfoHandler(checkApplicationHealth());
 

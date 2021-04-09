@@ -78,8 +78,10 @@ import {
 import { NonEmptyString } from "italia-ts-commons/lib/strings";
 import { PromiseType } from "italia-ts-commons/lib/types";
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const ApiNewMessageWithDefaults = t.intersection([
   ApiNewMessage,
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   t.interface({ time_to_live: TimeToLiveSeconds })
 ]);
 export type ApiNewMessageWithDefaults = t.TypeOf<
@@ -89,6 +91,7 @@ export type ApiNewMessageWithDefaults = t.TypeOf<
 /**
  * A request middleware that validates the Message payload.
  */
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const MessagePayloadMiddleware: IRequestMiddleware<
   "IResponseErrorValidation",
   ApiNewMessageWithDefaults
@@ -117,7 +120,7 @@ type ICreateMessageHandler = (
   messagePayload: ApiNewMessageWithDefaults,
   maybeFiscalCode: Option<FiscalCode>
 ) => Promise<
-  // eslint-disable-next-line sonar/max-union-size
+  // eslint-disable-next-line @typescript-eslint/ban-types
   | IResponseSuccessRedirectToResource<Message, {}>
   | IResponseErrorInternal
   | IResponseErrorQuery
@@ -221,6 +224,7 @@ export const createMessageDocument = (
 ): TaskEither<
   IResponseErrorInternal | IResponseErrorQuery,
   NewMessageWithoutContent
+  // eslint-disable-next-line max-params
 > => {
   // create a new message from the payload
   // this object contains only the message metadata, the content of the
@@ -299,6 +303,7 @@ export const forkOrchestrator = (
   // queue the message to the created messages queue by setting
   // the message to the output binding of this function
   // eslint-disable-next-line functional/immutable-data
+  // eslint-disable-next-line extra-rules/no-commented-out-code
   // context.bindings.createdMessage = createdMessageEventOrError.value;
   const dfClient = getDfClient();
   return tryCatch(
@@ -317,6 +322,7 @@ export const forkOrchestrator = (
  */
 const redirectToNewMessage = (
   newMessageWithoutContent: NewMessageWithoutContent
+  // eslint-disable-next-line @typescript-eslint/ban-types
 ): IResponseSuccessRedirectToResource<Message, {}> =>
   ResponseSuccessRedirectToResource(
     newMessageWithoutContent,
@@ -327,11 +333,13 @@ const redirectToNewMessage = (
 /**
  * Returns a type safe CreateMessage handler.
  */
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
 export function CreateMessageHandler(
   telemetryClient: ReturnType<typeof initAppInsights>,
   messageModel: MessageModel,
   generateObjectId: ObjectIdGenerator
 ): ICreateMessageHandler {
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   return async (
     context,
     auth,
@@ -339,6 +347,7 @@ export function CreateMessageHandler(
     userAttributes,
     messagePayload,
     maybeFiscalCodeInPath
+    // eslint-disable-next-line max-params
   ) => {
     const maybeFiscalCodeInPayload = fromNullable(messagePayload.fiscal_code);
 
@@ -378,6 +387,7 @@ export function CreateMessageHandler(
         properties: {
           error: isSuccess ? undefined : r.kind,
           hasDefaultEmail: Boolean(
+            // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
             messagePayload.default_addresses &&
               messagePayload.default_addresses.email
           ).toString(),
@@ -464,6 +474,7 @@ export function CreateMessageHandler(
 /**
  * Wraps a CreateMessage handler inside an Express request handler.
  */
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
 export function CreateMessage(
   telemetryClient: ReturnType<typeof initAppInsights>,
   serviceModel: ServiceModel,
@@ -492,6 +503,7 @@ export function CreateMessage(
   );
   return wrapRequestHandler(
     middlewaresWrap(
+      // eslint-disable-next-line @typescript-eslint/naming-convention, max-params
       checkSourceIpForHandler(handler, (_, __, c, u, ___, ____) =>
         ipTuple(c, u)
       )

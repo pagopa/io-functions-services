@@ -7,6 +7,7 @@ import * as t from "io-ts";
  *
  * @returns either a decode error or the array of decoded items
  */
+// eslint-disable-next-line @typescript-eslint/naming-convention, @typescript-eslint/explicit-function-return-type
 export const CommaSeparatedListOf = (decoder: t.Mixed) =>
   new t.Type<ReadonlyArray<t.TypeOf<typeof decoder>>, string, unknown>(
     `CommaSeparatedListOf<${decoder.name}>`,

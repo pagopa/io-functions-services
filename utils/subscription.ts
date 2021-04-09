@@ -3,6 +3,7 @@ import { ResponseErrorForbiddenNotAuthorized } from "italia-ts-commons/lib/respo
 import { NonEmptyString } from "italia-ts-commons/lib/strings";
 import { ErrorResponses } from "./responses";
 
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export const serviceOwnerCheckTask = (
   serviceId: NonEmptyString,
   ownerSubscriptionId: NonEmptyString

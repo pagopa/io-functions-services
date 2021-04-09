@@ -8,6 +8,7 @@ import { NonEmptyString } from "italia-ts-commons/lib/strings";
 const DEFAULT_SAMPLING_PERCENTAGE = 5;
 
 // Avoid to initialize Application Insights more than once
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export const initTelemetryClient = (
   intrumentationKey: NonEmptyString,
   env = process.env

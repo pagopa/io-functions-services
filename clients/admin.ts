@@ -29,6 +29,7 @@ const fetchApi: typeof fetchWithTimeout = (nodeFetch as any) as typeof fetchWith
 export const apiClient = createClient<"SubscriptionKey">({
   baseUrl: adminBaseUrl,
   fetchApi,
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/naming-convention
   withDefaults: op => params => op({ SubscriptionKey: adminToken, ...params })
 });
 

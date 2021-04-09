@@ -11,6 +11,7 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/models/message_status";
 import { ReadableReporter } from "italia-ts-commons/lib/reporters";
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const Input = t.interface({
   messageId: NonEmptyString,
   status: MessageStatusValue

@@ -59,7 +59,6 @@ type IGetLimitedProfileByPOSTHandler = (
   userAttributes: IAzureUserAttributes,
   payload: GetLimitedProfileByPOSTPayload
 ) => Promise<
-  // eslint-disable-next-line sonar/max-union-size
   | IResponseSuccessJson<LimitedProfile>
   | IResponseErrorNotFound
   | IResponseErrorQuery
@@ -69,9 +68,11 @@ type IGetLimitedProfileByPOSTHandler = (
 /**
  * Returns a type safe GetLimitedProfileByPOST handler.
  */
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
 export function GetLimitedProfileByPOSTHandler(
   profileModel: ProfileModel
 ): IGetLimitedProfileByPOSTHandler {
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   return async (auth, __, userAttributes, payload) => {
     // Sandboxed accounts will receive 403
     // if they're not authorized to send a messages to this fiscal code.
@@ -128,6 +129,7 @@ export function GetLimitedProfileByPOSTHandler(
 /**
  * Wraps a GetLimitedProfileByPOST handler inside an Express request handler.
  */
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
 export function GetLimitedProfileByPOST(
   serviceModel: ServiceModel,
   profileModel: ProfileModel

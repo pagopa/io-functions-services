@@ -8,6 +8,7 @@ import { FiscalCodeHash } from "../generated/definitions/FiscalCodeHash";
  * A minimal storage table Entry
  */
 type TableEntry = Readonly<{
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   readonly RowKey: Readonly<{
     readonly _: string;
   }>;
@@ -27,6 +28,7 @@ export type PagedQuery = (
  */
 export const getPagedQuery = (tableService: TableService, table: string) => (
   tableQuery: TableQuery
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 ): PagedQuery => currentToken =>
   new Promise(resolve =>
     tableService.queryEntities(
@@ -96,6 +98,7 @@ const withHashFromEntry = (f: (s: FiscalCodeHash) => void) => (
 /**
  * Fetches all user hashed returned by the provided paged query
  */
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export async function queryUsers(
   pagedQuery: PagedQuery
 ): Promise<ReadonlySet<FiscalCodeHash>> {

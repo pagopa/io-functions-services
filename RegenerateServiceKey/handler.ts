@@ -85,6 +85,7 @@ const regenerateServiceKeyTask = (
     () =>
       apiClient.RegenerateSubscriptionKeys({
         body: subscriptionKeyTypePayload,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         service_id: serviceId
       }),
     200
@@ -93,9 +94,11 @@ const regenerateServiceKeyTask = (
 /**
  * Handles requests for upload a service logo by a service ID and a base64 logo' s string.
  */
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
 export function RegenerateServiceKeyHandler(
   apiClient: APIClient
 ): IRegenerateServiceKeyHandler {
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/naming-convention, max-params
   return (_, apiAuth, ___, ____, serviceId, subscriptionKeyTypePayload) =>
     serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId)
       .chain(() =>
@@ -113,6 +116,7 @@ export function RegenerateServiceKeyHandler(
 /**
  * Wraps a RegenerateServiceKey handler inside an Express request handler.
  */
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
 export function RegenerateServiceKey(
   serviceModel: ServiceModel,
   client: APIClient
@@ -128,6 +132,7 @@ export function RegenerateServiceKey(
   );
   return wrapRequestHandler(
     middlewaresWrap(
+      // eslint-disable-next-line @typescript-eslint/naming-convention, max-params
       checkSourceIpForHandler(handler, (_, __, c, u, ___, ____) =>
         ipTuple(c, u)
       )

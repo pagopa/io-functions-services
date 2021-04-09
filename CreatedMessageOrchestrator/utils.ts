@@ -12,6 +12,7 @@ export type HandlerInputType<T> = T extends Function2<any, infer A, any>
   ? A
   : never;
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const MessageProcessingEvent = t.interface({
   name: t.string,
   properties: t.interface({
@@ -42,11 +43,18 @@ export const trackMessageProcessing = (
     : null;
 
 export enum MessageProcessingEventNames {
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   DECODE_INPUT = "api.messages.create.decodeinput",
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   STORE_MESSAGE_DECODE = "api.messages.create.storemessagedecode",
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   UPDATE_NOTIFICATION_STATUS = "api.messages.create.updatenotificationstatus",
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   NO_CHANNEL = "api.messages.create.nochannel",
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   EMAIL_SENT = "api.messages.create.emailsent",
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   WEBHOOK = "api.messages.create.webhook",
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   UPDATE_MESSAGE_STATUS = "api.messages.create.updatemessagestatus"
 }

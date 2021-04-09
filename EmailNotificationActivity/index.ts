@@ -44,7 +44,9 @@ const activityFunction: AzureFunction = getEmailNotificationActivityHandler(
   mailerTransporter,
   notificationModel,
   {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     HTML_TO_TEXT_OPTIONS,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     MAIL_FROM
   }
 );
