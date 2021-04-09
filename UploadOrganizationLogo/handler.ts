@@ -42,7 +42,7 @@ import { identity } from "fp-ts/lib/function";
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import { APIClient } from "../clients/admin";
 import { Logo } from "../generated/api-admin/Logo";
-import { withApiRequestWrapper } from "../utils/api";
+import { withEmptyApiRequestWrapper } from "../utils/api";
 import { getLogger, ILogger } from "../utils/logging";
 import {
   ErrorResponses,
@@ -80,7 +80,7 @@ const uploadOrganizationLogoTask = (
   organizationFiscalCode: OrganizationFiscalCode,
   logo: Logo
 ): TaskEither<ErrorResponses, IResponseSuccessAccepted> =>
-  withApiRequestWrapper(
+  withEmptyApiRequestWrapper(
     logger,
     () =>
       apiClient.uploadOrganizationLogo({

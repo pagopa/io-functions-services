@@ -55,12 +55,9 @@ import { Subscription } from "../generated/api-admin/Subscription";
 import { UserInfo } from "../generated/api-admin/UserInfo";
 import { ServicePayload } from "../generated/definitions/ServicePayload";
 import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWithSubscriptionKeys";
-import { withApiRequestWrapper } from "../utils/api";
+import { withEmbodimentApiRequestWrapper } from "../utils/api";
 import { getLogger, ILogger } from "../utils/logging";
 import { ErrorResponses, IResponseErrorUnauthorized } from "../utils/responses";
-
-import { IResponseType } from "italia-ts-commons/lib/requests";
-import * as t from "io-ts";
 
 type ResponseTypes =
   | IResponseSuccessJson<ServiceWithSubscriptionKeys>
@@ -93,15 +90,16 @@ const createSubscriptionTask = (
   subscriptionId: NonEmptyString,
   productName: NonEmptyString
 ): TaskEither<ErrorResponses, Subscription> =>
-  withApiRequestWrapper(
+  withEmbodimentApiRequestWrapper(
     logger,
-    () => apiClient.createSubscription({
-      body: {
-        product_name: productName
-      },
-      email: userEmail,
-      subscription_id: subscriptionId
-    }) as Promise<t.Validation<IResponseType<number, any, never>>>,
+    () =>
+      apiClient.createSubscription({
+        body: {
+          product_name: productName
+        },
+        email: userEmail,
+        subscription_id: subscriptionId
+      }),
     200
   );
 
@@ -110,12 +108,12 @@ const getUserTask = (
   apiClient: APIClient,
   userEmail: EmailString
 ): TaskEither<ErrorResponses, UserInfo> =>
-  withApiRequestWrapper(
+  withEmbodimentApiRequestWrapper(
     logger,
     () =>
       apiClient.getUser({
         email: userEmail
-      }) as Promise<t.Validation<IResponseType<number, any, never>>>,
+      }),
     200
   );
 
@@ -127,7 +125,7 @@ const createServiceTask = (
   sandboxFiscalCode: FiscalCode,
   adb2cTokenName: NonEmptyString
 ): TaskEither<ErrorResponses, Service> =>
-  withApiRequestWrapper(
+  withEmbodimentApiRequestWrapper(
     logger,
     () =>
       apiClient.createService({
@@ -140,7 +138,7 @@ const createServiceTask = (
             token_name: adb2cTokenName
           } as ServiceMetadata
         }
-      }) as Promise<t.Validation<IResponseType<number, any, never>>>,
+      }),
     200
   );
 
@@ -178,7 +176,7 @@ export function CreateServiceHandler(
             servicePayload,
             subscriptionId,
             (sandboxFiscalCode as unknown) as FiscalCode,
-            userInfo.token_name as NonEmptyString
+            (userInfo.token_name as unknown) as NonEmptyString
           ).map(service => {
             telemetryClient.trackEvent({
               name: "api.services.create",

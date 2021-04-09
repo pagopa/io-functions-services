@@ -36,15 +36,12 @@ import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/m
 import { identity } from "fp-ts/lib/function";
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import { APIClient } from "../clients/admin";
-import { UserInfo} from "../generated/api-admin/UserInfo";
 import { Subscription } from "../generated/api-admin/Subscription";
+import { UserInfo } from "../generated/api-admin/UserInfo";
 import { ServiceIdCollection } from "../generated/definitions/ServiceIdCollection";
-import { withApiRequestWrapper } from "../utils/api";
+import { withEmbodimentApiRequestWrapper } from "../utils/api";
 import { getLogger, ILogger } from "../utils/logging";
 import { ErrorResponses } from "../utils/responses";
-
-import * as t from "io-ts";
-import { IResponseType } from "italia-ts-commons/lib/requests";
 
 /**
  * Type of a GetUserServices handler.
@@ -65,12 +62,12 @@ const getUserTask = (
   apiClient: APIClient,
   userEmail: EmailString
 ): TaskEither<ErrorResponses, UserInfo> =>
-  withApiRequestWrapper(
+  withEmbodimentApiRequestWrapper(
     logger,
     () =>
       apiClient.getUser({
         email: userEmail
-      }) as Promise<t.Validation<IResponseType<number, any, never>>>,
+      }),
     200
   );
 
@@ -88,8 +85,8 @@ export function GetUserServicesHandler(
     )
       .map(userInfo =>
         ResponseSuccessJson({
-          items: (userInfo.subscriptions as Subscription[]).map(it =>
-            ServiceId.encode(it.id as NonEmptyString)
+          items: (userInfo.subscriptions as readonly Subscription[]).map(it =>
+            ServiceId.encode((it.id as unknown) as NonEmptyString)
           )
         })
       )

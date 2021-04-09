@@ -15,14 +15,15 @@ import {
 } from "./responses";
 
 /**
- * Wrap the input API call into a TaskEither, returning a response type T (if both API call and response parse complete successfully) or an ErrorResponses.
- * TYPE HAZARD: this function support only a single successful response type T: if the call response status code match the input successStatusCode the function returns an object <T>, otherwise the api response must be undefined and the function returns an object type ErrorResponses.
+ * Wrap the input API call into a TaskEither, returning a response type T (if both the response status code match the input successStatusCode and the response decode successfully) or an ErrorResponses.
+ * TYPE HAZARD: this function support only a single successful response type T: if the api response body value is not undefined will be decoded in a T object, otherwise returns an ErrorResponses.
+ * @see withEmptyApiRequestWrapper
  * @param logger - the Logger instance used to log errors
  * @param apiCallWithParams - the API call as a promise
  * @param successStatusCode - the successful status code used to accept the response as valid and decode it into an object T
  * @returns a TaskEither wrapping the API call
  */
-export const withApiRequestWrapper = <T>(
+export const withEmbodimentApiRequestWrapper = <T>(
   logger: ILogger,
   apiCallWithParams: () => Promise<
     t.Validation<IResponseType<number, T | undefined, never>>
@@ -52,5 +53,46 @@ export const withApiRequestWrapper = <T>(
             response.value !== undefined
               ? taskEither.of(response.value)
               : fromLeft<ErrorResponses, T>(toErrorServerResponse(response))
+        )
+    );
+
+/**
+ * Wrap the input API call into a TaskEither, returning an empty response (if the repsonse status code match the input successStatusCode) or an ErrorResponses.
+ * @param logger - the Logger instance used to log errors
+ * @param apiCallWithParams - the API call as a promise
+ * @param successStatusCode - the successful status code used to accept the response as valid and decode it into an object T
+ * @returns a TaskEither wrapping the API call
+ */
+export const withEmptyApiRequestWrapper = <T>(
+  logger: ILogger,
+  apiCallWithParams: () => Promise<
+    t.Validation<IResponseType<number, T | undefined, never>>
+  >,
+  successStatusCode: 200 | 201 | 202 = 200
+): TaskEither<ErrorResponses, undefined> =>
+  tryCatch(
+    () => apiCallWithParams(),
+    errs => {
+      logger.logUnknown(errs);
+      return toDefaultResponseErrorInternal(errs);
+    }
+  )
+    .map(fromEither)
+    .foldTaskEither(
+      apiCallError => fromLeft<ErrorResponses, undefined>(apiCallError),
+      apiCallResponse =>
+        apiCallResponse.foldTaskEither<ErrorResponses, undefined>(
+          parseResponseError => {
+            logger.logErrors(parseResponseError);
+            return fromLeft<ErrorResponses, undefined>(
+              toDefaultResponseErrorInternal(parseResponseError)
+            );
+          },
+          response =>
+            response.status === successStatusCode
+              ? taskEither.of(undefined)
+              : fromLeft<ErrorResponses, undefined>(
+                  toErrorServerResponse(response)
+                )
         )
     );

@@ -47,14 +47,12 @@ import { SubscriptionKeys } from "../generated/api-admin/SubscriptionKeys";
 import { UserInfo } from "../generated/api-admin/UserInfo";
 import { ServicePayload } from "../generated/definitions/ServicePayload";
 import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWithSubscriptionKeys";
-import { withApiRequestWrapper } from "../utils/api";
+import { withEmbodimentApiRequestWrapper } from "../utils/api";
 import { getLogger, ILogger } from "../utils/logging";
 import { ErrorResponses, IResponseErrorUnauthorized } from "../utils/responses";
 import { serviceOwnerCheckTask } from "../utils/subscription";
 
 import { ServiceMetadata } from "../generated/api-admin/ServiceMetadata";
-import { IResponseType } from "italia-ts-commons/lib/requests";
-import * as t from "io-ts";
 
 type ResponseTypes =
   | IResponseSuccessJson<ServiceWithSubscriptionKeys>
@@ -86,12 +84,12 @@ const getSubscriptionKeysTask = (
   apiClient: APIClient,
   serviceId: NonEmptyString
 ): TaskEither<ErrorResponses, SubscriptionKeys> =>
-  withApiRequestWrapper(
+  withEmbodimentApiRequestWrapper(
     logger,
     () =>
       apiClient.getSubscriptionKeys({
         service_id: serviceId
-      }) as Promise<t.Validation<IResponseType<number, any, never>>>,
+      }),
     200
   );
 
@@ -100,12 +98,12 @@ const getServiceTask = (
   apiClient: APIClient,
   serviceId: NonEmptyString
 ): TaskEither<ErrorResponses, Service> =>
-  withApiRequestWrapper(
+  withEmbodimentApiRequestWrapper(
     logger,
     () =>
       apiClient.getService({
         service_id: serviceId
-      }) as Promise<t.Validation<IResponseType<number, any, never>>>,
+      }),
     200
   );
 
@@ -114,12 +112,12 @@ const getUserTask = (
   apiClient: APIClient,
   userEmail: EmailString
 ): TaskEither<ErrorResponses, UserInfo> =>
-  withApiRequestWrapper(
+  withEmbodimentApiRequestWrapper(
     logger,
     () =>
       apiClient.getUser({
         email: userEmail
-      }) as Promise<t.Validation<IResponseType<number, any, never>>>,
+      }),
     200
   );
 
@@ -131,7 +129,7 @@ const updateServiceTask = (
   retrievedService: Service,
   adb2cTokenName: NonEmptyString
 ): TaskEither<ErrorResponses, Service> =>
-  withApiRequestWrapper(
+  withEmbodimentApiRequestWrapper(
     logger,
     () =>
       apiClient.updateService({
@@ -145,7 +143,7 @@ const updateServiceTask = (
           } as ServiceMetadata
         },
         service_id: serviceId
-      }) as Promise<t.Validation<IResponseType<number, any, never>>>,
+      }),
     200
   );
 
@@ -176,7 +174,7 @@ export function UpdateServiceHandler(
                 servicePayload,
                 serviceId,
                 retrievedService,
-                userInfo.token_name as NonEmptyString
+                (userInfo.token_name as unknown) as NonEmptyString
               )
             )
             .chain(service => {
