@@ -33,7 +33,7 @@ const telemetryClient = initTelemetryClient(
 export const trackMessageProcessing = (
   event: MessageProcessingEvent,
   isReplaying: boolean
-): void =>
+): void|null =>
   !isReplaying
     ? telemetryClient.trackEvent({
         name: event.name,

@@ -47,10 +47,12 @@ import { SubscriptionKeys } from "../generated/api-admin/SubscriptionKeys";
 import { UserInfo } from "../generated/api-admin/UserInfo";
 import { ServicePayload } from "../generated/definitions/ServicePayload";
 import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWithSubscriptionKeys";
-import { withApiRequestWrapper } from "../utils/api";
+import { withEmbodimentApiRequestWrapper } from "../utils/api";
 import { getLogger, ILogger } from "../utils/logging";
 import { ErrorResponses, IResponseErrorUnauthorized } from "../utils/responses";
 import { serviceOwnerCheckTask } from "../utils/subscription";
+
+import { ServiceMetadata } from "../generated/api-admin/ServiceMetadata";
 
 type ResponseTypes =
   | IResponseSuccessJson<ServiceWithSubscriptionKeys>
@@ -82,7 +84,7 @@ const getSubscriptionKeysTask = (
   apiClient: APIClient,
   serviceId: NonEmptyString
 ): TaskEither<ErrorResponses, SubscriptionKeys> =>
-  withApiRequestWrapper(
+  withEmbodimentApiRequestWrapper(
     logger,
     () =>
       apiClient.getSubscriptionKeys({
@@ -96,7 +98,7 @@ const getServiceTask = (
   apiClient: APIClient,
   serviceId: NonEmptyString
 ): TaskEither<ErrorResponses, Service> =>
-  withApiRequestWrapper(
+  withEmbodimentApiRequestWrapper(
     logger,
     () =>
       apiClient.getService({
@@ -110,7 +112,7 @@ const getUserTask = (
   apiClient: APIClient,
   userEmail: EmailString
 ): TaskEither<ErrorResponses, UserInfo> =>
-  withApiRequestWrapper(
+  withEmbodimentApiRequestWrapper(
     logger,
     () =>
       apiClient.getUser({
@@ -127,7 +129,7 @@ const updateServiceTask = (
   retrievedService: Service,
   adb2cTokenName: NonEmptyString
 ): TaskEither<ErrorResponses, Service> =>
-  withApiRequestWrapper(
+  withEmbodimentApiRequestWrapper(
     logger,
     () =>
       apiClient.updateService({
@@ -138,7 +140,7 @@ const updateServiceTask = (
           service_metadata: {
             ...servicePayload.service_metadata,
             token_name: adb2cTokenName
-          }
+          } as ServiceMetadata
         },
         service_id: serviceId
       }),
@@ -172,7 +174,7 @@ export function UpdateServiceHandler(
                 servicePayload,
                 serviceId,
                 retrievedService,
-                userInfo.token_name
+                (userInfo.token_name as unknown) as NonEmptyString
               )
             )
             .chain(service => {

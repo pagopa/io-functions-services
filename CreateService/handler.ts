@@ -50,11 +50,12 @@ import {
 } from "italia-ts-commons/lib/strings";
 import { APIClient } from "../clients/admin";
 import { Service } from "../generated/api-admin/Service";
+import { ServiceMetadata } from "../generated/api-admin/ServiceMetadata";
 import { Subscription } from "../generated/api-admin/Subscription";
 import { UserInfo } from "../generated/api-admin/UserInfo";
 import { ServicePayload } from "../generated/definitions/ServicePayload";
 import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWithSubscriptionKeys";
-import { withApiRequestWrapper } from "../utils/api";
+import { withEmbodimentApiRequestWrapper } from "../utils/api";
 import { getLogger, ILogger } from "../utils/logging";
 import { ErrorResponses, IResponseErrorUnauthorized } from "../utils/responses";
 
@@ -89,7 +90,7 @@ const createSubscriptionTask = (
   subscriptionId: NonEmptyString,
   productName: NonEmptyString
 ): TaskEither<ErrorResponses, Subscription> =>
-  withApiRequestWrapper(
+  withEmbodimentApiRequestWrapper(
     logger,
     () =>
       apiClient.createSubscription({
@@ -107,7 +108,7 @@ const getUserTask = (
   apiClient: APIClient,
   userEmail: EmailString
 ): TaskEither<ErrorResponses, UserInfo> =>
-  withApiRequestWrapper(
+  withEmbodimentApiRequestWrapper(
     logger,
     () =>
       apiClient.getUser({
@@ -124,7 +125,7 @@ const createServiceTask = (
   sandboxFiscalCode: FiscalCode,
   adb2cTokenName: NonEmptyString
 ): TaskEither<ErrorResponses, Service> =>
-  withApiRequestWrapper(
+  withEmbodimentApiRequestWrapper(
     logger,
     () =>
       apiClient.createService({
@@ -135,7 +136,7 @@ const createServiceTask = (
           service_metadata: {
             ...servicePayload.service_metadata,
             token_name: adb2cTokenName
-          }
+          } as ServiceMetadata
         }
       }),
     200
@@ -175,7 +176,7 @@ export function CreateServiceHandler(
             servicePayload,
             subscriptionId,
             (sandboxFiscalCode as unknown) as FiscalCode,
-            userInfo.token_name
+            (userInfo.token_name as unknown) as NonEmptyString
           ).map(service => {
             telemetryClient.trackEvent({
               name: "api.services.create",

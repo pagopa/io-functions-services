@@ -1,4 +1,5 @@
 import {
+  fromEither,
   fromLeft,
   TaskEither,
   taskEither,
@@ -13,10 +14,19 @@ import {
   toErrorServerResponse
 } from "./responses";
 
-export const withApiRequestWrapper = <T>(
+/**
+ * Wrap the input API call into a TaskEither, returning a response type T (if both the response status code match the input successStatusCode and the response decode successfully) or an ErrorResponses.
+ * TYPE HAZARD: this function support only a single successful response type T: if the api response body value is not undefined will be decoded in a T object, otherwise returns an ErrorResponses.
+ * @see withEmptyApiRequestWrapper
+ * @param logger - the Logger instance used to log errors
+ * @param apiCallWithParams - the API call as a promise
+ * @param successStatusCode - the successful status code used to accept the response as valid and decode it into an object T
+ * @returns a TaskEither wrapping the API call
+ */
+export const withEmbodimentApiRequestWrapper = <T>(
   logger: ILogger,
   apiCallWithParams: () => Promise<
-    t.Validation<IResponseType<number, T, never>>
+    t.Validation<IResponseType<number, T | undefined, never>>
   >,
   successStatusCode: 200 | 201 | 202 = 200
 ): TaskEither<ErrorResponses, T> =>
@@ -26,17 +36,63 @@ export const withApiRequestWrapper = <T>(
       logger.logUnknown(errs);
       return toDefaultResponseErrorInternal(errs);
     }
-  ).foldTaskEither(
-    err => fromLeft(err),
-    errorOrResponse =>
-      errorOrResponse.fold(
-        errs => {
-          logger.logErrors(errs);
-          return fromLeft(toDefaultResponseErrorInternal(errs));
-        },
-        responseType =>
-          responseType.status !== successStatusCode
-            ? fromLeft(toErrorServerResponse(responseType))
-            : taskEither.of(responseType.value)
-      )
-  );
+  )
+    .map(fromEither)
+    .foldTaskEither(
+      apiCallError => fromLeft<ErrorResponses, T>(apiCallError),
+      apiCallResponse =>
+        apiCallResponse.foldTaskEither<ErrorResponses, T>(
+          parseResponseError => {
+            logger.logErrors(parseResponseError);
+            return fromLeft<ErrorResponses, T>(
+              toDefaultResponseErrorInternal(parseResponseError)
+            );
+          },
+          response =>
+            response.status === successStatusCode &&
+            response.value !== undefined
+              ? taskEither.of(response.value)
+              : fromLeft<ErrorResponses, T>(toErrorServerResponse(response))
+        )
+    );
+
+/**
+ * Wrap the input API call into a TaskEither, returning an empty response (if the repsonse status code match the input successStatusCode) or an ErrorResponses.
+ * @param logger - the Logger instance used to log errors
+ * @param apiCallWithParams - the API call as a promise
+ * @param successStatusCode - the successful status code used to accept the response as valid and decode it into an object T
+ * @returns a TaskEither wrapping the API call
+ */
+export const withEmptyApiRequestWrapper = <T>(
+  logger: ILogger,
+  apiCallWithParams: () => Promise<
+    t.Validation<IResponseType<number, T | undefined, never>>
+  >,
+  successStatusCode: 200 | 201 | 202 = 200
+): TaskEither<ErrorResponses, undefined> =>
+  tryCatch(
+    () => apiCallWithParams(),
+    errs => {
+      logger.logUnknown(errs);
+      return toDefaultResponseErrorInternal(errs);
+    }
+  )
+    .map(fromEither)
+    .foldTaskEither(
+      apiCallError => fromLeft<ErrorResponses, undefined>(apiCallError),
+      apiCallResponse =>
+        apiCallResponse.foldTaskEither<ErrorResponses, undefined>(
+          parseResponseError => {
+            logger.logErrors(parseResponseError);
+            return fromLeft<ErrorResponses, undefined>(
+              toDefaultResponseErrorInternal(parseResponseError)
+            );
+          },
+          response =>
+            response.status === successStatusCode
+              ? taskEither.of(undefined)
+              : fromLeft<ErrorResponses, undefined>(
+                  toErrorServerResponse(response)
+                )
+        )
+    );

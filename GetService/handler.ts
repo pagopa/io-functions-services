@@ -40,7 +40,7 @@ import { APIClient } from "../clients/admin";
 import { Service } from "../generated/api-admin/Service";
 import { SubscriptionKeys } from "../generated/api-admin/SubscriptionKeys";
 import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWithSubscriptionKeys";
-import { withApiRequestWrapper } from "../utils/api";
+import { withEmbodimentApiRequestWrapper } from "../utils/api";
 import { getLogger, ILogger } from "../utils/logging";
 import { ErrorResponses } from "../utils/responses";
 import { serviceOwnerCheckTask } from "../utils/subscription";
@@ -69,7 +69,7 @@ const getServiceTask = (
   apiClient: APIClient,
   serviceId: string
 ): TaskEither<ErrorResponses, Service> =>
-  withApiRequestWrapper(
+  withEmbodimentApiRequestWrapper(
     logger,
     () =>
       apiClient.getService({
@@ -83,7 +83,7 @@ const getSubscriptionKeysTask = (
   apiClient: APIClient,
   serviceId: string
 ): TaskEither<ErrorResponses, SubscriptionKeys> =>
-  withApiRequestWrapper(
+  withEmbodimentApiRequestWrapper(
     logger,
     () =>
       apiClient.getSubscriptionKeys({

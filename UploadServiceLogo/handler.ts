@@ -43,7 +43,7 @@ import { identity } from "fp-ts/lib/function";
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import { APIClient } from "../clients/admin";
 import { Logo } from "../generated/api-admin/Logo";
-import { withApiRequestWrapper } from "../utils/api";
+import { withEmptyApiRequestWrapper } from "../utils/api";
 import { getLogger, ILogger } from "../utils/logging";
 import { ErrorResponses, IResponseErrorUnauthorized } from "../utils/responses";
 import { serviceOwnerCheckTask } from "../utils/subscription";
@@ -79,7 +79,7 @@ const uploadServiceLogoTask = (
   serviceId: string,
   logo: Logo
 ): TaskEither<ErrorResponses, IResponseSuccessJson<undefined>> =>
-  withApiRequestWrapper(
+  withEmptyApiRequestWrapper(
     logger,
     () =>
       apiClient.uploadServiceLogo({
@@ -87,7 +87,7 @@ const uploadServiceLogoTask = (
         service_id: serviceId
       }),
     201
-  ).map(_ => ResponseSuccessJson(undefined));
+  ).map(ResponseSuccessJson);
 
 /**
  * Handles requests for upload a service logo by a service ID and a base64 logo' s string.

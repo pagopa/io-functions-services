@@ -44,7 +44,7 @@ import { TaskEither } from "fp-ts/lib/TaskEither";
 import { APIClient } from "../clients/admin";
 import { SubscriptionKeys } from "../generated/definitions/SubscriptionKeys";
 import { SubscriptionKeyTypePayload } from "../generated/definitions/SubscriptionKeyTypePayload";
-import { withApiRequestWrapper } from "../utils/api";
+import { withEmbodimentApiRequestWrapper } from "../utils/api";
 import { getLogger, ILogger } from "../utils/logging";
 import { ErrorResponses, IResponseErrorUnauthorized } from "../utils/responses";
 import { serviceOwnerCheckTask } from "../utils/subscription";
@@ -80,7 +80,7 @@ const regenerateServiceKeyTask = (
   serviceId: NonEmptyString,
   subscriptionKeyTypePayload: SubscriptionKeyTypePayload
 ): TaskEither<ErrorResponses, IResponseSuccessJson<SubscriptionKeys>> =>
-  withApiRequestWrapper(
+  withEmbodimentApiRequestWrapper(
     logger,
     () =>
       apiClient.RegenerateSubscriptionKeys({

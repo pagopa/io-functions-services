@@ -10,14 +10,16 @@ import * as fc from "fast-check";
 import { some } from "fp-ts/lib/Option";
 import {
   NonNegativeInteger,
-  WithinRangeInteger
+  WithinRangeInteger,
+  IWithinRangeIntegerTag
 } from "italia-ts-commons/lib/numbers";
 import {
   EmailString,
   FiscalCode,
   NonEmptyString,
-  PatternString
+  PatternString,
 } from "italia-ts-commons/lib/strings";
+
 
 //
 // custom fastcheck arbitraries
@@ -82,9 +84,9 @@ export const newMessageArb = fc
         markdown,
         subject
       }
-    }).getOrElse(undefined)
+    }).fold(l=>undefined, r=>r)
   )
-  .filter(_ => _ !== undefined);
+  .filter(_ => _ !== undefined) as fc.Arbitrary<any>;
 
 export const newMessageWithDefaultEmailArb = fc
   .tuple(newMessageArb, fc.emailAddress())
@@ -100,14 +102,14 @@ export const messageTimeToLiveArb = fc
   // tslint:disable-next-line:no-useless-cast
   .map(_ => _ as number & WithinRangeInteger<3600, 604800>);
 
-export const amountArb = fc
+export const amountArb = fc 
   .integer(1, 9999999999)
   .map(_ =>
     WithinRangeInteger(1, 9999999999)
       .decode(_)
-      .getOrElse(undefined)
+      .fold(l=>undefined, r=>r)
   )
-  .filter(_ => _ !== undefined);
+  .filter(_ => _ != undefined) as fc.Arbitrary<number & IWithinRangeIntegerTag<1,9999999999>>;
 
 export const maxAmountArb = fc
   .integer(0, 9999999999)

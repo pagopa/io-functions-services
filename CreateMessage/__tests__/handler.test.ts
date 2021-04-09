@@ -179,7 +179,7 @@ describe("createMessageDocument", () => {
 
           expect(mockMessageModel.create).toHaveBeenCalledTimes(1);
           expect(response.isRight()).toBeTruthy();
-          expect(response.getOrElse(undefined)).toMatchObject({
+          expect(response.fold(l=>undefined,r=>r)).toMatchObject({
             fiscalCode,
             id: messageId,
             indexedId: messageId,
@@ -242,7 +242,7 @@ describe("forkOrchestrator", () => {
               serviceVersion: service.version
             })
           );
-          expect(response.getOrElse(undefined)).toEqual("orchestratorId");
+          expect(response.fold(l=>undefined,r=>r)).toEqual("orchestratorId");
         }
       )
     );

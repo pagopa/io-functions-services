@@ -19,7 +19,7 @@ type TableEntry = Readonly<{
  * @see https://docs.microsoft.com/en-us/rest/api/storageservices/query-timeout-and-pagination
  */
 export type PagedQuery = (
-  currentToken: TableService.TableContinuationToken
+  currentToken: TableService.TableContinuationToken | undefined
 ) => Promise<Either<Error, TableService.QueryEntitiesResult<TableEntry>>>;
 
 /**
@@ -32,7 +32,7 @@ export const getPagedQuery = (tableService: TableService, table: string) => (
     tableService.queryEntities(
       table,
       tableQuery,
-      currentToken,
+      currentToken as TableService.TableContinuationToken,
       (
         error: Error,
         result: TableService.QueryEntitiesResult<TableEntry>,
@@ -51,16 +51,16 @@ async function* iterateOnPages(
   pagedQuery: PagedQuery
 ): AsyncIterableIterator<ReadonlyArray<TableEntry>> {
   // tslint:disable-next-line: no-let
-  let token: TableService.TableContinuationToken = null;
+  let token: TableService.TableContinuationToken | undefined = undefined;
   do {
     // query for a page of entries
-    const errorOrResults = await pagedQuery(token);
+    const errorOrResults : Either<Error, TableService.QueryEntitiesResult<TableEntry>> = await pagedQuery(token);
     if (isLeft(errorOrResults)) {
       // throw an exception in case of error
       throw errorOrResults.value;
     }
     // call the async callback with the current page of entries
-    const results = errorOrResults.value;
+    const results : TableService.QueryEntitiesResult<TableEntry> = errorOrResults.value;
     yield results.entries;
     // update the continuation token, the loop will continue until
     // the token is defined
