@@ -1,7 +1,6 @@
 import { Context } from "@azure/functions";
 import * as cors from "cors";
 import * as express from "express";
-import { cosmosdbInstance } from "../utils/cosmosdb";
 
 import {
   SERVICE_COLLECTION_NAME,
@@ -11,12 +10,13 @@ import { secureExpressApp } from "@pagopa/io-functions-commons/dist/src/utils/ex
 import { setAppContext } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 
 import createAzureFunctionHandler from "io-functions-express/dist/src/createAzureFunctionsHandler";
+import { cosmosdbInstance } from "../utils/cosmosdb";
 
 import { apiClient } from "../clients/admin";
-import { CreateService } from "./handler";
 
 import { initTelemetryClient } from "../utils/appinsights";
 import { getConfigOrThrow } from "../utils/config";
+import { CreateService } from "./handler";
 
 const config = getConfigOrThrow();
 

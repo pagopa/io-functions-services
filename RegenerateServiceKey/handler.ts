@@ -96,8 +96,8 @@ const regenerateServiceKeyTask = (
 export function RegenerateServiceKeyHandler(
   apiClient: APIClient
 ): IRegenerateServiceKeyHandler {
-  return (_, apiAuth, ___, ____, serviceId, subscriptionKeyTypePayload) => {
-    return serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId)
+  return (_, apiAuth, ___, ____, serviceId, subscriptionKeyTypePayload) =>
+    serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId)
       .chain(() =>
         regenerateServiceKeyTask(
           getLogger(_, logPrefix, "RegenerateServiceKey"),
@@ -108,7 +108,6 @@ export function RegenerateServiceKeyHandler(
       )
       .fold<ResponseTypes>(identity, identity)
       .run();
-  };
 }
 
 /**

@@ -76,8 +76,8 @@ const getUserTask = (
 export function GetUserServicesHandler(
   apiClient: APIClient
 ): IGetUserServicesHandler {
-  return (_, __, ___, userAttributes) => {
-    return getUserTask(
+  return (_, __, ___, userAttributes) =>
+    getUserTask(
       getLogger(_, logPrefix, "GetUser"),
       apiClient,
       userAttributes.email
@@ -94,7 +94,6 @@ export function GetUserServicesHandler(
         identity
       )
       .run();
-  };
 }
 
 /**

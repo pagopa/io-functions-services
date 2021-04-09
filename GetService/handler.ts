@@ -96,8 +96,8 @@ const getSubscriptionKeysTask = (
  * Handles requests for getting a single service by a service ID.
  */
 export function GetServiceHandler(apiClient: APIClient): IGetServiceHandler {
-  return (_, apiAuth, ___, ____, serviceId) => {
-    return serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId)
+  return (_, apiAuth, ___, ____, serviceId) =>
+    serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId)
       .chain(() =>
         getServiceTask(
           getLogger(_, logPrefix, "GetService"),
@@ -121,7 +121,6 @@ export function GetServiceHandler(apiClient: APIClient): IGetServiceHandler {
         identity
       )
       .run();
-  };
 }
 
 /**

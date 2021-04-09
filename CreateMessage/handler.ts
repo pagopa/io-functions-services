@@ -93,13 +93,13 @@ export const MessagePayloadMiddleware: IRequestMiddleware<
   "IResponseErrorValidation",
   ApiNewMessageWithDefaults
 > = request =>
-  new Promise(resolve => {
-    return resolve(
+  new Promise(resolve =>
+    resolve(
       ApiNewMessageWithDefaults.decode(request.body).mapLeft(
         ResponseErrorFromValidationErrors(ApiNewMessageWithDefaults)
       )
-    );
-  });
+    )
+  );
 
 /**
  * Type of a CreateMessage handler.

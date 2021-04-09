@@ -19,11 +19,8 @@ export function isSenderAllowed(
   return (
     blockedInboxOrChannels === undefined ||
     blockedInboxOrChannels[serviceId] === undefined ||
-    !(
-      blockedInboxOrChannels[serviceId].indexOf(
-        BlockedInboxOrChannelEnum.INBOX
-      ) >= 0
-    )
+    blockedInboxOrChannels[serviceId].indexOf(BlockedInboxOrChannelEnum.INBOX) <
+      0
   );
 }
 

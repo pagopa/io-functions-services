@@ -9,7 +9,6 @@
  *   function app in Kudu
  */
 import { AzureFunction } from "@azure/functions";
-import { cosmosdbInstance } from "../utils/cosmosdb";
 
 import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
 import { HttpsUrl } from "@pagopa/io-functions-commons/dist/generated/definitions/HttpsUrl";
@@ -18,10 +17,10 @@ import {
   NOTIFICATION_COLLECTION_NAME,
   NotificationModel
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
-
-import { getCreateNotificationActivityHandler } from "./handler";
+import { cosmosdbInstance } from "../utils/cosmosdb";
 
 import { getConfigOrThrow } from "../utils/config";
+import { getCreateNotificationActivityHandler } from "./handler";
 
 const config = getConfigOrThrow();
 

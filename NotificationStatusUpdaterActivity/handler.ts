@@ -14,9 +14,9 @@ import { ReadableReporter } from "italia-ts-commons/lib/reporters";
 
 type INotificationStatusUpdaterResult =
   | {
-      kind: "SUCCESS";
+      readonly kind: "SUCCESS";
     }
-  | { kind: "FAILURE" };
+  | { readonly kind: "FAILURE" };
 
 export const NotificationStatusUpdaterActivityInput = t.interface({
   channel: NotificationChannel,

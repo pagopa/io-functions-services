@@ -10,13 +10,11 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/models/service";
 import { secureExpressApp } from "@pagopa/io-functions-commons/dist/src/utils/express";
 import { setAppContext } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
+import createAzureFunctionHandler from "io-functions-express/dist/src/createAzureFunctionsHandler";
 import { cosmosdbInstance } from "../utils/cosmosdb";
 
-import createAzureFunctionHandler from "io-functions-express/dist/src/createAzureFunctionsHandler";
-
-import { GetSubscriptionsFeed } from "./handler";
-
 import { getConfigOrThrow } from "../utils/config";
+import { GetSubscriptionsFeed } from "./handler";
 
 const config = getConfigOrThrow();
 

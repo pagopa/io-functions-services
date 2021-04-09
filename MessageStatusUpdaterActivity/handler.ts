@@ -17,7 +17,7 @@ export const Input = t.interface({
 });
 
 interface IResponse {
-  kind: "FAILURE" | "SUCCESS";
+  readonly kind: "FAILURE" | "SUCCESS";
 }
 
 export const getMessageStatusUpdaterActivityHandler = (

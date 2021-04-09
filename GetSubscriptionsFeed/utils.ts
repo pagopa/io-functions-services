@@ -8,8 +8,8 @@ import { FiscalCodeHash } from "../generated/definitions/FiscalCodeHash";
  * A minimal storage table Entry
  */
 type TableEntry = Readonly<{
-  RowKey: Readonly<{
-    _: string;
+  readonly RowKey: Readonly<{
+    readonly _: string;
   }>;
 }>;
 

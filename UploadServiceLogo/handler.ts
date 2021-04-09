@@ -95,8 +95,8 @@ const uploadServiceLogoTask = (
 export function UploadServiceLogoHandler(
   apiClient: APIClient
 ): IUploadServiceLogoHandler {
-  return (_, apiAuth, ___, ____, serviceId, logoPayload) => {
-    return serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId)
+  return (_, apiAuth, ___, ____, serviceId, logoPayload) =>
+    serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId)
       .chain(() =>
         uploadServiceLogoTask(
           getLogger(_, logPrefix, "UploadServiceLogo"),
@@ -107,7 +107,6 @@ export function UploadServiceLogoHandler(
       )
       .fold<ResponseTypes>(identity, identity)
       .run();
-  };
 }
 
 /**

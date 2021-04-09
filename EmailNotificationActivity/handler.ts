@@ -15,9 +15,8 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
 import { NotificationEvent } from "@pagopa/io-functions-commons/dist/src/models/notification_event";
 
-import { generateDocumentHtml } from "./utils";
-
 import { sendMail } from "@pagopa/io-functions-commons/dist/src/mailer";
+import { generateDocumentHtml } from "./utils";
 
 export interface INotificationDefaults {
   readonly HTML_TO_TEXT_OPTIONS: HtmlToTextOptions;

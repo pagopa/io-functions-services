@@ -152,8 +152,8 @@ export function UpdateServiceHandler(
   telemetryClient: ReturnType<typeof initAppInsights>,
   apiClient: APIClient
 ): IUpdateServiceHandler {
-  return (_, apiAuth, ___, userAttributes, serviceId, servicePayload) => {
-    return serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId)
+  return (_, apiAuth, ___, userAttributes, serviceId, servicePayload) =>
+    serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId)
       .chain(() =>
         getServiceTask(
           getLogger(_, logPrefix, "GetService"),
@@ -201,7 +201,6 @@ export function UpdateServiceHandler(
       )
       .fold<ResponseTypes>(identity, identity)
       .run();
-  };
 }
 
 /**

@@ -1,9 +1,8 @@
 import { Function2 } from "fp-ts/lib/function";
+import * as t from "io-ts";
 import { initTelemetryClient } from "../utils/appinsights";
 
 import { getConfigOrThrow } from "../utils/config";
-
-import * as t from "io-ts";
 
 /**
  * Extracts the input type of an activity handler

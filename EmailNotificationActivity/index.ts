@@ -9,17 +9,16 @@
  *   function app in Kudu
  */
 import { AzureFunction } from "@azure/functions";
-import { cosmosdbInstance } from "../utils/cosmosdb";
 
 import {
   NOTIFICATION_COLLECTION_NAME,
   NotificationModel
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
 
-import { getEmailNotificationActivityHandler } from "./handler";
-
 import { getMailerTransporter } from "@pagopa/io-functions-commons/dist/src/mailer";
+import { cosmosdbInstance } from "../utils/cosmosdb";
 import { getConfigOrThrow } from "../utils/config";
+import { getEmailNotificationActivityHandler } from "./handler";
 
 const config = getConfigOrThrow();
 

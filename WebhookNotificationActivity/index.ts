@@ -3,7 +3,6 @@ import {
   NOTIFICATION_COLLECTION_NAME,
   NotificationModel
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
-import { cosmosdbInstance } from "../utils/cosmosdb";
 
 import { agent } from "italia-ts-commons";
 
@@ -13,6 +12,7 @@ import {
   toFetch
 } from "italia-ts-commons/lib/fetch";
 import { Millisecond } from "italia-ts-commons/lib/units";
+import { cosmosdbInstance } from "../utils/cosmosdb";
 
 import { getNotifyClient } from "./client";
 import { getWebhookNotificationActivityHandler } from "./handler";

@@ -20,7 +20,9 @@ import fetch from "node-fetch";
 import { getConfig, IConfig } from "./config";
 
 type ProblemSource = "AzureCosmosDB" | "AzureStorage" | "Config" | "Url";
-export type HealthProblem<S extends ProblemSource> = string & { __source: S };
+export type HealthProblem<S extends ProblemSource> = string & {
+  readonly __source: S;
+};
 export type HealthCheck<
   S extends ProblemSource = ProblemSource,
   T = true

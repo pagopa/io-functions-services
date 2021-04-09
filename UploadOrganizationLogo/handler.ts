@@ -96,8 +96,8 @@ const uploadOrganizationLogoTask = (
 export function UploadOrganizationLogoHandler(
   apiClient: APIClient
 ): IUploadOrganizationLogoHandler {
-  return (_, __, ___, ____, organizationFiscalCode, logoPayload) => {
-    return uploadOrganizationLogoTask(
+  return (_, __, ___, ____, organizationFiscalCode, logoPayload) =>
+    uploadOrganizationLogoTask(
       getLogger(_, logPrefix, "UploadOrganizationLogo"),
       apiClient,
       organizationFiscalCode,
@@ -111,7 +111,6 @@ export function UploadOrganizationLogoHandler(
       )
       .fold<ResponseTypes>(identity, identity)
       .run();
-  };
 }
 
 /**
