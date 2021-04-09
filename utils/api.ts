@@ -14,6 +14,14 @@ import {
   toErrorServerResponse
 } from "./responses";
 
+/**
+ * Wrap the input API call into a TaskEither, returning a response type T (if both API call and response parse complete successfully) or an ErrorResponses.
+ * TYPE HAZARD: this function support only a single successful response type T: if the call response status code match the input successStatusCode the function returns an object <T>, otherwise the api response must be undefined and the function returns an object type ErrorResponses.
+ * @param logger - the Logger instance used to log errors
+ * @param apiCallWithParams - the API call as a promise
+ * @param successStatusCode - the successful status code used to accept the response as valid and decode it into an object T
+ * @returns a TaskEither wrapping the API call
+ */
 export const withApiRequestWrapper = <T>(
   logger: ILogger,
   apiCallWithParams: () => Promise<
@@ -33,10 +41,12 @@ export const withApiRequestWrapper = <T>(
       apiCallError => fromLeft<ErrorResponses, T>(apiCallError),
       apiCallResponse =>
         apiCallResponse.foldTaskEither<ErrorResponses, T>(
-          parseResponseError =>
-            fromLeft<ErrorResponses, T>(
+          parseResponseError => {
+            logger.logErrors(parseResponseError);
+            return fromLeft<ErrorResponses, T>(
               toDefaultResponseErrorInternal(parseResponseError)
-            ),
+            );
+          },
           response =>
             response.status === successStatusCode &&
             response.value !== undefined
