@@ -33,14 +33,14 @@ const telemetryClient = initTelemetryClient(
 export const trackMessageProcessing = (
   event: MessageProcessingEvent,
   isReplaying: boolean
-): void|null =>
+): void =>
   !isReplaying
     ? telemetryClient.trackEvent({
         name: event.name,
         properties: event.properties,
         tagOverrides: { samplingEnabled: "false" }
       })
-    : null;
+    : void 0;
 
 export enum MessageProcessingEventNames {
   DECODE_INPUT = "api.messages.create.decodeinput",
