@@ -68,7 +68,7 @@ type IGetLimitedProfileByPOSTHandler = (
 /**
  * Returns a type safe GetLimitedProfileByPOST handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function GetLimitedProfileByPOSTHandler(
   profileModel: ProfileModel
 ): IGetLimitedProfileByPOSTHandler {
@@ -129,7 +129,7 @@ export function GetLimitedProfileByPOSTHandler(
 /**
  * Wraps a GetLimitedProfileByPOST handler inside an Express request handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function GetLimitedProfileByPOST(
   serviceModel: ServiceModel,
   profileModel: ProfileModel

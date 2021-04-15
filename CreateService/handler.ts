@@ -94,11 +94,9 @@ const createSubscriptionTask = (
     () =>
       apiClient.createSubscription({
         body: {
-          // eslint-disable-next-line @typescript-eslint/naming-convention
           product_name: productName
         },
         email: userEmail,
-        // eslint-disable-next-line @typescript-eslint/naming-convention
         subscription_id: subscriptionId
       }),
     200
@@ -133,14 +131,10 @@ const createServiceTask = (
       apiClient.createService({
         body: {
           ...servicePayload,
-          // eslint-disable-next-line @typescript-eslint/naming-convention
           authorized_recipients: [sandboxFiscalCode],
-          // eslint-disable-next-line @typescript-eslint/naming-convention
           service_id: subscriptionId,
-          // eslint-disable-next-line @typescript-eslint/naming-convention
           service_metadata: {
             ...servicePayload.service_metadata,
-            // eslint-disable-next-line @typescript-eslint/naming-convention
             token_name: adb2cTokenName
           }
         }
@@ -151,7 +145,7 @@ const createServiceTask = (
 /**
  * Handles requests for create a service by a Service Payload.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function CreateServiceHandler(
   telemetryClient: ReturnType<typeof initAppInsights>,
   apiClient: APIClient,
@@ -159,7 +153,7 @@ export function CreateServiceHandler(
   productName: NonEmptyString,
   sandboxFiscalCode: NonEmptyString
 ): ICreateServiceHandler {
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/naming-convention
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   return (context, __, ___, userAttributes, servicePayload) => {
     const subscriptionId = generateObjectId();
     context.log.info(
@@ -196,9 +190,7 @@ export function CreateServiceHandler(
             });
             return ResponseSuccessJson({
               ...service,
-              // eslint-disable-next-line @typescript-eslint/naming-convention
               primary_key: subscription.primary_key,
-              // eslint-disable-next-line @typescript-eslint/naming-convention
               secondary_key: subscription.secondary_key
             });
           })
@@ -212,7 +204,7 @@ export function CreateServiceHandler(
 /**
  * Wraps a CreateService handler inside an Express request handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function CreateService(
   telemetryClient: ReturnType<typeof initAppInsights>,
   serviceModel: ServiceModel,
@@ -236,7 +228,6 @@ export function CreateService(
   );
   return wrapRequestHandler(
     middlewaresWrap(
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       checkSourceIpForHandler(handler, (_, __, c, u, ___) => ipTuple(c, u))
     )
   );
