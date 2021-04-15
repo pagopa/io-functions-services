@@ -73,7 +73,6 @@ const getServiceTask = (
     logger,
     () =>
       apiClient.getService({
-        // eslint-disable-next-line @typescript-eslint/naming-convention
         service_id: serviceId
       }),
     200
@@ -88,7 +87,6 @@ const getSubscriptionKeysTask = (
     logger,
     () =>
       apiClient.getSubscriptionKeys({
-        // eslint-disable-next-line @typescript-eslint/naming-convention
         service_id: serviceId
       }),
     200
@@ -145,7 +143,6 @@ export function GetService(
   );
   return wrapRequestHandler(
     middlewaresWrap(
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       checkSourceIpForHandler(handler, (_, __, c, u, ___) => ipTuple(c, u))
     )
   );

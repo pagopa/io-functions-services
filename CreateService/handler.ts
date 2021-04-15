@@ -94,11 +94,9 @@ const createSubscriptionTask = (
     () =>
       apiClient.createSubscription({
         body: {
-          // eslint-disable-next-line @typescript-eslint/naming-convention
           product_name: productName
         },
         email: userEmail,
-        // eslint-disable-next-line @typescript-eslint/naming-convention
         subscription_id: subscriptionId
       }),
     200
@@ -133,14 +131,10 @@ const createServiceTask = (
       apiClient.createService({
         body: {
           ...servicePayload,
-          // eslint-disable-next-line @typescript-eslint/naming-convention
           authorized_recipients: [sandboxFiscalCode],
-          // eslint-disable-next-line @typescript-eslint/naming-convention
           service_id: subscriptionId,
-          // eslint-disable-next-line @typescript-eslint/naming-convention
           service_metadata: {
             ...servicePayload.service_metadata,
-            // eslint-disable-next-line @typescript-eslint/naming-convention
             token_name: adb2cTokenName
           }
         }
@@ -196,9 +190,7 @@ export function CreateServiceHandler(
             });
             return ResponseSuccessJson({
               ...service,
-              // eslint-disable-next-line @typescript-eslint/naming-convention
               primary_key: subscription.primary_key,
-              // eslint-disable-next-line @typescript-eslint/naming-convention
               secondary_key: subscription.secondary_key
             });
           })
@@ -236,7 +228,6 @@ export function CreateService(
   );
   return wrapRequestHandler(
     middlewaresWrap(
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       checkSourceIpForHandler(handler, (_, __, c, u, ___) => ipTuple(c, u))
     )
   );

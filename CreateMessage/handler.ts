@@ -78,10 +78,8 @@ import {
 import { NonEmptyString } from "italia-ts-commons/lib/strings";
 import { PromiseType } from "italia-ts-commons/lib/types";
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 const ApiNewMessageWithDefaults = t.intersection([
   ApiNewMessage,
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   t.interface({ time_to_live: TimeToLiveSeconds })
 ]);
 export type ApiNewMessageWithDefaults = t.TypeOf<
@@ -91,7 +89,6 @@ export type ApiNewMessageWithDefaults = t.TypeOf<
 /**
  * A request middleware that validates the Message payload.
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const MessagePayloadMiddleware: IRequestMiddleware<
   "IResponseErrorValidation",
   ApiNewMessageWithDefaults

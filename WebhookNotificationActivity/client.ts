@@ -29,7 +29,6 @@ export const getNotifyClient = (
       headers: ApiHeaderJson,
       method: "post",
       query: _ => ({}),
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       response_decoder: notifyDefaultDecoder(),
       url: params => `${params.webhookEndpoint}`
     } as WebhookNotifyT,

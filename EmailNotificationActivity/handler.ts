@@ -19,13 +19,10 @@ import { sendMail } from "@pagopa/io-functions-commons/dist/src/mailer";
 import { generateDocumentHtml } from "./utils";
 
 export interface INotificationDefaults {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   readonly HTML_TO_TEXT_OPTIONS: HtmlToTextOptions;
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   readonly MAIL_FROM: NonEmptyString;
 }
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const EmailNotificationActivityInput = t.interface({
   notificationEvent: NotificationEvent
 });
@@ -34,7 +31,6 @@ export type EmailNotificationActivityInput = t.TypeOf<
   typeof EmailNotificationActivityInput
 >;
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const EmailNotificationActivityResult = t.taggedUnion("kind", [
   t.interface({
     kind: t.literal("SUCCESS"),
@@ -43,7 +39,6 @@ export const EmailNotificationActivityResult = t.taggedUnion("kind", [
   }),
   t.interface({
     kind: t.literal("FAILURE"),
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     reason: t.keyof({ DECODE_ERROR: null })
   })
 ]);
@@ -159,9 +154,7 @@ export const getEmailNotificationActivityHandler = (
   await sendMail(lMailerTransporter, {
     from: notificationDefaultParams.MAIL_FROM,
     headers: {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       "X-Italia-Messages-MessageId": message.id,
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       "X-Italia-Messages-NotificationId": notificationId
     },
     html: documentHtml,
