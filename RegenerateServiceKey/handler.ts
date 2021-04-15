@@ -85,6 +85,7 @@ const regenerateServiceKeyTask = (
     () =>
       apiClient.RegenerateSubscriptionKeys({
         body: subscriptionKeyTypePayload,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         service_id: serviceId
       }),
     200

@@ -190,6 +190,7 @@ export function GetSubscriptionsFeedHandler(
 /**
  * A string that represents a date in the format YYYY-MM-DD
  */
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const ShortDateString = t.refinement(
   PatternString("\\d\\d\\d\\d-\\d\\d-\\d\\d"),
   s => !isNaN(new Date(s).getTime()),

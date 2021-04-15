@@ -34,8 +34,10 @@ export function retrievedProfileToLimitedProfile(
   senderAllowed: boolean
 ): LimitedProfile {
   return {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     preferred_languages: retrivedProfile.preferredLanguages,
     // computed property
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     sender_allowed: senderAllowed
   };
 }
@@ -43,6 +45,7 @@ export function retrievedProfileToLimitedProfile(
 /**
  * A middleware that extracts a GetLimitedProfileByPOSTPayload from a request.
  */
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const GetLimitedProfileByPOSTPayloadMiddleware: IRequestMiddleware<
   "IResponseErrorValidation",
   GetLimitedProfileByPOSTPayload

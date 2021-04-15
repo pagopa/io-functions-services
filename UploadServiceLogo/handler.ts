@@ -84,6 +84,7 @@ const uploadServiceLogoTask = (
     () =>
       apiClient.uploadServiceLogo({
         body: logo,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         service_id: serviceId
       }),
     201

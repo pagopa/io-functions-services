@@ -74,6 +74,7 @@ async function createNotification(
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const CreateNotificationActivityInput = t.interface({
   createdMessageEvent: CreatedMessageEvent,
   storeMessageContentActivityResult: SuccessfulStoreMessageContentActivityResult
@@ -83,6 +84,7 @@ export type CreateNotificationActivityInput = t.TypeOf<
   typeof CreateNotificationActivityInput
 >;
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const CreateNotificationActivitySomeResult = t.interface({
   hasEmail: t.boolean,
   hasWebhook: t.boolean,
@@ -94,6 +96,7 @@ type CreateNotificationActivitySomeResult = t.TypeOf<
   typeof CreateNotificationActivitySomeResult
 >;
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const CreateNotificationActivityNoneResult = t.interface({
   kind: t.literal("none")
 });
@@ -102,6 +105,7 @@ type CreateNotificationActivityNoneResult = t.TypeOf<
   typeof CreateNotificationActivityNoneResult
 >;
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const CreateNotificationActivityResult = t.taggedUnion("kind", [
   CreateNotificationActivitySomeResult,
   CreateNotificationActivityNoneResult

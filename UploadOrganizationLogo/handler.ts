@@ -85,6 +85,7 @@ const uploadOrganizationLogoTask = (
     () =>
       apiClient.uploadOrganizationLogo({
         body: logo,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         organization_fiscal_code: organizationFiscalCode
       }),
     201

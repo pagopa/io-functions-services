@@ -86,6 +86,7 @@ const getSubscriptionKeysTask = (
     logger,
     () =>
       apiClient.getSubscriptionKeys({
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         service_id: serviceId
       }),
     200
@@ -100,6 +101,7 @@ const getServiceTask = (
     logger,
     () =>
       apiClient.getService({
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         service_id: serviceId
       }),
     200
@@ -135,12 +137,16 @@ const updateServiceTask = (
         body: {
           ...retrievedService,
           ...servicePayload,
+          // eslint-disable-next-line @typescript-eslint/naming-convention
           service_id: serviceId,
+          // eslint-disable-next-line @typescript-eslint/naming-convention
           service_metadata: {
             ...servicePayload.service_metadata,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             token_name: adb2cTokenName
           }
         },
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         service_id: serviceId
       }),
     200
