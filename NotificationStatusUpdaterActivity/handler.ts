@@ -18,7 +18,6 @@ type INotificationStatusUpdaterResult =
     }
   | { readonly kind: "FAILURE" };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const NotificationStatusUpdaterActivityInput = t.interface({
   channel: NotificationChannel,
   messageId: NonEmptyString,

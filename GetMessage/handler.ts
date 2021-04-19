@@ -98,7 +98,7 @@ type IGetMessageHandler = (
 /**
  * Handles requests for getting a single message for a recipient.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function GetMessageHandler(
   messageModel: MessageModel,
   messageStatusModel: MessageStatusModel,
@@ -214,7 +214,7 @@ export function GetMessageHandler(
 /**
  * Wraps a GetMessage handler inside an Express request handler.
  */
-// eslint-disable-next-line max-params, prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
+// eslint-disable-next-line max-params, prefer-arrow/prefer-arrow-functions
 export function GetMessage(
   serviceModel: ServiceModel,
   messageModel: MessageModel,
@@ -240,7 +240,7 @@ export function GetMessage(
   );
   return wrapRequestHandler(
     middlewaresWrap(
-      // eslint-disable-next-line @typescript-eslint/naming-convention, max-params
+      // eslint-disable-next-line max-params
       checkSourceIpForHandler(handler, (_, __, c, u, ___, ____) =>
         ipTuple(c, u)
       )

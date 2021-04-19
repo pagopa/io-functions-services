@@ -75,7 +75,7 @@ type IGetSubscriptionsFeedHandler = (
 /**
  * Handles requests for getting a single message for a recipient.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function GetSubscriptionsFeedHandler(
   tableService: TableService,
   subscriptionsFeedTable: string
@@ -190,7 +190,6 @@ export function GetSubscriptionsFeedHandler(
 /**
  * A string that represents a date in the format YYYY-MM-DD
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
 const ShortDateString = t.refinement(
   PatternString("\\d\\d\\d\\d-\\d\\d-\\d\\d"),
   s => !isNaN(new Date(s).getTime()),
@@ -200,7 +199,7 @@ const ShortDateString = t.refinement(
 /**
  * Wraps a GetMessage handler inside an Express request handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function GetSubscriptionsFeed(
   serviceModel: ServiceModel,
   tableService: TableService,

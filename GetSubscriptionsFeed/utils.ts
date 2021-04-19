@@ -8,7 +8,6 @@ import { FiscalCodeHash } from "../generated/definitions/FiscalCodeHash";
  * A minimal storage table Entry
  */
 type TableEntry = Readonly<{
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   readonly RowKey: Readonly<{
     readonly _: string;
   }>;

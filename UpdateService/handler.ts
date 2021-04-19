@@ -86,7 +86,6 @@ const getSubscriptionKeysTask = (
     logger,
     () =>
       apiClient.getSubscriptionKeys({
-        // eslint-disable-next-line @typescript-eslint/naming-convention
         service_id: serviceId
       }),
     200
@@ -101,7 +100,6 @@ const getServiceTask = (
     logger,
     () =>
       apiClient.getService({
-        // eslint-disable-next-line @typescript-eslint/naming-convention
         service_id: serviceId
       }),
     200
@@ -137,16 +135,12 @@ const updateServiceTask = (
         body: {
           ...retrievedService,
           ...servicePayload,
-          // eslint-disable-next-line @typescript-eslint/naming-convention
           service_id: serviceId,
-          // eslint-disable-next-line @typescript-eslint/naming-convention
           service_metadata: {
             ...servicePayload.service_metadata,
-            // eslint-disable-next-line @typescript-eslint/naming-convention
             token_name: adb2cTokenName
           }
         },
-        // eslint-disable-next-line @typescript-eslint/naming-convention
         service_id: serviceId
       }),
     200
@@ -155,12 +149,12 @@ const updateServiceTask = (
 /**
  * Handles requests for updating a service by given serviceId and a Service Payload.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function UpdateServiceHandler(
   telemetryClient: ReturnType<typeof initAppInsights>,
   apiClient: APIClient
 ): IUpdateServiceHandler {
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/naming-convention, max-params
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, max-params
   return (_, apiAuth, ___, userAttributes, serviceId, servicePayload) =>
     serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId)
       .chain(() =>
@@ -215,7 +209,7 @@ export function UpdateServiceHandler(
 /**
  * Wraps a UpdateService handler inside an Express request handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function UpdateService(
   telemetryClient: ReturnType<typeof initAppInsights>,
   serviceModel: ServiceModel,
@@ -232,7 +226,7 @@ export function UpdateService(
   );
   return wrapRequestHandler(
     middlewaresWrap(
-      // eslint-disable-next-line @typescript-eslint/naming-convention, max-params
+      // eslint-disable-next-line max-params
       checkSourceIpForHandler(handler, (_, __, c, u, ___, ____) =>
         ipTuple(c, u)
       )

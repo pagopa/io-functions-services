@@ -66,7 +66,7 @@ type IGetLimitedProfileHandler = (
 /**
  * Returns a type safe GetLimitedProfile handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function GetLimitedProfileHandler(
   profileModel: ProfileModel
 ): IGetLimitedProfileHandler {
@@ -127,7 +127,7 @@ export function GetLimitedProfileHandler(
 /**
  * Wraps a GetLimitedProfile handler inside an Express request handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function GetLimitedProfile(
   serviceModel: ServiceModel,
   profileModel: ProfileModel

@@ -78,10 +78,8 @@ import {
 import { NonEmptyString } from "italia-ts-commons/lib/strings";
 import { PromiseType } from "italia-ts-commons/lib/types";
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 const ApiNewMessageWithDefaults = t.intersection([
   ApiNewMessage,
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   t.interface({ time_to_live: TimeToLiveSeconds })
 ]);
 export type ApiNewMessageWithDefaults = t.TypeOf<
@@ -91,7 +89,6 @@ export type ApiNewMessageWithDefaults = t.TypeOf<
 /**
  * A request middleware that validates the Message payload.
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const MessagePayloadMiddleware: IRequestMiddleware<
   "IResponseErrorValidation",
   ApiNewMessageWithDefaults
@@ -333,7 +330,7 @@ const redirectToNewMessage = (
 /**
  * Returns a type safe CreateMessage handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function CreateMessageHandler(
   telemetryClient: ReturnType<typeof initAppInsights>,
   messageModel: MessageModel,
@@ -474,7 +471,7 @@ export function CreateMessageHandler(
 /**
  * Wraps a CreateMessage handler inside an Express request handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function CreateMessage(
   telemetryClient: ReturnType<typeof initAppInsights>,
   serviceModel: ServiceModel,
@@ -503,7 +500,7 @@ export function CreateMessage(
   );
   return wrapRequestHandler(
     middlewaresWrap(
-      // eslint-disable-next-line @typescript-eslint/naming-convention, max-params
+      // eslint-disable-next-line max-params
       checkSourceIpForHandler(handler, (_, __, c, u, ___, ____) =>
         ipTuple(c, u)
       )

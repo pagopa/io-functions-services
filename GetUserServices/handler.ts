@@ -73,11 +73,11 @@ const getUserTask = (
 /**
  * Handles requests for getting an array of serviceID by providing the current user email.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function GetUserServicesHandler(
   apiClient: APIClient
 ): IGetUserServicesHandler {
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/naming-convention
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   return (_, __, ___, userAttributes) =>
     getUserTask(
       getLogger(_, logPrefix, "GetUser"),
@@ -101,7 +101,7 @@ export function GetUserServicesHandler(
 /**
  * Wraps a GetUserServices handler inside an Express request handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function GetUserServices(
   serviceModel: ServiceModel,
   client: APIClient

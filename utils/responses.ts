@@ -33,7 +33,7 @@ export interface IResponseErrorUnauthorized
 /**
  * Returns an unauthorized error response with status code 401.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/naming-convention
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function ResponseErrorUnauthorized(
   title: string,
   detail: string

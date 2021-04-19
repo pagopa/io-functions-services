@@ -45,7 +45,6 @@ import {
 import { Notification } from "../generated/notifications/Notification";
 import { WebhookNotifyT } from "./client";
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const WebhookNotificationActivityInput = t.interface({
   notificationEvent: NotificationEvent
 });
@@ -54,16 +53,14 @@ export type WebhookNotificationActivityInput = t.TypeOf<
   typeof WebhookNotificationActivityInput
 >;
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const WebhookNotificationActivityResult = t.taggedUnion("kind", [
   t.interface({
     kind: t.literal("SUCCESS"),
-    // eslint-disable-next-line @typescript-eslint/naming-convention, sort-keys
+    // eslint-disable-next-line sort-keys
     result: t.keyof({ OK: null, EXPIRED: null })
   }),
   t.interface({
     kind: t.literal("FAILURE"),
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     reason: t.keyof({ DECODE_ERROR: null, SEND_TO_WEBHOOK_FAILED: null })
   })
 ]);
@@ -82,12 +79,9 @@ function newMessageToPublic(
   content?: MessageContent
 ): Notification["message"] {
   const message = {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     created_at: newMessage.createdAt,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     fiscal_code: newMessage.fiscalCode,
     id: newMessage.id,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     sender_service_id: newMessage.senderServiceId
   };
   return content ? { ...message, content } : message;
@@ -102,11 +96,8 @@ function senderMetadataToPublic(
   senderMetadata: CreatedMessageEventSenderMetadata
 ): SenderMetadata {
   return {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     department_name: senderMetadata.departmentName,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     organization_name: senderMetadata.organizationName,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     service_name: senderMetadata.serviceName
   };
 }
@@ -131,7 +122,6 @@ export function sendToWebhook(
           message: senderMetadata.requireSecureChannels
             ? newMessageToPublic(message)
             : newMessageToPublic(message, content),
-          // eslint-disable-next-line @typescript-eslint/naming-convention
           sender_metadata: senderMetadataToPublic(senderMetadata)
         },
         webhookEndpoint
