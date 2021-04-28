@@ -1,8 +1,5 @@
 import * as express from "express";
 
-import { isLeft, isRight } from "fp-ts/lib/Either";
-import { isSome } from "fp-ts/lib/Option";
-
 import { LimitedProfile } from "@pagopa/io-functions-commons/dist/generated/definitions/LimitedProfile";
 import { ProfileModel } from "@pagopa/io-functions-commons/dist/src/models/profile";
 import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
@@ -23,10 +20,7 @@ import {
   withRequestMiddlewares,
   wrapRequestHandler
 } from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
-import {
-  IResponseErrorQuery,
-  ResponseErrorQuery
-} from "@pagopa/io-functions-commons/dist/src/utils/response";
+import { IResponseErrorQuery } from "@pagopa/io-functions-commons/dist/src/utils/response";
 import {
   checkSourceIpForHandler,
   clientIPAndCidrTuple as ipTuple
@@ -34,18 +28,13 @@ import {
 import {
   IResponseErrorForbiddenNotAuthorizedForRecipient,
   IResponseErrorNotFound,
-  IResponseSuccessJson,
-  ResponseErrorForbiddenNotAuthorizedForRecipient,
-  ResponseErrorNotFound,
-  ResponseSuccessJson
+  IResponseSuccessJson
 } from "italia-ts-commons/lib/responses";
 
-import { canWriteMessage } from "../CreateMessage/handler";
 import { GetLimitedProfileByPOSTPayload } from "../generated/definitions/GetLimitedProfileByPOSTPayload";
 import {
   GetLimitedProfileByPOSTPayloadMiddleware,
-  isSenderAllowed,
-  retrievedProfileToLimitedProfile
+  getLimitedProfileTask
 } from "../utils/profile";
 
 /**
@@ -73,57 +62,13 @@ export function GetLimitedProfileByPOSTHandler(
   profileModel: ProfileModel
 ): IGetLimitedProfileByPOSTHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  return async (auth, __, userAttributes, payload) => {
-    // Sandboxed accounts will receive 403
-    // if they're not authorized to send a messages to this fiscal code.
-    // This prevents leaking the information, to sandboxed account,
-    // that the fiscal code belongs to a subscribed user
-    if (
-      isLeft(
-        canWriteMessage(
-          auth.groups,
-          userAttributes.service.authorizedRecipients,
-          payload.fiscal_code
-        )
-      )
-    ) {
-      return ResponseErrorForbiddenNotAuthorizedForRecipient;
-    }
-
-    const maybeProfileOrError = await profileModel
-      .findLastVersionByModelId([payload.fiscal_code])
-      .run();
-
-    if (isRight(maybeProfileOrError)) {
-      const maybeProfile = maybeProfileOrError.value;
-
-      // We also return ResponseErrorNotFound in case the profile is found
-      // but the inbox is not enabled (onboarding not completed).
-      if (isSome(maybeProfile) && maybeProfile.value.isInboxEnabled) {
-        const profile = maybeProfile.value;
-
-        return ResponseSuccessJson(
-          retrievedProfileToLimitedProfile(
-            profile,
-            isSenderAllowed(
-              profile.blockedInboxOrChannels,
-              userAttributes.service.serviceId
-            )
-          )
-        );
-      } else {
-        return ResponseErrorNotFound(
-          "Profile not found",
-          "The profile you requested was not found in the system."
-        );
-      }
-    } else {
-      return ResponseErrorQuery(
-        "Error while retrieving the profile",
-        maybeProfileOrError.value
-      );
-    }
-  };
+  return async (auth, __, userAttributes, { fiscal_code }) =>
+    getLimitedProfileTask(
+      auth,
+      userAttributes,
+      fiscal_code,
+      profileModel
+    ).run();
 }
 
 /**

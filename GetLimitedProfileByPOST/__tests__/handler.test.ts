@@ -23,6 +23,12 @@ import {
 } from "../../utils/__tests__/arbitraries";
 import { retrievedProfileToLimitedProfile } from "../../utils/profile";
 import { GetLimitedProfileByPOSTHandler } from "../handler";
+import {
+  aFiscalCode,
+  anIncompleteService,
+  anotherFiscalCode,
+  aValidService
+} from "../../__mocks__/mocks";
 
 // eslint-disable-next-line sonar/sonar-max-lines-per-function
 describe("GetLimitedProfileByPOSTHandler", () => {
@@ -36,9 +42,7 @@ describe("GetLimitedProfileByPOSTHandler", () => {
   const mockAzureUserAttributes: IAzureUserAttributes = {
     email: "" as EmailString,
     kind: "IAzureUserAttributes",
-    service: {
-      serviceId: "01234567890"
-    } as IAzureUserAttributes["service"]
+    service: aValidService as IAzureUserAttributes["service"]
   };
 
   it("should respond with ResponseErrorQuery when a database error occurs", async () => {
@@ -180,6 +184,51 @@ describe("GetLimitedProfileByPOSTHandler", () => {
               service: {
                 ...mockAzureUserAttributes.service,
                 authorizedRecipients: new Set(["ABC" as FiscalCode])
+              }
+            },
+            { fiscal_code: fiscalCode }
+          );
+
+          expect(
+            mockProfileModel.findLastVersionByModelId
+          ).not.toHaveBeenCalled();
+          expect(response.kind).toBe(
+            "IResponseErrorForbiddenNotAuthorizedForRecipient"
+          );
+        }
+      )
+    );
+  });
+
+  it("should respond with 403 when the requested profile is found in the db but the service hasn't the required quality field", async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        clientIpArb,
+        fiscalCodeArb,
+        retrievedProfileArb,
+        async (clientIp, fiscalCode, retrievedProfile) => {
+          const mockProfileModel = ({
+            findLastVersionByModelId: jest.fn(() =>
+              taskEither.of(some(retrievedProfile))
+            )
+          } as unknown) as ProfileModel;
+          const limitedProfileHandler = GetLimitedProfileByPOSTHandler(
+            mockProfileModel
+          );
+
+          const response = await limitedProfileHandler(
+            {
+              ...mockAzureApiAuthorization,
+              groups: new Set([UserGroup.ApiMessageWrite])
+            },
+            clientIp,
+            {
+              ...mockAzureUserAttributes,
+              service: {
+                ...anIncompleteService,
+                authorizedRecipients: new Set([
+                  aFiscalCode === fiscalCode ? anotherFiscalCode : aFiscalCode
+                ])
               }
             },
             { fiscal_code: fiscalCode }
