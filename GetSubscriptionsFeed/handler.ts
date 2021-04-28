@@ -30,6 +30,7 @@ import {
   IResponseErrorNotFound,
   IResponseErrorValidation,
   IResponseSuccessJson,
+  ResponseErrorForbiddenNotAuthorized,
   ResponseErrorNotFound,
   ResponseSuccessJson
 } from "italia-ts-commons/lib/responses";
@@ -40,7 +41,10 @@ import {
   clientIPAndCidrTuple as ipTuple
 } from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
 
-import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
+import {
+  ServiceModel,
+  ValidService
+} from "@pagopa/io-functions-commons/dist/src/models/service";
 
 import { TableService } from "azure-storage";
 
@@ -95,6 +99,11 @@ export function GetSubscriptionsFeedHandler(
           availableSince
         ).toUTCString()}`
       );
+    }
+
+    // Verify if the Service has the required quality to read the SubscriptionFeed
+    if (!ValidService.is(userAttributes.service)) {
+      return ResponseErrorForbiddenNotAuthorized;
     }
 
     const { serviceId } = userAttributes.service;
