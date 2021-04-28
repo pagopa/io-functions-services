@@ -23,7 +23,10 @@ import {
   MessageModel,
   NewMessageWithoutContent
 } from "@pagopa/io-functions-commons/dist/src/models/message";
-import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
+import {
+  ServiceModel,
+  ValidService
+} from "@pagopa/io-functions-commons/dist/src/models/service";
 import {
   AzureApiAuthMiddleware,
   IAzureApiAuthorization,
@@ -418,11 +421,23 @@ export function CreateMessageHandler(
             canWriteMessage(auth.groups, authorizedRecipients, fiscalCode)
           )
         )
-        .chainSecond(
+        // Verify if the Service has the required quality to sent message
+        .chain(_ =>
+          !authorizedRecipients.has(fiscalCode)
+            ? fromEither(
+                ValidService.decode(userAttributes.service)
+                  .map(_1 => true)
+                  .mapLeft(
+                    _1 => ResponseErrorForbiddenNotAuthorizedForRecipient
+                  )
+              )
+            : fromEither(right(true))
+        )
+        .chain(_ =>
           // check whether the client can provide default addresses
           fromEither(canDefaultAddresses(messagePayload))
         )
-        .chainSecond(
+        .chain(_ =>
           // check whether the client can ask for payment
           fromEither(
             canPaymentAmount(
@@ -431,7 +446,7 @@ export function CreateMessageHandler(
             )
           )
         )
-        .chainSecond(
+        .chain(_ =>
           // create a Message document in the database
           createMessageDocument(
             messageId,

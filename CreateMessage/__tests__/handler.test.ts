@@ -3,11 +3,15 @@
 import * as fc from "fast-check";
 
 import { MessageModel } from "@pagopa/io-functions-commons/dist/src/models/message";
-import { UserGroup } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
+import {
+  IAzureApiAuthorization,
+  UserGroup
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
 
 import { none, some } from "fp-ts/lib/Option";
 
 import {
+  ApiNewMessageWithDefaults,
   canDefaultAddresses,
   canPaymentAmount,
   canWriteMessage,
@@ -31,6 +35,15 @@ import {
   newMessageWithPaymentDataArb,
   versionedServiceArb
 } from "../../utils/__tests__/arbitraries";
+import { EmailString, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
+import { IAzureUserAttributes } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
+import {
+  aFiscalCode,
+  anIncompleteService,
+  anotherFiscalCode
+} from "../../__mocks__/mocks";
+import { initAppInsights } from "italia-ts-commons/lib/appinsights";
+import { mockOrchestratorContext } from "../../__mocks__/durable-functions";
 
 //
 // tests
@@ -292,5 +305,52 @@ describe("CreateMessageHandler", () => {
     );
 
     expect(response.kind).toBe("IResponseErrorValidation");
+  });
+
+  it("should return IResponseErrorForbiddenNotAuthorizedForProduction if the service hasn't quality field", async () => {
+    const mockAzureApiAuthorization: IAzureApiAuthorization = {
+      groups: new Set([UserGroup.ApiMessageWrite]),
+      kind: "IAzureApiAuthorization",
+      subscriptionId: "" as NonEmptyString,
+      userId: "" as NonEmptyString
+    };
+
+    const mockAzureUserAttributes: IAzureUserAttributes = {
+      email: "" as EmailString,
+      kind: "IAzureUserAttributes",
+      service: {
+        ...anIncompleteService,
+        authorizedRecipients: new Set([aFiscalCode])
+      } as IAzureUserAttributes["service"]
+    };
+    const mockGenerateObjId = jest
+      .fn()
+      .mockImplementationOnce(() => "mocked-message-id");
+    const mockTelemetryClient = ({
+      trackEvent: jest.fn()
+    } as unknown) as ReturnType<typeof initAppInsights>;
+    const createMessageHandler = CreateMessageHandler(
+      mockTelemetryClient,
+      undefined as any,
+      mockGenerateObjId
+    );
+
+    const response = await createMessageHandler(
+      mockOrchestratorContext,
+      mockAzureApiAuthorization,
+      undefined as any,
+      mockAzureUserAttributes,
+      {
+        content: {
+          markdown: "md",
+          subject: "subject"
+        }
+      } as ApiNewMessageWithDefaults,
+      some(anotherFiscalCode)
+    );
+
+    expect(response.kind).toBe(
+      "IResponseErrorForbiddenNotAuthorizedForRecipient"
+    );
   });
 });
