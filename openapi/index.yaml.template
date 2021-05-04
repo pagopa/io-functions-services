@@ -615,47 +615,47 @@ definitions:
     pattern: "[0-9]{4}-[0-9]{2}-[0-9]{2}"
     x-example: "2019-09-15"
   ProblemJson:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v17.0.0/openapi/definitions.yaml#/ProblemJson"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ProblemJson"
   NotificationChannelStatusValue:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v17.0.0/openapi/definitions.yaml#/NotificationChannelStatusValue"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/NotificationChannelStatusValue"
   MessageResponseWithContent:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v17.0.0/openapi/definitions.yaml#/MessageResponseWithContent"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/MessageResponseWithContent"
   FiscalCode:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v17.0.0/openapi/definitions.yaml#/FiscalCode"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/FiscalCode"
   LimitedProfile:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v17.0.0/openapi/definitions.yaml#/LimitedProfile"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/LimitedProfile"
   Timestamp:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v17.0.0/openapi/definitions.yaml#/Timestamp"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/Timestamp"
   TimeToLiveSeconds:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v17.0.0/openapi/definitions.yaml#/TimeToLiveSeconds"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/TimeToLiveSeconds"
   MessageContent:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v17.0.0/openapi/definitions.yaml#/MessageContent"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/MessageContent"
   NewMessage:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v17.0.0/openapi/definitions.yaml#/NewMessage"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/NewMessage"
   CIDR:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v17.0.0/openapi/definitions.yaml#/CIDR"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/CIDR"
   ServicePayload:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v17.0.0/openapi/definitions.yaml#/ServicePayload"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ServicePayload"
   HiddenServicePayload:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v17.0.0/openapi/definitions.yaml#/HiddenServicePayload"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/HiddenServicePayload"
   VisibleServicePayload:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v17.0.0/openapi/definitions.yaml#/VisibleServicePayload"   
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/VisibleServicePayload"   
   CommonServicePayload:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v17.0.0/openapi/definitions.yaml#/CommonServicePayload"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/CommonServicePayload"
   Service:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v17.0.0/openapi/definitions.yaml#/Service"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/Service"
   ServiceMetadata:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v17.0.0/openapi/definitions.yaml#/ServiceMetadata"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ServiceMetadata"
   ServiceScope:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v17.0.0/openapi/definitions.yaml#/ServiceScope"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ServiceScope"
   ServiceId:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v17.0.0/openapi/definitions.yaml#/ServiceId"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ServiceId"
   ServiceName:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v17.0.0/openapi/definitions.yaml#/ServiceName"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ServiceName"
   OrganizationName:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v17.0.0/openapi/definitions.yaml#/OrganizationName"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/OrganizationName"
   DepartmentName:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/v17.0.0/openapi/definitions.yaml#/DepartmentName"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/DepartmentName"
   SubscriptionKeys:
     type: object
     properties:
