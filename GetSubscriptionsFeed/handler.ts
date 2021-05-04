@@ -82,7 +82,8 @@ type IGetSubscriptionsFeedHandler = (
 // eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function GetSubscriptionsFeedHandler(
   tableService: TableService,
-  subscriptionsFeedTable: string
+  subscriptionsFeedTable: string,
+  disableIncompleteServices: boolean
 ): IGetSubscriptionsFeedHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   return async (_, __, userAttributes, subscriptionsDateUTC) => {
@@ -102,7 +103,7 @@ export function GetSubscriptionsFeedHandler(
     }
 
     // Verify if the Service has the required quality to read the SubscriptionFeed
-    if (!ValidService.is(userAttributes.service)) {
+    if (disableIncompleteServices && !ValidService.is(userAttributes.service)) {
       return ResponseErrorForbiddenNotAuthorized;
     }
 
@@ -212,11 +213,13 @@ const ShortDateString = t.refinement(
 export function GetSubscriptionsFeed(
   serviceModel: ServiceModel,
   tableService: TableService,
-  subscriptionsFeedTable: string
+  subscriptionsFeedTable: string,
+  disableIncompleteServices: boolean
 ): express.RequestHandler {
   const handler = GetSubscriptionsFeedHandler(
     tableService,
-    subscriptionsFeedTable
+    subscriptionsFeedTable,
+    disableIncompleteServices
   );
   const middlewaresWrap = withRequestMiddlewares(
     AzureApiAuthMiddleware(new Set([UserGroup.ApiSubscriptionsFeedRead])),

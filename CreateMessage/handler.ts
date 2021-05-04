@@ -337,7 +337,8 @@ const redirectToNewMessage = (
 export function CreateMessageHandler(
   telemetryClient: ReturnType<typeof initAppInsights>,
   messageModel: MessageModel,
-  generateObjectId: ObjectIdGenerator
+  generateObjectId: ObjectIdGenerator,
+  disableIncompleteServices: boolean
 ): ICreateMessageHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   return async (
@@ -423,7 +424,7 @@ export function CreateMessageHandler(
         )
         // Verify if the Service has the required quality to sent message
         .chain(_ =>
-          !authorizedRecipients.has(fiscalCode)
+          disableIncompleteServices && !authorizedRecipients.has(fiscalCode)
             ? fromEither(
                 ValidService.decode(userAttributes.service)
                   .map(_1 => true)
@@ -490,12 +491,14 @@ export function CreateMessageHandler(
 export function CreateMessage(
   telemetryClient: ReturnType<typeof initAppInsights>,
   serviceModel: ServiceModel,
-  messageModel: MessageModel
+  messageModel: MessageModel,
+  disableIncompleteServices: boolean
 ): express.RequestHandler {
   const handler = CreateMessageHandler(
     telemetryClient,
     messageModel,
-    ulidGenerator
+    ulidGenerator,
+    disableIncompleteServices
   );
   const middlewaresWrap = withRequestMiddlewares(
     // extract Azure Functions bindings

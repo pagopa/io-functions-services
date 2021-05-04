@@ -48,11 +48,18 @@ type IGetLimitedProfileHandler = (
  */
 // eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function GetLimitedProfileHandler(
-  profileModel: ProfileModel
+  profileModel: ProfileModel,
+  disableIncompleteServices: boolean
 ): IGetLimitedProfileHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   return async (auth, __, userAttributes, fiscalCode) =>
-    getLimitedProfileTask(auth, userAttributes, fiscalCode, profileModel).run();
+    getLimitedProfileTask(
+      auth,
+      userAttributes,
+      fiscalCode,
+      profileModel,
+      disableIncompleteServices
+    ).run();
 }
 
 /**
@@ -61,9 +68,13 @@ export function GetLimitedProfileHandler(
 // eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function GetLimitedProfile(
   serviceModel: ServiceModel,
-  profileModel: ProfileModel
+  profileModel: ProfileModel,
+  disableIncompleteServices: boolean
 ): express.RequestHandler {
-  const handler = GetLimitedProfileHandler(profileModel);
+  const handler = GetLimitedProfileHandler(
+    profileModel,
+    disableIncompleteServices
+  );
 
   const middlewaresWrap = withRequestMiddlewares(
     AzureApiAuthMiddleware(new Set([UserGroup.ApiLimitedProfileRead])),

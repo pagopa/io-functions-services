@@ -47,7 +47,12 @@ const telemetryClient = initTelemetryClient(
 
 app.post(
   "/api/v1/messages/:fiscalcode?",
-  CreateMessage(telemetryClient, serviceModel, messageModel)
+  CreateMessage(
+    telemetryClient,
+    serviceModel,
+    messageModel,
+    config.FF_DISABLE_INCOMPLETE_SERVICES
+  )
 );
 
 const azureFunctionHandler = createAzureFunctionHandler(app);

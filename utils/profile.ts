@@ -88,7 +88,8 @@ export const getLimitedProfileTask = (
   apiAuthorization: IAzureApiAuthorization,
   userAttributes: IAzureUserAttributes,
   fiscalCode: FiscalCode,
-  profileModel: ProfileModel
+  profileModel: ProfileModel,
+  disableIncompleteServices: boolean
 ): Task<IGetLimitedProfileResponses> =>
   taskEither
     .of<
@@ -111,7 +112,10 @@ export const getLimitedProfileTask = (
       ).mapLeft(_ => ResponseErrorForbiddenNotAuthorizedForRecipient)
     ) // Verify if the Service has the required quality to sent message
     .chain(_ => {
-      if (!userAttributes.service.authorizedRecipients.has(fiscalCode)) {
+      if (
+        disableIncompleteServices &&
+        !userAttributes.service.authorizedRecipients.has(fiscalCode)
+      ) {
         return fromEither(
           ValidService.decode(userAttributes.service)
             .map(_1 => true)

@@ -12,9 +12,12 @@ import { setAppContext } from "@pagopa/io-functions-commons/dist/src/utils/middl
 import cors = require("cors");
 import express = require("express");
 import createAzureFunctionHandler from "io-functions-express/dist/src/createAzureFunctionsHandler";
+import { getConfigOrThrow } from "../utils/config";
 import { cosmosdbInstance } from "../utils/cosmosdb";
 
 import { GetLimitedProfile } from "./handler";
+
+const config = getConfigOrThrow();
 
 // Setup Express
 const app = express();
@@ -33,7 +36,11 @@ const profileModel = new ProfileModel(
 
 app.get(
   "/api/v1/profiles/:fiscalcode",
-  GetLimitedProfile(serviceModel, profileModel)
+  GetLimitedProfile(
+    serviceModel,
+    profileModel,
+    config.FF_DISABLE_INCOMPLETE_SERVICES
+  )
 );
 
 const azureFunctionHandler = createAzureFunctionHandler(app);
