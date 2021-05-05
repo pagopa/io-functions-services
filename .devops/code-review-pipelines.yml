@@ -36,7 +36,7 @@ stages:
         - template: azure-templates/setup-project.yml
         - script: |
             yarn build
-          displayName: 'Build' 
+          displayName: 'Build'
 
   - stage: Static_analysis
     dependsOn: []
@@ -52,9 +52,18 @@ stages:
 
       - job: lint_api     
         steps:
+        - template: azure-templates/setup-project.yml
+        # OpenAPI spec is a versione file, still is created with a generation process from a template
+        # We need to check it either is out-of-sync with the template or it has been manually edited
         - script: |
-            npx oval validate -p openapi/index.yaml
-          displayName: 'Validate openAPI'
+            yarn openapi:bundle
+          displayName: 'Bundle OpenAPI'
+        - script: |
+            [[ -z $(git status --porcelain) ]] && exit 0 || exit 1
+          displayName: 'Check OpenAPI spec is up-to-date'
+        - script: |
+            yarn openapi:validate
+          displayName: 'Validate OpenAPI'
 
       - job: danger
         condition: 
