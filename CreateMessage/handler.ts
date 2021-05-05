@@ -80,6 +80,7 @@ import {
 } from "italia-ts-commons/lib/responses";
 import { NonEmptyString } from "italia-ts-commons/lib/strings";
 import { PromiseType } from "italia-ts-commons/lib/types";
+import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 
 const ApiNewMessageWithDefaults = t.intersection([
   ApiNewMessage,
@@ -338,7 +339,8 @@ export function CreateMessageHandler(
   telemetryClient: ReturnType<typeof initAppInsights>,
   messageModel: MessageModel,
   generateObjectId: ObjectIdGenerator,
-  disableIncompleteServices: boolean
+  disableIncompleteServices: boolean,
+  incompleteServiceWhitelist: ReadonlyArray<ServiceId>
 ): ICreateMessageHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   return async (
@@ -424,7 +426,9 @@ export function CreateMessageHandler(
         )
         // Verify if the Service has the required quality to sent message
         .chain(_ =>
-          disableIncompleteServices && !authorizedRecipients.has(fiscalCode)
+          disableIncompleteServices &&
+          !incompleteServiceWhitelist.includes(serviceId) &&
+          !authorizedRecipients.has(fiscalCode)
             ? fromEither(
                 ValidService.decode(userAttributes.service)
                   .map(_1 => true)
@@ -492,13 +496,15 @@ export function CreateMessage(
   telemetryClient: ReturnType<typeof initAppInsights>,
   serviceModel: ServiceModel,
   messageModel: MessageModel,
-  disableIncompleteServices: boolean
+  disableIncompleteServices: boolean,
+  incompleteServiceWhitelist: ReadonlyArray<ServiceId>
 ): express.RequestHandler {
   const handler = CreateMessageHandler(
     telemetryClient,
     messageModel,
     ulidGenerator,
-    disableIncompleteServices
+    disableIncompleteServices,
+    incompleteServiceWhitelist
   );
   const middlewaresWrap = withRequestMiddlewares(
     // extract Azure Functions bindings

@@ -39,7 +39,8 @@ app.get(
   GetLimitedProfile(
     serviceModel,
     profileModel,
-    config.FF_DISABLE_INCOMPLETE_SERVICES
+    config.FF_DISABLE_INCOMPLETE_SERVICES,
+    config.FF_INCOMPLETE_SERVICE_WHITELIST
   )
 );
 

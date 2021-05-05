@@ -270,7 +270,8 @@ describe("CreateMessageHandler", () => {
           undefined as any,
           undefined as any,
           undefined as any,
-          true
+          true,
+          []
         );
 
         const response = await createMessageHandler(
@@ -294,7 +295,8 @@ describe("CreateMessageHandler", () => {
       undefined as any,
       undefined as any,
       undefined as any,
-      true
+      true,
+      []
     );
 
     const response = await createMessageHandler(
@@ -335,7 +337,8 @@ describe("CreateMessageHandler", () => {
       mockTelemetryClient,
       undefined as any,
       mockGenerateObjId,
-      true
+      true,
+      []
     );
 
     const response = await createMessageHandler(

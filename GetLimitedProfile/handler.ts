@@ -1,3 +1,4 @@
+import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { ProfileModel } from "@pagopa/io-functions-commons/dist/src/models/profile";
 import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
 import {
@@ -49,7 +50,8 @@ type IGetLimitedProfileHandler = (
 // eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function GetLimitedProfileHandler(
   profileModel: ProfileModel,
-  disableIncompleteServices: boolean
+  disableIncompleteServices: boolean,
+  incompleteServiceWhitelist: ReadonlyArray<ServiceId>
 ): IGetLimitedProfileHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   return async (auth, __, userAttributes, fiscalCode) =>
@@ -58,7 +60,8 @@ export function GetLimitedProfileHandler(
       userAttributes,
       fiscalCode,
       profileModel,
-      disableIncompleteServices
+      disableIncompleteServices,
+      incompleteServiceWhitelist
     ).run();
 }
 
@@ -69,11 +72,13 @@ export function GetLimitedProfileHandler(
 export function GetLimitedProfile(
   serviceModel: ServiceModel,
   profileModel: ProfileModel,
-  disableIncompleteServices: boolean
+  disableIncompleteServices: boolean,
+  incompleteServiceWhitelist: ReadonlyArray<ServiceId>
 ): express.RequestHandler {
   const handler = GetLimitedProfileHandler(
     profileModel,
-    disableIncompleteServices
+    disableIncompleteServices,
+    incompleteServiceWhitelist
   );
 
   const middlewaresWrap = withRequestMiddlewares(

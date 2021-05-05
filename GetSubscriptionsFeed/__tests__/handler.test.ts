@@ -75,7 +75,8 @@ describe("GetSubscriptionsFeedHandler", () => {
     const getSubscriptionsFeedHandler = GetSubscriptionsFeedHandler(
       {} as any,
       "subscriptionFeedByDay",
-      true
+      true,
+      []
     );
     const result = await getSubscriptionsFeedHandler(
       {} as any,
@@ -94,7 +95,8 @@ describe("GetSubscriptionsFeedHandler", () => {
     const getSubscriptionsFeedHandler = GetSubscriptionsFeedHandler(
       tableServiceMock,
       "subscriptionFeedByDay",
-      true
+      true,
+      []
     );
 
     const result = await getSubscriptionsFeedHandler(
@@ -129,7 +131,8 @@ describe("GetSubscriptionsFeedHandler", () => {
     const getSubscriptionsFeedHandler = GetSubscriptionsFeedHandler(
       tableServiceMock,
       "subscriptionFeedByDay",
-      true
+      true,
+      []
     );
 
     const result = await getSubscriptionsFeedHandler(
@@ -171,7 +174,8 @@ describe("GetSubscriptionsFeedHandler", () => {
     const getSubscriptionsFeedHandler = GetSubscriptionsFeedHandler(
       tableServiceMock,
       "subscriptionFeedByDay",
-      true
+      true,
+      []
     );
 
     const result = await getSubscriptionsFeedHandler(
@@ -220,7 +224,8 @@ describe("GetSubscriptionsFeedHandler", () => {
     const getSubscriptionsFeedHandler = GetSubscriptionsFeedHandler(
       tableServiceMock,
       "subscriptionFeedByDay",
-      true
+      true,
+      []
     );
 
     const result = await getSubscriptionsFeedHandler(
@@ -265,7 +270,8 @@ describe("GetSubscriptionsFeedHandler", () => {
     const getSubscriptionsFeedHandler = GetSubscriptionsFeedHandler(
       tableServiceMock,
       "subscriptionFeedByDay",
-      true
+      true,
+      []
     );
 
     const result = await getSubscriptionsFeedHandler(
@@ -314,7 +320,8 @@ describe("GetSubscriptionsFeedHandler", () => {
     const getSubscriptionsFeedHandler = GetSubscriptionsFeedHandler(
       tableServiceMock,
       "subscriptionFeedByDay",
-      true
+      true,
+      []
     );
 
     const result = await getSubscriptionsFeedHandler(
@@ -343,7 +350,8 @@ it("should return ResponseErrorForbiddenNotAuthorized if the Service hasn't the 
   const getSubscriptionsFeedHandler = GetSubscriptionsFeedHandler(
     tableServiceMock,
     "subscriptionFeedByDay",
-    true
+    true,
+    []
   );
 
   const result = await getSubscriptionsFeedHandler(

@@ -53,7 +53,8 @@ describe("GetLimitedProfileHandler", () => {
           } as unknown) as ProfileModel;
           const limitedProfileHandler = GetLimitedProfileHandler(
             mockProfileModel,
-            true
+            true,
+            []
           );
 
           const response = await limitedProfileHandler(
@@ -89,7 +90,8 @@ describe("GetLimitedProfileHandler", () => {
           } as unknown) as ProfileModel;
           const limitedProfileHandler = GetLimitedProfileHandler(
             mockProfileModel,
-            true
+            true,
+            []
           );
 
           const response = await limitedProfileHandler(
@@ -132,7 +134,8 @@ describe("GetLimitedProfileHandler", () => {
           } as unknown) as ProfileModel;
           const limitedProfileHandler = GetLimitedProfileHandler(
             mockProfileModel,
-            true
+            true,
+            []
           );
 
           const response = await limitedProfileHandler(
@@ -171,7 +174,8 @@ describe("GetLimitedProfileHandler", () => {
           } as unknown) as ProfileModel;
           const limitedProfileHandler = GetLimitedProfileHandler(
             mockProfileModel,
-            true
+            true,
+            []
           );
 
           const response = await limitedProfileHandler(
@@ -217,7 +221,8 @@ describe("GetLimitedProfileHandler", () => {
           } as unknown) as ProfileModel;
           const limitedProfileHandler = GetLimitedProfileHandler(
             mockProfileModel,
-            true
+            true,
+            []
           );
 
           const response = await limitedProfileHandler(
@@ -263,7 +268,8 @@ describe("GetLimitedProfileHandler", () => {
           } as unknown) as ProfileModel;
           const limitedProfileHandler = GetLimitedProfileHandler(
             mockProfileModel,
-            true
+            true,
+            []
           );
 
           const response = await limitedProfileHandler(
@@ -313,7 +319,8 @@ describe("GetLimitedProfileHandler", () => {
           } as unknown) as ProfileModel;
           const limitedProfileHandler = GetLimitedProfileHandler(
             mockProfileModel,
-            true
+            true,
+            []
           );
 
           const response = await limitedProfileHandler(

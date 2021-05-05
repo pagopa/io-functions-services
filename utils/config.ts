@@ -43,6 +43,7 @@ export const IConfig = t.intersection([
 
     // eslint-disable-next-line sort-keys
     FF_DISABLE_INCOMPLETE_SERVICES: t.boolean,
+    FF_INCOMPLETE_SERVICE_WHITELIST: CommaSeparatedListOf(ServiceId),
 
     isProduction: t.boolean
   }),

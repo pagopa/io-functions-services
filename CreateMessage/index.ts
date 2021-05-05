@@ -51,7 +51,8 @@ app.post(
     telemetryClient,
     serviceModel,
     messageModel,
-    config.FF_DISABLE_INCOMPLETE_SERVICES
+    config.FF_DISABLE_INCOMPLETE_SERVICES,
+    config.FF_INCOMPLETE_SERVICE_WHITELIST
   )
 );
 

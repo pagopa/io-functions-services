@@ -89,7 +89,9 @@ export const getLimitedProfileTask = (
   userAttributes: IAzureUserAttributes,
   fiscalCode: FiscalCode,
   profileModel: ProfileModel,
-  disableIncompleteServices: boolean
+  disableIncompleteServices: boolean,
+  incompleteServiceWhitelist: ReadonlyArray<ServiceId>
+  // eslint-disable-next-line max-params
 ): Task<IGetLimitedProfileResponses> =>
   taskEither
     .of<
@@ -114,6 +116,9 @@ export const getLimitedProfileTask = (
     .chain(_ => {
       if (
         disableIncompleteServices &&
+        !incompleteServiceWhitelist.includes(
+          userAttributes.service.serviceId
+        ) &&
         !userAttributes.service.authorizedRecipients.has(fiscalCode)
       ) {
         return fromEither(
