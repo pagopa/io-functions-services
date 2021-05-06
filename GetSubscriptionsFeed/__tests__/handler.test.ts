@@ -339,30 +339,83 @@ describe("GetSubscriptionsFeedHandler", () => {
       });
     }
   });
-});
 
-it("should return ResponseErrorForbiddenNotAuthorized if the Service hasn't the required quality fields", async () => {
-  const queryEntities = jest.fn();
-  const tableServiceMock = ({
-    queryEntities
-  } as any) as TableService;
+  it("should return ResponseErrorForbiddenNotAuthorized if the Service hasn't the required quality fields", async () => {
+    const queryEntities = jest.fn();
+    const tableServiceMock = ({
+      queryEntities
+    } as any) as TableService;
 
-  const getSubscriptionsFeedHandler = GetSubscriptionsFeedHandler(
-    tableServiceMock,
-    "subscriptionFeedByDay",
-    true,
-    []
-  );
+    const getSubscriptionsFeedHandler = GetSubscriptionsFeedHandler(
+      tableServiceMock,
+      "subscriptionFeedByDay",
+      true,
+      []
+    );
 
-  const result = await getSubscriptionsFeedHandler(
-    {} as any,
-    {} as any,
-    {
-      ...userAttrs,
-      service: anIncompleteService
-    } as any,
-    yesterdayUTC
-  );
-  expect(result.kind).toBe("IResponseErrorForbiddenNotAuthorized");
-  expect(queryEntities).not.toBeCalled();
+    const result = await getSubscriptionsFeedHandler(
+      {} as any,
+      {} as any,
+      {
+        ...userAttrs,
+        service: anIncompleteService
+      } as any,
+      yesterdayUTC
+    );
+    expect(result.kind).toBe("IResponseErrorForbiddenNotAuthorized");
+    expect(queryEntities).not.toBeCalled();
+  });
+
+  it("should return a correct feed json if a whitelisted Service hasn't the required quality fields", async () => {
+    const queryEntities = jest.fn();
+    // Profile subscriptions
+    queryEntities.mockImplementationOnce(
+      queryEntitiesProfileSubscriptionMock(
+        [
+          anHashedFiscalCode,
+          anotherHashedFiscalCode,
+          anotherThirdHashedFiscalCode
+        ],
+        "S"
+      )
+    );
+    // profile unsubscriptions
+    queryEntities.mockImplementationOnce(emptyQueryEntities);
+    // service subscriptions
+    queryEntities.mockImplementationOnce(emptyQueryEntities);
+    queryEntities.mockImplementation(
+      queryEntitiesServiceSubscriptionMock(
+        [anHashedFiscalCode, anotherHashedFiscalCode],
+        "U"
+      )
+    );
+    const tableServiceMock = ({
+      queryEntities
+    } as any) as TableService;
+
+    const getSubscriptionsFeedHandler = GetSubscriptionsFeedHandler(
+      tableServiceMock,
+      "subscriptionFeedByDay",
+      true,
+      [anIncompleteService.serviceId]
+    );
+
+    const result = await getSubscriptionsFeedHandler(
+      {} as any,
+      {} as any,
+      {
+        ...userAttrs,
+        service: anIncompleteService
+      } as any,
+      yesterdayUTC
+    );
+    expect(result.kind).toBe("IResponseSuccessJson");
+    if (result.kind === "IResponseSuccessJson") {
+      expect(result.value).toEqual({
+        dateUTC: yesterdayUTC,
+        subscriptions: [anotherThirdHashedFiscalCode],
+        unsubscriptions: []
+      });
+    }
+  });
 });

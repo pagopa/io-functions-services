@@ -254,6 +254,59 @@ describe("GetLimitedProfileHandler", () => {
     );
   });
 
+  it("should respond with ResponseSuccessJson if a withelisted Service hasn't quality fields when the requested profile is found in the db", async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        clientIpArb,
+        fiscalCodeArb,
+        retrievedProfileArb,
+        async (clientIp, fiscalCode, retrievedProfile) => {
+          const mockProfileModel = ({
+            findLastVersionByModelId: jest.fn(() =>
+              taskEither.of(some(retrievedProfile))
+            )
+          } as unknown) as ProfileModel;
+          const limitedProfileHandler = GetLimitedProfileHandler(
+            mockProfileModel,
+            true,
+            [anIncompleteService.serviceId]
+          );
+
+          const response = await limitedProfileHandler(
+            {
+              ...mockAzureApiAuthorization,
+              groups: new Set([UserGroup.ApiMessageWrite])
+            },
+            clientIp,
+            {
+              ...mockAzureUserAttributes,
+              service: {
+                ...anIncompleteService,
+                authorizedRecipients: new Set([
+                  aFiscalCode === fiscalCode ? anotherFiscalCode : aFiscalCode
+                ])
+              }
+            },
+            fiscalCode
+          );
+
+          expect(
+            mockProfileModel.findLastVersionByModelId
+          ).toHaveBeenCalledTimes(1);
+          expect(mockProfileModel.findLastVersionByModelId).toBeCalledWith([
+            fiscalCode
+          ]);
+          expect(response.kind).toBe("IResponseSuccessJson");
+          if (response.kind === "IResponseSuccessJson") {
+            expect(response.value).toEqual(
+              retrievedProfileToLimitedProfile(retrievedProfile, false)
+            );
+          }
+        }
+      )
+    );
+  });
+
   it("should respond with ResponseSuccessJson when the requested profile is found in the db, the service is sandboxed but can write messages to the profile fiscal code", async () => {
     await fc.assert(
       fc.asyncProperty(
