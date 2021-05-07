@@ -430,11 +430,10 @@ export function CreateMessageHandler(
           !incompleteServiceWhitelist.includes(serviceId) &&
           !authorizedRecipients.has(fiscalCode)
             ? fromEither(
-                ValidService.decode(userAttributes.service)
-                  .map(_1 => true)
-                  .mapLeft(
-                    _1 => ResponseErrorForbiddenNotAuthorizedForRecipient
-                  )
+                ValidService.decode(userAttributes.service).bimap(
+                  _1 => ResponseErrorForbiddenNotAuthorizedForRecipient,
+                  _1 => true
+                )
               )
             : fromEither(right(true))
         )

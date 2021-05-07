@@ -122,9 +122,10 @@ export const getLimitedProfileTask = (
         !userAttributes.service.authorizedRecipients.has(fiscalCode)
       ) {
         return fromEither(
-          ValidService.decode(userAttributes.service)
-            .map(_1 => true)
-            .mapLeft(_1 => ResponseErrorForbiddenNotAuthorizedForRecipient)
+          ValidService.decode(userAttributes.service).bimap(
+            _1 => ResponseErrorForbiddenNotAuthorizedForRecipient,
+            _1 => true
+          )
         );
       }
       return fromEither(right(true));
