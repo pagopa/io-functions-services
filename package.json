@@ -64,7 +64,7 @@
     "azure-storage": "^2.10.3",
     "cors": "^2.8.4",
     "documentdb": "^1.12.2",
-    "durable-functions": "^1.4.1",
+    "durable-functions": "^1.4.3",
     "express": "^4.15.3",
     "fp-ts": "1.17.4",
     "html-to-text": "^4.0.0",
