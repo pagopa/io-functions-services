@@ -1,6 +1,6 @@
 swagger: '2.0'
 info:
-  version: 1.1.0
+  version: 1.14.1
   title: IO API for Public Administration Services
   contact:
     name: Digital Transformation Team
@@ -748,7 +748,7 @@ definitions:
           content:
             $ref: '#/definitions/MessageContent'
           sender_service_id:
-            type: string
+            $ref: '#/definitions/ServiceId'
         required:
           - id
           - fiscal_code
@@ -794,7 +794,7 @@ definitions:
     type: string
     description: User's fiscal code.
     format: FiscalCode
-    x-import: italia-ts-commons/lib/strings
+    x-import: '@pagopa/ts-commons/lib/strings'
     example: SPNDNL80R13C555X
   LimitedProfile:
     description: |-
@@ -837,7 +837,7 @@ definitions:
     type: string
     format: UTCISODateFromString
     description: A date-time field in ISO-8601 format and UTC timezone.
-    x-import: italia-ts-commons/lib/dates
+    x-import: '@pagopa/ts-commons/lib/dates'
     example: '2018-10-13T00:00:00.000Z'
   TimeToLiveSeconds:
     type: integer
@@ -930,7 +930,7 @@ definitions:
             type: string
             description: Fiscal code of the Doctor that made the prescription.
             format: FiscalCode
-            x-import: italia-ts-commons/lib/strings
+            x-import: '@pagopa/ts-commons/lib/strings'
             example: TCNZRO80R13C555Y
         required:
           - nre
@@ -1016,7 +1016,7 @@ definitions:
         type: string
         description: Organization fiscal code.
         format: OrganizationFiscalCode
-        x-import: italia-ts-commons/lib/strings
+        x-import: '@pagopa/ts-commons/lib/strings'
         example: '12345678901'
       authorized_cidrs:
         description: >-
