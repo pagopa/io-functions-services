@@ -139,6 +139,7 @@ stages:
     jobs:
       - job: 'do_healthcheck'       
         steps:  
+          - checkout: none
           - template: templates/rest-healthcheck/template.yaml@pagopaCommons
             parameters:
               azureSubscription: '$(PRODUCTION_AZURE_SUBSCRIPTION)'
@@ -157,6 +158,7 @@ stages:
     jobs:
       - job: 'do_deploy'       
         steps:  
+          - checkout: none
           - task: AzureAppServiceManage@0   
             inputs:
               azureSubscription: '$(PRODUCTION_AZURE_SUBSCRIPTION)'
