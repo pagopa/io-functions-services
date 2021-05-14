@@ -7,6 +7,7 @@
 
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { MailerConfig } from "@pagopa/io-functions-commons/dist/src/mailer";
+import { fromNullable } from "fp-ts/lib/Option";
 import * as t from "io-ts";
 import { readableReport } from "italia-ts-commons/lib/reporters";
 import { NonEmptyString } from "italia-ts-commons/lib/strings";
@@ -40,6 +41,10 @@ export const IConfig = t.intersection([
 
     WEBHOOK_CHANNEL_URL: NonEmptyString,
 
+    // eslint-disable-next-line sort-keys
+    FF_DISABLE_INCOMPLETE_SERVICES: t.boolean,
+    FF_INCOMPLETE_SERVICE_WHITELIST: CommaSeparatedListOf(ServiceId),
+
     isProduction: t.boolean
   }),
   MailerConfig
@@ -48,6 +53,11 @@ export const IConfig = t.intersection([
 // No need to re-evaluate this object for each call
 const errorOrConfig: t.Validation<IConfig> = IConfig.decode({
   ...process.env,
+  FF_DISABLE_INCOMPLETE_SERVICES: fromNullable(
+    process.env.FF_DISABLE_INCOMPLETE_SERVICES
+  )
+    .map(_ => _.toLowerCase() === "true")
+    .getOrElse(false),
   isProduction: process.env.NODE_ENV === "production"
 });
 

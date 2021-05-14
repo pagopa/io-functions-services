@@ -30,6 +30,7 @@ import {
   IResponseErrorNotFound,
   IResponseErrorValidation,
   IResponseSuccessJson,
+  ResponseErrorForbiddenNotAuthorized,
   ResponseErrorNotFound,
   ResponseSuccessJson
 } from "italia-ts-commons/lib/responses";
@@ -40,10 +41,14 @@ import {
   clientIPAndCidrTuple as ipTuple
 } from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
 
-import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
+import {
+  ServiceModel,
+  ValidService
+} from "@pagopa/io-functions-commons/dist/src/models/service";
 
 import { TableService } from "azure-storage";
 
+import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { DateUTC } from "../generated/definitions/DateUTC";
 import { FiscalCodeHash } from "../generated/definitions/FiscalCodeHash";
 import { SubscriptionsFeed } from "../generated/definitions/SubscriptionsFeed";
@@ -78,7 +83,9 @@ type IGetSubscriptionsFeedHandler = (
 // eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function GetSubscriptionsFeedHandler(
   tableService: TableService,
-  subscriptionsFeedTable: string
+  subscriptionsFeedTable: string,
+  disableIncompleteServices: boolean,
+  incompleteServiceWhitelist: ReadonlyArray<ServiceId>
 ): IGetSubscriptionsFeedHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   return async (_, __, userAttributes, subscriptionsDateUTC) => {
@@ -98,6 +105,15 @@ export function GetSubscriptionsFeedHandler(
     }
 
     const { serviceId } = userAttributes.service;
+
+    // Verify if the Service has the required quality to read the SubscriptionFeed
+    if (
+      disableIncompleteServices &&
+      !incompleteServiceWhitelist.includes(serviceId) &&
+      !ValidService.is(userAttributes.service)
+    ) {
+      return ResponseErrorForbiddenNotAuthorized;
+    }
 
     // get a function that can query the subscriptions table
     const pagedQuery = getPagedQuery(tableService, subscriptionsFeedTable);
@@ -203,11 +219,15 @@ const ShortDateString = t.refinement(
 export function GetSubscriptionsFeed(
   serviceModel: ServiceModel,
   tableService: TableService,
-  subscriptionsFeedTable: string
+  subscriptionsFeedTable: string,
+  disableIncompleteServices: boolean,
+  incompleteServiceWhitelist: ReadonlyArray<ServiceId>
 ): express.RequestHandler {
   const handler = GetSubscriptionsFeedHandler(
     tableService,
-    subscriptionsFeedTable
+    subscriptionsFeedTable,
+    disableIncompleteServices,
+    incompleteServiceWhitelist
   );
   const middlewaresWrap = withRequestMiddlewares(
     AzureApiAuthMiddleware(new Set([UserGroup.ApiSubscriptionsFeedRead])),

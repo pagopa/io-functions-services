@@ -9,6 +9,7 @@
     "resolveJsonModule": true
   }, "exclude": [
     "Dangerfile.ts",
-    "**/__tests__"
+    "**/__tests__",
+    "__mocks__/**",
   ]
 }

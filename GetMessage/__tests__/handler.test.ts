@@ -47,157 +47,163 @@ import { TimeToLiveSeconds } from "@pagopa/io-functions-commons/dist/generated/d
 import { fromLeft, taskEither, TaskEither } from "fp-ts/lib/TaskEither";
 import { GetMessageHandler } from "../handler";
 
-jest.useFakeTimers();
-
-const mockContext = {
-  log: {
-    // eslint-disable-next-line no-console
-    error: console.error,
-    // eslint-disable-next-line no-console
-    info: console.log,
-    // eslint-disable-next-line no-console
-    verbose: console.log,
-    // eslint-disable-next-line no-console
-    warn: console.warn
-  }
-} as any;
-
-afterEach(() => {
-  jest.resetAllMocks();
-  jest.restoreAllMocks();
-});
-
-const aFiscalCode = "FRLFRC74E04B157I" as FiscalCode;
-const anOrganizationFiscalCode = "01234567890" as OrganizationFiscalCode;
-const anEmail = "test@example.com" as EmailString;
-
-const someUserAttributes: IAzureUserAttributes = {
-  email: anEmail,
-  kind: "IAzureUserAttributes",
-  service: {
-    authorizedCIDRs: toAuthorizedCIDRs([]),
-    authorizedRecipients: new Set([]),
-    departmentName: "IT" as NonEmptyString,
-    isVisible: true,
-    maxAllowedPaymentAmount: 0 as MaxAllowedPaymentAmount,
-    organizationFiscalCode: anOrganizationFiscalCode,
-    organizationName: "AgID" as NonEmptyString,
-    requireSecureChannels: false,
-    serviceId: "test" as NonEmptyString,
-    serviceName: "Test" as NonEmptyString,
-    version: 1 as NonNegativeInteger
-  }
-};
-
-const aUserAuthenticationDeveloper: IAzureApiAuthorization = {
-  groups: new Set([UserGroup.ApiMessageRead, UserGroup.ApiMessageWrite]),
-  kind: "IAzureApiAuthorization",
-  subscriptionId: "s123" as NonEmptyString,
-  userId: "u123" as NonEmptyString
-};
-
-const aUserAuthenticationTrustedApplication: IAzureApiAuthorization = {
-  groups: new Set([UserGroup.ApiMessageRead, UserGroup.ApiMessageList]),
-  kind: "IAzureApiAuthorization",
-  subscriptionId: "s123" as NonEmptyString,
-  userId: "u123" as NonEmptyString
-};
-
-const aMessageId = "A_MESSAGE_ID" as NonEmptyString;
-
-const aNewMessageWithoutContent: NewMessageWithoutContent = {
-  createdAt: new Date(),
-  fiscalCode: aFiscalCode,
-  id: "A_MESSAGE_ID" as NonEmptyString,
-  indexedId: "A_MESSAGE_ID" as NonEmptyString,
-  isPending: true,
-  kind: "INewMessageWithoutContent",
-  senderServiceId: "test" as ServiceId,
-  senderUserId: "u123" as NonEmptyString,
-  timeToLiveSeconds: 3600 as TimeToLiveSeconds
-};
-
-const aRetrievedMessageWithoutContent: RetrievedMessageWithoutContent = {
-  ...aNewMessageWithoutContent,
-  _etag: "_etag",
-  _rid: "_rid",
-  _self: "xyz",
-  _ts: 1,
-  kind: "IRetrievedMessageWithoutContent"
-};
-
-const aPublicExtendedMessage: CreatedMessageWithoutContent = {
-  created_at: new Date(),
-  fiscal_code: aNewMessageWithoutContent.fiscalCode,
-  id: "A_MESSAGE_ID",
-  sender_service_id: aNewMessageWithoutContent.senderServiceId
-};
-
-const aPublicExtendedMessageResponse: MessageResponseWithoutContent = {
-  message: aPublicExtendedMessage,
-  notification: {
-    email: NotificationChannelStatusValueEnum.SENT,
-    webhook: NotificationChannelStatusValueEnum.SENT
-  },
-  status: MessageStatusValueEnum.ACCEPTED
-};
-
-function getNotificationModelMock(
-  aRetrievedNotification: any = { data: "data" }
-): any {
-  return {
-    findNotificationForMessage: jest.fn(() =>
-      taskEither.of(some(aRetrievedNotification))
-    )
-  };
-}
-
-const aRetrievedNotificationStatus: RetrievedNotificationStatus = {
-  _etag: "_etag",
-  _rid: "_rid",
-  _self: "xyz",
-  _ts: 1,
-  channel: NotificationChannelEnum.EMAIL,
-  id: "1" as NonEmptyString,
-  kind: "IRetrievedNotificationStatus",
-  messageId: "1" as NonEmptyString,
-  notificationId: "1" as NonEmptyString,
-  status: NotificationChannelStatusValueEnum.SENT,
-  statusId: makeStatusId("1" as NonEmptyString, NotificationChannelEnum.EMAIL),
-  updatedAt: new Date(),
-  version: 1 as NonNegativeInteger
-};
-
-const aMessageStatus: MessageStatus = {
-  messageId: aMessageId,
-  status: MessageStatusValueEnum.ACCEPTED,
-  updatedAt: new Date()
-};
-
-function getNotificationStatusModelMock(
-  retrievedNotificationStatus: any = taskEither.of(
-    some(aRetrievedNotificationStatus)
-  )
-): any {
-  return {
-    findOneNotificationStatusByNotificationChannel: jest.fn(
-      () => retrievedNotificationStatus
-    )
-  };
-}
-
-function getMessageStatusModelMock(
-  s: TaskEither<QueryError, Option<MessageStatus>> = taskEither.of(
-    some(aMessageStatus)
-  )
-): any {
-  return {
-    findLastVersionByModelId: jest.fn().mockReturnValue(s),
-    upsert: jest.fn(status => fromLeft(status))
-  };
-}
-
 describe("GetMessageHandler", () => {
+  jest.useFakeTimers();
+
+  const mockContext = {
+    log: {
+      // eslint-disable-next-line no-console
+      error: console.error,
+      // eslint-disable-next-line no-console
+      info: console.log,
+      // eslint-disable-next-line no-console
+      verbose: console.log,
+      // eslint-disable-next-line no-console
+      warn: console.warn
+    }
+  } as any;
+
+  afterEach(() => {
+    jest.resetAllMocks();
+    jest.restoreAllMocks();
+  });
+
+  afterAll(() => {
+    jest.useRealTimers();
+  });
+
+  const aFiscalCode = "FRLFRC74E04B157I" as FiscalCode;
+  const anOrganizationFiscalCode = "01234567890" as OrganizationFiscalCode;
+  const anEmail = "test@example.com" as EmailString;
+
+  const someUserAttributes: IAzureUserAttributes = {
+    email: anEmail,
+    kind: "IAzureUserAttributes",
+    service: {
+      authorizedCIDRs: toAuthorizedCIDRs([]),
+      authorizedRecipients: new Set([]),
+      departmentName: "IT" as NonEmptyString,
+      isVisible: true,
+      maxAllowedPaymentAmount: 0 as MaxAllowedPaymentAmount,
+      organizationFiscalCode: anOrganizationFiscalCode,
+      organizationName: "AgID" as NonEmptyString,
+      requireSecureChannels: false,
+      serviceId: "test" as NonEmptyString,
+      serviceName: "Test" as NonEmptyString,
+      version: 1 as NonNegativeInteger
+    }
+  };
+
+  const aUserAuthenticationDeveloper: IAzureApiAuthorization = {
+    groups: new Set([UserGroup.ApiMessageRead, UserGroup.ApiMessageWrite]),
+    kind: "IAzureApiAuthorization",
+    subscriptionId: "s123" as NonEmptyString,
+    userId: "u123" as NonEmptyString
+  };
+
+  const aUserAuthenticationTrustedApplication: IAzureApiAuthorization = {
+    groups: new Set([UserGroup.ApiMessageRead, UserGroup.ApiMessageList]),
+    kind: "IAzureApiAuthorization",
+    subscriptionId: "s123" as NonEmptyString,
+    userId: "u123" as NonEmptyString
+  };
+
+  const aMessageId = "A_MESSAGE_ID" as NonEmptyString;
+
+  const aNewMessageWithoutContent: NewMessageWithoutContent = {
+    createdAt: new Date(),
+    fiscalCode: aFiscalCode,
+    id: "A_MESSAGE_ID" as NonEmptyString,
+    indexedId: "A_MESSAGE_ID" as NonEmptyString,
+    isPending: true,
+    kind: "INewMessageWithoutContent",
+    senderServiceId: "test" as ServiceId,
+    senderUserId: "u123" as NonEmptyString,
+    timeToLiveSeconds: 3600 as TimeToLiveSeconds
+  };
+
+  const aRetrievedMessageWithoutContent: RetrievedMessageWithoutContent = {
+    ...aNewMessageWithoutContent,
+    _etag: "_etag",
+    _rid: "_rid",
+    _self: "xyz",
+    _ts: 1,
+    kind: "IRetrievedMessageWithoutContent"
+  };
+
+  const aPublicExtendedMessage: CreatedMessageWithoutContent = {
+    created_at: new Date(),
+    fiscal_code: aNewMessageWithoutContent.fiscalCode,
+    id: "A_MESSAGE_ID",
+    sender_service_id: aNewMessageWithoutContent.senderServiceId
+  };
+
+  const aPublicExtendedMessageResponse: MessageResponseWithoutContent = {
+    message: aPublicExtendedMessage,
+    notification: {
+      email: NotificationChannelStatusValueEnum.SENT,
+      webhook: NotificationChannelStatusValueEnum.SENT
+    },
+    status: MessageStatusValueEnum.ACCEPTED
+  };
+
+  function getNotificationModelMock(
+    aRetrievedNotification: any = { data: "data" }
+  ): any {
+    return {
+      findNotificationForMessage: jest.fn(() =>
+        taskEither.of(some(aRetrievedNotification))
+      )
+    };
+  }
+
+  const aRetrievedNotificationStatus: RetrievedNotificationStatus = {
+    _etag: "_etag",
+    _rid: "_rid",
+    _self: "xyz",
+    _ts: 1,
+    channel: NotificationChannelEnum.EMAIL,
+    id: "1" as NonEmptyString,
+    kind: "IRetrievedNotificationStatus",
+    messageId: "1" as NonEmptyString,
+    notificationId: "1" as NonEmptyString,
+    status: NotificationChannelStatusValueEnum.SENT,
+    statusId: makeStatusId(
+      "1" as NonEmptyString,
+      NotificationChannelEnum.EMAIL
+    ),
+    updatedAt: new Date(),
+    version: 1 as NonNegativeInteger
+  };
+
+  const aMessageStatus: MessageStatus = {
+    messageId: aMessageId,
+    status: MessageStatusValueEnum.ACCEPTED,
+    updatedAt: new Date()
+  };
+
+  function getNotificationStatusModelMock(
+    retrievedNotificationStatus: any = taskEither.of(
+      some(aRetrievedNotificationStatus)
+    )
+  ): any {
+    return {
+      findOneNotificationStatusByNotificationChannel: jest.fn(
+        () => retrievedNotificationStatus
+      )
+    };
+  }
+
+  function getMessageStatusModelMock(
+    s: TaskEither<QueryError, Option<MessageStatus>> = taskEither.of(
+      some(aMessageStatus)
+    )
+  ): any {
+    return {
+      findLastVersionByModelId: jest.fn().mockReturnValue(s),
+      upsert: jest.fn(status => fromLeft(status))
+    };
+  }
   it("should respond with a message if requesting user is the sender", async () => {
     const mockMessageModel = {
       findMessageForRecipient: jest.fn(() =>

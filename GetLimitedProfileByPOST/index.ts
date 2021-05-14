@@ -12,6 +12,7 @@ import { setAppContext } from "@pagopa/io-functions-commons/dist/src/utils/middl
 import cors = require("cors");
 import express = require("express");
 import createAzureFunctionHandler from "io-functions-express/dist/src/createAzureFunctionsHandler";
+import { getConfigOrThrow } from "../utils/config";
 import { cosmosdbInstance } from "../utils/cosmosdb";
 
 import { GetLimitedProfileByPOST } from "./handler";
@@ -24,6 +25,8 @@ const profileModel = new ProfileModel(
   cosmosdbInstance.container(PROFILE_COLLECTION_NAME)
 );
 
+const config = getConfigOrThrow();
+
 // Setup Express
 const app = express();
 secureExpressApp(app);
@@ -33,7 +36,12 @@ app.use(cors());
 
 app.post(
   "/api/v1/profiles",
-  GetLimitedProfileByPOST(serviceModel, profileModel)
+  GetLimitedProfileByPOST(
+    serviceModel,
+    profileModel,
+    config.FF_DISABLE_INCOMPLETE_SERVICES,
+    config.FF_INCOMPLETE_SERVICE_WHITELIST
+  )
 );
 
 const azureFunctionHandler = createAzureFunctionHandler(app);

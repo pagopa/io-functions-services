@@ -23,7 +23,10 @@ import {
   MessageModel,
   NewMessageWithoutContent
 } from "@pagopa/io-functions-commons/dist/src/models/message";
-import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
+import {
+  ServiceModel,
+  ValidService
+} from "@pagopa/io-functions-commons/dist/src/models/service";
 import {
   AzureApiAuthMiddleware,
   IAzureApiAuthorization,
@@ -77,6 +80,7 @@ import {
 } from "italia-ts-commons/lib/responses";
 import { NonEmptyString } from "italia-ts-commons/lib/strings";
 import { PromiseType } from "italia-ts-commons/lib/types";
+import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 
 const ApiNewMessageWithDefaults = t.intersection([
   ApiNewMessage,
@@ -334,7 +338,9 @@ const redirectToNewMessage = (
 export function CreateMessageHandler(
   telemetryClient: ReturnType<typeof initAppInsights>,
   messageModel: MessageModel,
-  generateObjectId: ObjectIdGenerator
+  generateObjectId: ObjectIdGenerator,
+  disableIncompleteServices: boolean,
+  incompleteServiceWhitelist: ReadonlyArray<ServiceId>
 ): ICreateMessageHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   return async (
@@ -418,11 +424,24 @@ export function CreateMessageHandler(
             canWriteMessage(auth.groups, authorizedRecipients, fiscalCode)
           )
         )
-        .chainSecond(
+        // Verify if the Service has the required quality to sent message
+        .chain(_ =>
+          disableIncompleteServices &&
+          !incompleteServiceWhitelist.includes(serviceId) &&
+          !authorizedRecipients.has(fiscalCode)
+            ? fromEither(
+                ValidService.decode(userAttributes.service).bimap(
+                  _1 => ResponseErrorForbiddenNotAuthorizedForRecipient,
+                  _1 => true
+                )
+              )
+            : fromEither(right(true))
+        )
+        .chain(_ =>
           // check whether the client can provide default addresses
           fromEither(canDefaultAddresses(messagePayload))
         )
-        .chainSecond(
+        .chain(_ =>
           // check whether the client can ask for payment
           fromEither(
             canPaymentAmount(
@@ -431,7 +450,7 @@ export function CreateMessageHandler(
             )
           )
         )
-        .chainSecond(
+        .chain(_ =>
           // create a Message document in the database
           createMessageDocument(
             messageId,
@@ -475,12 +494,16 @@ export function CreateMessageHandler(
 export function CreateMessage(
   telemetryClient: ReturnType<typeof initAppInsights>,
   serviceModel: ServiceModel,
-  messageModel: MessageModel
+  messageModel: MessageModel,
+  disableIncompleteServices: boolean,
+  incompleteServiceWhitelist: ReadonlyArray<ServiceId>
 ): express.RequestHandler {
   const handler = CreateMessageHandler(
     telemetryClient,
     messageModel,
-    ulidGenerator
+    ulidGenerator,
+    disableIncompleteServices,
+    incompleteServiceWhitelist
   );
   const middlewaresWrap = withRequestMiddlewares(
     // extract Azure Functions bindings

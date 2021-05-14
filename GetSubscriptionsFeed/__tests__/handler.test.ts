@@ -7,23 +7,21 @@ import { TableService } from "azure-storage";
 import * as dateFmt from "date-fns";
 import * as endOfTomorrow from "date-fns/end_of_tomorrow";
 import * as startOfYesterday from "date-fns/start_of_yesterday";
-import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { FiscalCodeHash } from "../../generated/definitions/FiscalCodeHash";
 import { GetSubscriptionsFeedHandler } from "../handler";
+
+import { anIncompleteService, aValidService } from "../../__mocks__/mocks";
 
 const tomorrow = endOfTomorrow();
 
 const yesterday = startOfYesterday();
-const aServiceId = "MyServiceId" as ServiceId;
 
 const yesterdayUTC = dateFmt.format(yesterday, "YYYY-MM-DD");
 
 const userAttrs = {
   email: "example@mail.com",
   kind: "IAzureUserAttributes",
-  service: {
-    serviceId: aServiceId
-  }
+  service: aValidService
 };
 
 const anHashedFiscalCode = "77408089123C62362C2D70E4C262BB45E268A3D477335D9C4A383521FA772AAE" as FiscalCodeHash;
@@ -61,7 +59,7 @@ const queryEntitiesServiceSubscriptionMock = (
           entries.length > 0
             ? entries.map(e => ({
                 RowKey: {
-                  _: `S-${yesterdayUTC}-${aServiceId}-${subscriptionSuffix}-${e}`
+                  _: `S-${yesterdayUTC}-${aValidService.serviceId}-${subscriptionSuffix}-${e}`
                 }
               }))
             : []
@@ -76,7 +74,9 @@ describe("GetSubscriptionsFeedHandler", () => {
   it("should respond with Not Found if Date.now() is lower than given subscriptionDate", async () => {
     const getSubscriptionsFeedHandler = GetSubscriptionsFeedHandler(
       {} as any,
-      "subscriptionFeedByDay"
+      "subscriptionFeedByDay",
+      true,
+      []
     );
     const result = await getSubscriptionsFeedHandler(
       {} as any,
@@ -94,7 +94,9 @@ describe("GetSubscriptionsFeedHandler", () => {
 
     const getSubscriptionsFeedHandler = GetSubscriptionsFeedHandler(
       tableServiceMock,
-      "subscriptionFeedByDay"
+      "subscriptionFeedByDay",
+      true,
+      []
     );
 
     const result = await getSubscriptionsFeedHandler(
@@ -128,7 +130,9 @@ describe("GetSubscriptionsFeedHandler", () => {
 
     const getSubscriptionsFeedHandler = GetSubscriptionsFeedHandler(
       tableServiceMock,
-      "subscriptionFeedByDay"
+      "subscriptionFeedByDay",
+      true,
+      []
     );
 
     const result = await getSubscriptionsFeedHandler(
@@ -169,7 +173,9 @@ describe("GetSubscriptionsFeedHandler", () => {
 
     const getSubscriptionsFeedHandler = GetSubscriptionsFeedHandler(
       tableServiceMock,
-      "subscriptionFeedByDay"
+      "subscriptionFeedByDay",
+      true,
+      []
     );
 
     const result = await getSubscriptionsFeedHandler(
@@ -217,7 +223,9 @@ describe("GetSubscriptionsFeedHandler", () => {
 
     const getSubscriptionsFeedHandler = GetSubscriptionsFeedHandler(
       tableServiceMock,
-      "subscriptionFeedByDay"
+      "subscriptionFeedByDay",
+      true,
+      []
     );
 
     const result = await getSubscriptionsFeedHandler(
@@ -261,7 +269,9 @@ describe("GetSubscriptionsFeedHandler", () => {
 
     const getSubscriptionsFeedHandler = GetSubscriptionsFeedHandler(
       tableServiceMock,
-      "subscriptionFeedByDay"
+      "subscriptionFeedByDay",
+      true,
+      []
     );
 
     const result = await getSubscriptionsFeedHandler(
@@ -309,13 +319,94 @@ describe("GetSubscriptionsFeedHandler", () => {
 
     const getSubscriptionsFeedHandler = GetSubscriptionsFeedHandler(
       tableServiceMock,
-      "subscriptionFeedByDay"
+      "subscriptionFeedByDay",
+      true,
+      []
     );
 
     const result = await getSubscriptionsFeedHandler(
       {} as any,
       {} as any,
       userAttrs as any,
+      yesterdayUTC
+    );
+    expect(result.kind).toBe("IResponseSuccessJson");
+    if (result.kind === "IResponseSuccessJson") {
+      expect(result.value).toEqual({
+        dateUTC: yesterdayUTC,
+        subscriptions: [anotherThirdHashedFiscalCode],
+        unsubscriptions: []
+      });
+    }
+  });
+
+  it("should return ResponseErrorForbiddenNotAuthorized if the Service hasn't the required quality fields", async () => {
+    const queryEntities = jest.fn();
+    const tableServiceMock = ({
+      queryEntities
+    } as any) as TableService;
+
+    const getSubscriptionsFeedHandler = GetSubscriptionsFeedHandler(
+      tableServiceMock,
+      "subscriptionFeedByDay",
+      true,
+      []
+    );
+
+    const result = await getSubscriptionsFeedHandler(
+      {} as any,
+      {} as any,
+      {
+        ...userAttrs,
+        service: anIncompleteService
+      } as any,
+      yesterdayUTC
+    );
+    expect(result.kind).toBe("IResponseErrorForbiddenNotAuthorized");
+    expect(queryEntities).not.toBeCalled();
+  });
+
+  it("should return a correct feed json if a whitelisted Service hasn't the required quality fields", async () => {
+    const queryEntities = jest.fn();
+    // Profile subscriptions
+    queryEntities.mockImplementationOnce(
+      queryEntitiesProfileSubscriptionMock(
+        [
+          anHashedFiscalCode,
+          anotherHashedFiscalCode,
+          anotherThirdHashedFiscalCode
+        ],
+        "S"
+      )
+    );
+    // profile unsubscriptions
+    queryEntities.mockImplementationOnce(emptyQueryEntities);
+    // service subscriptions
+    queryEntities.mockImplementationOnce(emptyQueryEntities);
+    queryEntities.mockImplementation(
+      queryEntitiesServiceSubscriptionMock(
+        [anHashedFiscalCode, anotherHashedFiscalCode],
+        "U"
+      )
+    );
+    const tableServiceMock = ({
+      queryEntities
+    } as any) as TableService;
+
+    const getSubscriptionsFeedHandler = GetSubscriptionsFeedHandler(
+      tableServiceMock,
+      "subscriptionFeedByDay",
+      true,
+      [anIncompleteService.serviceId]
+    );
+
+    const result = await getSubscriptionsFeedHandler(
+      {} as any,
+      {} as any,
+      {
+        ...userAttrs,
+        service: anIncompleteService
+      } as any,
       yesterdayUTC
     );
     expect(result.kind).toBe("IResponseSuccessJson");
