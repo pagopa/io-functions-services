@@ -3,7 +3,6 @@ import * as t from "io-ts";
 import { Context } from "@azure/functions";
 
 import * as HtmlToText from "html-to-text";
-import * as NodeMailer from "nodemailer";
 
 import { readableReport } from "italia-ts-commons/lib/reporters";
 import { NonEmptyString } from "italia-ts-commons/lib/strings";
@@ -15,7 +14,10 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
 import { NotificationEvent } from "@pagopa/io-functions-commons/dist/src/models/notification_event";
 
-import { sendMail } from "@pagopa/io-functions-commons/dist/src/mailer";
+import {
+  MailerTransporter,
+  sendMail
+} from "@pagopa/io-functions-commons/dist/src/mailer";
 import { generateDocumentHtml } from "./utils";
 
 export interface INotificationDefaults {
@@ -51,7 +53,7 @@ export type EmailNotificationActivityResult = t.TypeOf<
  * Returns a function for handling EmailNotificationActivity
  */
 export const getEmailNotificationActivityHandler = (
-  lMailerTransporter: NodeMailer.Transporter,
+  lMailerTransporter: MailerTransporter,
   lNotificationModel: NotificationModel,
   notificationDefaultParams: INotificationDefaults
 ) => async (
