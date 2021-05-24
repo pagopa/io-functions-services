@@ -20,7 +20,8 @@
   },
   "extensions": {
     "durableTask": {
-      "hubName": "%SLOT_TASK_HUBNAME%"
+      "hubName": "%SLOT_TASK_HUBNAME%",
+      "localRpcEndpointEnabled": false
     },
     "tracing": {
       "traceInputsAndOutputs": false,
