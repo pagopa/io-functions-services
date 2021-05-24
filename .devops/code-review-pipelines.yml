@@ -14,6 +14,14 @@ variables:
 # https://docs.microsoft.com/en-us/azure/devops/pipelines/yaml-schema?view=azure-devops&tabs=schema%2Cparameter-schema#pr-trigger
 trigger: none
 
+resources:
+  repositories:
+    - repository: pagopaCommons
+      type: github
+      name: pagopa/azure-pipeline-templates
+      ref: refs/tags/v14
+      endpoint: 'io-azure-devops-github-ro'
+
 # This pipeline has been implemented to be run on hosted agent pools based both
 # on 'windows' and 'ubuntu' virtual machine images and using the scripts defined
 # in the package.json file. Since we are deploying on Azure functions on Windows
@@ -33,7 +41,7 @@ stages:
           # As we deploy on Wondows machines, we use Windows to build
           vmImage: 'windows-2019'         
         steps:
-        - template: azure-templates/setup-project.yml
+        - template: templates/node-job-setup/template.yaml@pagopaCommons
         - script: |
             yarn build
           displayName: 'Build'
@@ -44,7 +52,7 @@ stages:
       
       - job: lint     
         steps:
-        - template: azure-templates/setup-project.yml
+        - template: templates/node-job-setup/template.yaml@pagopaCommons
 
         - script: |
             yarn lint
@@ -52,7 +60,7 @@ stages:
 
       - job: lint_api     
         steps:
-        - template: azure-templates/setup-project.yml
+        - template: templates/node-job-setup/template.yaml@pagopaCommons
         # OpenAPI spec is a versione file, still is created with a generation process from a template
         # We need to check it either is out-of-sync with the template or it has been manually edited
         - script: |
@@ -75,7 +83,7 @@ stages:
             )
           )
         steps:
-          - template: azure-templates/setup-project.yml
+          - template: templates/node-job-setup/template.yaml@pagopaCommons
 
           - bash: |
               yarn danger ci
@@ -88,7 +96,7 @@ stages:
     jobs:
       - job: unit_tests
         steps:
-        - template: azure-templates/setup-project.yml
+        - template: templates/node-job-setup/template.yaml@pagopaCommons
 
         - script: |
             yarn generate
@@ -97,7 +105,3 @@ stages:
         - script: |
             yarn test:coverage
           displayName: 'Unit tests exec'
-
-        - bash: |
-            bash <(curl -s https://codecov.io/bash)
-          displayName: 'Code coverage'
