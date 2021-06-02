@@ -948,6 +948,14 @@ definitions:
             example: TCNZRO80R13C555Y
         required:
           - nre
+      eu_covid_cert:
+        type: object
+        description: Paylod with access token to retrieve a EU Covid Certificate
+        properties:
+          auth_code:
+            type: string
+        required:
+          - auth_code
       due_date:
         $ref: '#/definitions/Timestamp'
     required:

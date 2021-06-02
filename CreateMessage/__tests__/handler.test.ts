@@ -11,7 +11,6 @@ import {
 import { none, some } from "fp-ts/lib/Option";
 
 import {
-  ApiNewMessageWithDefaults,
   canDefaultAddresses,
   canPaymentAmount,
   canWriteMessage,
@@ -44,6 +43,7 @@ import {
 } from "../../__mocks__/mocks";
 import { initAppInsights } from "italia-ts-commons/lib/appinsights";
 import { mockOrchestratorContext } from "../../__mocks__/durable-functions";
+import { ApiNewMessageWithDefaults } from "../types";
 
 //
 // tests
