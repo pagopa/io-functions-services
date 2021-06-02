@@ -4,7 +4,6 @@
 import { Context } from "@azure/functions";
 
 import * as express from "express";
-
 import * as df from "durable-functions";
 
 import { Either, isLeft, left, right } from "fp-ts/lib/Either";
@@ -15,8 +14,8 @@ import { fromEither, TaskEither, tryCatch } from "fp-ts/lib/TaskEither";
 import * as t from "io-ts";
 
 import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
+import { EUCovidCert } from "@pagopa/io-functions-commons/dist/generated/definitions/EUCovidCert";
 import { NewMessage as ApiNewMessage } from "@pagopa/io-functions-commons/dist/generated/definitions/NewMessage";
-import { TimeToLiveSeconds } from "@pagopa/io-functions-commons/dist/generated/definitions/TimeToLiveSeconds";
 import { CreatedMessageEvent } from "@pagopa/io-functions-commons/dist/src/models/created_message_event";
 import {
   Message,
@@ -28,6 +27,7 @@ import {
   ValidService
 } from "@pagopa/io-functions-commons/dist/src/models/service";
 import {
+  AzureAllowBodyPayloadMiddleware,
   AzureApiAuthMiddleware,
   IAzureApiAuthorization,
   UserGroup
@@ -81,14 +81,7 @@ import {
 import { NonEmptyString } from "italia-ts-commons/lib/strings";
 import { PromiseType } from "italia-ts-commons/lib/types";
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
-
-const ApiNewMessageWithDefaults = t.intersection([
-  ApiNewMessage,
-  t.interface({ time_to_live: TimeToLiveSeconds })
-]);
-export type ApiNewMessageWithDefaults = t.TypeOf<
-  typeof ApiNewMessageWithDefaults
->;
+import { ApiNewMessageWithContentOf, ApiNewMessageWithDefaults } from "./types";
 
 /**
  * A request middleware that validates the Message payload.
@@ -519,7 +512,12 @@ export function CreateMessage(
     // extracts the create message payload from the request body
     MessagePayloadMiddleware,
     // extracts the optional fiscal code from the request params
-    OptionalFiscalCodeMiddleware
+    OptionalFiscalCodeMiddleware,
+    // Ensures only users in ApiMessageWriteEUCovidCert group can send messages with EUCovidCert payload
+    AzureAllowBodyPayloadMiddleware(
+      ApiNewMessageWithContentOf(t.interface({ eu_covid_cert: EUCovidCert })),
+      new Set([UserGroup.ApiMessageWriteEUCovidCert])
+    )
   );
   return wrapRequestHandler(
     middlewaresWrap(
