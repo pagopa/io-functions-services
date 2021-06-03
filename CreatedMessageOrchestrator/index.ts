@@ -54,7 +54,8 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
         properties: {
           details: readableReport(errorOrCreatedMessageEvent.value),
           isSuccess: "false",
-          messageId: ""
+          messageId: "",
+          serviceId: ""
         }
       },
       context.df.isReplaying
@@ -103,7 +104,8 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
               storeMessageContentActivityResultOrError.value
             ),
             isSuccess: "false",
-            messageId: newMessageWithContent.id
+            messageId: newMessageWithContent.id,
+            serviceId: newMessageWithContent.senderServiceId
           }
         },
         context.df.isReplaying
@@ -147,7 +149,8 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
           properties: {
             details: `${MessageStatusValueEnum.REJECTED}-${storeMessageContentActivityResult.reason}`,
             isSuccess: "true",
-            messageId: newMessageWithContent.id
+            messageId: newMessageWithContent.id,
+            serviceId: newMessageWithContent.senderServiceId
           }
         },
         context.df.isReplaying
@@ -187,7 +190,8 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
               createNotificationActivityResultOrError.value
             ),
             isSuccess: "false",
-            messageId: newMessageWithContent.id
+            messageId: newMessageWithContent.id,
+            serviceId: newMessageWithContent.senderServiceId
           }
         },
         context.df.isReplaying
@@ -201,7 +205,8 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
         properties: {
           details: "",
           isSuccess: "true",
-          messageId: newMessageWithContent.id
+          messageId: newMessageWithContent.id,
+          serviceId: newMessageWithContent.senderServiceId
         }
       },
       context.df.isReplaying
@@ -220,7 +225,8 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
           properties: {
             details: "No notifications will be delivered",
             isSuccess: "true",
-            messageId: newMessageWithContent.id
+            messageId: newMessageWithContent.id,
+            serviceId: newMessageWithContent.senderServiceId
           }
         },
         context.df.isReplaying
@@ -274,7 +280,8 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
                 properties: {
                   details: emailNotificationActivityResult.reason,
                   isSuccess: "false",
-                  messageId: newMessageWithContent.id
+                  messageId: newMessageWithContent.id,
+                  serviceId: newMessageWithContent.senderServiceId
                 }
               },
               context.df.isReplaying
@@ -286,7 +293,8 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
                 properties: {
                   details: "",
                   isSuccess: "true",
-                  messageId: newMessageWithContent.id
+                  messageId: newMessageWithContent.id,
+                  serviceId: newMessageWithContent.senderServiceId
                 }
               },
               context.df.isReplaying
@@ -316,7 +324,8 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
                   properties: {
                     details: "email",
                     isSuccess: "true",
-                    messageId: newMessageWithContent.id
+                    messageId: newMessageWithContent.id,
+                    serviceId: newMessageWithContent.senderServiceId
                   }
                 },
                 context.df.isReplaying
@@ -334,7 +343,8 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
                   properties: {
                     details: "email",
                     isSuccess: "false",
-                    messageId: newMessageWithContent.id
+                    messageId: newMessageWithContent.id,
+                    serviceId: newMessageWithContent.senderServiceId
                   }
                 },
                 context.df.isReplaying
@@ -395,7 +405,8 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
                 properties: {
                   details: webhookNotificationActivityResult.reason,
                   isSuccess: "false",
-                  messageId: newMessageWithContent.id
+                  messageId: newMessageWithContent.id,
+                  serviceId: newMessageWithContent.senderServiceId
                 }
               },
               context.df.isReplaying
@@ -407,7 +418,8 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
                 properties: {
                   details: "",
                   isSuccess: "true",
-                  messageId: newMessageWithContent.id
+                  messageId: newMessageWithContent.id,
+                  serviceId: newMessageWithContent.senderServiceId
                 }
               },
               context.df.isReplaying
@@ -437,7 +449,8 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
                   properties: {
                     details: "webhook",
                     isSuccess: "true",
-                    messageId: newMessageWithContent.id
+                    messageId: newMessageWithContent.id,
+                    serviceId: newMessageWithContent.senderServiceId
                   }
                 },
                 context.df.isReplaying
@@ -454,7 +467,8 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
                   properties: {
                     details: "webhook",
                     isSuccess: "false",
-                    messageId: newMessageWithContent.id
+                    messageId: newMessageWithContent.id,
+                    serviceId: newMessageWithContent.senderServiceId
                   }
                 },
                 context.df.isReplaying
@@ -492,7 +506,8 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
         properties: {
           details: MessageStatusValueEnum.PROCESSED,
           isSuccess: "true",
-          messageId: newMessageWithContent.id
+          messageId: newMessageWithContent.id,
+          serviceId: newMessageWithContent.senderServiceId
         }
       },
       context.df.isReplaying
