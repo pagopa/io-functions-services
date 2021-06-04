@@ -17,7 +17,8 @@ const MessageProcessingEvent = t.interface({
   properties: t.interface({
     details: t.string,
     isSuccess: t.string,
-    messageId: t.string
+    messageId: t.string,
+    serviceId: t.string
   })
 });
 
