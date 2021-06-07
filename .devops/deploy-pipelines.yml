@@ -1,8 +1,11 @@
 # Azure DevOps pipeline to release a new version and deploy to production.
 
 variables:
-  NODE_VERSION: '10.14.1'
-  YARN_CACHE_FOLDER: $(Pipeline.Workspace)/.yarn
+  # Configuration to run the healthcheck container
+  HEALTHCHECK_CONTAINER_RG: 'io-p-rg-common'
+  HEALTHCHECK_CONTAINER_VNET: 'io-p-vnet-common'
+  HEALTHCHECK_CONTAINER_SUBNET: 'azure-devops' 
+  HEALTHCHECK_PATH: 'api/v1/info' 
 
 parameters:
   - name: 'RELEASE_SEMVER'
@@ -13,6 +16,20 @@ parameters:
       - minor
       - patch
     default: minor
+  # Map of production apps to deploy to, in the form
+  #   {logicName}: 
+  #     appname: {name of the resource}
+  #     rg: {name of the resource group}
+  # Although it's a parameter, it's not intended to be edited at runtime.
+  # It's here because variables only handle scalar values
+  - name: 'PRODUCTION_APPS'
+    displayName: ''
+    type: object
+    default:
+      services:
+        appname: io-p-fn3-services
+        rg: io-p-rg-functions_services
+
 
 # Only manual activations are intended
 trigger: none
@@ -73,12 +90,13 @@ stages:
               echo "We assume this reference to be a valid release: $(Build.SourceBranch). Therefore, there is no need to bundle a new release."
             displayName: 'Skip release bundle'
 
+
   # Prepare Artifact
-  - stage: Deploy_staging
+  - stage: Prepare_artifact
     dependsOn:
       - Release
     jobs:
-      - job: 'prepare_artifact_and_deploy'
+      - job: 'prepare_artifact'
         steps:
           # Build application
           - template: templates/node-job-setup/template.yaml@pagopaCommons
@@ -102,15 +120,14 @@ stages:
           - task: CopyFiles@2
             inputs:
               SourceFolder: '$(System.DefaultWorkingDirectory)'
-              TargetFolder: '$(Build.ArtifactStagingDirectory)'
+              TargetFolder: '$(System.DefaultWorkingDirectory)/bundle'
               Contents: |
                 **/*
                 !.git/**/*
                 !**/*.js.map
                 !**/*.ts
                 !.vscode/**/*
-                !azure-templates/**/*
-                !azure-pipelines.yml
+                !.devops/**/*
                 !.prettierrc
                 !.gitignore
                 !README.md
@@ -118,56 +135,80 @@ stages:
                 !local.settings.json
                 !test
                 !tsconfig.json
+                !tslint.json
+                !yarn.lock
+                !Dangerfile.js
+                !CODEOWNERS
+                !__*/**/*
             displayName: 'Copy deploy files'
+          
+          - publish: $(System.DefaultWorkingDirectory)/bundle
+            artifact: Bundle
+
+  # Deploy on staging slot
+  - ${{ each app in parameters.PRODUCTION_APPS }}:
+    - stage: Deploy_${{ app.Key }}_to_staging
+      dependsOn:
+        - Prepare_artifact
+      jobs:
+        - job: 'do_deploy_${{ app.Key }}'
+          steps:
+            - checkout: none
+            - download: current
+              artifact: Bundle
             
-          - task: AzureFunctionApp@1  
-            inputs:
-              azureSubscription: '$(PRODUCTION_AZURE_SUBSCRIPTION)'
-              resourceGroupName: '$(PRODUCTION_RESOURCE_GROUP_NAME)'
-              appType: 'functionApp'
-              appName: '$(PRODUCTION_APP_NAME)'
-              package: '$(Build.ArtifactStagingDirectory)/'
-              deploymentMethod: 'auto'
-              deployToSlotOrASE: true
-              slotName: 'staging'
-            displayName: Deploy to staging slot
+            - task: AzureFunctionApp@1  
+              inputs:
+                azureSubscription: '$(PRODUCTION_AZURE_SUBSCRIPTION)'
+                resourceGroupName: '${{ app.Value.rg }}'
+                appType: 'functionApp'
+                appName: '${{ app.Value.appname }}'
+                package: '$(Pipeline.Workspace)/Bundle'
+                deploymentMethod: 'auto'
+                deployToSlotOrASE: true
+                slotName: 'staging'
+              displayName: Deploy to staging slot 
 
   # Check that the staging instance is healthy
-  - stage: Healthcheck
-    dependsOn:
-      - Deploy_staging
-    jobs:
-      - job: 'do_healthcheck'       
-        steps:  
-          - checkout: none
-          - template: templates/rest-healthcheck/template.yaml@pagopaCommons
-            parameters:
-              azureSubscription: '$(PRODUCTION_AZURE_SUBSCRIPTION)'
-              appName: '$(PRODUCTION_APP_NAME)'
-              endpoint: 'https://$(PRODUCTION_APP_NAME)-staging.azurewebsites.net/api/info'
-              endpointType: 'private'
-              containerInstanceResourceGroup: 'io-p-rg-common'
-              containerInstanceVNet: 'io-p-vnet-common'
-              containerInstanceSubnet: 'azure-devops' 
+  - ${{ each app in parameters.PRODUCTION_APPS }}:
+    - stage: Healthcheck_${{ app.Key }}
+      dependsOn:
+        - Deploy_${{ app.Key }}_to_staging
+      jobs:
+        - job: 'do_healthcheck_${{ app.Key }}'       
+          steps:  
+            - checkout: none
+            - template: templates/rest-healthcheck/template.yaml@pagopaCommons
+              parameters:
+                azureSubscription: '$(PRODUCTION_AZURE_SUBSCRIPTION)'
+                appName: '${{ app.Value.appname }}'
+                endpoint: 'https://${{ app.Value.appname }}-staging.azurewebsites.net/$(HEALTHCHECK_PATH)'
+                endpointType: 'private'
+                containerInstanceResourceGroup: '$(HEALTHCHECK_CONTAINER_RG)'
+                containerInstanceVNet: '$(HEALTHCHECK_CONTAINER_VNET)'
+                containerInstanceSubnet: '$(HEALTHCHECK_CONTAINER_SUBNET)'
 
   # Promote the staging instance to production
-  - stage: Deploy_production
-    dependsOn:
-      - Healthcheck
-      - Deploy_staging
-    jobs:
-      - job: 'do_deploy'       
-        steps:  
-          - checkout: none
-          - task: AzureAppServiceManage@0   
-            inputs:
-              azureSubscription: '$(PRODUCTION_AZURE_SUBSCRIPTION)'
-              resourceGroupName: '$(PRODUCTION_RESOURCE_GROUP_NAME)'
-              webAppName: '$(PRODUCTION_APP_NAME)'
-              sourceSlot: staging
-              swapWithProduction: true
-            displayName: Swap with production slot
-
+  - ${{ each app in parameters.PRODUCTION_APPS }}:
+    - stage: Swap_${{ app.Key }}_to_production
+      dependsOn:
+        - Deploy_${{ app.Key }}_to_staging
+        # Wait for every healthcheck to succeed
+        # This implied that no app is swapped to prod if at least one healthcheck fails
+        - ${{ each appInner in parameters.PRODUCTION_APPS }}:
+          - Healthcheck_${{ appInner.Key }}
+      jobs:
+        - job: 'do_deploy_${{ app.Key }}'       
+          steps:  
+            - checkout: none
+            - task: AzureAppServiceManage@0
+              inputs:
+                azureSubscription: '$(PRODUCTION_AZURE_SUBSCRIPTION)'
+                resourceGroupName: '${{ app.Value.rg }}'
+                webAppName: '${{ app.Value.appname }}'
+                sourceSlot: staging
+                swapWithProduction: true
+              displayName: Swap with production slot
 
   # Publish client SDK to NPM
   - stage: PublishClientSDKtoNPM

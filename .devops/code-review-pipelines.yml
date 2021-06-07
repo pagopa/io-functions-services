@@ -6,13 +6,14 @@
 # - DANGER_GITHUB_API_TOKEN
 # 
 
-variables:
-  NODE_VERSION: '10.14.1'
-  YARN_CACHE_FOLDER: $(Pipeline.Workspace)/.yarn
-
 # Automatically triggered on PR
 # https://docs.microsoft.com/en-us/azure/devops/pipelines/yaml-schema?view=azure-devops&tabs=schema%2Cparameter-schema#pr-trigger
 trigger: none
+
+# Execute agents (jobs) on latest Ubuntu version.
+# To change OS for a specific, ovverride "pool" attribute inside the job definition
+pool:
+  vmImage: 'ubuntu-latest'
 
 resources:
   repositories:
@@ -22,20 +23,10 @@ resources:
       ref: refs/tags/v14
       endpoint: 'io-azure-devops-github-ro'
 
-# This pipeline has been implemented to be run on hosted agent pools based both
-# on 'windows' and 'ubuntu' virtual machine images and using the scripts defined
-# in the package.json file. Since we are deploying on Azure functions on Windows
-# runtime, the pipeline is currently configured to use a Windows hosted image for
-# the build and deploy.
-pool:
-  vmImage: 'ubuntu-latest'
-
 stages:
-  # A) Build and code validation
   - stage: Build
     dependsOn: []
     jobs:
-      # A1) Checkout, install module and build code
       - job: make_build
         pool:
           # As we deploy on Wondows machines, we use Windows to build
@@ -45,15 +36,13 @@ stages:
         - script: |
             yarn build
           displayName: 'Build'
-
+  
   - stage: Static_analysis
     dependsOn: []
     jobs:
-      
       - job: lint     
         steps:
         - template: templates/node-job-setup/template.yaml@pagopaCommons
-
         - script: |
             yarn lint
           displayName: 'Lint'
@@ -91,16 +80,18 @@ stages:
               DANGER_GITHUB_API_TOKEN: '$(DANGER_GITHUB_API_TOKEN)'
             displayName: 'Danger CI'
 
+
+  # B) Run unit tests if there is a push or pull request on any branch.
   - stage: Test
     dependsOn: []
     jobs:
       - job: unit_tests
         steps:
         - template: templates/node-job-setup/template.yaml@pagopaCommons
-
+        
         - script: |
             yarn generate
-          displayName: 'Generate defintions'
+          displayName: 'Generate definitions'
 
         - script: |
             yarn test:coverage
