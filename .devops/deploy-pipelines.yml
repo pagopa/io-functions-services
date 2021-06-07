@@ -1,9 +1,5 @@
 # Azure DevOps pipeline to release a new version and deploy to production.
 
-variables:
-  NODE_VERSION: '10.14.1'
-  YARN_CACHE_FOLDER: $(Pipeline.Workspace)/.yarn
-
 parameters:
   - name: 'RELEASE_SEMVER'
     displayName: 'When packing a release, define the version bump to apply'
@@ -73,6 +69,7 @@ stages:
               echo "We assume this reference to be a valid release: $(Build.SourceBranch). Therefore, there is no need to bundle a new release."
             displayName: 'Skip release bundle'
 
+
   # Prepare Artifact
   - stage: Deploy_staging
     dependsOn:
@@ -139,12 +136,11 @@ stages:
     jobs:
       - job: 'do_healthcheck'       
         steps:  
-          - checkout: none
           - template: templates/rest-healthcheck/template.yaml@pagopaCommons
             parameters:
               azureSubscription: '$(PRODUCTION_AZURE_SUBSCRIPTION)'
               appName: '$(PRODUCTION_APP_NAME)'
-              endpoint: 'https://$(PRODUCTION_APP_NAME)-staging.azurewebsites.net/api/info'
+              endpoint: 'https://$(PRODUCTION_APP_NAME)-staging.azurewebsites.net/api/v1/info'
               endpointType: 'private'
               containerInstanceResourceGroup: 'io-p-rg-common'
               containerInstanceVNet: 'io-p-vnet-common'
@@ -158,7 +154,6 @@ stages:
     jobs:
       - job: 'do_deploy'       
         steps:  
-          - checkout: none
           - task: AzureAppServiceManage@0   
             inputs:
               azureSubscription: '$(PRODUCTION_AZURE_SUBSCRIPTION)'
