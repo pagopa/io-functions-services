@@ -5,7 +5,7 @@
 jest.mock("applicationinsights");
 jest.mock("azure-storage");
 
-import { isLeft, left, right } from "fp-ts/lib/Either";
+import { isLeft, isRight, right } from "fp-ts/lib/Either";
 import { none, some } from "fp-ts/lib/Option";
 import {
   EmailString,
@@ -24,6 +24,7 @@ import { readableReport } from "italia-ts-commons/lib/reporters";
 
 import {
   getWebhookNotificationActivityHandler,
+  senderMetadataToPublic,
   sendToWebhook
 } from "../handler";
 
@@ -140,7 +141,7 @@ const nullLog = {
 };
 
 const mockFetch = <T>(status: number, json: T) => {
-  return jest.fn(() => ({
+  return jest.fn((_1, _2) => ({
     json: () => Promise.resolve(json),
     status
   }));
@@ -151,6 +152,62 @@ const nullContext = {
 } as any;
 
 describe("sendToWebhook", () => {
+  it("should succeded with right parameters", async () => {
+    const expectedResponse = { message: "OK" };
+    const fetchApi = mockFetch(200, expectedResponse);
+    const notifyApiCall = getNotifyClient(fetchApi as any);
+    const ret = await sendToWebhook(
+      notifyApiCall,
+      "http://localhost/test" as HttpsUrl,
+      aMessage as any,
+      aMessageContent,
+      aSenderMetadata,
+      false
+    ).run();
+    expect(isRight(ret)).toBeTruthy();
+  });
+
+  it("should remove message content if the service require secure channel", async () => {
+    const expectedResponse = { message: "OK" };
+    const fetchApi = mockFetch(200, expectedResponse);
+    const notifyApiCall = getNotifyClient(fetchApi as any);
+    const ret = await sendToWebhook(
+      notifyApiCall,
+      "http://localhost/test" as HttpsUrl,
+      aMessage as any,
+      aMessageContent,
+      {
+        ...aSenderMetadata,
+        requireSecureChannels: true
+      },
+      false
+    ).run();
+    expect(fetchApi.mock.calls[0][1]).toHaveProperty("body");
+    const body = JSON.parse(fetchApi.mock.calls[0][1].body);
+    expect(body).toHaveProperty("message");
+    expect(body).toHaveProperty("sender_metadata");
+    expect(body).not.toHaveProperty("content");
+    expect(isRight(ret)).toBeTruthy();
+  });
+  it("should remove message content if webhook message content is disabled", async () => {
+    const expectedResponse = { message: "OK" };
+    const fetchApi = mockFetch(200, expectedResponse);
+    const notifyApiCall = getNotifyClient(fetchApi as any);
+    const ret = await sendToWebhook(
+      notifyApiCall,
+      "http://localhost/test" as HttpsUrl,
+      aMessage as any,
+      aMessageContent,
+      aSenderMetadata,
+      true
+    ).run();
+    expect(fetchApi.mock.calls[0][1]).toHaveProperty("body");
+    const body = JSON.parse(fetchApi.mock.calls[0][1].body);
+    expect(body).toHaveProperty("message");
+    expect(body).toHaveProperty("sender_metadata");
+    expect(body).not.toHaveProperty("content");
+    expect(isRight(ret)).toBeTruthy();
+  });
   it("should return a transient error in case of timeout", async () => {
     const abortableFetch = AbortableFetch(agent.getHttpsFetch(process.env));
     const fetchWithTimeout = setFetchTimeout(1 as Millisecond, abortableFetch);
@@ -160,7 +217,8 @@ describe("sendToWebhook", () => {
       "http://localhost/test" as HttpsUrl,
       aMessage as any,
       aMessageContent,
-      aSenderMetadata
+      aSenderMetadata,
+      false
     ).run();
     expect(isLeft(ret)).toBeTruthy();
     if (isLeft(ret)) {
@@ -176,7 +234,8 @@ describe("sendToWebhook", () => {
       {} as any,
       {} as any,
       {} as any,
-      {} as any
+      {} as any,
+      false
     ).run();
     expect(fetchApi).toHaveBeenCalledTimes(1);
     expect(isLeft(ret)).toBeTruthy();
@@ -193,7 +252,8 @@ describe("sendToWebhook", () => {
       {} as any,
       {} as any,
       {} as any,
-      {} as any
+      {} as any,
+      false
     ).run();
     expect(fetchApi).toHaveBeenCalledTimes(1);
     expect(isLeft(ret)).toBeTruthy();
@@ -212,7 +272,8 @@ describe("handler", () => {
     await expect(
       getWebhookNotificationActivityHandler(
         notificationModelMock as any,
-        {} as any
+        {} as any,
+        false
       )(nullContext, {
         notificationEvent: getMockNotificationEvent()
       })
@@ -227,7 +288,8 @@ describe("handler", () => {
     await expect(
       getWebhookNotificationActivityHandler(
         notificationModelMock as any,
-        {} as any
+        {} as any,
+        false
       )(nullContext, {
         notificationEvent: getMockNotificationEvent()
       })
@@ -242,7 +304,8 @@ describe("handler", () => {
     await expect(
       getWebhookNotificationActivityHandler(
         notificationModelMock as any,
-        {} as any
+        {} as any,
+        false
       )(nullContext, {
         notificationEvent: getMockNotificationEvent()
       })
@@ -261,7 +324,8 @@ describe("handler", () => {
 
     const result = await getWebhookNotificationActivityHandler(
       notificationModelMock as any,
-      notifyCallApiMock as any
+      notifyCallApiMock as any,
+      false
     )(nullContext, {
       notificationEvent: getMockNotificationEvent(aMessageContent)
     });
@@ -291,7 +355,8 @@ describe("handler", () => {
 
     const result = await getWebhookNotificationActivityHandler(
       notificationModelMock as any,
-      notifyCallApiMock
+      notifyCallApiMock,
+      false
     )(nullContext, {
       notificationEvent: getMockNotificationEvent(aLongMessageContent)
     });
@@ -315,7 +380,8 @@ describe("handler", () => {
     await expect(
       getWebhookNotificationActivityHandler(
         notificationModelMock as any,
-        notifyCallApiMock
+        notifyCallApiMock,
+        false
       )(nullContext, {
         notificationEvent: getMockNotificationEvent(aMessageContent)
       })
@@ -333,7 +399,8 @@ describe("handler", () => {
 
     const ret = await getWebhookNotificationActivityHandler(
       notificationModelMock as any,
-      {} as any
+      {} as any,
+      false
     )(nullContext, {
       notificationEvent: {
         ...notificationEvent,

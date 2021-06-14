@@ -74,7 +74,7 @@ export type WebhookNotificationActivityResult = t.TypeOf<
  * to the one of the public NotificationAPI
  */
 // eslint-disable-next-line prefer-arrow/prefer-arrow-functions
-function newMessageToPublic(
+export function newMessageToPublic(
   newMessage: NewMessageWithoutContent,
   content?: MessageContent
 ): Notification["message"] {
@@ -92,7 +92,7 @@ function newMessageToPublic(
  * to the one of the public API
  */
 // eslint-disable-next-line prefer-arrow/prefer-arrow-functions
-function senderMetadataToPublic(
+export function senderMetadataToPublic(
   senderMetadata: CreatedMessageEventSenderMetadata
 ): SenderMetadata {
   return {
@@ -105,23 +105,27 @@ function senderMetadataToPublic(
 /**
  * Post data to the API proxy webhook endpoint.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
-export function sendToWebhook(
+export const sendToWebhook = (
   notifyApiCall: TypeofApiCall<WebhookNotifyT>,
   webhookEndpoint: HttpsUrl,
   message: NewMessageWithoutContent,
   content: MessageContent,
-  senderMetadata: CreatedMessageEventSenderMetadata
-): TaskEither<RuntimeError, TypeofApiResponse<WebhookNotifyT>> {
-  return tryCatch(
+  senderMetadata: CreatedMessageEventSenderMetadata,
+  disableWebhookMessageContent: boolean
+  // eslint-disable-next-line max-params
+): TaskEither<RuntimeError, TypeofApiResponse<WebhookNotifyT>> =>
+  tryCatch(
     () =>
       notifyApiCall({
         notification: {
-          // if the service requires secure channels
+          // If the service requires secure channels
+          // or the message content is disabled for all services
           // we send an empty (generic) push notification
-          message: senderMetadata.requireSecureChannels
-            ? newMessageToPublic(message)
-            : newMessageToPublic(message, content),
+          // generic content is provided by `io-backend` https://github.com/pagopa/io-backend/blob/v7.16.0/src/controllers/notificationController.ts#L62
+          message:
+            senderMetadata.requireSecureChannels || disableWebhookMessageContent
+              ? newMessageToPublic(message)
+              : newMessageToPublic(message, content),
           sender_metadata: senderMetadataToPublic(senderMetadata)
         },
         webhookEndpoint
@@ -160,14 +164,14 @@ export function sendToWebhook(
       )
     )
   );
-}
 
 /**
  * Returns a function for handling WebhookNotificationActivity
  */
 export const getWebhookNotificationActivityHandler = (
   lNotificationModel: NotificationModel,
-  notifyApiCall: TypeofApiCall<WebhookNotifyT>
+  notifyApiCall: TypeofApiCall<WebhookNotifyT>,
+  disableWebhookMessageContent: boolean
 ) => async (context: Context, input: unknown): Promise<unknown> => {
   const inputOrError = WebhookNotificationActivityInput.decode(input);
 
@@ -250,7 +254,8 @@ export const getWebhookNotificationActivityHandler = (
     webhookNotification.url,
     message,
     content,
-    senderMetadata
+    senderMetadata,
+    disableWebhookMessageContent
   ).run();
   if (sendResult.isLeft()) {
     const error = sendResult.value;

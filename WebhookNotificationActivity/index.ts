@@ -12,10 +12,13 @@ import {
   toFetch
 } from "italia-ts-commons/lib/fetch";
 import { Millisecond } from "italia-ts-commons/lib/units";
+import { getConfigOrThrow } from "../utils/config";
 import { cosmosdbInstance } from "../utils/cosmosdb";
 
 import { getNotifyClient } from "./client";
 import { getWebhookNotificationActivityHandler } from "./handler";
+
+const config = getConfigOrThrow();
 
 const notificationModel = new NotificationModel(
   cosmosdbInstance.container(NOTIFICATION_COLLECTION_NAME)
@@ -34,7 +37,8 @@ const notifyApiCall = getNotifyClient(toFetch(fetchWithTimeout));
 
 const activityFunction: AzureFunction = getWebhookNotificationActivityHandler(
   notificationModel,
-  notifyApiCall
+  notifyApiCall,
+  config.FF_DISABLE_WEBHOOK_MESSAGE_CONTENT
 );
 
 export default activityFunction;

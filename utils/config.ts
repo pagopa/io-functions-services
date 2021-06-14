@@ -43,6 +43,7 @@ export const IConfig = t.intersection([
 
     // eslint-disable-next-line sort-keys
     FF_DISABLE_INCOMPLETE_SERVICES: t.boolean,
+    FF_DISABLE_WEBHOOK_MESSAGE_CONTENT: t.boolean,
     FF_INCOMPLETE_SERVICE_WHITELIST: CommaSeparatedListOf(ServiceId),
 
     isProduction: t.boolean
@@ -55,6 +56,11 @@ const errorOrConfig: t.Validation<IConfig> = IConfig.decode({
   ...process.env,
   FF_DISABLE_INCOMPLETE_SERVICES: fromNullable(
     process.env.FF_DISABLE_INCOMPLETE_SERVICES
+  )
+    .map(_ => _.toLowerCase() === "true")
+    .getOrElse(false),
+  FF_DISABLE_WEBHOOK_MESSAGE_CONTENT: fromNullable(
+    process.env.FF_DISABLE_WEBHOOK_MESSAGE_CONTENT
   )
     .map(_ => _.toLowerCase() === "true")
     .getOrElse(false),
