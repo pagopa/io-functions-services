@@ -67,7 +67,7 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
   const createdMessageEvent = errorOrCreatedMessageEvent.value;
   const newMessageWithContent = createdMessageEvent.message;
 
-  const logPrefix = `CreatedMessageOrchestrator|ORCHESTRATOR_ID=${context.df.instanceId}|MESSAGE_ID=${newMessageWithContent.id}|RECIPIENT=${newMessageWithContent.fiscalCode}`;
+  const logPrefix = `CreatedMessageOrchestrator|ORCHESTRATOR_ID=${context.df.instanceId}|MESSAGE_ID=${newMessageWithContent.id}`;
 
   context.log.verbose(`${logPrefix}|Starting`);
 

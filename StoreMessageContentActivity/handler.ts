@@ -80,7 +80,7 @@ export const getStoreMessageContentActivityHandler = (
 
   const newMessageWithoutContent = createdMessageEvent.message;
 
-  const logPrefix = `StoreMessageContentActivity|MESSAGE_ID=${newMessageWithoutContent.id}|RECIPIENT=${newMessageWithoutContent.fiscalCode}`;
+  const logPrefix = `StoreMessageContentActivity|MESSAGE_ID=${newMessageWithoutContent.id}`;
 
   context.log.verbose(`${logPrefix}|STARTING`);
 
