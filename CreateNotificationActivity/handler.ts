@@ -141,7 +141,7 @@ export const getCreateNotificationActivityHandler = (
     storeMessageContentActivityResult
   } = inputOrError.value;
 
-  const logPrefix = `CreateNotificationActivity|MESSAGE_ID=${createdMessageEvent.message.id}|RECIPIENT=${createdMessageEvent.message.fiscalCode}`;
+  const logPrefix = `CreateNotificationActivity|MESSAGE_ID=${createdMessageEvent.message.id}`;
 
   context.log.verbose(`${logPrefix}|STARTING`);
 

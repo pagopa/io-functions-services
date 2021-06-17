@@ -197,7 +197,7 @@ export const getWebhookNotificationActivityHandler = (
     senderMetadata
   } = notificationEvent;
 
-  const logPrefix = `WebhookNotificationActivity|MESSAGE_ID=${message.id}|RECIPIENT=${message.fiscalCode}|NOTIFICATION_ID=${notificationId}`;
+  const logPrefix = `WebhookNotificationActivity|MESSAGE_ID=${message.id}|NOTIFICATION_ID=${notificationId}`;
 
   // Check whether the message is expired
   const errorOrActiveMessage = ActiveMessage.decode(message);

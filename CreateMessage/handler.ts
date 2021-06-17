@@ -401,9 +401,9 @@ export function CreateMessageHandler(
       isSuccess: boolean
     ): void =>
       context.log.verbose(
-        `CreateMessageHandler|SERVICE_ID=${serviceId}|RECIPIENT=${fiscalCode}|RESPONSE=${
-          r.kind
-        }|${r.detail}|RESULT=${isSuccess ? "SUCCESS" : "FAILURE"}`
+        `CreateMessageHandler|SERVICE_ID=${serviceId}|RESPONSE=${r.kind}|${
+          r.detail
+        }|RESULT=${isSuccess ? "SUCCESS" : "FAILURE"}`
       );
 
     // here we create an async Task that processes the request

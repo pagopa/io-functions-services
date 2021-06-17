@@ -82,7 +82,7 @@ export const getEmailNotificationActivityHandler = (
     senderMetadata
   } = notificationEvent;
 
-  const logPrefix = `EmailNotificationActivity|MESSAGE_ID=${message.id}|RECIPIENT=${message.fiscalCode}|NOTIFICATION_ID=${notificationId}`;
+  const logPrefix = `EmailNotificationActivity|MESSAGE_ID=${message.id}|NOTIFICATION_ID=${notificationId}`;
 
   // Check whether the message is expired
   const errorOrActiveMessage = ActiveMessage.decode(message);
