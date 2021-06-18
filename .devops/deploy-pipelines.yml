@@ -32,6 +32,9 @@ parameters:
       services01:
         appname: io-p-fn3-services01
         rg: io-p-rg-services
+      services02:
+        appname: io-p-fn3-services02
+        rg: io-p-rg-services
 
 # Only manual activations are intended
 trigger: none
