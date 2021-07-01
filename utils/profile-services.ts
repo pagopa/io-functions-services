@@ -64,7 +64,7 @@ export const isSenderAllowed = (
 
 const findServicePreference = (
   servicesPreferencesModel: ServicesPreferencesModel,
-  profile,
+  profile: RetrievedProfile,
   serviceId: ServiceId
 ): te.TaskEither<IResponseErrorNotFound, RetrievedServicePreference> =>
   te
