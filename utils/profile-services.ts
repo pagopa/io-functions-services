@@ -139,7 +139,7 @@ export const profileWithPreferenceVersionWithModeAuto: IServicePreferenceHandler
         servicePreferenceToLimitedProfile(profile, servicePreference)
     ),
   isMyReposability: profile =>
-    profile.servicePreferencesSettings.version > 0 &&
+    profile.servicePreferencesSettings.version >= 0 &&
     profile.servicePreferencesSettings.mode === ServicesPreferencesModeEnum.AUTO
 };
 
@@ -151,7 +151,7 @@ export const profileWithPreferenceVersionWithModeManual: IServicePreferenceHandl
         servicePreferenceToLimitedProfile(profile, servicePreference)
     ),
   isMyReposability: profile =>
-    profile.servicePreferencesSettings.version > 0 &&
+    profile.servicePreferencesSettings.version >= 0 &&
     profile.servicePreferencesSettings.mode ===
       ServicesPreferencesModeEnum.MANUAL
 };

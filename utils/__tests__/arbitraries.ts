@@ -240,7 +240,7 @@ export const retrievedProfileArb = fc
         version: version as NonNegativeInteger,
         servicePreferencesSettings: {
           mode: ServicesPreferencesModeEnum.LEGACY,
-          version: 0
+          version: -1
         }
       } as RetrievedProfile)
   );
@@ -273,7 +273,7 @@ export const retrievedProfileUnhandled = fc.tuple(retrievedProfileArb).map(
       ...profile,
       servicePreferencesSettings: {
         mode: ServicesPreferencesModeEnum.AUTO,
-        version: 0
+        version: -1
       }
     } as RetrievedProfile)
 );

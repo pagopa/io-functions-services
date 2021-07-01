@@ -614,10 +614,10 @@
     eslint-plugin-sonarjs "^0.5.0"
     prettier "^2.1.2"
 
-"@pagopa/io-functions-commons@^20.6.5":
-  version "20.6.5"
-  resolved "https://registry.yarnpkg.com/@pagopa/io-functions-commons/-/io-functions-commons-20.6.5.tgz#ca57a1263d4951eccb26cab124d24154e001c2a3"
-  integrity sha512-1D9pM8nRaho0jO0cQBd36/Ar3FH4lCBAj1433rzz5nck+9AnG2tRtn/sav23BaLQV/BRHvgDCaJvZ3NNxQJQ7w==
+"@pagopa/io-functions-commons@^20.6.6":
+  version "20.6.6"
+  resolved "https://registry.yarnpkg.com/@pagopa/io-functions-commons/-/io-functions-commons-20.6.6.tgz#973027c4a51fd2f1f4a7218094f144faba40c875"
+  integrity sha512-SWxJpEW1KfHAE7WMfPUXnX0JOMJrupWNXItKyjx3tNmZw7EzfvRBfi7y4c2ysX0CpkcWq0hewhl8XT8ZEWH//w==
   dependencies:
     "@azure/cosmos" "^3.11.5"
     "@pagopa/ts-commons" "^9.5.1"

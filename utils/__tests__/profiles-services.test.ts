@@ -277,7 +277,7 @@ describe("profiles-services-test", () => {
     );
   });
 
-  it("GIVEN a profile with setting preference verison to 0 and service preference mode to AUTO, WHEN handleAll is called, THEN the handler must return a NotFound", async () => {
+  it("GIVEN a profile with setting preference verison to -1 and service preference mode to AUTO, WHEN handleAll is called, THEN the handler must return a NotFound", async () => {
     await fc.assert(
       fc.asyncProperty(
         arb.retrievedProfileUnhandled,
