@@ -5,7 +5,10 @@ import { NonEmptyString } from "italia-ts-commons/lib/strings";
 import { BlockedInboxOrChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
 
 import { RetrievedProfile } from "@pagopa/io-functions-commons/dist/src/models/profile";
-import { isSenderAllowed, retrievedProfileToLimitedProfile } from "../profile";
+import {
+  isSenderAllowed,
+  retrievedProfileToLimitedProfile
+} from "../profile-services";
 import { retrievedProfileArb } from "./arbitraries";
 
 describe("isSenderAllowed", () => {

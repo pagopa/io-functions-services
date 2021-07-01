@@ -127,6 +127,10 @@ const input: EmailNotificationActivityInput = {
 
 const lMailerTransporterMock = ({} as unknown) as mail.MailerTransporter;
 
+jest.mock("@pagopa/io-functions-commons/dist/src/mailer", () => ({
+  sendMail: jest.fn()
+}));
+
 describe("getEmailNotificationActivityHandler", () => {
   it("should respond with 'SUCCESS' if the mail is sent", async () => {
     jest.spyOn(mail, "sendMail").mockReturnValueOnce(taskEither.of("SUCCESS"));

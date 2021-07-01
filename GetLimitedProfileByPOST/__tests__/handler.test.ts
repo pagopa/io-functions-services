@@ -21,7 +21,7 @@ import {
   fiscalCodeArb,
   retrievedProfileArb
 } from "../../utils/__tests__/arbitraries";
-import { retrievedProfileToLimitedProfile } from "../../utils/profile";
+import { retrievedProfileToLimitedProfile } from "../../utils/profile-services";
 import { GetLimitedProfileByPOSTHandler } from "../handler";
 import {
   aFiscalCode,
@@ -29,6 +29,7 @@ import {
   anotherFiscalCode,
   aValidService
 } from "../../__mocks__/mocks";
+import { ServicesPreferencesModel } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 
 // eslint-disable-next-line sonar/sonar-max-lines-per-function
 describe("GetLimitedProfileByPOSTHandler", () => {
@@ -54,10 +55,14 @@ describe("GetLimitedProfileByPOSTHandler", () => {
           const mockProfileModel = ({
             findLastVersionByModelId: jest.fn(() => fromLeft({}))
           } as unknown) as ProfileModel;
+          const mockServicesPreferencesModel = ({
+            getQueryIterator: jest.fn(() => fromLeft({}))
+          } as unknown) as ServicesPreferencesModel;
           const limitedProfileHandler = GetLimitedProfileByPOSTHandler(
             mockProfileModel,
             true,
-            []
+            [],
+            mockServicesPreferencesModel
           );
 
           const response = await limitedProfileHandler(
@@ -91,10 +96,14 @@ describe("GetLimitedProfileByPOSTHandler", () => {
           const mockProfileModel = ({
             findLastVersionByModelId: jest.fn(() => taskEither.of(none))
           } as unknown) as ProfileModel;
+          const mockServicesPreferencesModel = ({
+            getQueryIterator: jest.fn(() => fromLeft({}))
+          } as unknown) as ServicesPreferencesModel;
           const limitedProfileHandler = GetLimitedProfileByPOSTHandler(
             mockProfileModel,
             true,
-            []
+            [],
+            mockServicesPreferencesModel
           );
 
           const response = await limitedProfileHandler(
@@ -135,10 +144,14 @@ describe("GetLimitedProfileByPOSTHandler", () => {
               taskEither.of(some(retrievedProfileWithInboxDisabled))
             )
           } as unknown) as ProfileModel;
+          const mockServicesPreferencesModel = ({
+            getQueryIterator: jest.fn(() => fromLeft({}))
+          } as unknown) as ServicesPreferencesModel;
           const limitedProfileHandler = GetLimitedProfileByPOSTHandler(
             mockProfileModel,
             true,
-            []
+            [],
+            mockServicesPreferencesModel
           );
 
           const response = await limitedProfileHandler(
@@ -175,10 +188,14 @@ describe("GetLimitedProfileByPOSTHandler", () => {
               taskEither.of(some(retrievedProfile))
             )
           } as unknown) as ProfileModel;
+          const mockServicesPreferencesModel = ({
+            getQueryIterator: jest.fn(() => fromLeft({}))
+          } as unknown) as ServicesPreferencesModel;
           const limitedProfileHandler = GetLimitedProfileByPOSTHandler(
             mockProfileModel,
             true,
-            []
+            [],
+            mockServicesPreferencesModel
           );
 
           const response = await limitedProfileHandler(
@@ -220,10 +237,14 @@ describe("GetLimitedProfileByPOSTHandler", () => {
               taskEither.of(some(retrievedProfile))
             )
           } as unknown) as ProfileModel;
+          const mockServicesPreferencesModel = ({
+            getQueryIterator: jest.fn(() => fromLeft({}))
+          } as unknown) as ServicesPreferencesModel;
           const limitedProfileHandler = GetLimitedProfileByPOSTHandler(
             mockProfileModel,
             true,
-            []
+            [],
+            mockServicesPreferencesModel
           );
 
           const response = await limitedProfileHandler(
@@ -267,10 +288,14 @@ describe("GetLimitedProfileByPOSTHandler", () => {
               taskEither.of(some(retrievedProfile))
             )
           } as unknown) as ProfileModel;
+          const mockServicesPreferencesModel = ({
+            getQueryIterator: jest.fn(() => fromLeft({}))
+          } as unknown) as ServicesPreferencesModel;
           const limitedProfileHandler = GetLimitedProfileByPOSTHandler(
             mockProfileModel,
             true,
-            [anIncompleteService.serviceId]
+            [anIncompleteService.serviceId],
+            mockServicesPreferencesModel
           );
 
           const response = await limitedProfileHandler(
@@ -320,10 +345,14 @@ describe("GetLimitedProfileByPOSTHandler", () => {
               taskEither.of(some(retrievedProfile))
             )
           } as unknown) as ProfileModel;
+          const mockServicesPreferencesModel = ({
+            getQueryIterator: jest.fn(() => fromLeft({}))
+          } as unknown) as ServicesPreferencesModel;
           const limitedProfileHandler = GetLimitedProfileByPOSTHandler(
             mockProfileModel,
             true,
-            []
+            [],
+            mockServicesPreferencesModel
           );
 
           const response = await limitedProfileHandler(
@@ -371,10 +400,14 @@ describe("GetLimitedProfileByPOSTHandler", () => {
               taskEither.of(some(retrievedProfile))
             )
           } as unknown) as ProfileModel;
+          const mockServicesPreferencesModel = ({
+            getQueryIterator: jest.fn(() => fromLeft({}))
+          } as unknown) as ServicesPreferencesModel;
           const limitedProfileHandler = GetLimitedProfileByPOSTHandler(
             mockProfileModel,
             true,
-            []
+            [],
+            mockServicesPreferencesModel
           );
 
           const response = await limitedProfileHandler(
