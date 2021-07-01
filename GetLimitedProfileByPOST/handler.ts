@@ -32,6 +32,7 @@ import {
 } from "italia-ts-commons/lib/responses";
 
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
+import { ServicesPreferencesModel } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 import { GetLimitedProfileByPOSTPayload } from "../generated/definitions/GetLimitedProfileByPOSTPayload";
 import {
   GetLimitedProfileByPOSTPayloadMiddleware,
@@ -62,7 +63,8 @@ type IGetLimitedProfileByPOSTHandler = (
 export function GetLimitedProfileByPOSTHandler(
   profileModel: ProfileModel,
   disableIncompleteServices: boolean,
-  incompleteServiceWhitelist: ReadonlyArray<ServiceId>
+  incompleteServiceWhitelist: ReadonlyArray<ServiceId>,
+  servicesPreferencesModel: ServicesPreferencesModel
 ): IGetLimitedProfileByPOSTHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   return async (auth, __, userAttributes, { fiscal_code }) =>
@@ -72,7 +74,8 @@ export function GetLimitedProfileByPOSTHandler(
       fiscal_code,
       profileModel,
       disableIncompleteServices,
-      incompleteServiceWhitelist
+      incompleteServiceWhitelist,
+      servicesPreferencesModel
     ).run();
 }
 
@@ -84,12 +87,14 @@ export function GetLimitedProfileByPOST(
   serviceModel: ServiceModel,
   profileModel: ProfileModel,
   disableIncompleteServices: boolean,
-  incompleteServiceWhitelist: ReadonlyArray<ServiceId>
+  incompleteServiceWhitelist: ReadonlyArray<ServiceId>,
+  servicesPreferencesModel: ServicesPreferencesModel
 ): express.RequestHandler {
   const handler = GetLimitedProfileByPOSTHandler(
     profileModel,
     disableIncompleteServices,
-    incompleteServiceWhitelist
+    incompleteServiceWhitelist,
+    servicesPreferencesModel
   );
 
   const middlewaresWrap = withRequestMiddlewares(

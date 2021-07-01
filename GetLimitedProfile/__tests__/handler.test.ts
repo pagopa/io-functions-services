@@ -18,7 +18,7 @@ import {
   fiscalCodeArb,
   retrievedProfileArb
 } from "../../utils/__tests__/arbitraries";
-import { retrievedProfileToLimitedProfile } from "../../utils/profile";
+import { retrievedProfileToLimitedProfile } from "../../utils/profile-services";
 import { GetLimitedProfileHandler } from "../handler";
 import {
   aFiscalCode,
@@ -26,6 +26,7 @@ import {
   anotherFiscalCode,
   aValidService
 } from "../../__mocks__/mocks";
+import { ServicesPreferencesModel } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 
 // eslint-disable-next-line sonar/sonar-max-lines-per-function
 describe("GetLimitedProfileHandler", () => {
@@ -51,10 +52,14 @@ describe("GetLimitedProfileHandler", () => {
           const mockProfileModel = ({
             findLastVersionByModelId: jest.fn(() => fromLeft({}))
           } as unknown) as ProfileModel;
+          const mockServicesPreferencesModel = ({
+            getQueryIterator: jest.fn(() => fromLeft({}))
+          } as unknown) as ServicesPreferencesModel;
           const limitedProfileHandler = GetLimitedProfileHandler(
             mockProfileModel,
             true,
-            []
+            [],
+            mockServicesPreferencesModel
           );
 
           const response = await limitedProfileHandler(
@@ -88,10 +93,14 @@ describe("GetLimitedProfileHandler", () => {
           const mockProfileModel = ({
             findLastVersionByModelId: jest.fn(() => taskEither.of(none))
           } as unknown) as ProfileModel;
+          const mockServicesPreferencesModel = ({
+            getQueryIterator: jest.fn(() => fromLeft({}))
+          } as unknown) as ServicesPreferencesModel;
           const limitedProfileHandler = GetLimitedProfileHandler(
             mockProfileModel,
             true,
-            []
+            [],
+            mockServicesPreferencesModel
           );
 
           const response = await limitedProfileHandler(
@@ -132,10 +141,14 @@ describe("GetLimitedProfileHandler", () => {
               taskEither.of(some(retrievedProfileWithInboxDisabled))
             )
           } as unknown) as ProfileModel;
+          const mockServicesPreferencesModel = ({
+            getQueryIterator: jest.fn(() => fromLeft({}))
+          } as unknown) as ServicesPreferencesModel;
           const limitedProfileHandler = GetLimitedProfileHandler(
             mockProfileModel,
             true,
-            []
+            [],
+            mockServicesPreferencesModel
           );
 
           const response = await limitedProfileHandler(
@@ -172,10 +185,14 @@ describe("GetLimitedProfileHandler", () => {
               taskEither.of(some(retrievedProfile))
             )
           } as unknown) as ProfileModel;
+          const mockServicesPreferencesModel = ({
+            getQueryIterator: jest.fn(() => fromLeft({}))
+          } as unknown) as ServicesPreferencesModel;
           const limitedProfileHandler = GetLimitedProfileHandler(
             mockProfileModel,
             true,
-            []
+            [],
+            mockServicesPreferencesModel
           );
 
           const response = await limitedProfileHandler(
@@ -219,10 +236,14 @@ describe("GetLimitedProfileHandler", () => {
               taskEither.of(some(retrievedProfile))
             )
           } as unknown) as ProfileModel;
+          const mockServicesPreferencesModel = ({
+            getQueryIterator: jest.fn(() => fromLeft({}))
+          } as unknown) as ServicesPreferencesModel;
           const limitedProfileHandler = GetLimitedProfileHandler(
             mockProfileModel,
             true,
-            []
+            [],
+            mockServicesPreferencesModel
           );
 
           const response = await limitedProfileHandler(
@@ -254,7 +275,7 @@ describe("GetLimitedProfileHandler", () => {
     );
   });
 
-  it("should respond with ResponseSuccessJson if a withelisted Service hasn't quality fields when the requested profile is found in the db", async () => {
+  it("should respond with ResponseSuccessJson if a withelisted Service hasn't quality fields when the requested profile is found in the db for LEGACY profile", async () => {
     await fc.assert(
       fc.asyncProperty(
         clientIpArb,
@@ -266,10 +287,14 @@ describe("GetLimitedProfileHandler", () => {
               taskEither.of(some(retrievedProfile))
             )
           } as unknown) as ProfileModel;
+          const mockServicesPreferencesModel = ({
+            getQueryIterator: jest.fn(() => fromLeft({}))
+          } as unknown) as ServicesPreferencesModel;
           const limitedProfileHandler = GetLimitedProfileHandler(
             mockProfileModel,
             true,
-            [anIncompleteService.serviceId]
+            [anIncompleteService.serviceId],
+            mockServicesPreferencesModel
           );
 
           const response = await limitedProfileHandler(
@@ -307,7 +332,7 @@ describe("GetLimitedProfileHandler", () => {
     );
   });
 
-  it("should respond with ResponseSuccessJson when the requested profile is found in the db, the service is sandboxed but can write messages to the profile fiscal code", async () => {
+  it("should respond with ResponseSuccessJson when the requested profile is found in the db, the service is sandboxed but can write messages to the profile fiscal code for LEGACY profile", async () => {
     await fc.assert(
       fc.asyncProperty(
         clientIpArb,
@@ -319,10 +344,14 @@ describe("GetLimitedProfileHandler", () => {
               taskEither.of(some(retrievedProfile))
             )
           } as unknown) as ProfileModel;
+          const mockServicesPreferencesModel = ({
+            getQueryIterator: jest.fn(() => fromLeft({}))
+          } as unknown) as ServicesPreferencesModel;
           const limitedProfileHandler = GetLimitedProfileHandler(
             mockProfileModel,
             true,
-            []
+            [],
+            mockServicesPreferencesModel
           );
 
           const response = await limitedProfileHandler(
@@ -358,7 +387,7 @@ describe("GetLimitedProfileHandler", () => {
     );
   });
 
-  it("should respond with ResponseSuccessJson when the requested profile is found in the db", async () => {
+  it("should respond with ResponseSuccessJson when the requested profile is found in the db for LEGACY profile", async () => {
     await fc.assert(
       fc.asyncProperty(
         clientIpArb,
@@ -370,10 +399,14 @@ describe("GetLimitedProfileHandler", () => {
               taskEither.of(some(retrievedProfile))
             )
           } as unknown) as ProfileModel;
+          const mockServicesPreferencesModel = ({
+            getQueryIterator: jest.fn(() => fromLeft({}))
+          } as unknown) as ServicesPreferencesModel;
           const limitedProfileHandler = GetLimitedProfileHandler(
             mockProfileModel,
             true,
-            []
+            [],
+            mockServicesPreferencesModel
           );
 
           const response = await limitedProfileHandler(

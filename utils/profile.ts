@@ -1,4 +1,3 @@
-import { BlockedInboxOrChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
 import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
 import { LimitedProfile } from "@pagopa/io-functions-commons/dist/generated/definitions/LimitedProfile";
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
@@ -6,6 +5,7 @@ import {
   ProfileModel,
   RetrievedProfile
 } from "@pagopa/io-functions-commons/dist/src/models/profile";
+import { ServicesPreferencesModel } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 import { ValidService } from "@pagopa/io-functions-commons/dist/src/models/service";
 import { IAzureApiAuthorization } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
 import { IAzureUserAttributes } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
@@ -28,42 +28,9 @@ import {
   ResponseSuccessJson
 } from "italia-ts-commons/lib/responses";
 import { Task } from "fp-ts/lib/Task";
-import { canWriteMessage } from "../CreateMessage/handler";
 import { GetLimitedProfileByPOSTPayload } from "../generated/definitions/GetLimitedProfileByPOSTPayload";
-
-/**
- * Whether the sender service is allowed to send
- * messages to the user identified by this profile
- */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
-export function isSenderAllowed(
-  blockedInboxOrChannels:
-    | RetrievedProfile["blockedInboxOrChannels"]
-    | undefined,
-  serviceId: ServiceId
-): boolean {
-  return (
-    blockedInboxOrChannels === undefined ||
-    blockedInboxOrChannels[serviceId] === undefined ||
-    blockedInboxOrChannels[serviceId].indexOf(BlockedInboxOrChannelEnum.INBOX) <
-      0
-  );
-}
-
-/**
- * Converts the RetrievedProfile model to LimitedProfile type.
- */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
-export function retrievedProfileToLimitedProfile(
-  retrivedProfile: RetrievedProfile,
-  senderAllowed: boolean
-): LimitedProfile {
-  return {
-    preferred_languages: retrivedProfile.preferredLanguages,
-    // computed property
-    sender_allowed: senderAllowed
-  };
-}
+import { canWriteMessage } from "../CreateMessage/handler";
+import { handleAll } from "./profile-services";
 
 /**
  * A middleware that extracts a GetLimitedProfileByPOSTPayload from a request.
@@ -90,7 +57,8 @@ export const getLimitedProfileTask = (
   fiscalCode: FiscalCode,
   profileModel: ProfileModel,
   disableIncompleteServices: boolean,
-  incompleteServiceWhitelist: ReadonlyArray<ServiceId>
+  incompleteServiceWhitelist: ReadonlyArray<ServiceId>,
+  servicesPreferencesModel: ServicesPreferencesModel
   // eslint-disable-next-line max-params
 ): Task<IGetLimitedProfileResponses> =>
   taskEither
@@ -148,15 +116,12 @@ export const getLimitedProfileTask = (
           )
       )
     )
-    .map(_ => _.value)
-    .fold<IGetLimitedProfileResponses>(identity, service =>
-      ResponseSuccessJson(
-        retrievedProfileToLimitedProfile(
-          service,
-          isSenderAllowed(
-            service.blockedInboxOrChannels,
-            userAttributes.service.serviceId
-          )
-        )
+    .map(maybeProfile => maybeProfile.value)
+    .chain(profile =>
+      handleAll()(
+        profile,
+        servicesPreferencesModel,
+        userAttributes.service.serviceId
       )
-    );
+    )
+    .fold<IGetLimitedProfileResponses>(identity, ResponseSuccessJson);

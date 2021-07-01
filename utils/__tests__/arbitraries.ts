@@ -8,6 +8,7 @@ import { ClientIp } from "@pagopa/io-functions-commons/dist/src/utils/middleware
 import * as assert from "assert";
 import * as fc from "fast-check";
 import { some } from "fp-ts/lib/Option";
+import { ServicesPreferencesModeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServicesPreferencesMode";
 import {
   NonNegativeInteger,
   WithinRangeInteger
@@ -18,6 +19,7 @@ import {
   NonEmptyString,
   PatternString
 } from "italia-ts-commons/lib/strings";
+import { RetrievedServicePreference } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 
 //
 // custom fastcheck arbitraries
@@ -234,6 +236,23 @@ export const retrievedProfileArb = fc
         isInboxEnabled: true,
         kind: "IRetrievedProfile",
         preferredLanguages: [PreferredLanguageEnum.en_GB],
-        version: version as NonNegativeInteger
+        version: version as NonNegativeInteger,
+        servicePreferencesSettings: {
+          mode: ServicesPreferencesModeEnum.LEGACY,
+          version: 0
+        }
       } as RetrievedProfile)
+  );
+
+export const retrievedServicesPreferencesArb = fc
+  .tuple(fc.nat(), fiscalCodeArb, fc.emailAddress())
+  .map(
+    ([version, fiscalCode, email]) =>
+      ({
+        _etag: "_etag",
+        _rid: "_rid",
+        _self: "xyz",
+        _ts: 1,
+        isEmailEnabled: true
+      } as RetrievedServicePreference)
   );
