@@ -276,7 +276,7 @@ describe("GetLimitedProfileByPOSTHandler", () => {
     );
   });
 
-  it("should respond with ResponseSuccessJson if a withelisted Service hasn't quality fields when the requested profile is found in the db", async () => {
+  it("should respond with ResponseSuccessJson if a withelisted Service hasn't quality fields when the requested profile is found in the db for LEGACY profile", async () => {
     await fc.assert(
       fc.asyncProperty(
         clientIpArb,
@@ -333,7 +333,7 @@ describe("GetLimitedProfileByPOSTHandler", () => {
     );
   });
 
-  it("should respond with ResponseSuccessJson when the requested profile is found in the db, the service is sandboxed but can write messages to the profile fiscal code", async () => {
+  it("should respond with ResponseSuccessJson when the requested profile is found in the db, the service is sandboxed but can write messages to the profile fiscal code for LEGACY profile", async () => {
     await fc.assert(
       fc.asyncProperty(
         clientIpArb,
@@ -388,7 +388,7 @@ describe("GetLimitedProfileByPOSTHandler", () => {
     );
   });
 
-  it("should respond with ResponseSuccessJson when the requested profile is found in the db", async () => {
+  it("should respond with ResponseSuccessJson when the requested profile is found in the db for LEGACY profile", async () => {
     await fc.assert(
       fc.asyncProperty(
         clientIpArb,

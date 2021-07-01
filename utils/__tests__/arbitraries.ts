@@ -20,6 +20,7 @@ import {
   PatternString
 } from "italia-ts-commons/lib/strings";
 import { RetrievedServicePreference } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
+import { ServiceId } from "../../generated/api-admin/ServiceId";
 
 //
 // custom fastcheck arbitraries
@@ -244,6 +245,39 @@ export const retrievedProfileArb = fc
       } as RetrievedProfile)
   );
 
+export const retrievedProfileAuto = fc.tuple(retrievedProfileArb).map(
+  ([profile]) =>
+    ({
+      ...profile,
+      servicePreferencesSettings: {
+        mode: ServicesPreferencesModeEnum.AUTO,
+        version: 1
+      }
+    } as RetrievedProfile)
+);
+
+export const retrievedProfileManual = fc.tuple(retrievedProfileArb).map(
+  ([profile]) =>
+    ({
+      ...profile,
+      servicePreferencesSettings: {
+        mode: ServicesPreferencesModeEnum.MANUAL,
+        version: 1
+      }
+    } as RetrievedProfile)
+);
+
+export const retrievedProfileUnhandled = fc.tuple(retrievedProfileArb).map(
+  ([profile]) =>
+    ({
+      ...profile,
+      servicePreferencesSettings: {
+        mode: ServicesPreferencesModeEnum.AUTO,
+        version: 0
+      }
+    } as RetrievedProfile)
+);
+
 export const retrievedServicesPreferencesArb = fc
   .tuple(fc.nat(), fiscalCodeArb, fc.emailAddress())
   .map(
@@ -253,6 +287,27 @@ export const retrievedServicesPreferencesArb = fc
         _rid: "_rid",
         _self: "xyz",
         _ts: 1,
-        isEmailEnabled: true
+        isInboxEnabled: true
+      } as RetrievedServicePreference)
+  );
+
+export const retrievedServicesPreferencesEnabled = fc
+  .tuple(retrievedServicesPreferencesArb)
+  .map(
+    ([prefs]) =>
+      ({
+        ...prefs,
+        settingsVersion: 1,
+        serviceId: "1" as ServiceId
+      } as RetrievedServicePreference)
+  );
+
+export const retrievedServicesPreferencesDisabled = fc
+  .tuple(retrievedServicesPreferencesEnabled)
+  .map(
+    ([prefs]) =>
+      ({
+        ...prefs,
+        isInboxEnabled: false
       } as RetrievedServicePreference)
   );
