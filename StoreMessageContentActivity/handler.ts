@@ -15,6 +15,8 @@ import { BlobService } from "azure-storage";
 import { isLeft } from "fp-ts/lib/Either";
 import { fromNullable, isNone } from "fp-ts/lib/Option";
 import { readableReport } from "italia-ts-commons/lib/reporters";
+import { isBefore } from "date-fns";
+import { UTCISODateFromString } from "@pagopa/ts-commons/lib/dates";
 
 export const SuccessfulStoreMessageContentActivityResult = t.interface({
   blockedInboxOrChannels: t.readonlyArray(BlockedInboxOrChannel),
@@ -57,7 +59,8 @@ export type StoreMessageContentActivityResult = t.TypeOf<
 export const getStoreMessageContentActivityHandler = (
   lProfileModel: ProfileModel,
   lMessageModel: MessageModel,
-  lBlobService: BlobService
+  lBlobService: BlobService,
+  emailModeSwitchLimitDate: UTCISODateFromString
 ) => async (
   context: Context,
   input: unknown
@@ -181,6 +184,12 @@ export const getStoreMessageContentActivityHandler = (
     // since a Set can't be serialized to JSON
     blockedInboxOrChannels: Array.from(blockedInboxOrChannels),
     kind: "SUCCESS",
-    profile
+    profile: {
+      ...profile,
+      // eslint-disable-next-line no-underscore-dangle
+      isEmailEnabled: isBefore(profile._ts, emailModeSwitchLimitDate)
+        ? false
+        : profile.isEmailEnabled
+    }
   };
 };
