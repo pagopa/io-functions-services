@@ -63,6 +63,7 @@
     "applicationinsights": "^1.7.4",
     "azure-storage": "^2.10.3",
     "cors": "^2.8.4",
+    "date-fns": "^2.16.1",
     "documentdb": "^1.12.2",
     "durable-functions": "^1.4.3",
     "express": "^4.15.3",
