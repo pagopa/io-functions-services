@@ -18,6 +18,7 @@ import {
   NonEmptyString,
   PatternString
 } from "italia-ts-commons/lib/strings";
+import { legacyProfileServicePreferencesSettings } from "../../__mocks__/mocks";
 
 //
 // custom fastcheck arbitraries
@@ -234,6 +235,7 @@ export const retrievedProfileArb = fc
         isInboxEnabled: true,
         kind: "IRetrievedProfile",
         preferredLanguages: [PreferredLanguageEnum.en_GB],
+        servicePreferencesSettings: legacyProfileServicePreferencesSettings,
         version: version as NonNegativeInteger
       } as RetrievedProfile)
   );
