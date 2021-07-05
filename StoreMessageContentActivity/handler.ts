@@ -60,7 +60,8 @@ export const getStoreMessageContentActivityHandler = (
   lProfileModel: ProfileModel,
   lMessageModel: MessageModel,
   lBlobService: BlobService,
-  optOutEmailSwitchDate: UTCISODateFromString
+  optOutEmailSwitchDate: UTCISODateFromString,
+  isOptInEmailEnabled: boolean
 ) => async (
   context: Context,
   input: unknown
@@ -187,10 +188,11 @@ export const getStoreMessageContentActivityHandler = (
     profile: {
       ...profile,
       // if profile's timestamp is before email opt out switch limit date we must force isEmailEnabled to false
-      // eslint-disable-next-line no-underscore-dangle
-      isEmailEnabled: isBefore(profile._ts, optOutEmailSwitchDate)
-        ? false
-        : profile.isEmailEnabled
+      isEmailEnabled:
+        // eslint-disable-next-line no-underscore-dangle
+        isOptInEmailEnabled && isBefore(profile._ts, optOutEmailSwitchDate)
+          ? false
+          : profile.isEmailEnabled
     }
   };
 };

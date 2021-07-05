@@ -75,7 +75,8 @@ describe("getStoreMessageContentActivityHandler", () => {
       messageModelMock as any,
       {} as any,
       // limit date is after profile timestamp
-      anOptOutEmailSwitchDate
+      anOptOutEmailSwitchDate,
+      true
     );
 
     const result = await storeMessageContentActivityHandler(
@@ -93,6 +94,31 @@ describe("getStoreMessageContentActivityHandler", () => {
     }
   });
 
+  it("should respond success with a retrieved profile mantaining its original isEmailEnabled property with Feature flag disabled", async () => {
+    findLastVersionByModelIdMock.mockImplementationOnce(() =>
+      taskEither.of(some(aRetrievedProfileWithAValidTimestamp))
+    );
+    const storeMessageContentActivityHandler = getStoreMessageContentActivityHandler(
+      profileModelMock as any,
+      messageModelMock as any,
+      {} as any,
+      // limit date is before profile timestamp
+      anOptOutEmailSwitchDate,
+      false
+    );
+
+    const result = await storeMessageContentActivityHandler(
+      mockContext,
+      aCreatedMessageEvent
+    );
+
+    expect(result.kind).toBe("SUCCESS");
+    if (result.kind === "SUCCESS") {
+      expect(result.blockedInboxOrChannels).toEqual([]);
+      expect(result.profile).toEqual(aRetrievedProfileWithAValidTimestamp);
+    }
+  });
+
   it("should respond success with a retrieved profile mantaining its original isEmailEnabled property", async () => {
     findLastVersionByModelIdMock.mockImplementationOnce(() =>
       taskEither.of(some(aRetrievedProfileWithAValidTimestamp))
@@ -102,7 +128,8 @@ describe("getStoreMessageContentActivityHandler", () => {
       messageModelMock as any,
       {} as any,
       // limit date is before profile timestamp
-      aPastOptOutEmailSwitchDate
+      aPastOptOutEmailSwitchDate,
+      true
     );
 
     const result = await storeMessageContentActivityHandler(
@@ -122,7 +149,8 @@ describe("getStoreMessageContentActivityHandler", () => {
       profileModelMock as any,
       messageModelMock as any,
       {} as any,
-      aPastOptOutEmailSwitchDate
+      aPastOptOutEmailSwitchDate,
+      true
     );
 
     const result = await storeMessageContentActivityHandler(
@@ -144,7 +172,8 @@ describe("getStoreMessageContentActivityHandler", () => {
       profileModelMock as any,
       messageModelMock as any,
       {} as any,
-      aPastOptOutEmailSwitchDate
+      aPastOptOutEmailSwitchDate,
+      true
     );
 
     await expect(
@@ -160,7 +189,8 @@ describe("getStoreMessageContentActivityHandler", () => {
       profileModelMock as any,
       messageModelMock as any,
       {} as any,
-      aPastOptOutEmailSwitchDate
+      aPastOptOutEmailSwitchDate,
+      true
     );
 
     const result = await storeMessageContentActivityHandler(
@@ -182,7 +212,8 @@ describe("getStoreMessageContentActivityHandler", () => {
       profileModelMock as any,
       messageModelMock as any,
       {} as any,
-      aPastOptOutEmailSwitchDate
+      aPastOptOutEmailSwitchDate,
+      true
     );
 
     const result = await storeMessageContentActivityHandler(
@@ -209,7 +240,8 @@ describe("getStoreMessageContentActivityHandler", () => {
       profileModelMock as any,
       messageModelMock as any,
       {} as any,
-      aPastOptOutEmailSwitchDate
+      aPastOptOutEmailSwitchDate,
+      true
     );
 
     const result = await storeMessageContentActivityHandler(
@@ -237,7 +269,8 @@ describe("getStoreMessageContentActivityHandler", () => {
       profileModelMock as any,
       messageModelMock as any,
       {} as any,
-      aPastOptOutEmailSwitchDate
+      aPastOptOutEmailSwitchDate,
+      true
     );
 
     await expect(
@@ -253,7 +286,8 @@ describe("getStoreMessageContentActivityHandler", () => {
       profileModelMock as any,
       messageModelMock as any,
       {} as any,
-      aPastOptOutEmailSwitchDate
+      aPastOptOutEmailSwitchDate,
+      true
     );
 
     await expect(
