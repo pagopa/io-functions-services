@@ -70,7 +70,7 @@ const errorOrConfig: t.Validation<IConfig> = IConfig.decode({
     .map(_ => _.toLowerCase() === "true")
     .getOrElse(false),
   OPT_OUT_EMAIL_SWITCH_DATE: fromNullable(
-    process.env.EMAIL_MODE_SWITCH_LIMIT_DATE
+    process.env.OPT_OUT_EMAIL_SWITCH_DATE
   ).getOrElse(DEFAULT_OPT_OUT_EMAIL_SWITCH_DATE),
   isProduction: process.env.NODE_ENV === "production"
 });
