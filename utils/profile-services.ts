@@ -177,7 +177,7 @@ export const handle = (handler: IServicePreferenceHandler) => (
   te
     .fromPredicate(
       handler.isMyReposability,
-      _ => new Error("Handler not feasable!")
+      _ => new Error("Handler not feasible!")
     )(profile)
     .chain(_ =>
       te.right(
