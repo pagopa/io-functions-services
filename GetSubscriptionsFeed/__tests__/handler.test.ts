@@ -257,10 +257,7 @@ describe("GetSubscriptionsFeedHandler", () => {
     );
     // service subscriptions
     queryEntities.mockImplementationOnce(
-      queryEntitiesServiceSubscriptionMock(
-        [anHashedFiscalCode, anotherHashedFiscalCode],
-        "S"
-      )
+      queryEntitiesServiceSubscriptionMock([anHashedFiscalCode], "S")
     );
     queryEntities.mockImplementation(emptyQueryEntities);
     const tableServiceMock = ({
@@ -285,7 +282,7 @@ describe("GetSubscriptionsFeedHandler", () => {
       expect(result.value).toEqual({
         dateUTC: yesterdayUTC,
         subscriptions: [],
-        unsubscriptions: [anHashedFiscalCode, anotherHashedFiscalCode]
+        unsubscriptions: [anHashedFiscalCode]
       });
     }
   });
