@@ -157,7 +157,7 @@ export const getCreateNotificationActivityHandler = (
 
   // whether email notifications are enabled in this user profile - this is
   // true by default, it's false only for users that have isEmailEnabled = false
-  // in their profile. We assume it's true when not defined in user's profile.
+  // in their profile.
   const isEmailEnabledInProfile = profile.isEmailEnabled !== false;
 
   // Check if the email in the user profile is validated.

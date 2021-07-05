@@ -29,7 +29,8 @@ const blobService = createBlobService(config.QueueStorageConnection);
 const activityFunctionHandler: AzureFunction = getStoreMessageContentActivityHandler(
   profileModel,
   messageModel,
-  blobService
+  blobService,
+  config.OPT_OUT_EMAIL_SWITCH_DATE
 );
 
 export default activityFunctionHandler;

@@ -11,6 +11,7 @@ import { fromNullable } from "fp-ts/lib/Option";
 import * as t from "io-ts";
 import { readableReport } from "italia-ts-commons/lib/reporters";
 import { NonEmptyString } from "italia-ts-commons/lib/strings";
+import { UTCISODateFromString } from "@pagopa/ts-commons/lib/dates";
 import { CommaSeparatedListOf } from "./comma-separated-list";
 
 // global app configuration
@@ -33,6 +34,7 @@ export const IConfig = t.intersection([
     IO_FUNCTIONS_ADMIN_BASE_URL: NonEmptyString,
 
     MESSAGE_CONTAINER_NAME: NonEmptyString,
+    OPT_OUT_EMAIL_SWITCH_DATE: UTCISODateFromString,
 
     QueueStorageConnection: NonEmptyString,
 
@@ -51,9 +53,12 @@ export const IConfig = t.intersection([
   MailerConfig
 ]);
 
+const DEFAULT_OPT_OUT_EMAIL_SWITCH_DATE = "1970-01-01T00:00:00Z";
+
 // No need to re-evaluate this object for each call
 const errorOrConfig: t.Validation<IConfig> = IConfig.decode({
   ...process.env,
+
   FF_DISABLE_INCOMPLETE_SERVICES: fromNullable(
     process.env.FF_DISABLE_INCOMPLETE_SERVICES
   )
@@ -64,6 +69,9 @@ const errorOrConfig: t.Validation<IConfig> = IConfig.decode({
   )
     .map(_ => _.toLowerCase() === "true")
     .getOrElse(false),
+  OPT_OUT_EMAIL_SWITCH_DATE: fromNullable(
+    process.env.OPT_OUT_EMAIL_SWITCH_DATE
+  ).getOrElse(DEFAULT_OPT_OUT_EMAIL_SWITCH_DATE),
   isProduction: process.env.NODE_ENV === "production"
 });
 
