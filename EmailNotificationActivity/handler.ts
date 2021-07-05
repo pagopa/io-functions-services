@@ -15,7 +15,7 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
 import { NotificationEvent } from "@pagopa/io-functions-commons/dist/src/models/notification_event";
 
-import { sendMail } from "@pagopa/io-functions-commons/dist/src/mailer";
+import { sendMail } from "@pagopa/io-functions-commons/dist/src/mailer/transports";
 import { generateDocumentHtml } from "./utils";
 
 export interface INotificationDefaults {
