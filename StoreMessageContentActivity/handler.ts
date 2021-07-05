@@ -186,6 +186,7 @@ export const getStoreMessageContentActivityHandler = (
     kind: "SUCCESS",
     profile: {
       ...profile,
+      // if profile's timestamp is before email mode switch limit date we must force isEmailEnabled to false
       // eslint-disable-next-line no-underscore-dangle
       isEmailEnabled: isBefore(profile._ts, optOutEmailSwitchDate)
         ? false
