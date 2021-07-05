@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { BlockedInboxOrChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
+import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { CreatedMessageEvent } from "@pagopa/io-functions-commons/dist/src/models/created_message_event";
 import { UTCISODateFromString } from "@pagopa/ts-commons/lib/dates";
 import { NonNegativeNumber } from "@pagopa/ts-commons/lib/numbers";
@@ -200,7 +201,7 @@ describe("getStoreMessageContentActivityHandler", () => {
       taskEither.of(
         some({
           ...aRetrievedProfile,
-          blockedInboxOrChannels: { agid: [BlockedInboxOrChannelEnum.INBOX] }
+          blockedInboxOrChannels: { myService: [BlockedInboxOrChannelEnum.INBOX] }
         })
       )
     );
@@ -213,7 +214,13 @@ describe("getStoreMessageContentActivityHandler", () => {
 
     const result = await storeMessageContentActivityHandler(
       mockContext,
-      aCreatedMessageEvent
+      {
+        ...aCreatedMessageEvent, 
+        message: {
+          ...aNewMessageWithoutContent,
+          senderServiceId: "myService" as ServiceId
+        }
+      }
     );
 
     expect(result.kind).toBe("FAILURE");
