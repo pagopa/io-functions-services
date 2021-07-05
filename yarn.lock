@@ -669,24 +669,24 @@
     node-fetch "^2.6.0"
     validator "^10.1.0"
 
-"@pagopa/ts-commons@^9.4.1":
-  version "9.4.1"
-  resolved "https://registry.yarnpkg.com/@pagopa/ts-commons/-/ts-commons-9.4.1.tgz#cc2c1c08c84fb6fa55a99c506227b8c2dcc69c01"
-  integrity sha512-wA/eInP9l0vPovR4+50vpVxHdUr/el0xUrJ0LoRJv6qAErS9NzGIDwyg4ZjW6SHxDGzN4PpIFSb0QFki27wswg==
-  dependencies:
-    abort-controller "^3.0.0"
-    agentkeepalive "^4.1.2"
-    applicationinsights "^1.7.4"
-    fp-ts "1.17.4"
-    io-ts "1.8.5"
-    json-set-map "^1.0.2"
-    node-fetch "^2.6.0"
-    validator "^10.1.0"
-
 "@pagopa/ts-commons@^9.5.1":
   version "9.5.1"
   resolved "https://registry.yarnpkg.com/@pagopa/ts-commons/-/ts-commons-9.5.1.tgz#a1285589265560a1a96b4d389da2e37f9209ec58"
   integrity sha512-Eqozj079y/oyLZwh6I/WBWsUKJ6rFOj5wGTXaYmVffxFHWXstQiSqw5S6cFAKK5/LA9lL9ro+zk3+lUKi+/Fow==
+  dependencies:
+    abort-controller "^3.0.0"
+    agentkeepalive "^4.1.4"
+    applicationinsights "^1.8.10"
+    fp-ts "1.17.4"
+    io-ts "1.8.5"
+    json-set-map "^1.1.2"
+    node-fetch "^2.6.0"
+    validator "^10.1.0"
+
+"@pagopa/ts-commons@^9.6.0":
+  version "9.6.0"
+  resolved "https://registry.yarnpkg.com/@pagopa/ts-commons/-/ts-commons-9.6.0.tgz#dbc837e8afa0aa66ab174d49757321a9fe18e416"
+  integrity sha512-GrXz6qFtBeRPS7reVxLEze6OvHUNMlCp4Ksbqwijl8xdkXD9ETCgU+9nKjGSPS6fOz2pUIOuIcts72HX7wlGmA==
   dependencies:
     abort-controller "^3.0.0"
     agentkeepalive "^4.1.4"
