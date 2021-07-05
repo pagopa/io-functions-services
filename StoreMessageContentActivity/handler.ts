@@ -15,6 +15,20 @@ import { BlobService } from "azure-storage";
 import { isLeft } from "fp-ts/lib/Either";
 import { fromNullable, isNone } from "fp-ts/lib/Option";
 import { readableReport } from "italia-ts-commons/lib/reporters";
+import {
+  makeServicesPreferencesDocumentId,
+  ServicePreference,
+  ServicesPreferencesModel
+} from "@pagopa/io-functions-commons/dist/src/models/service_preference";
+import { NonEmptyString } from "italia-ts-commons/lib/strings";
+import { NonNegativeInteger } from "italia-ts-commons/lib/numbers";
+import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
+import {
+  ServicesPreferencesMode,
+  ServicesPreferencesModeEnum
+} from "@pagopa/io-functions-commons/dist/generated/definitions/ServicesPreferencesMode";
+import { identity } from "fp-ts/lib/function";
+import { fromLeft, TaskEither } from "fp-ts/lib/TaskEither";
 
 export const SuccessfulStoreMessageContentActivityResult = t.interface({
   blockedInboxOrChannels: t.readonlyArray(BlockedInboxOrChannel),
@@ -51,13 +65,53 @@ export type StoreMessageContentActivityResult = t.TypeOf<
   typeof StoreMessageContentActivityResult
 >;
 
+export declare type GetPermissionToCreateMessage = (params: {
+  readonly serviceId: NonEmptyString;
+  readonly fiscalCode: FiscalCode;
+  readonly userServicePreferencesMode: ServicesPreferencesMode;
+  readonly userServicePreferencesVersion: number;
+}) => TaskEither<Error, boolean>;
+
+const getPermissionToCreateMessage = (
+  servicePreferencesModel: ServicesPreferencesModel
+): GetPermissionToCreateMessage => ({
+  fiscalCode,
+  serviceId,
+  userServicePreferencesMode,
+  userServicePreferencesVersion
+}) => {
+  if (userServicePreferencesMode === ServicesPreferencesModeEnum.LEGACY) {
+    return fromLeft(Error("User service preferences mode is LEGACY"));
+  }
+
+  const documentId = makeServicesPreferencesDocumentId(
+    fiscalCode,
+    serviceId,
+    userServicePreferencesVersion as NonNegativeInteger
+  );
+
+  return servicePreferencesModel
+    .find([documentId, fiscalCode])
+    .mapLeft(failure => Error(`COSMOSDB|ERROR=${failure.kind}`))
+    .map(maybeServicePref =>
+      maybeServicePref.fold<boolean>(
+        // if we do not have a preference we return true only
+        // if we have preference mode AUTO
+        userServicePreferencesMode === ServicesPreferencesModeEnum.AUTO,
+        // if we have a preference we return its "isInboxEnabled"
+        pref => pref.isInboxEnabled
+      )
+    );
+};
+
 /**
  * Returns a function for handling storeMessageContentActivity
  */
 export const getStoreMessageContentActivityHandler = (
   lProfileModel: ProfileModel,
   lMessageModel: MessageModel,
-  lBlobService: BlobService
+  lBlobService: BlobService,
+  lServicePreferencesModel: ServicesPreferencesModel
 ) => async (
   context: Context,
   input: unknown
@@ -110,15 +164,6 @@ export const getStoreMessageContentActivityHandler = (
 
   const profile = maybeProfile.value;
 
-  // channels the user has blocked for this sender service
-  const blockedInboxOrChannels = fromNullable(profile.blockedInboxOrChannels)
-    .chain(bc => fromNullable(bc[newMessageWithoutContent.senderServiceId]))
-    .getOrElse([]);
-
-  context.log.verbose(
-    `${logPrefix}|BLOCKED_CHANNELS=${JSON.stringify(blockedInboxOrChannels)}`
-  );
-
   //
   //  Inbox storage
   //
@@ -132,55 +177,82 @@ export const getStoreMessageContentActivityHandler = (
     return { kind: "FAILURE", reason: "MASTER_INBOX_DISABLED" };
   }
 
-  // whether the user has blocked inbox storage for messages from this sender
-  const isMessageStorageBlockedForService =
-    blockedInboxOrChannels.indexOf(BlockedInboxOrChannelEnum.INBOX) >= 0;
+  // channels the user has blocked for this sender service
+  const blockedInboxOrChannels = fromNullable(profile.blockedInboxOrChannels)
+    .chain(bc => fromNullable(bc[newMessageWithoutContent.senderServiceId]))
+    .getOrElse([]);
 
-  if (isMessageStorageBlockedForService) {
-    // the recipient's inbox is disabled
-    context.log.warn(`${logPrefix}|RESULT=SENDER_BLOCKED`);
-    return { kind: "FAILURE", reason: "SENDER_BLOCKED" };
-  }
+  context.log.verbose(
+    `${logPrefix}|BLOCKED_CHANNELS=${JSON.stringify(blockedInboxOrChannels)}`
+  );
 
-  // Save the content of the message to the blob storage.
-  // In case of a retry this operation will overwrite the message content with itself
-  // (this is fine as we don't know if the operation succeeded at first)
-  const errorOrAttachment = await lMessageModel
-    .storeContentAsBlob(
-      lBlobService,
-      newMessageWithoutContent.id,
-      createdMessageEvent.content
+  //
+  // check Service Preferences Settings
+  //
+  return getPermissionToCreateMessage(lServicePreferencesModel)({
+    fiscalCode: newMessageWithoutContent.fiscalCode,
+    serviceId: newMessageWithoutContent.senderServiceId,
+    userServicePreferencesMode: profile.servicePreferencesSettings.mode,
+    userServicePreferencesVersion: profile.servicePreferencesSettings.version
+  })
+    .fold<boolean>(_ => {
+      context.log.warn(`${logPrefix}|LEGACY_OR_ERROR=${_.message}`);
+
+      // whether the user has blocked inbox storage for messages from this sender
+      const isMessageStorageBlockedForService =
+        blockedInboxOrChannels.indexOf(BlockedInboxOrChannelEnum.INBOX) >= 0;
+
+      return !isMessageStorageBlockedForService;
+    }, identity)
+    .map<Promise<StoreMessageContentActivityResult>>(
+      async isMessageStorageAllowedForService => {
+        if (!isMessageStorageAllowedForService) {
+          context.log.warn(`${logPrefix}|RESULT=SENDER_BLOCKED`);
+          return { kind: "FAILURE", reason: "SENDER_BLOCKED" };
+        }
+
+        // Save the content of the message to the blob storage.
+        // In case of a retry this operation will overwrite the message content with itself
+        // (this is fine as we don't know if the operation succeeded at first)
+        const errorOrAttachment = await lMessageModel
+          .storeContentAsBlob(
+            lBlobService,
+            newMessageWithoutContent.id,
+            createdMessageEvent.content
+          )
+          .run();
+
+        if (isLeft(errorOrAttachment)) {
+          context.log.error(`${logPrefix}|ERROR=${errorOrAttachment.value}`);
+          throw new Error("Error while storing message content");
+        }
+
+        // Now that the message content has been stored, we can make the message
+        // visible to getMessages by changing the pending flag to false
+        const updatedMessageOrError = await lMessageModel
+          .upsert({
+            ...newMessageWithoutContent,
+            isPending: false
+          })
+          .run();
+
+        if (isLeft(updatedMessageOrError)) {
+          context.log.error(
+            `${logPrefix}|ERROR=${JSON.stringify(updatedMessageOrError.value)}`
+          );
+          throw new Error("Error while updating message pending status");
+        }
+
+        context.log.verbose(`${logPrefix}|RESULT=SUCCESS`);
+
+        return {
+          // being blockedInboxOrChannels a Set, we explicitly convert it to an array
+          // since a Set can't be serialized to JSON
+          blockedInboxOrChannels: Array.from(blockedInboxOrChannels),
+          kind: "SUCCESS",
+          profile
+        };
+      }
     )
     .run();
-
-  if (isLeft(errorOrAttachment)) {
-    context.log.error(`${logPrefix}|ERROR=${errorOrAttachment.value}`);
-    throw new Error("Error while storing message content");
-  }
-
-  // Now that the message content has been stored, we can make the message
-  // visible to getMessages by changing the pending flag to false
-  const updatedMessageOrError = await lMessageModel
-    .upsert({
-      ...newMessageWithoutContent,
-      isPending: false
-    })
-    .run();
-
-  if (isLeft(updatedMessageOrError)) {
-    context.log.error(
-      `${logPrefix}|ERROR=${JSON.stringify(updatedMessageOrError.value)}`
-    );
-    throw new Error("Error while updating message pending status");
-  }
-
-  context.log.verbose(`${logPrefix}|RESULT=SUCCESS`);
-
-  return {
-    // being blockedInboxOrChannels a Set, we explicitly convert it to an array
-    // since a Set can't be serialized to JSON
-    blockedInboxOrChannels: Array.from(blockedInboxOrChannels),
-    kind: "SUCCESS",
-    profile
-  };
 };

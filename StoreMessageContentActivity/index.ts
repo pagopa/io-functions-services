@@ -12,6 +12,7 @@ import {
 import { cosmosdbInstance } from "../utils/cosmosdb";
 import { getConfigOrThrow } from "../utils/config";
 import { getStoreMessageContentActivityHandler } from "./handler";
+import { ServicesPreferencesModel, SERVICE_PREFERENCES_COLLECTION_NAME } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 
 const config = getConfigOrThrow();
 
@@ -26,10 +27,16 @@ const messageModel = new MessageModel(
 
 const blobService = createBlobService(config.QueueStorageConnection);
 
+const servicePreferencesModel = new ServicesPreferencesModel(
+  cosmosdbInstance.container(SERVICE_PREFERENCES_COLLECTION_NAME),
+  SERVICE_PREFERENCES_COLLECTION_NAME
+);
+
 const activityFunctionHandler: AzureFunction = getStoreMessageContentActivityHandler(
   profileModel,
   messageModel,
-  blobService
+  blobService,
+  servicePreferencesModel
 );
 
 export default activityFunctionHandler;
