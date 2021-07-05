@@ -9,10 +9,13 @@ import {
   PROFILE_COLLECTION_NAME,
   ProfileModel
 } from "@pagopa/io-functions-commons/dist/src/models/profile";
+import {
+  ServicesPreferencesModel,
+  SERVICE_PREFERENCES_COLLECTION_NAME
+} from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 import { cosmosdbInstance } from "../utils/cosmosdb";
 import { getConfigOrThrow } from "../utils/config";
 import { getStoreMessageContentActivityHandler } from "./handler";
-import { ServicesPreferencesModel, SERVICE_PREFERENCES_COLLECTION_NAME } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 
 const config = getConfigOrThrow();
 

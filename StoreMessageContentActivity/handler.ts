@@ -17,7 +17,6 @@ import { fromNullable, isNone } from "fp-ts/lib/Option";
 import { readableReport } from "italia-ts-commons/lib/reporters";
 import {
   makeServicesPreferencesDocumentId,
-  ServicePreference,
   ServicesPreferencesModel
 } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 import { NonEmptyString } from "italia-ts-commons/lib/strings";
@@ -67,21 +66,21 @@ export type StoreMessageContentActivityResult = t.TypeOf<
   typeof StoreMessageContentActivityResult
 >;
 
-export declare type GetPermissionToCreateMessage = (params: {
+export declare type ServicePreferenceValueOrError = (params: {
   readonly serviceId: NonEmptyString;
   readonly fiscalCode: FiscalCode;
   readonly userServicePreferencesMode: ServicesPreferencesMode;
   readonly userServicePreferencesVersion: number;
 }) => TaskEither<Error, boolean>;
 
-const getPermissionToCreateMessage = (
+const getServicePreferenceValueOrError = (
   servicePreferencesModel: ServicesPreferencesModel
-): GetPermissionToCreateMessage => ({
+): ServicePreferenceValueOrError => ({
   fiscalCode,
   serviceId,
   userServicePreferencesMode,
   userServicePreferencesVersion
-}) => {
+}): TaskEither<Error, boolean> => {
   if (userServicePreferencesMode === ServicesPreferencesModeEnum.LEGACY) {
     return fromLeft(Error("User service preferences mode is LEGACY"));
   }
@@ -192,13 +191,14 @@ export const getStoreMessageContentActivityHandler = (
   //
   // check Service Preferences Settings
   //
-  return getPermissionToCreateMessage(lServicePreferencesModel)({
+  return getServicePreferenceValueOrError(lServicePreferencesModel)({
     fiscalCode: newMessageWithoutContent.fiscalCode,
     serviceId: newMessageWithoutContent.senderServiceId,
     userServicePreferencesMode: profile.servicePreferencesSettings.mode,
     userServicePreferencesVersion: profile.servicePreferencesSettings.version
   })
     .fold<boolean>(_ => {
+      // an error occurs also when user service preference mode is LEGACY
       context.log.warn(`${logPrefix}|LEGACY_OR_ERROR=${_.message}`);
 
       // whether the user has blocked inbox storage for messages from this sender

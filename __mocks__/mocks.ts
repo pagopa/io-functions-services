@@ -24,7 +24,8 @@ import { TimeToLiveSeconds } from "@pagopa/io-functions-commons/dist/generated/d
 import { NewMessageWithoutContent, RetrievedMessageWithoutContent } from "@pagopa/io-functions-commons/dist/src/models/message";
 import { CreatedMessageEventSenderMetadata } from "@pagopa/io-functions-commons/dist/src/models/created_message_sender_metadata";
 import { RetrievedProfile } from "@pagopa/io-functions-commons/dist/src/models/profile";
-import { ServicesPreferencesModeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServicesPreferencesMode";
+import { ServicesPreferencesModeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServicesPreferencesMode"
+import { ServicePreference } from "@pagopa/io-functions-commons/dist/src/models/service_preference"
 import { MessageContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageContent";
 
 export const aFiscalCode = "AAABBB01C02D345D" as FiscalCode;
@@ -82,6 +83,16 @@ export const anIncompleteService: Service & {
 export const legacyProfileServicePreferencesSettings: RetrievedProfile["servicePreferencesSettings"] = {
   mode: ServicesPreferencesModeEnum.LEGACY,
   version: -1
+};
+
+export const autoProfileServicePreferencesSettings: RetrievedProfile["servicePreferencesSettings"] = {
+  mode: ServicesPreferencesModeEnum.AUTO,
+  version: 0 as NonNegativeInteger
+};
+
+export const manualProfileServicePreferencesSettings: RetrievedProfile["servicePreferencesSettings"] = {
+  mode: ServicesPreferencesModeEnum.MANUAL,
+  version: 1 as NonNegativeInteger
 };
 
 export const aRetrievedProfile: RetrievedProfile = {
@@ -148,3 +159,22 @@ export const aCreatedMessageEventSenderMetadata: CreatedMessageEventSenderMetada
   serviceName: "A_SERVICE_NAME" as NonEmptyString,
   serviceUserEmail: "aaa@mail.com" as EmailString
 };
+
+export const anEnabledServicePreference: ServicePreference = {
+  fiscalCode: aFiscalCode,
+  isEmailEnabled: true,
+  isInboxEnabled: true,
+  isWebhookEnabled: true,
+  serviceId: "01234567890" as NonEmptyString,
+  settingsVersion: 0 as NonNegativeInteger
+}
+
+
+export const aDisabledServicePreference: ServicePreference = {
+  fiscalCode: aFiscalCode,
+  isEmailEnabled: false,
+  isInboxEnabled: false,
+  isWebhookEnabled: false,
+  serviceId: "01234567890" as NonEmptyString,
+  settingsVersion: 0 as NonNegativeInteger
+} 
