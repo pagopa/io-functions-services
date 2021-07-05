@@ -73,7 +73,7 @@
     "io-ts": "1.8.5",
     "italia-ts-commons": "^8.6.0",
     "node-fetch": "^2.6.1",
-    "nodemailer": "^4.6.7",
+    "nodemailer": "^6.4.16",
     "nodemailer-sendgrid": "^1.0.3"
   },
   "resolutions": {
