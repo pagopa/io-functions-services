@@ -61,7 +61,7 @@
     "@pagopa/io-functions-commons": "^20.6.6",
     "@pagopa/ts-commons": "^9.4.1",
     "applicationinsights": "^1.7.4",
-    "azure-storage": "^2.10.3",
+    "azure-storage": "^2.10.4",
     "cors": "^2.8.4",
     "date-fns": "^2.16.1",
     "documentdb": "^1.12.2",
@@ -78,7 +78,6 @@
   },
   "resolutions": {
     "handlebars": "~4.5.3",
-    "fp-ts": "1.17.4",
-    "azure-storage": "^2.10.3"
+    "fp-ts": "1.17.4"
   }
 }
