@@ -57,7 +57,7 @@
     "typescript": "^3.3.3"
   },
   "dependencies": {
-    "@azure/cosmos": "^3.7.2",
+    "@azure/cosmos": "^3.11.5",
     "@pagopa/io-functions-commons": "^20.6.6",
     "@pagopa/ts-commons": "^9.4.1",
     "applicationinsights": "^1.7.4",
@@ -79,7 +79,6 @@
   "resolutions": {
     "handlebars": "~4.5.3",
     "fp-ts": "1.17.4",
-    "@azure/cosmos": "^3.7.2",
     "azure-storage": "^2.10.3"
   }
 }

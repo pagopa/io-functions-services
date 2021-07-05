@@ -48,11 +48,11 @@ const messageModelMock = {
   upsert: jest.fn(upsertMessageMock)
 };
 
-const anEmailModeSwitchLimitDate = UTCISODateFromString.decode(
+const anOptOutEmailSwitchDate = UTCISODateFromString.decode(
   "2021-07-08T23:59:59Z"
 ).getOrElseL(() => fail("wrong date value"));
 
-const aPastEmailModeSwitchLimitDate = UTCISODateFromString.decode(
+const aPastOptOutEmailSwitchDate = UTCISODateFromString.decode(
   "2000-07-08T23:59:59Z"
 ).getOrElseL(() => fail("wrong date value"));
 
@@ -74,7 +74,7 @@ describe("getStoreMessageContentActivityHandler", () => {
       messageModelMock as any,
       {} as any,
       // limit date is after profile timestamp
-      anEmailModeSwitchLimitDate
+      anOptOutEmailSwitchDate
     );
 
     const result = await storeMessageContentActivityHandler(
@@ -101,7 +101,7 @@ describe("getStoreMessageContentActivityHandler", () => {
       messageModelMock as any,
       {} as any,
       // limit date is before profile timestamp
-      aPastEmailModeSwitchLimitDate
+      aPastOptOutEmailSwitchDate
     );
 
     const result = await storeMessageContentActivityHandler(
@@ -121,7 +121,7 @@ describe("getStoreMessageContentActivityHandler", () => {
       profileModelMock as any,
       messageModelMock as any,
       {} as any,
-      aPastEmailModeSwitchLimitDate
+      aPastOptOutEmailSwitchDate
     );
 
     const result = await storeMessageContentActivityHandler(
@@ -143,7 +143,7 @@ describe("getStoreMessageContentActivityHandler", () => {
       profileModelMock as any,
       messageModelMock as any,
       {} as any,
-      aPastEmailModeSwitchLimitDate
+      aPastOptOutEmailSwitchDate
     );
 
     await expect(
@@ -159,7 +159,7 @@ describe("getStoreMessageContentActivityHandler", () => {
       profileModelMock as any,
       messageModelMock as any,
       {} as any,
-      aPastEmailModeSwitchLimitDate
+      aPastOptOutEmailSwitchDate
     );
 
     const result = await storeMessageContentActivityHandler(
@@ -181,7 +181,7 @@ describe("getStoreMessageContentActivityHandler", () => {
       profileModelMock as any,
       messageModelMock as any,
       {} as any,
-      aPastEmailModeSwitchLimitDate
+      aPastOptOutEmailSwitchDate
     );
 
     const result = await storeMessageContentActivityHandler(
@@ -200,7 +200,7 @@ describe("getStoreMessageContentActivityHandler", () => {
       taskEither.of(
         some({
           ...aRetrievedProfile,
-          blockedInboxOrChannels: { agid: BlockedInboxOrChannelEnum.INBOX }
+          blockedInboxOrChannels: { agid: [BlockedInboxOrChannelEnum.INBOX] }
         })
       )
     );
@@ -208,7 +208,7 @@ describe("getStoreMessageContentActivityHandler", () => {
       profileModelMock as any,
       messageModelMock as any,
       {} as any,
-      aPastEmailModeSwitchLimitDate
+      aPastOptOutEmailSwitchDate
     );
 
     const result = await storeMessageContentActivityHandler(
@@ -230,7 +230,7 @@ describe("getStoreMessageContentActivityHandler", () => {
       profileModelMock as any,
       messageModelMock as any,
       {} as any,
-      aPastEmailModeSwitchLimitDate
+      aPastOptOutEmailSwitchDate
     );
 
     await expect(
@@ -246,7 +246,7 @@ describe("getStoreMessageContentActivityHandler", () => {
       profileModelMock as any,
       messageModelMock as any,
       {} as any,
-      aPastEmailModeSwitchLimitDate
+      aPastOptOutEmailSwitchDate
     );
 
     await expect(

@@ -60,7 +60,7 @@ export const getStoreMessageContentActivityHandler = (
   lProfileModel: ProfileModel,
   lMessageModel: MessageModel,
   lBlobService: BlobService,
-  emailModeSwitchLimitDate: UTCISODateFromString
+  optOutEmailSwitchDate: UTCISODateFromString
 ) => async (
   context: Context,
   input: unknown
@@ -187,7 +187,7 @@ export const getStoreMessageContentActivityHandler = (
     profile: {
       ...profile,
       // eslint-disable-next-line no-underscore-dangle
-      isEmailEnabled: isBefore(profile._ts, emailModeSwitchLimitDate)
+      isEmailEnabled: isBefore(profile._ts, optOutEmailSwitchDate)
         ? false
         : profile.isEmailEnabled
     }

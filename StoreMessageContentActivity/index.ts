@@ -30,7 +30,7 @@ const activityFunctionHandler: AzureFunction = getStoreMessageContentActivityHan
   profileModel,
   messageModel,
   blobService,
-  config.EMAIL_MODE_SWITCH_LIMIT_DATE
+  config.OPT_OUT_EMAIL_SWITCH_DATE
 );
 
 export default activityFunctionHandler;
