@@ -5,18 +5,16 @@
 
 import { TableService } from "azure-storage";
 import * as dateFmt from "date-fns";
-import * as endOfTomorrow from "date-fns/end_of_tomorrow";
-import * as startOfYesterday from "date-fns/start_of_yesterday";
 import { FiscalCodeHash } from "../../generated/definitions/FiscalCodeHash";
 import { GetSubscriptionsFeedHandler } from "../handler";
 
 import { anIncompleteService, aValidService } from "../../__mocks__/mocks";
 
-const tomorrow = endOfTomorrow();
+const tomorrow = dateFmt.endOfTomorrow();
 
-const yesterday = startOfYesterday();
+const yesterday = dateFmt.startOfYesterday();
 
-const yesterdayUTC = dateFmt.format(yesterday, "YYYY-MM-DD");
+const yesterdayUTC = dateFmt.format(yesterday, "yyyy-MM-dd");
 
 const userAttrs = {
   email: "example@mail.com",
@@ -82,7 +80,7 @@ describe("GetSubscriptionsFeedHandler", () => {
       {} as any,
       {} as any,
       userAttrs as any,
-      dateFmt.format(tomorrow, "YYYY-MM-DD")
+      dateFmt.format(tomorrow, "yyyy-MM-dd")
     );
     expect(result.kind).toBe("IResponseErrorNotFound");
   });

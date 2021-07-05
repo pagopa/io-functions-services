@@ -29,6 +29,8 @@ import {
 } from "@pagopa/io-functions-commons/dist/generated/definitions/ServicesPreferencesMode";
 import { identity } from "fp-ts/lib/function";
 import { fromLeft, TaskEither } from "fp-ts/lib/TaskEither";
+import { isBefore } from "date-fns";
+import { UTCISODateFromString } from "@pagopa/ts-commons/lib/dates";
 
 export const SuccessfulStoreMessageContentActivityResult = t.interface({
   blockedInboxOrChannels: t.readonlyArray(BlockedInboxOrChannel),
@@ -111,7 +113,8 @@ export const getStoreMessageContentActivityHandler = (
   lProfileModel: ProfileModel,
   lMessageModel: MessageModel,
   lBlobService: BlobService,
-  lServicePreferencesModel: ServicesPreferencesModel
+  lServicePreferencesModel: ServicesPreferencesModel,
+  optOutEmailSwitchDate: UTCISODateFromString
 ) => async (
   context: Context,
   input: unknown
@@ -250,7 +253,14 @@ export const getStoreMessageContentActivityHandler = (
           // since a Set can't be serialized to JSON
           blockedInboxOrChannels: Array.from(blockedInboxOrChannels),
           kind: "SUCCESS",
-          profile
+          profile: {
+            ...profile,
+            // if profile's timestamp is before email opt out switch limit date we must force isEmailEnabled to false
+            // eslint-disable-next-line no-underscore-dangle
+            isEmailEnabled: isBefore(profile._ts, optOutEmailSwitchDate)
+              ? false
+              : profile.isEmailEnabled
+          }
         };
       }
     )

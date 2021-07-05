@@ -21,6 +21,7 @@ import {
 } from "italia-ts-commons/lib/strings";
 import { RetrievedServicePreference } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 import { ServiceId } from "../../generated/api-admin/ServiceId";
+import { legacyProfileServicePreferencesSettings } from "../../__mocks__/mocks";
 
 //
 // custom fastcheck arbitraries
@@ -237,11 +238,8 @@ export const retrievedProfileArb = fc
         isInboxEnabled: true,
         kind: "IRetrievedProfile",
         preferredLanguages: [PreferredLanguageEnum.en_GB],
-        version: version as NonNegativeInteger,
-        servicePreferencesSettings: {
-          mode: ServicesPreferencesModeEnum.LEGACY,
-          version: -1
-        }
+        servicePreferencesSettings: legacyProfileServicePreferencesSettings,
+        version: version as NonNegativeInteger
       } as RetrievedProfile)
   );
 
