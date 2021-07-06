@@ -8,10 +8,13 @@
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { MailerConfig } from "@pagopa/io-functions-commons/dist/src/mailer";
 import { fromNullable } from "fp-ts/lib/Option";
+import { fromNullable as fromNullableE } from "fp-ts/lib/Either";
 import * as t from "io-ts";
 import { readableReport } from "italia-ts-commons/lib/reporters";
 import { NonEmptyString } from "italia-ts-commons/lib/strings";
-import { UTCISODateFromString } from "@pagopa/ts-commons/lib/dates";
+import { DateFromTimestamp } from "@pagopa/ts-commons/lib/dates";
+import { NumberFromString } from "@pagopa/ts-commons/lib/numbers";
+import { identity } from "fp-ts/lib/function";
 import { CommaSeparatedListOf } from "./comma-separated-list";
 
 // global app configuration
@@ -34,7 +37,7 @@ export const IConfig = t.intersection([
     IO_FUNCTIONS_ADMIN_BASE_URL: NonEmptyString,
 
     MESSAGE_CONTAINER_NAME: NonEmptyString,
-    OPT_OUT_EMAIL_SWITCH_DATE: UTCISODateFromString,
+    OPT_OUT_EMAIL_SWITCH_DATE: DateFromTimestamp,
 
     QueueStorageConnection: NonEmptyString,
 
@@ -53,7 +56,7 @@ export const IConfig = t.intersection([
   MailerConfig
 ]);
 
-const DEFAULT_OPT_OUT_EMAIL_SWITCH_DATE = "1970-01-01T00:00:00Z";
+const DEFAULT_OPT_OUT_EMAIL_SWITCH_DATE = 1625781600000;
 
 // No need to re-evaluate this object for each call
 const errorOrConfig: t.Validation<IConfig> = IConfig.decode({
@@ -69,9 +72,15 @@ const errorOrConfig: t.Validation<IConfig> = IConfig.decode({
   )
     .map(_ => _.toLowerCase() === "true")
     .getOrElse(false),
-  OPT_OUT_EMAIL_SWITCH_DATE: fromNullable(
+  OPT_OUT_EMAIL_SWITCH_DATE: fromNullableE(DEFAULT_OPT_OUT_EMAIL_SWITCH_DATE)(
     process.env.OPT_OUT_EMAIL_SWITCH_DATE
-  ).getOrElse(DEFAULT_OPT_OUT_EMAIL_SWITCH_DATE),
+  )
+    .chain(_ =>
+      NumberFromString.decode(_).mapLeft(
+        () => DEFAULT_OPT_OUT_EMAIL_SWITCH_DATE
+      )
+    )
+    .fold(identity, identity),
   isProduction: process.env.NODE_ENV === "production"
 });
 
