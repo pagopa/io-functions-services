@@ -28,7 +28,7 @@ import {
   ServicesPreferencesModeEnum
 } from "@pagopa/io-functions-commons/dist/generated/definitions/ServicesPreferencesMode";
 import { identity } from "fp-ts/lib/function";
-import { fromLeft, TaskEither } from "fp-ts/lib/TaskEither";
+import { fromPredicate, taskEither, TaskEither } from "fp-ts/lib/TaskEither";
 import { isBefore } from "date-fns";
 import { UTCISODateFromString } from "@pagopa/ts-commons/lib/dates";
 
@@ -113,26 +113,35 @@ const getServicePreferenceValueOrError = (
 }): TaskEither<
   ServicePreferenceError,
   ReadonlyArray<BlockedInboxOrChannelEnum>
-> => {
-  if (userServicePreferencesMode === ServicesPreferencesModeEnum.LEGACY) {
-    return fromLeft({
-      kind: "LEGACY",
-      message: "User service preferences mode is LEGACY"
-    });
-  }
-
-  const documentId = makeServicesPreferencesDocumentId(
-    fiscalCode,
-    serviceId,
-    userServicePreferencesVersion as NonNegativeInteger
-  );
-
-  return servicePreferencesModel
-    .find([documentId, fiscalCode])
-    .mapLeft<ServicePreferenceError>(failure => ({
-      kind: "ERROR",
-      message: `COSMOSDB|ERROR=${failure.kind}`
-    }))
+> =>
+  taskEither
+    .of<ServicePreferenceError, ServicesPreferencesMode>(
+      userServicePreferencesMode
+    )
+    .chain(
+      fromPredicate(
+        _ => _ !== ServicesPreferencesModeEnum.LEGACY,
+        () => ({
+          kind: "LEGACY",
+          message: "User service preferences mode is LEGACY"
+        })
+      )
+    )
+    .map(() =>
+      makeServicesPreferencesDocumentId(
+        fiscalCode,
+        serviceId,
+        userServicePreferencesVersion as NonNegativeInteger
+      )
+    )
+    .chain(documentId =>
+      servicePreferencesModel
+        .find([documentId, fiscalCode])
+        .mapLeft<ServicePreferenceError>(failure => ({
+          kind: "ERROR",
+          message: `COSMOSDB|ERROR=${failure.kind}`
+        }))
+    )
     .map(maybeServicePref =>
       maybeServicePref.foldL<ReadonlyArray<BlockedInboxOrChannelEnum>>(
         () =>
@@ -145,7 +154,6 @@ const getServicePreferenceValueOrError = (
         servicePreferenceToBlockedInboxOrChannels
       )
     );
-};
 
 /**
  * Returns a function for handling storeMessageContentActivity
