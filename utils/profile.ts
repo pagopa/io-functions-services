@@ -15,7 +15,13 @@ import {
   ResponseErrorQuery
 } from "@pagopa/io-functions-commons/dist/src/utils/response";
 import { Some, isSome } from "fp-ts/lib/Option";
-import { fromEither, fromPredicate, taskEither } from "fp-ts/lib/TaskEither";
+import {
+  fromEither,
+  fromLeft,
+  fromPredicate,
+  TaskEither,
+  taskEither
+} from "fp-ts/lib/TaskEither";
 import { right } from "fp-ts/lib/Either";
 import { identity } from "io-ts";
 import {
@@ -34,21 +40,21 @@ import { GetLimitedProfileByPOSTPayload } from "../generated/definitions/GetLimi
 /**
  * Whether the sender service is allowed to send
  * messages to the user identified by this profile
+ * which servicesPreferencesSettings.mode is LEGACY
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
-export function isSenderAllowed(
+export const isSenderAllowedLegacy = (
   blockedInboxOrChannels:
     | RetrievedProfile["blockedInboxOrChannels"]
     | undefined,
   serviceId: ServiceId
-): boolean {
-  return (
+): TaskEither<never, boolean> =>
+  taskEither.of(
     blockedInboxOrChannels === undefined ||
-    blockedInboxOrChannels[serviceId] === undefined ||
-    blockedInboxOrChannels[serviceId].indexOf(BlockedInboxOrChannelEnum.INBOX) <
-      0
+      blockedInboxOrChannels[serviceId] === undefined ||
+      blockedInboxOrChannels[serviceId].indexOf(
+        BlockedInboxOrChannelEnum.INBOX
+      ) < 0
   );
-}
 
 /**
  * Converts the RetrievedProfile model to LimitedProfile type.
@@ -149,14 +155,15 @@ export const getLimitedProfileTask = (
       )
     )
     .map(_ => _.value)
-    .fold<IGetLimitedProfileResponses>(identity, service =>
-      ResponseSuccessJson(
-        retrievedProfileToLimitedProfile(
-          service,
-          isSenderAllowed(
-            service.blockedInboxOrChannels,
-            userAttributes.service.serviceId
-          )
-        )
-      )
+    .chain(service =>
+      isSenderAllowedLegacy(
+        service.blockedInboxOrChannels,
+        userAttributes.service.serviceId
+      ).map(isAllowed => ({
+        isAllowed,
+        service
+      }))
+    )
+    .fold<IGetLimitedProfileResponses>(identity, ({ isAllowed, service }) =>
+      ResponseSuccessJson(retrievedProfileToLimitedProfile(service, isAllowed))
     );
