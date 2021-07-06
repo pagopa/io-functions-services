@@ -45,12 +45,12 @@ const mockContext = {
   }
 } as any;
 
-const findLastVersionByModelIdMock = jest
+const findLastProfileVersionByModelIdMock = jest
   .fn()
   .mockImplementation(() => taskEither.of(some(aRetrievedProfile)));
 
 const profileModelMock = {
-  findLastVersionByModelId: jest.fn(findLastVersionByModelIdMock)
+  findLastVersionByModelId: jest.fn(findLastProfileVersionByModelIdMock)
 };
 
 const aBlobResult = {
@@ -131,7 +131,7 @@ describe("getStoreMessageContentActivityHandler", () => {
   });
 
   it("should respond success with a retrieved profile mantaining its original isEmailEnabled property", async () => {
-    findLastVersionByModelIdMock.mockImplementationOnce(() =>
+    findLastProfileVersionByModelIdMock.mockImplementationOnce(() =>
       taskEither.of(some(aRetrievedProfileWithAValidTimestamp))
     );
     const storeMessageContentActivityHandler = getStoreMessageContentActivityHandler(
@@ -176,7 +176,7 @@ describe("getStoreMessageContentActivityHandler", () => {
   });
 
   it("should throw an Error if there is an error while fetching profile", async () => {
-    findLastVersionByModelIdMock.mockImplementationOnce(() =>
+    findLastProfileVersionByModelIdMock.mockImplementationOnce(() =>
       fromLeft("Profile fetch error")
     );
     const storeMessageContentActivityHandler = getStoreMessageContentActivityHandler(
@@ -193,7 +193,7 @@ describe("getStoreMessageContentActivityHandler", () => {
   });
 
   it("should return a failure if no profile was found", async () => {
-    findLastVersionByModelIdMock.mockImplementationOnce(() =>
+    findLastProfileVersionByModelIdMock.mockImplementationOnce(() =>
       taskEither.of(none)
     );
     const storeMessageContentActivityHandler = getStoreMessageContentActivityHandler(
@@ -216,7 +216,7 @@ describe("getStoreMessageContentActivityHandler", () => {
   });
 
   it("should return a failure if inbox is not enabled", async () => {
-    findLastVersionByModelIdMock.mockImplementationOnce(() =>
+    findLastProfileVersionByModelIdMock.mockImplementationOnce(() =>
       taskEither.of(some({ ...aRetrievedProfile, isInboxEnabled: false }))
     );
     const storeMessageContentActivityHandler = getStoreMessageContentActivityHandler(
@@ -239,7 +239,7 @@ describe("getStoreMessageContentActivityHandler", () => {
   });
 
   it("should return a failure if message sender is blocked", async () => {
-    findLastVersionByModelIdMock.mockImplementationOnce(() =>
+    findLastProfileVersionByModelIdMock.mockImplementationOnce(() =>
       taskEither.of(
         some({
           ...aRetrievedProfile,
@@ -306,7 +306,7 @@ describe("getStoreMessageContentActivityHandler", () => {
   });
 
   it("should throw an Error if user's service preference retrieval fails (AUTO SETTINGS)", async () => {
-    findLastVersionByModelIdMock.mockImplementationOnce(() =>
+    findLastProfileVersionByModelIdMock.mockImplementationOnce(() =>
       taskEither.of(
         some({
           ...aRetrievedProfile,
@@ -335,9 +335,9 @@ describe("getStoreMessageContentActivityHandler", () => {
       storeMessageContentActivityHandler(mockContext, aCreatedMessageEvent)
     ).rejects.toThrow();
 
-    expect(findLastVersionByModelIdMock).toHaveBeenCalled();
-    expect(findLastVersionByModelIdMock).toHaveBeenCalledTimes(1);
-    expect(findLastVersionByModelIdMock).toHaveBeenCalledWith([
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalled();
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledTimes(1);
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledWith([
       aRetrievedProfile.fiscalCode
     ]);
 
@@ -355,7 +355,7 @@ describe("getStoreMessageContentActivityHandler", () => {
   });
 
   it("should throw an Error if user's service preference retrieval fails (MANUAL SETTINGS)", async () => {
-    findLastVersionByModelIdMock.mockImplementationOnce(() =>
+    findLastProfileVersionByModelIdMock.mockImplementationOnce(() =>
       taskEither.of(
         some({
           ...aRetrievedProfile,
@@ -384,9 +384,9 @@ describe("getStoreMessageContentActivityHandler", () => {
       storeMessageContentActivityHandler(mockContext, aCreatedMessageEvent)
     ).rejects.toThrow();
 
-    expect(findLastVersionByModelIdMock).toHaveBeenCalled();
-    expect(findLastVersionByModelIdMock).toHaveBeenCalledTimes(1);
-    expect(findLastVersionByModelIdMock).toHaveBeenCalledWith([
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalled();
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledTimes(1);
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledWith([
       aRetrievedProfile.fiscalCode
     ]);
 
@@ -403,11 +403,11 @@ describe("getStoreMessageContentActivityHandler", () => {
     ]);
   });
 
-  it("should not throw if user's service preference retrieval fails (LEGACY SETTINGS)", async () => {
+  it("should not throw if user's service preference retrieval fails and return success service is not in blockedInboxOrChannels (LEGACY SETTINGS)", async () => {
     // LEGACY settings should not run any query on service preferences
     // so this should not throw any error because query is not run
 
-    findLastVersionByModelIdMock.mockImplementationOnce(() =>
+    findLastProfileVersionByModelIdMock.mockImplementationOnce(() =>
       taskEither.of(
         some({
           ...aRetrievedProfile,
@@ -446,16 +446,120 @@ describe("getStoreMessageContentActivityHandler", () => {
     // findServicePreferenceMock is not mocked because it should not be called
     // senderServiceId: "01234567890" is not in blockedInboxOrChannels
     // => SUCCESS
-    expect(findLastVersionByModelIdMock).toHaveBeenCalled();
-    expect(findLastVersionByModelIdMock).toHaveBeenCalledTimes(1);
-    expect(findLastVersionByModelIdMock).toHaveBeenCalledWith([
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalled();
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledTimes(1);
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledWith([
       aRetrievedProfile.fiscalCode
     ]);
     expect(findServicePreferenceMock).not.toHaveBeenCalled();
   });
 
-  it("should return a success if message sender service does not exists in user service preference (AUTO SETTINGS)", async () => {
-    findLastVersionByModelIdMock.mockImplementationOnce(() =>
+  it("should not throw if user's service preference retrieval fails and return success if inbox is not disabled in blockedInboxOrChannels (LEGACY SETTINGS)", async () => {
+    // LEGACY settings should not run any query on service preferences
+    // so this should not throw any error because query is not run
+
+    findLastProfileVersionByModelIdMock.mockImplementationOnce(() =>
+      taskEither.of(
+        some({
+          ...aRetrievedProfile,
+          servicePreferencesSettings: legacyProfileServicePreferencesSettings,
+          blockedInboxOrChannels: {
+            "01234567890": [BlockedInboxOrChannelEnum.EMAIL]
+          }
+        })
+      )
+    );
+
+    const storeMessageContentActivityHandler = getStoreMessageContentActivityHandler(
+      profileModelMock as any,
+      messageModelMock as any,
+      {} as any,
+      mockServicesPreferencesModel as any,
+      aPastOptOutEmailSwitchDate
+    );
+
+    const result: StoreMessageContentActivityResult = await storeMessageContentActivityHandler(
+      mockContext,
+      {
+        ...aCreatedMessageEvent,
+        message: {
+          ...aNewMessageWithoutContent,
+          senderServiceId: "01234567890" as ServiceId
+        }
+      }
+    );
+
+    expect(result.kind).toBe("SUCCESS");
+    if (result.kind === "SUCCESS") {
+      expect(result.blockedInboxOrChannels).toEqual([
+        BlockedInboxOrChannelEnum.EMAIL
+      ]);
+    }
+
+    // findServicePreferenceMock is not mocked because it should not be called
+    // senderServiceId: "01234567890" is in blockedInboxOrChannels for EMAIL
+    // => SUCCESS
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalled();
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledTimes(1);
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledWith([
+      aRetrievedProfile.fiscalCode
+    ]);
+    expect(findServicePreferenceMock).not.toHaveBeenCalled();
+  });
+
+  it("should not throw if user's service preference retrieval fails and return failure if inbox is disabled in blockedInboxOrChannels (LEGACY SETTINGS)", async () => {
+    // LEGACY settings should not run any query on service preferences
+    // so this should not throw any error because query is not run
+
+    findLastProfileVersionByModelIdMock.mockImplementationOnce(() =>
+      taskEither.of(
+        some({
+          ...aRetrievedProfile,
+          servicePreferencesSettings: legacyProfileServicePreferencesSettings,
+          blockedInboxOrChannels: {
+            "01234567890": [BlockedInboxOrChannelEnum.INBOX]
+          }
+        })
+      )
+    );
+
+    const storeMessageContentActivityHandler = getStoreMessageContentActivityHandler(
+      profileModelMock as any,
+      messageModelMock as any,
+      {} as any,
+      mockServicesPreferencesModel as any,
+      aPastOptOutEmailSwitchDate
+    );
+
+    const result: StoreMessageContentActivityResult = await storeMessageContentActivityHandler(
+      mockContext,
+      {
+        ...aCreatedMessageEvent,
+        message: {
+          ...aNewMessageWithoutContent,
+          senderServiceId: "01234567890" as ServiceId
+        }
+      }
+    );
+
+    expect(result.kind).toBe("FAILURE");
+    if (result.kind === "FAILURE") {
+      expect(result.reason).toEqual("SENDER_BLOCKED");
+    }
+
+    // findServicePreferenceMock is not mocked because it should not be called
+    // senderServiceId: "01234567890" is in blockedInboxOrChannels for INBOX
+    // => FAILURE
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalled();
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledTimes(1);
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledWith([
+      aRetrievedProfile.fiscalCode
+    ]);
+    expect(findServicePreferenceMock).not.toHaveBeenCalled();
+  });
+
+  it("should return a success with empty blockedInboxOrChannels if message sender service does not exists in user service preference (AUTO SETTINGS)", async () => {
+    findLastProfileVersionByModelIdMock.mockImplementationOnce(() =>
       taskEither.of(
         some({
           ...aRetrievedProfile,
@@ -493,14 +597,13 @@ describe("getStoreMessageContentActivityHandler", () => {
 
     expect(result.kind).toBe("SUCCESS");
     if (result.kind === "SUCCESS") {
-      expect(result.blockedInboxOrChannels).toEqual([
-        BlockedInboxOrChannelEnum.INBOX
-      ]);
+      // we expect that blockedInboxOrChannels is overridden by AUTO setting
+      expect(result.blockedInboxOrChannels).toEqual([]);
     }
 
-    expect(findLastVersionByModelIdMock).toHaveBeenCalled();
-    expect(findLastVersionByModelIdMock).toHaveBeenCalledTimes(1);
-    expect(findLastVersionByModelIdMock).toHaveBeenCalledWith([
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalled();
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledTimes(1);
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledWith([
       aRetrievedProfile.fiscalCode
     ]);
 
@@ -518,7 +621,7 @@ describe("getStoreMessageContentActivityHandler", () => {
   });
 
   it("should return a success if message sender service exists and is enabled in user service preference (AUTO SETTINGS)", async () => {
-    findLastVersionByModelIdMock.mockImplementationOnce(() =>
+    findLastProfileVersionByModelIdMock.mockImplementationOnce(() =>
       taskEither.of(
         some({
           ...aRetrievedProfile,
@@ -561,14 +664,85 @@ describe("getStoreMessageContentActivityHandler", () => {
 
     expect(result.kind).toBe("SUCCESS");
     if (result.kind === "SUCCESS") {
+      // we expect that blockedInboxOrChannels is overridden by AUTO setting
+      // with service preferences
+      expect(result.blockedInboxOrChannels).toEqual([]);
+    }
+
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalled();
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledTimes(1);
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledWith([
+      aRetrievedProfile.fiscalCode
+    ]);
+
+    const documentId = makeServicesPreferencesDocumentId(
+      aRetrievedProfile.fiscalCode,
+      "01234567890" as NonEmptyString,
+      autoProfileServicePreferencesSettings.version as NonNegativeInteger
+    );
+    expect(findServicePreferenceMock).toHaveBeenCalled();
+    expect(findServicePreferenceMock).toHaveBeenCalledTimes(1);
+    expect(findServicePreferenceMock).toHaveBeenCalledWith([
+      documentId,
+      aRetrievedProfile.fiscalCode
+    ]);
+  });
+
+  it("should return a success with a blocked EMAIL if sender service exists and has EMAIL disabled in user service preference (AUTO SETTINGS)", async () => {
+    findLastProfileVersionByModelIdMock.mockImplementationOnce(() =>
+      taskEither.of(
+        some({
+          ...aRetrievedProfile,
+          servicePreferencesSettings: autoProfileServicePreferencesSettings,
+          blockedInboxOrChannels: {
+            "01234567890": [BlockedInboxOrChannelEnum.INBOX]
+          }
+        })
+      )
+    );
+
+    findServicePreferenceMock.mockImplementationOnce(
+      ([modelId, partitionKey]) =>
+        taskEither.of<CosmosErrors, Option<ServicePreference>>(
+          some({
+            ...anEnabledServicePreference,
+            isEmailEnabled: false, // we disable email for this test
+            version: autoProfileServicePreferencesSettings.version
+          })
+        )
+    );
+
+    const storeMessageContentActivityHandler = getStoreMessageContentActivityHandler(
+      profileModelMock as any,
+      messageModelMock as any,
+      {} as any,
+      mockServicesPreferencesModel as any,
+      aPastOptOutEmailSwitchDate
+    );
+
+    const result: StoreMessageContentActivityResult = await storeMessageContentActivityHandler(
+      mockContext,
+      {
+        ...aCreatedMessageEvent,
+        message: {
+          ...aNewMessageWithoutContent,
+          senderServiceId: "01234567890" as ServiceId
+        }
+      }
+    );
+
+    expect(result.kind).toBe("SUCCESS");
+    if (result.kind === "SUCCESS") {
+      // we expect that blockedInboxOrChannels is overridden by AUTO setting
+      // with service preferences with disabled EMAIL
       expect(result.blockedInboxOrChannels).toEqual([
-        BlockedInboxOrChannelEnum.INBOX
+        BlockedInboxOrChannelEnum.EMAIL
       ]);
     }
 
-    expect(findLastVersionByModelIdMock).toHaveBeenCalled();
-    expect(findLastVersionByModelIdMock).toHaveBeenCalledTimes(1);
-    expect(findLastVersionByModelIdMock).toHaveBeenCalledWith([
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalled();
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledTimes(1);
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledWith([
       aRetrievedProfile.fiscalCode
     ]);
 
@@ -586,7 +760,7 @@ describe("getStoreMessageContentActivityHandler", () => {
   });
 
   it("should return a failure if message sender service exists and is not enabled in user service preference (AUTO SETTINGS)", async () => {
-    findLastVersionByModelIdMock.mockImplementationOnce(() =>
+    findLastProfileVersionByModelIdMock.mockImplementationOnce(() =>
       taskEither.of(
         some({
           ...aRetrievedProfile,
@@ -632,9 +806,77 @@ describe("getStoreMessageContentActivityHandler", () => {
       expect(result.reason).toEqual("SENDER_BLOCKED");
     }
 
-    expect(findLastVersionByModelIdMock).toHaveBeenCalled();
-    expect(findLastVersionByModelIdMock).toHaveBeenCalledTimes(1);
-    expect(findLastVersionByModelIdMock).toHaveBeenCalledWith([
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalled();
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledTimes(1);
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledWith([
+      aRetrievedProfile.fiscalCode
+    ]);
+
+    const documentId = makeServicesPreferencesDocumentId(
+      aRetrievedProfile.fiscalCode,
+      "01234567890" as NonEmptyString,
+      autoProfileServicePreferencesSettings.version as NonNegativeInteger
+    );
+    expect(findServicePreferenceMock).toHaveBeenCalled();
+    expect(findServicePreferenceMock).toHaveBeenCalledTimes(1);
+    expect(findServicePreferenceMock).toHaveBeenCalledWith([
+      documentId,
+      aRetrievedProfile.fiscalCode
+    ]);
+  });
+
+  it("should return a failure if message sender service exists and has only INBOX disabled in user service preference (AUTO SETTINGS)", async () => {
+    findLastProfileVersionByModelIdMock.mockImplementationOnce(() =>
+      taskEither.of(
+        some({
+          ...aRetrievedProfile,
+          servicePreferencesSettings: autoProfileServicePreferencesSettings,
+          blockedInboxOrChannels: {
+            "01234567890": [BlockedInboxOrChannelEnum.INBOX]
+          }
+        })
+      )
+    );
+
+    findServicePreferenceMock.mockImplementationOnce(
+      ([modelId, partitionKey]) =>
+        taskEither.of<CosmosErrors, Option<ServicePreference>>(
+          some({
+            ...aDisabledServicePreference,
+            isEmailEnabled: true,
+            isWebhookEnabled: true,
+            version: autoProfileServicePreferencesSettings.version
+          })
+        )
+    );
+
+    const storeMessageContentActivityHandler = getStoreMessageContentActivityHandler(
+      profileModelMock as any,
+      messageModelMock as any,
+      {} as any,
+      mockServicesPreferencesModel as any,
+      aPastOptOutEmailSwitchDate
+    );
+
+    const result: StoreMessageContentActivityResult = await storeMessageContentActivityHandler(
+      mockContext,
+      {
+        ...aCreatedMessageEvent,
+        message: {
+          ...aNewMessageWithoutContent,
+          senderServiceId: "01234567890" as ServiceId
+        }
+      }
+    );
+
+    expect(result.kind).toBe("FAILURE");
+    if (result.kind === "FAILURE") {
+      expect(result.reason).toEqual("SENDER_BLOCKED");
+    }
+
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalled();
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledTimes(1);
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledWith([
       aRetrievedProfile.fiscalCode
     ]);
 
@@ -652,7 +894,7 @@ describe("getStoreMessageContentActivityHandler", () => {
   });
 
   it("should return a failure if message sender service does not exists in user service preference (MANUAL SETTINGS)", async () => {
-    findLastVersionByModelIdMock.mockImplementationOnce(() =>
+    findLastProfileVersionByModelIdMock.mockImplementationOnce(() =>
       taskEither.of(
         some({
           ...aRetrievedProfile,
@@ -693,9 +935,9 @@ describe("getStoreMessageContentActivityHandler", () => {
       expect(result.reason).toEqual("SENDER_BLOCKED");
     }
 
-    expect(findLastVersionByModelIdMock).toHaveBeenCalled();
-    expect(findLastVersionByModelIdMock).toHaveBeenCalledTimes(1);
-    expect(findLastVersionByModelIdMock).toHaveBeenCalledWith([
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalled();
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledTimes(1);
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledWith([
       aRetrievedProfile.fiscalCode
     ]);
 
@@ -713,13 +955,13 @@ describe("getStoreMessageContentActivityHandler", () => {
   });
 
   it("should return a success if message sender service exists and is enabled in user service preference (MANUAL SETTINGS)", async () => {
-    findLastVersionByModelIdMock.mockImplementationOnce(() =>
+    findLastProfileVersionByModelIdMock.mockImplementationOnce(() =>
       taskEither.of(
         some({
           ...aRetrievedProfile,
           servicePreferencesSettings: manualProfileServicePreferencesSettings,
           blockedInboxOrChannels: {
-            "01234567890": [BlockedInboxOrChannelEnum.INBOX]
+            "01234567890": [BlockedInboxOrChannelEnum.INBOX] // this settings will not be checked because we are in MANUAL settings
           }
         })
       )
@@ -756,14 +998,81 @@ describe("getStoreMessageContentActivityHandler", () => {
 
     expect(result.kind).toBe("SUCCESS");
     if (result.kind === "SUCCESS") {
+      expect(result.blockedInboxOrChannels).toEqual([]);
+    }
+
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalled();
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledTimes(1);
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledWith([
+      aRetrievedProfile.fiscalCode
+    ]);
+
+    const documentId = makeServicesPreferencesDocumentId(
+      aRetrievedProfile.fiscalCode,
+      "01234567890" as NonEmptyString,
+      manualProfileServicePreferencesSettings.version as NonNegativeInteger
+    );
+    expect(findServicePreferenceMock).toHaveBeenCalled();
+    expect(findServicePreferenceMock).toHaveBeenCalledTimes(1);
+    expect(findServicePreferenceMock).toHaveBeenCalledWith([
+      documentId,
+      aRetrievedProfile.fiscalCode
+    ]);
+  });
+
+  it("should return a success with blocked EMAIL if message sender service exists and has EMAIL disabled in user service preference (MANUAL SETTINGS)", async () => {
+    findLastProfileVersionByModelIdMock.mockImplementationOnce(() =>
+      taskEither.of(
+        some({
+          ...aRetrievedProfile,
+          servicePreferencesSettings: manualProfileServicePreferencesSettings,
+          blockedInboxOrChannels: {
+            "01234567890": [BlockedInboxOrChannelEnum.INBOX] // this settings will not be checked because we are in MANUAL settings
+          }
+        })
+      )
+    );
+
+    findServicePreferenceMock.mockImplementationOnce(
+      ([modelId, partitionKey]) =>
+        taskEither.of<CosmosErrors, Option<ServicePreference>>(
+          some({
+            ...anEnabledServicePreference,
+            isEmailEnabled: false,
+            version: manualProfileServicePreferencesSettings.version
+          })
+        )
+    );
+
+    const storeMessageContentActivityHandler = getStoreMessageContentActivityHandler(
+      profileModelMock as any,
+      messageModelMock as any,
+      {} as any,
+      mockServicesPreferencesModel as any,
+      aPastOptOutEmailSwitchDate
+    );
+
+    const result: StoreMessageContentActivityResult = await storeMessageContentActivityHandler(
+      mockContext,
+      {
+        ...aCreatedMessageEvent,
+        message: {
+          ...aNewMessageWithoutContent,
+          senderServiceId: "01234567890" as ServiceId
+        }
+      }
+    );
+
+    expect(result.kind).toBe("SUCCESS");
+    if (result.kind === "SUCCESS") {
       expect(result.blockedInboxOrChannels).toEqual([
-        BlockedInboxOrChannelEnum.INBOX
+        BlockedInboxOrChannelEnum.EMAIL
       ]);
     }
 
-    expect(findLastVersionByModelIdMock).toHaveBeenCalled();
-    expect(findLastVersionByModelIdMock).toHaveBeenCalledTimes(1);
-    expect(findLastVersionByModelIdMock).toHaveBeenCalledWith([
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalled();
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledTimes(1);
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledWith([
       aRetrievedProfile.fiscalCode
     ]);
 
@@ -781,7 +1090,7 @@ describe("getStoreMessageContentActivityHandler", () => {
   });
 
   it("should return a failure if message sender service exists and is not enabled in user service preference (MANUAL SETTINGS)", async () => {
-    findLastVersionByModelIdMock.mockImplementationOnce(() =>
+    findLastProfileVersionByModelIdMock.mockImplementationOnce(() =>
       taskEither.of(
         some({
           ...aRetrievedProfile,
@@ -827,9 +1136,76 @@ describe("getStoreMessageContentActivityHandler", () => {
       expect(result.reason).toEqual("SENDER_BLOCKED");
     }
 
-    expect(findLastVersionByModelIdMock).toHaveBeenCalled();
-    expect(findLastVersionByModelIdMock).toHaveBeenCalledTimes(1);
-    expect(findLastVersionByModelIdMock).toHaveBeenCalledWith([
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalled();
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledTimes(1);
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledWith([
+      aRetrievedProfile.fiscalCode
+    ]);
+
+    const documentId = makeServicesPreferencesDocumentId(
+      aRetrievedProfile.fiscalCode,
+      "01234567890" as NonEmptyString,
+      manualProfileServicePreferencesSettings.version as NonNegativeInteger
+    );
+    expect(findServicePreferenceMock).toHaveBeenCalled();
+    expect(findServicePreferenceMock).toHaveBeenCalledTimes(1);
+    expect(findServicePreferenceMock).toHaveBeenCalledWith([
+      documentId,
+      aRetrievedProfile.fiscalCode
+    ]);
+  });
+
+  it("should return a failure if message sender service exists and has INBOX disabled in user service preference (MANUAL SETTINGS)", async () => {
+    findLastProfileVersionByModelIdMock.mockImplementationOnce(() =>
+      taskEither.of(
+        some({
+          ...aRetrievedProfile,
+          servicePreferencesSettings: manualProfileServicePreferencesSettings,
+          blockedInboxOrChannels: {
+            "01234567890": [BlockedInboxOrChannelEnum.INBOX]
+          }
+        })
+      )
+    );
+
+    findServicePreferenceMock.mockImplementationOnce(
+      ([modelId, partitionKey]) =>
+        taskEither.of<CosmosErrors, Option<ServicePreference>>(
+          some({
+            ...anEnabledServicePreference,
+            isInboxEnabled: false,
+            version: manualProfileServicePreferencesSettings.version
+          })
+        )
+    );
+
+    const storeMessageContentActivityHandler = getStoreMessageContentActivityHandler(
+      profileModelMock as any,
+      messageModelMock as any,
+      {} as any,
+      mockServicesPreferencesModel as any,
+      aPastOptOutEmailSwitchDate
+    );
+
+    const result: StoreMessageContentActivityResult = await storeMessageContentActivityHandler(
+      mockContext,
+      {
+        ...aCreatedMessageEvent,
+        message: {
+          ...aNewMessageWithoutContent,
+          senderServiceId: "01234567890" as ServiceId
+        }
+      }
+    );
+
+    expect(result.kind).toBe("FAILURE");
+    if (result.kind === "FAILURE") {
+      expect(result.reason).toEqual("SENDER_BLOCKED");
+    }
+
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalled();
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledTimes(1);
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledWith([
       aRetrievedProfile.fiscalCode
     ]);
 
@@ -847,7 +1223,7 @@ describe("getStoreMessageContentActivityHandler", () => {
   });
 
   it("should return a failure if message sender service exists in profile.blockedInboxOrChannels (LEGACY SETTINGS)", async () => {
-    findLastVersionByModelIdMock.mockImplementationOnce(() =>
+    findLastProfileVersionByModelIdMock.mockImplementationOnce(() =>
       taskEither.of(
         some({
           ...aRetrievedProfile,
@@ -886,16 +1262,16 @@ describe("getStoreMessageContentActivityHandler", () => {
     // findServicePreferenceMock is not mocked because it should not be called
     // senderServiceId: "01234567890" is in blockedInboxOrChannels
     // => FAILURE
-    expect(findLastVersionByModelIdMock).toHaveBeenCalled();
-    expect(findLastVersionByModelIdMock).toHaveBeenCalledTimes(1);
-    expect(findLastVersionByModelIdMock).toHaveBeenCalledWith([
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalled();
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledTimes(1);
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledWith([
       aRetrievedProfile.fiscalCode
     ]);
     expect(findServicePreferenceMock).not.toHaveBeenCalled();
   });
 
   it("should return a success if message sender service does not exists in profile.blockedInboxOrChannels (LEGACY SETTINGS)", async () => {
-    findLastVersionByModelIdMock.mockImplementationOnce(() =>
+    findLastProfileVersionByModelIdMock.mockImplementationOnce(() =>
       taskEither.of(
         some({
           ...aRetrievedProfile,
@@ -934,9 +1310,59 @@ describe("getStoreMessageContentActivityHandler", () => {
     // findServicePreferenceMock is not mocked because it should not be called
     // senderServiceId: "01234567890" is not in blockedInboxOrChannels
     // => SUCCESS
-    expect(findLastVersionByModelIdMock).toHaveBeenCalled();
-    expect(findLastVersionByModelIdMock).toHaveBeenCalledTimes(1);
-    expect(findLastVersionByModelIdMock).toHaveBeenCalledWith([
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalled();
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledTimes(1);
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledWith([
+      aRetrievedProfile.fiscalCode
+    ]);
+    expect(findServicePreferenceMock).not.toHaveBeenCalled();
+  });
+
+  it("should return a success if message sender service exists in profile.blockedInboxOrChannels but only blocks EMAIL (LEGACY SETTINGS)", async () => {
+    findLastProfileVersionByModelIdMock.mockImplementationOnce(() =>
+      taskEither.of(
+        some({
+          ...aRetrievedProfile,
+          servicePreferencesSettings: legacyProfileServicePreferencesSettings,
+          blockedInboxOrChannels: {
+            "01234567890": [BlockedInboxOrChannelEnum.EMAIL]
+          }
+        })
+      )
+    );
+
+    const storeMessageContentActivityHandler = getStoreMessageContentActivityHandler(
+      profileModelMock as any,
+      messageModelMock as any,
+      {} as any,
+      mockServicesPreferencesModel as any,
+      aPastOptOutEmailSwitchDate
+    );
+
+    const result: StoreMessageContentActivityResult = await storeMessageContentActivityHandler(
+      mockContext,
+      {
+        ...aCreatedMessageEvent,
+        message: {
+          ...aNewMessageWithoutContent,
+          senderServiceId: "01234567890" as ServiceId
+        }
+      }
+    );
+
+    expect(result.kind).toBe("SUCCESS");
+    if (result.kind === "SUCCESS") {
+      expect(result.blockedInboxOrChannels).toEqual([
+        BlockedInboxOrChannelEnum.EMAIL
+      ]);
+    }
+
+    // findServicePreferenceMock is not mocked because it should not be called
+    // senderServiceId: "01234567890" is not in blockedInboxOrChannels
+    // => SUCCESS
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalled();
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledTimes(1);
+    expect(findLastProfileVersionByModelIdMock).toHaveBeenCalledWith([
       aRetrievedProfile.fiscalCode
     ]);
     expect(findServicePreferenceMock).not.toHaveBeenCalled();

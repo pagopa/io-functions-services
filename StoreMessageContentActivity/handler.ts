@@ -17,6 +17,7 @@ import { fromNullable, isNone } from "fp-ts/lib/Option";
 import { readableReport } from "italia-ts-commons/lib/reporters";
 import {
   makeServicesPreferencesDocumentId,
+  ServicePreference,
   ServicesPreferencesModel
 } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 import { NonEmptyString } from "italia-ts-commons/lib/strings";
@@ -78,7 +79,29 @@ export type ServicePreferenceValueOrError = (params: {
   readonly fiscalCode: FiscalCode;
   readonly userServicePreferencesMode: ServicesPreferencesMode;
   readonly userServicePreferencesVersion: number;
-}) => TaskEither<ServicePreferenceError, boolean>;
+}) => TaskEither<
+  ServicePreferenceError,
+  ReadonlyArray<BlockedInboxOrChannelEnum>
+>;
+
+const servicePreferenceToBlockedInboxOrChannels: (
+  servicePreference: ServicePreference
+) => ReadonlyArray<BlockedInboxOrChannelEnum> = servicePreference => {
+  const blockedInboxOrChannels = [];
+  if (!servicePreference.isInboxEnabled) {
+    // eslint-disable-next-line functional/immutable-data
+    blockedInboxOrChannels.push(BlockedInboxOrChannelEnum.INBOX);
+  }
+  if (!servicePreference.isEmailEnabled) {
+    // eslint-disable-next-line functional/immutable-data
+    blockedInboxOrChannels.push(BlockedInboxOrChannelEnum.EMAIL);
+  }
+  if (!servicePreference.isWebhookEnabled) {
+    // eslint-disable-next-line functional/immutable-data
+    blockedInboxOrChannels.push(BlockedInboxOrChannelEnum.WEBHOOK);
+  }
+  return blockedInboxOrChannels;
+};
 
 const getServicePreferenceValueOrError = (
   servicePreferencesModel: ServicesPreferencesModel
@@ -87,7 +110,10 @@ const getServicePreferenceValueOrError = (
   serviceId,
   userServicePreferencesMode,
   userServicePreferencesVersion
-}): TaskEither<ServicePreferenceError, boolean> => {
+}): TaskEither<
+  ServicePreferenceError,
+  ReadonlyArray<BlockedInboxOrChannelEnum>
+> => {
   if (userServicePreferencesMode === ServicesPreferencesModeEnum.LEGACY) {
     return fromLeft({
       kind: "LEGACY",
@@ -108,12 +134,15 @@ const getServicePreferenceValueOrError = (
       message: `COSMOSDB|ERROR=${failure.kind}`
     }))
     .map(maybeServicePref =>
-      maybeServicePref.fold<boolean>(
-        // if we do not have a preference we return true only
-        // if we have preference mode AUTO
-        userServicePreferencesMode === ServicesPreferencesModeEnum.AUTO,
-        // if we have a preference we return its "isInboxEnabled"
-        pref => pref.isInboxEnabled
+      maybeServicePref.foldL<ReadonlyArray<BlockedInboxOrChannelEnum>>(
+        () =>
+          // if we do not have a preference we return an empty array only
+          // if we have preference mode AUTO, else we must return an array
+          // with BlockedInboxOrChannelEnum.INBOX
+          userServicePreferencesMode === ServicesPreferencesModeEnum.AUTO
+            ? []
+            : [BlockedInboxOrChannelEnum.INBOX],
+        servicePreferenceToBlockedInboxOrChannels
       )
     );
 };
@@ -210,7 +239,7 @@ export const getStoreMessageContentActivityHandler = (
     userServicePreferencesMode: profile.servicePreferencesSettings.mode,
     userServicePreferencesVersion: profile.servicePreferencesSettings.version
   })
-    .fold<boolean>(servicePreferenceError => {
+    .fold<ReadonlyArray<BlockedInboxOrChannelEnum>>(servicePreferenceError => {
       if (servicePreferenceError.kind === "ERROR") {
         // The query has failed, we consider this as a transient error.
         context.log.error(`${logPrefix}|${servicePreferenceError.message}`);
@@ -220,15 +249,17 @@ export const getStoreMessageContentActivityHandler = (
       // an error occurs also when user service preference mode is LEGACY
       context.log.warn(`${logPrefix}|${servicePreferenceError.message}`);
 
-      // whether the user has blocked inbox storage for messages from this sender
-      const isMessageStorageBlockedForService =
-        blockedInboxOrChannels.indexOf(BlockedInboxOrChannelEnum.INBOX) >= 0;
-
-      return !isMessageStorageBlockedForService;
+      return blockedInboxOrChannels;
     }, identity)
     .map<Promise<StoreMessageContentActivityResult>>(
-      async isMessageStorageAllowedForService => {
-        if (!isMessageStorageAllowedForService) {
+      async remappedBlockedInboxOrChannels => {
+        // whether the user has blocked inbox storage for messages from this sender
+        const isMessageStorageBlockedForService =
+          remappedBlockedInboxOrChannels.indexOf(
+            BlockedInboxOrChannelEnum.INBOX
+          ) >= 0;
+
+        if (isMessageStorageBlockedForService) {
           context.log.warn(`${logPrefix}|RESULT=SENDER_BLOCKED`);
           return { kind: "FAILURE", reason: "SENDER_BLOCKED" };
         }
@@ -268,9 +299,7 @@ export const getStoreMessageContentActivityHandler = (
         context.log.verbose(`${logPrefix}|RESULT=SUCCESS`);
 
         return {
-          // being blockedInboxOrChannels a Set, we explicitly convert it to an array
-          // since a Set can't be serialized to JSON
-          blockedInboxOrChannels: Array.from(blockedInboxOrChannels),
+          blockedInboxOrChannels: remappedBlockedInboxOrChannels,
           kind: "SUCCESS",
           profile: {
             ...profile,
