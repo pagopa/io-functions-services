@@ -84,24 +84,29 @@ export type ServicePreferenceValueOrError = (params: {
   ReadonlyArray<BlockedInboxOrChannelEnum>
 >;
 
+type ServicePreferencesValues = Omit<
+  ServicePreference,
+  "serviceId" | "fiscalCode" | "settingsVersion"
+>;
+
+const channelToBlockedInboxOrChannelEnum: {
+  readonly [key in keyof ServicePreferencesValues]: BlockedInboxOrChannelEnum;
+} = {
+  isInboxEnabled: BlockedInboxOrChannelEnum.INBOX,
+  isEmailEnabled: BlockedInboxOrChannelEnum.EMAIL,
+  isWebhookEnabled: BlockedInboxOrChannelEnum.WEBHOOK
+};
+
 const servicePreferenceToBlockedInboxOrChannels: (
   servicePreference: ServicePreference
-) => ReadonlyArray<BlockedInboxOrChannelEnum> = servicePreference => {
-  const blockedInboxOrChannels = [];
-  if (!servicePreference.isInboxEnabled) {
-    // eslint-disable-next-line functional/immutable-data
-    blockedInboxOrChannels.push(BlockedInboxOrChannelEnum.INBOX);
-  }
-  if (!servicePreference.isEmailEnabled) {
-    // eslint-disable-next-line functional/immutable-data
-    blockedInboxOrChannels.push(BlockedInboxOrChannelEnum.EMAIL);
-  }
-  if (!servicePreference.isWebhookEnabled) {
-    // eslint-disable-next-line functional/immutable-data
-    blockedInboxOrChannels.push(BlockedInboxOrChannelEnum.WEBHOOK);
-  }
-  return blockedInboxOrChannels;
-};
+) => ReadonlyArray<BlockedInboxOrChannelEnum> = servicePreference =>
+  Object.entries(servicePreference)
+    // take only attributes of ServicePreferencesValues
+    .filter(([name, _]) => channelToBlockedInboxOrChannelEnum[name])
+    // take values set to false
+    .filter(([_, isEnabled]) => !isEnabled)
+    // map to BlockedInboxOrChannelEnum
+    .map(([name, _]) => channelToBlockedInboxOrChannelEnum[name]);
 
 const getServicePreferenceValueOrError = (
   servicePreferencesModel: ServicesPreferencesModel
