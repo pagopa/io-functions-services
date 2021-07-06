@@ -66,12 +66,19 @@ export type StoreMessageContentActivityResult = t.TypeOf<
   typeof StoreMessageContentActivityResult
 >;
 
-export declare type ServicePreferenceValueOrError = (params: {
+export const ServicePreferenceError = t.interface({
+  kind: t.keyof({ LEGACY: null, ERROR: null }),
+  message: t.string
+});
+
+export type ServicePreferenceError = t.TypeOf<typeof ServicePreferenceError>;
+
+export type ServicePreferenceValueOrError = (params: {
   readonly serviceId: NonEmptyString;
   readonly fiscalCode: FiscalCode;
   readonly userServicePreferencesMode: ServicesPreferencesMode;
   readonly userServicePreferencesVersion: number;
-}) => TaskEither<Error, boolean>;
+}) => TaskEither<ServicePreferenceError, boolean>;
 
 const getServicePreferenceValueOrError = (
   servicePreferencesModel: ServicesPreferencesModel
@@ -80,9 +87,12 @@ const getServicePreferenceValueOrError = (
   serviceId,
   userServicePreferencesMode,
   userServicePreferencesVersion
-}): TaskEither<Error, boolean> => {
+}): TaskEither<ServicePreferenceError, boolean> => {
   if (userServicePreferencesMode === ServicesPreferencesModeEnum.LEGACY) {
-    return fromLeft(Error("User service preferences mode is LEGACY"));
+    return fromLeft({
+      kind: "LEGACY",
+      message: "User service preferences mode is LEGACY"
+    });
   }
 
   const documentId = makeServicesPreferencesDocumentId(
@@ -93,7 +103,10 @@ const getServicePreferenceValueOrError = (
 
   return servicePreferencesModel
     .find([documentId, fiscalCode])
-    .mapLeft(failure => Error(`COSMOSDB|ERROR=${failure.kind}`))
+    .mapLeft<ServicePreferenceError>(failure => ({
+      kind: "ERROR",
+      message: `COSMOSDB|ERROR=${failure.kind}`
+    }))
     .map(maybeServicePref =>
       maybeServicePref.fold<boolean>(
         // if we do not have a preference we return true only
@@ -191,15 +204,25 @@ export const getStoreMessageContentActivityHandler = (
   //
   // check Service Preferences Settings
   //
-  return getServicePreferenceValueOrError(lServicePreferencesModel)({
+  return await getServicePreferenceValueOrError(lServicePreferencesModel)({
     fiscalCode: newMessageWithoutContent.fiscalCode,
     serviceId: newMessageWithoutContent.senderServiceId,
     userServicePreferencesMode: profile.servicePreferencesSettings.mode,
     userServicePreferencesVersion: profile.servicePreferencesSettings.version
   })
-    .fold<boolean>(_ => {
+    .fold<boolean>(servicePreferenceError => {
+      if (servicePreferenceError.kind === "ERROR") {
+        // The query has failed, we consider this as a transient error.
+        context.log.error(
+          `${logPrefix}|${servicePreferenceError.message}`
+        );
+        throw Error("Error while retrieving user's service preference");
+      }
+
       // an error occurs also when user service preference mode is LEGACY
-      context.log.warn(`${logPrefix}|LEGACY_OR_ERROR=${_.message}`);
+      context.log.warn(
+        `${logPrefix}|${servicePreferenceError.message}`
+      );
 
       // whether the user has blocked inbox storage for messages from this sender
       const isMessageStorageBlockedForService =
