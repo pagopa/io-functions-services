@@ -67,7 +67,7 @@ export type StoreMessageContentActivityResult = t.TypeOf<
 >;
 
 export const ServicePreferenceError = t.interface({
-  kind: t.keyof({ LEGACY: null, ERROR: null }),
+  kind: t.keyof({ ERROR: null, LEGACY: null }),
   message: t.string
 });
 
@@ -213,16 +213,12 @@ export const getStoreMessageContentActivityHandler = (
     .fold<boolean>(servicePreferenceError => {
       if (servicePreferenceError.kind === "ERROR") {
         // The query has failed, we consider this as a transient error.
-        context.log.error(
-          `${logPrefix}|${servicePreferenceError.message}`
-        );
+        context.log.error(`${logPrefix}|${servicePreferenceError.message}`);
         throw Error("Error while retrieving user's service preference");
       }
 
       // an error occurs also when user service preference mode is LEGACY
-      context.log.warn(
-        `${logPrefix}|${servicePreferenceError.message}`
-      );
+      context.log.warn(`${logPrefix}|${servicePreferenceError.message}`);
 
       // whether the user has blocked inbox storage for messages from this sender
       const isMessageStorageBlockedForService =
