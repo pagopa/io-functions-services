@@ -92,8 +92,8 @@ type ServicePreferencesValues = Omit<
 const channelToBlockedInboxOrChannelEnum: {
   readonly [key in keyof ServicePreferencesValues]: BlockedInboxOrChannelEnum;
 } = {
-  isInboxEnabled: BlockedInboxOrChannelEnum.INBOX,
   isEmailEnabled: BlockedInboxOrChannelEnum.EMAIL,
+  isInboxEnabled: BlockedInboxOrChannelEnum.INBOX,
   isWebhookEnabled: BlockedInboxOrChannelEnum.WEBHOOK
 };
 
