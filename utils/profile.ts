@@ -91,7 +91,7 @@ export const isSenderAllowedLegacy = (
 export const isSenderAllowed = (
   servicesPreferencesModel: ServicesPreferencesModel,
   serviceId: ServiceId,
-  profileId: FiscalCode,
+  fiscalCode: FiscalCode,
   {
     mode,
     version
@@ -106,8 +106,8 @@ export const isSenderAllowed = (
     .of<
       CosmosErrors | IUnexpectedValue,
       ReturnType<typeof makeServicesPreferencesDocumentId>
-    >(makeServicesPreferencesDocumentId(profileId, serviceId, version))
-    .chain(docId => servicesPreferencesModel.find([docId, profileId]))
+    >(makeServicesPreferencesDocumentId(fiscalCode, serviceId, version))
+    .chain(docId => servicesPreferencesModel.find([docId, fiscalCode]))
     .chain(maybeDoc =>
       maybeDoc.foldL(
         // In case the user hasn't a specific preference for the service,
