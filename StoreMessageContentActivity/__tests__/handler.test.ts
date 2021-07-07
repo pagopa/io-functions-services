@@ -437,7 +437,7 @@ describe("getStoreMessageContentActivityHandler", () => {
     ]);
   });
 
-  it("should not throw if user's service preference retrieval fails and return success service is not in blockedInboxOrChannels (LEGACY SETTINGS)", async () => {
+  it("should succeeded with an empty array if the service is not in blockedInboxOrChannels (LEGACY SETTINGS)", async () => {
     // LEGACY settings should not run any query on service preferences
     // so this should not throw any error because query is not run
 
