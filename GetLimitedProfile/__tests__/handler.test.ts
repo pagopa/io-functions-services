@@ -26,6 +26,12 @@ import {
   anotherFiscalCode,
   aValidService
 } from "../../__mocks__/mocks";
+import { ServicesPreferencesModel } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
+
+const mockServicePreferenceFind = jest.fn();
+const mockServicePreferenceModel = ({
+  find: mockServicePreferenceFind
+} as unknown) as ServicesPreferencesModel;
 
 // eslint-disable-next-line sonar/sonar-max-lines-per-function
 describe("GetLimitedProfileHandler", () => {
@@ -54,7 +60,8 @@ describe("GetLimitedProfileHandler", () => {
           const limitedProfileHandler = GetLimitedProfileHandler(
             mockProfileModel,
             true,
-            []
+            [],
+            mockServicePreferenceModel
           );
 
           const response = await limitedProfileHandler(
@@ -91,7 +98,8 @@ describe("GetLimitedProfileHandler", () => {
           const limitedProfileHandler = GetLimitedProfileHandler(
             mockProfileModel,
             true,
-            []
+            [],
+            mockServicePreferenceModel
           );
 
           const response = await limitedProfileHandler(
@@ -135,7 +143,8 @@ describe("GetLimitedProfileHandler", () => {
           const limitedProfileHandler = GetLimitedProfileHandler(
             mockProfileModel,
             true,
-            []
+            [],
+            mockServicePreferenceModel
           );
 
           const response = await limitedProfileHandler(
@@ -175,7 +184,8 @@ describe("GetLimitedProfileHandler", () => {
           const limitedProfileHandler = GetLimitedProfileHandler(
             mockProfileModel,
             true,
-            []
+            [],
+            mockServicePreferenceModel
           );
 
           const response = await limitedProfileHandler(
@@ -222,7 +232,8 @@ describe("GetLimitedProfileHandler", () => {
           const limitedProfileHandler = GetLimitedProfileHandler(
             mockProfileModel,
             true,
-            []
+            [],
+            mockServicePreferenceModel
           );
 
           const response = await limitedProfileHandler(
@@ -269,7 +280,8 @@ describe("GetLimitedProfileHandler", () => {
           const limitedProfileHandler = GetLimitedProfileHandler(
             mockProfileModel,
             true,
-            [anIncompleteService.serviceId]
+            [anIncompleteService.serviceId],
+            mockServicePreferenceModel
           );
 
           const response = await limitedProfileHandler(
@@ -322,7 +334,8 @@ describe("GetLimitedProfileHandler", () => {
           const limitedProfileHandler = GetLimitedProfileHandler(
             mockProfileModel,
             true,
-            []
+            [],
+            mockServicePreferenceModel
           );
 
           const response = await limitedProfileHandler(
@@ -373,7 +386,8 @@ describe("GetLimitedProfileHandler", () => {
           const limitedProfileHandler = GetLimitedProfileHandler(
             mockProfileModel,
             true,
-            []
+            [],
+            mockServicePreferenceModel
           );
 
           const response = await limitedProfileHandler(
