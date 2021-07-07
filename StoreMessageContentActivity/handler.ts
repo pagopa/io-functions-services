@@ -28,9 +28,15 @@ import {
   ServicesPreferencesModeEnum
 } from "@pagopa/io-functions-commons/dist/generated/definitions/ServicesPreferencesMode";
 import { identity } from "fp-ts/lib/function";
-import { fromPredicate, taskEither, TaskEither } from "fp-ts/lib/TaskEither";
+import {
+  fromLeft,
+  fromPredicate,
+  taskEither,
+  TaskEither
+} from "fp-ts/lib/TaskEither";
 import { isBefore } from "date-fns";
 import { UTCISODateFromString } from "@pagopa/ts-commons/lib/dates";
+import { CosmosErrors } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
 
 export const SuccessfulStoreMessageContentActivityResult = t.interface({
   blockedInboxOrChannels: t.readonlyArray(BlockedInboxOrChannel),
@@ -67,12 +73,42 @@ export type StoreMessageContentActivityResult = t.TypeOf<
   typeof StoreMessageContentActivityResult
 >;
 
-export const ServicePreferenceError = t.interface({
-  kind: t.keyof({ ERROR: null, LEGACY: null }),
-  message: t.string
+// Interface that marks an unexpected value
+interface IUnexpectedValue {
+  readonly kind: "UNEXPECTED_VALUE";
+  readonly value: unknown;
+}
+
+/**
+ * Creates a IUnexpectedValue error object
+ * value is defined as never so the function can be used for exhaustive checks
+ *
+ * @param value the unexpected value
+ * @returns a formatted IUnexpectedValue error
+ */
+const unexpectedValue = (value: never): IUnexpectedValue => ({
+  kind: "UNEXPECTED_VALUE",
+  value
 });
 
-export type ServicePreferenceError = t.TypeOf<typeof ServicePreferenceError>;
+// Interface that marks a skipped service preference mode value
+interface ISkippedMode {
+  readonly kind: "INVALID_MODE";
+  readonly message: NonEmptyString;
+}
+
+/**
+ * Creates a ISkippedMode error object
+ *
+ * @param value the unexpected value
+ * @returns a formatted IUnexpectedValue error
+ */
+const skippedMode = (mode: ServicesPreferencesModeEnum): ISkippedMode => ({
+  kind: "INVALID_MODE",
+  message: `${mode} is managed as default` as NonEmptyString
+});
+
+type ServicePreferenceError = ISkippedMode | CosmosErrors | IUnexpectedValue;
 
 export type ServicePreferenceValueOrError = (params: {
   readonly serviceId: NonEmptyString;
@@ -132,11 +168,8 @@ const getServicePreferenceValueOrError = (
     )
     .chain(
       fromPredicate(
-        _ => _ !== ServicesPreferencesModeEnum.LEGACY,
-        () => ({
-          kind: "LEGACY",
-          message: "User service preferences mode is LEGACY"
-        })
+        mode => mode !== ServicesPreferencesModeEnum.LEGACY,
+        skippedMode
       )
     )
     .map(() =>
@@ -149,21 +182,29 @@ const getServicePreferenceValueOrError = (
     .chain(documentId =>
       servicePreferencesModel
         .find([documentId, fiscalCode])
-        .mapLeft<ServicePreferenceError>(failure => ({
-          kind: "ERROR",
-          message: `COSMOSDB|ERROR=${failure.kind}`
-        }))
+        .mapLeft<ServicePreferenceError>(identity)
     )
-    .map(maybeServicePref =>
-      maybeServicePref.foldL<ReadonlyArray<BlockedInboxOrChannelEnum>>(
+    .chain(maybeServicePref =>
+      maybeServicePref.foldL<
+        TaskEither<
+          ServicePreferenceError,
+          ReadonlyArray<BlockedInboxOrChannelEnum>
+        >
+      >(
         () =>
           // if we do not have a preference we return an empty array only
           // if we have preference mode AUTO, else we must return an array
           // with BlockedInboxOrChannelEnum.INBOX
           userServicePreferencesMode === ServicesPreferencesModeEnum.AUTO
-            ? []
-            : [BlockedInboxOrChannelEnum.INBOX],
-        servicePreferenceToBlockedInboxOrChannels
+            ? taskEither.of([])
+            : userServicePreferencesMode === ServicesPreferencesModeEnum.MANUAL
+            ? taskEither.of([BlockedInboxOrChannelEnum.INBOX])
+            : // The following code should never be reached
+            // LEGACY is managed above and any other case should be managed explicitly
+            userServicePreferencesMode === ServicesPreferencesModeEnum.LEGACY
+            ? fromLeft(skippedMode(userServicePreferencesMode))
+            : fromLeft(unexpectedValue(userServicePreferencesMode)),
+        s => taskEither.of(servicePreferenceToBlockedInboxOrChannels(s))
       )
     );
 
@@ -252,9 +293,9 @@ export const getStoreMessageContentActivityHandler = (
     userServicePreferencesVersion: profile.servicePreferencesSettings.version
   })
     .fold<ReadonlyArray<BlockedInboxOrChannelEnum>>(servicePreferenceError => {
-      if (servicePreferenceError.kind === "ERROR") {
+      if (servicePreferenceError.kind !== "INVALID_MODE") {
         // The query has failed, we consider this as a transient error.
-        context.log.error(`${logPrefix}|${servicePreferenceError.message}`);
+        context.log.error(`${logPrefix}|${servicePreferenceError.kind}`);
         throw Error("Error while retrieving user's service preference");
       }
 
@@ -270,9 +311,6 @@ export const getStoreMessageContentActivityHandler = (
           blockedInboxOrChannels
         )}`
       );
-
-      // an error occurs also when user service preference mode is LEGACY
-      context.log.warn(`${logPrefix}|${servicePreferenceError.message}`);
 
       return blockedInboxOrChannels;
     }, identity)
