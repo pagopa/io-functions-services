@@ -78,9 +78,9 @@ export const isSenderAllowedLegacy = (
   taskEither.of(
     blockedInboxOrChannels === undefined ||
       blockedInboxOrChannels[serviceId] === undefined ||
-      blockedInboxOrChannels[serviceId].indexOf(
+      !blockedInboxOrChannels[serviceId].includes(
         BlockedInboxOrChannelEnum.INBOX
-      ) < 0
+      )
   );
 
 /**
