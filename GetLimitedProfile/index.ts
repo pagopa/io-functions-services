@@ -7,6 +7,10 @@ import {
   SERVICE_COLLECTION_NAME,
   ServiceModel
 } from "@pagopa/io-functions-commons/dist/src/models/service";
+import {
+  ServicesPreferencesModel,
+  SERVICE_PREFERENCES_COLLECTION_NAME
+} from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 import { secureExpressApp } from "@pagopa/io-functions-commons/dist/src/utils/express";
 import { setAppContext } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import cors = require("cors");
@@ -34,13 +38,19 @@ const profileModel = new ProfileModel(
   cosmosdbInstance.container(PROFILE_COLLECTION_NAME)
 );
 
+const servicesPreferencesModel = new ServicesPreferencesModel(
+  cosmosdbInstance.container(SERVICE_PREFERENCES_COLLECTION_NAME),
+  SERVICE_PREFERENCES_COLLECTION_NAME
+);
+
 app.get(
   "/api/v1/profiles/:fiscalcode",
   GetLimitedProfile(
     serviceModel,
     profileModel,
     config.FF_DISABLE_INCOMPLETE_SERVICES,
-    config.FF_INCOMPLETE_SERVICE_WHITELIST
+    config.FF_INCOMPLETE_SERVICE_WHITELIST,
+    servicesPreferencesModel
   )
 );
 
