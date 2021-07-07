@@ -320,7 +320,7 @@ describe("getStoreMessageContentActivityHandler", () => {
 
     findServicePreferenceMock.mockImplementationOnce(
       ([modelId, partitionKey]) =>
-        fromLeft({ kind: "COSMOSDB|ERROR=Any DB error that can occur" })
+        fromLeft({ kind: "COSMOS_EMPTY_RESPONSE" })
     );
 
     const storeMessageContentActivityHandler = getStoreMessageContentActivityHandler(
@@ -369,7 +369,7 @@ describe("getStoreMessageContentActivityHandler", () => {
 
     findServicePreferenceMock.mockImplementationOnce(
       ([modelId, partitionKey]) =>
-        fromLeft({ kind: "COSMOSDB|ERROR=Any DB error that can occur" })
+        fromLeft({ kind: "COSMOS_EMPTY_RESPONSE" })
     );
 
     const storeMessageContentActivityHandler = getStoreMessageContentActivityHandler(
