@@ -100,6 +100,13 @@ const channelToBlockedInboxOrChannelEnum: {
 const servicePreferenceToBlockedInboxOrChannels: (
   servicePreference: ServicePreference
 ) => ReadonlyArray<BlockedInboxOrChannelEnum> = servicePreference =>
+  /**
+   * Reduce the complexity of User's preferences into an array of BlockedInboxOrChannelEnum
+   * In case a preference is set to false, it is translated to proper BlockedInboxOrChannelEnum
+   * and added to returned array.
+   * By adding a `channelToBlockedInboxOrChannelEnum` map we are prepared to handle new
+   * service preferences
+   */
   Object.entries(servicePreference)
     // take only attributes of ServicePreferencesValues
     .filter(([name, _]) => channelToBlockedInboxOrChannelEnum[name])
