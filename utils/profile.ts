@@ -15,40 +15,113 @@ import {
   ResponseErrorQuery
 } from "@pagopa/io-functions-commons/dist/src/utils/response";
 import { Some, isSome } from "fp-ts/lib/Option";
-import { fromEither, fromPredicate, taskEither } from "fp-ts/lib/TaskEither";
+import {
+  fromEither,
+  fromLeft,
+  fromPredicate,
+  TaskEither,
+  taskEither
+} from "fp-ts/lib/TaskEither";
 import { right } from "fp-ts/lib/Either";
 import { identity } from "io-ts";
+
+import { Task } from "fp-ts/lib/Task";
+import { ServicesPreferencesModeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServicesPreferencesMode";
 import {
+  makeServicesPreferencesDocumentId,
+  ServicesPreferencesModel
+} from "@pagopa/io-functions-commons/dist/src/models/service_preference";
+import { NonNegativeInteger } from "@pagopa/io-functions-commons/node_modules/@pagopa/ts-commons/lib/numbers";
+import { CosmosErrors } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
+import {
+  ResponseErrorInternal,
   IResponseErrorForbiddenNotAuthorizedForRecipient,
   IResponseErrorNotFound,
   IResponseSuccessJson,
   ResponseErrorForbiddenNotAuthorizedForRecipient,
   ResponseErrorFromValidationErrors,
   ResponseErrorNotFound,
-  ResponseSuccessJson
-} from "italia-ts-commons/lib/responses";
-import { Task } from "fp-ts/lib/Task";
-import { canWriteMessage } from "../CreateMessage/handler";
+  ResponseSuccessJson,
+  IResponseErrorInternal
+} from "@pagopa/ts-commons/lib/responses";
 import { GetLimitedProfileByPOSTPayload } from "../generated/definitions/GetLimitedProfileByPOSTPayload";
+import { canWriteMessage } from "../CreateMessage/handler";
+
+// Map an error when an unexpected value is passed
+interface IUnexpectedValue {
+  readonly kind: "UNEXPECTED_VALUE";
+  readonly value: unknown;
+}
+/**
+ * Creates a IUnexpectedValue error object
+ * value is defined as never so the function can be used for exhaustive checks
+ *
+ * @param value the unexpected value
+ * @returns a formatted IUnexpectedValue error
+ */
+const unexpectedValue = (value: never): IUnexpectedValue => ({
+  kind: "UNEXPECTED_VALUE",
+  value
+});
 
 /**
  * Whether the sender service is allowed to send
  * messages to the user identified by this profile
+ * which servicesPreferencesSettings.mode is LEGACY
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
-export function isSenderAllowed(
+export const isSenderAllowedLegacy = (
   blockedInboxOrChannels:
     | RetrievedProfile["blockedInboxOrChannels"]
     | undefined,
   serviceId: ServiceId
-): boolean {
-  return (
+): TaskEither<never, boolean> =>
+  taskEither.of(
     blockedInboxOrChannels === undefined ||
-    blockedInboxOrChannels[serviceId] === undefined ||
-    blockedInboxOrChannels[serviceId].indexOf(BlockedInboxOrChannelEnum.INBOX) <
-      0
+      blockedInboxOrChannels[serviceId] === undefined ||
+      !blockedInboxOrChannels[serviceId].includes(
+        BlockedInboxOrChannelEnum.INBOX
+      )
   );
-}
+
+/**
+ * Whether the sender service is allowed to send
+ * messages to the user identified by this profile
+ * which servicesPreferencesSettings.mode is NOT LEGACY
+ */
+export const isSenderAllowed = (
+  servicesPreferencesModel: ServicesPreferencesModel,
+  serviceId: ServiceId,
+  fiscalCode: FiscalCode,
+  {
+    mode,
+    version
+  }: {
+    readonly mode:
+      | ServicesPreferencesModeEnum.AUTO
+      | ServicesPreferencesModeEnum.MANUAL;
+    readonly version: NonNegativeInteger;
+  }
+): TaskEither<CosmosErrors | IUnexpectedValue, boolean> =>
+  taskEither
+    .of<
+      CosmosErrors | IUnexpectedValue,
+      ReturnType<typeof makeServicesPreferencesDocumentId>
+    >(makeServicesPreferencesDocumentId(fiscalCode, serviceId, version))
+    .chain(docId => servicesPreferencesModel.find([docId, fiscalCode]))
+    .chain(maybeDoc =>
+      maybeDoc.foldL(
+        // In case the user hasn't a specific preference for the service,
+        //   use default behaviour depending on profile's mode
+        () =>
+          mode === ServicesPreferencesModeEnum.AUTO
+            ? taskEither.of(true)
+            : mode === ServicesPreferencesModeEnum.MANUAL
+            ? taskEither.of(false)
+            : fromLeft(unexpectedValue(mode)),
+        // Read straight from the preference
+        doc => taskEither.of(doc.isInboxEnabled)
+      )
+    );
 
 /**
  * Converts the RetrievedProfile model to LimitedProfile type.
@@ -78,11 +151,14 @@ export const GetLimitedProfileByPOSTPayloadMiddleware: IRequestMiddleware<
     )
   );
 
-export type IGetLimitedProfileResponses =
-  | IResponseSuccessJson<LimitedProfile>
+export type IGetLimitedProfileFailureResponses =
   | IResponseErrorNotFound
   | IResponseErrorQuery
+  | IResponseErrorInternal
   | IResponseErrorForbiddenNotAuthorizedForRecipient;
+export type IGetLimitedProfileResponses =
+  | IResponseSuccessJson<LimitedProfile>
+  | IGetLimitedProfileFailureResponses;
 
 export const getLimitedProfileTask = (
   apiAuthorization: IAzureApiAuthorization,
@@ -90,16 +166,12 @@ export const getLimitedProfileTask = (
   fiscalCode: FiscalCode,
   profileModel: ProfileModel,
   disableIncompleteServices: boolean,
-  incompleteServiceWhitelist: ReadonlyArray<ServiceId>
+  incompleteServiceWhitelist: ReadonlyArray<ServiceId>,
+  servicesPreferencesModel: ServicesPreferencesModel
   // eslint-disable-next-line max-params
 ): Task<IGetLimitedProfileResponses> =>
   taskEither
-    .of<
-      | IResponseErrorForbiddenNotAuthorizedForRecipient
-      | IResponseErrorNotFound
-      | IResponseErrorQuery,
-      void
-    >(void 0)
+    .of<IGetLimitedProfileFailureResponses, void>(void 0)
     .chainSecond(
       // Sandboxed accounts will receive 403
       // if they're not authorized to send a messages to this fiscal code.
@@ -149,14 +221,36 @@ export const getLimitedProfileTask = (
       )
     )
     .map(_ => _.value)
-    .fold<IGetLimitedProfileResponses>(identity, service =>
-      ResponseSuccessJson(
-        retrievedProfileToLimitedProfile(
-          service,
-          isSenderAllowed(
-            service.blockedInboxOrChannels,
-            userAttributes.service.serviceId
-          )
-        )
-      )
+    .chain(profile => {
+      // To determine allowance, use a different algorithm depending in subscription mode
+      const isSenderAllowedTask =
+        profile.servicePreferencesSettings.mode ===
+        ServicesPreferencesModeEnum.LEGACY
+          ? isSenderAllowedLegacy(
+              profile.blockedInboxOrChannels,
+              userAttributes.service.serviceId
+            )
+          : isSenderAllowed(
+              servicesPreferencesModel,
+              userAttributes.service.serviceId,
+              profile.fiscalCode,
+              profile.servicePreferencesSettings
+            );
+
+      return isSenderAllowedTask.bimap(
+        error =>
+          error.kind === "UNEXPECTED_VALUE"
+            ? ResponseErrorInternal(`Unexpected mode: ${error.value}`)
+            : ResponseErrorQuery(
+                "Failed to read preference for the given service",
+                error
+              ),
+        isAllowed => ({
+          isAllowed,
+          profile
+        })
+      );
+    })
+    .fold<IGetLimitedProfileResponses>(identity, ({ isAllowed, profile }) =>
+      ResponseSuccessJson(retrievedProfileToLimitedProfile(profile, isAllowed))
     );

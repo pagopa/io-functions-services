@@ -1,6 +1,5 @@
 import * as express from "express";
 
-import { LimitedProfile } from "@pagopa/io-functions-commons/dist/generated/definitions/LimitedProfile";
 import { ProfileModel } from "@pagopa/io-functions-commons/dist/src/models/profile";
 import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
 import {
@@ -20,21 +19,17 @@ import {
   withRequestMiddlewares,
   wrapRequestHandler
 } from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
-import { IResponseErrorQuery } from "@pagopa/io-functions-commons/dist/src/utils/response";
 import {
   checkSourceIpForHandler,
   clientIPAndCidrTuple as ipTuple
 } from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
-import {
-  IResponseErrorForbiddenNotAuthorizedForRecipient,
-  IResponseErrorNotFound,
-  IResponseSuccessJson
-} from "italia-ts-commons/lib/responses";
 
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
+import { ServicesPreferencesModel } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 import { GetLimitedProfileByPOSTPayload } from "../generated/definitions/GetLimitedProfileByPOSTPayload";
 import {
   GetLimitedProfileByPOSTPayloadMiddleware,
+  IGetLimitedProfileResponses,
   getLimitedProfileTask
 } from "../utils/profile";
 
@@ -48,12 +43,7 @@ type IGetLimitedProfileByPOSTHandler = (
   clientIp: ClientIp,
   userAttributes: IAzureUserAttributes,
   payload: GetLimitedProfileByPOSTPayload
-) => Promise<
-  | IResponseSuccessJson<LimitedProfile>
-  | IResponseErrorNotFound
-  | IResponseErrorQuery
-  | IResponseErrorForbiddenNotAuthorizedForRecipient
->;
+) => Promise<IGetLimitedProfileResponses>;
 
 /**
  * Returns a type safe GetLimitedProfileByPOST handler.
@@ -62,7 +52,8 @@ type IGetLimitedProfileByPOSTHandler = (
 export function GetLimitedProfileByPOSTHandler(
   profileModel: ProfileModel,
   disableIncompleteServices: boolean,
-  incompleteServiceWhitelist: ReadonlyArray<ServiceId>
+  incompleteServiceWhitelist: ReadonlyArray<ServiceId>,
+  servicesPreferencesModel: ServicesPreferencesModel
 ): IGetLimitedProfileByPOSTHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   return async (auth, __, userAttributes, { fiscal_code }) =>
@@ -72,7 +63,8 @@ export function GetLimitedProfileByPOSTHandler(
       fiscal_code,
       profileModel,
       disableIncompleteServices,
-      incompleteServiceWhitelist
+      incompleteServiceWhitelist,
+      servicesPreferencesModel
     ).run();
 }
 
@@ -84,12 +76,14 @@ export function GetLimitedProfileByPOST(
   serviceModel: ServiceModel,
   profileModel: ProfileModel,
   disableIncompleteServices: boolean,
-  incompleteServiceWhitelist: ReadonlyArray<ServiceId>
+  incompleteServiceWhitelist: ReadonlyArray<ServiceId>,
+  servicesPreferencesModel: ServicesPreferencesModel
 ): express.RequestHandler {
   const handler = GetLimitedProfileByPOSTHandler(
     profileModel,
     disableIncompleteServices,
-    incompleteServiceWhitelist
+    incompleteServiceWhitelist,
+    servicesPreferencesModel
   );
 
   const middlewaresWrap = withRequestMiddlewares(

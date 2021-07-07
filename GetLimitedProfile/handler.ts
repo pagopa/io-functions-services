@@ -1,6 +1,7 @@
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { ProfileModel } from "@pagopa/io-functions-commons/dist/src/models/profile";
 import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
+import { ServicesPreferencesModel } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 import {
   AzureApiAuthMiddleware,
   IAzureApiAuthorization,
@@ -51,7 +52,8 @@ type IGetLimitedProfileHandler = (
 export function GetLimitedProfileHandler(
   profileModel: ProfileModel,
   disableIncompleteServices: boolean,
-  incompleteServiceWhitelist: ReadonlyArray<ServiceId>
+  incompleteServiceWhitelist: ReadonlyArray<ServiceId>,
+  servicesPreferencesModel: ServicesPreferencesModel
 ): IGetLimitedProfileHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   return async (auth, __, userAttributes, fiscalCode) =>
@@ -61,7 +63,8 @@ export function GetLimitedProfileHandler(
       fiscalCode,
       profileModel,
       disableIncompleteServices,
-      incompleteServiceWhitelist
+      incompleteServiceWhitelist,
+      servicesPreferencesModel
     ).run();
 }
 
@@ -73,12 +76,14 @@ export function GetLimitedProfile(
   serviceModel: ServiceModel,
   profileModel: ProfileModel,
   disableIncompleteServices: boolean,
-  incompleteServiceWhitelist: ReadonlyArray<ServiceId>
+  incompleteServiceWhitelist: ReadonlyArray<ServiceId>,
+  servicesPreferencesModel: ServicesPreferencesModel
 ): express.RequestHandler {
   const handler = GetLimitedProfileHandler(
     profileModel,
     disableIncompleteServices,
-    incompleteServiceWhitelist
+    incompleteServiceWhitelist,
+    servicesPreferencesModel
   );
 
   const middlewaresWrap = withRequestMiddlewares(

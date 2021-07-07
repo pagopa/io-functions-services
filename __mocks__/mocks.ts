@@ -1,9 +1,18 @@
+import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { ServiceScopeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceScope";
+import { ServicesPreferencesModeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServicesPreferencesMode";
+import { RetrievedProfile } from "@pagopa/io-functions-commons/dist/src/models/profile";
 import {
   Service,
   ValidService
 } from "@pagopa/io-functions-commons/dist/src/models/service";
+import { ServicePreference } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 import { CosmosResource } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
+import {
+  IAzureApiAuthorization,
+  UserGroup
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
+import { IAzureUserAttributes } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
 import {
   NonNegativeInteger,
   WithinRangeInteger
@@ -14,17 +23,20 @@ import {
   NonEmptyString,
   OrganizationFiscalCode
 } from "@pagopa/ts-commons/lib/strings";
+
 import { CIDR } from "../generated/definitions/CIDR";
 
-import { MessageBodyMarkdown } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageBodyMarkdown"
-import { MessageSubject } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageSubject"
-import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId"
-import { TimeToLiveSeconds } from "@pagopa/io-functions-commons/dist/generated/definitions/TimeToLiveSeconds"
+import { MessageBodyMarkdown } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageBodyMarkdown";
+import { MessageSubject } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageSubject";
 
-import { NewMessageWithoutContent, RetrievedMessageWithoutContent } from "@pagopa/io-functions-commons/dist/src/models/message";
+import { TimeToLiveSeconds } from "@pagopa/io-functions-commons/dist/generated/definitions/TimeToLiveSeconds";
+
+import {
+  NewMessageWithoutContent,
+  RetrievedMessageWithoutContent
+} from "@pagopa/io-functions-commons/dist/src/models/message";
 import { CreatedMessageEventSenderMetadata } from "@pagopa/io-functions-commons/dist/src/models/created_message_sender_metadata";
-import { RetrievedProfile } from "@pagopa/io-functions-commons/dist/src/models/profile";
-import { ServicesPreferencesModeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServicesPreferencesMode";
+
 import { MessageContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageContent";
 
 export const aFiscalCode = "AAABBB01C02D345D" as FiscalCode;
@@ -58,10 +70,12 @@ export const aValidService: ValidService = {
   }
 };
 
+export const aServiceId: ServiceId = "01234567890" as NonEmptyString;
+
 export const anIncompleteService: Service & {
   readonly version: NonNegativeInteger;
 } = {
-  serviceId: "01234567890" as NonEmptyString,
+  serviceId: aServiceId,
   authorizedRecipients: new Set([aFiscalCode, anotherFiscalCode]),
   authorizedCIDRs: new Set((["0.0.0.0"] as unknown) as CIDR[]),
   departmentName: "department" as NonEmptyString,
@@ -79,9 +93,32 @@ export const anIncompleteService: Service & {
   version: 1 as NonNegativeInteger
 };
 
+export const anAzureApiAuthorization: IAzureApiAuthorization = {
+  kind: "IAzureApiAuthorization",
+  groups: new Set([UserGroup.ApiLimitedProfileRead, UserGroup.ApiMessageWrite]),
+  userId: "01234567890" as NonEmptyString,
+  subscriptionId: "abcdefghi" as NonEmptyString
+};
+
+export const anAzureUserAttributes: IAzureUserAttributes = {
+  kind: "IAzureUserAttributes",
+  email: "foo@example.com" as EmailString,
+  service: { ...aValidService, version: 0 as NonNegativeInteger }
+};
+
 export const legacyProfileServicePreferencesSettings: RetrievedProfile["servicePreferencesSettings"] = {
   mode: ServicesPreferencesModeEnum.LEGACY,
   version: -1
+};
+
+export const autoProfileServicePreferencesSettings: RetrievedProfile["servicePreferencesSettings"] = {
+  mode: ServicesPreferencesModeEnum.AUTO,
+  version: 0 as NonNegativeInteger
+};
+
+export const manualProfileServicePreferencesSettings: RetrievedProfile["servicePreferencesSettings"] = {
+  mode: ServicesPreferencesModeEnum.MANUAL,
+  version: 1 as NonNegativeInteger
 };
 
 export const aRetrievedProfile: RetrievedProfile = {
@@ -117,7 +154,6 @@ export const aMessageContent: MessageContent = {
   subject: "test".repeat(10) as MessageSubject
 };
 
-
 export const aSerializedNewMessageWithContent = {
   content: aMessageContent,
   createdAt: new Date().toISOString(),
@@ -147,4 +183,12 @@ export const aCreatedMessageEventSenderMetadata: CreatedMessageEventSenderMetada
   requireSecureChannels: false,
   serviceName: "A_SERVICE_NAME" as NonEmptyString,
   serviceUserEmail: "aaa@mail.com" as EmailString
+};
+export const aRetrievedServicePreference: ServicePreference = {
+  fiscalCode: aFiscalCode,
+  isEmailEnabled: true,
+  isInboxEnabled: true,
+  isWebhookEnabled: true,
+  serviceId: aServiceId,
+  settingsVersion: 0 as NonNegativeInteger
 };
