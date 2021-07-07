@@ -6,7 +6,6 @@ import { BlockedInboxOrChannelEnum } from "@pagopa/io-functions-commons/dist/gen
 
 import {
   ProfileModel,
-  PROFILE_SERVICE_PREFERENCES_SETTINGS_LEGACY_VERSION,
   RetrievedProfile
 } from "@pagopa/io-functions-commons/dist/src/models/profile";
 import {
@@ -15,11 +14,12 @@ import {
   retrievedProfileToLimitedProfile
 } from "../profile";
 import { retrievedProfileArb } from "./arbitraries";
-import { ServicesPreferencesModeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServicesPreferencesMode";
 import {
   aFiscalCode,
   anAzureApiAuthorization,
   anAzureUserAttributes,
+  anIncompleteService,
+  anotherFiscalCode,
   aRetrievedProfile,
   aRetrievedServicePreference,
   autoProfileServicePreferencesSettings,
@@ -29,36 +29,10 @@ import {
 
 import MockResponse from "../../__mocks__/response";
 
-import {
-  ServicePreference,
-  ServicesPreferencesModel
-} from "@pagopa/io-functions-commons/dist/src/models/service_preference";
+import { ServicesPreferencesModel } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 import { some, none } from "fp-ts/lib/Option";
-import { taskEither } from "fp-ts/lib/TaskEither";
-
-const retrievedProfileArbWithLegacyMode = retrievedProfileArb.map(e => ({
-  ...e,
-  servicePreferencesSettings: {
-    mode: ServicesPreferencesModeEnum.LEGACY,
-    version: PROFILE_SERVICE_PREFERENCES_SETTINGS_LEGACY_VERSION
-  }
-}));
-
-const retrievedProfileArbWithAutoMode = retrievedProfileArb.map(e => ({
-  ...e,
-  servicePreferencesSettings: {
-    mode: ServicesPreferencesModeEnum.AUTO,
-    version: 0
-  }
-}));
-
-const retrievedProfileArbWithManualMode = retrievedProfileArb.map(e => ({
-  ...e,
-  servicePreferencesSettings: {
-    mode: ServicesPreferencesModeEnum.AUTO,
-    version: 0
-  }
-}));
+import { fromLeft, taskEither } from "fp-ts/lib/TaskEither";
+import { UserGroup } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
 
 describe("isSenderAllowed", () => {
   it("should return false if the service is not allowed to send notifications to the user", async () => {
@@ -199,6 +173,80 @@ describe("getLimitedProfileTask", () => {
 
       expect(mockExpresseResponse.json).toHaveBeenCalledWith(
         expect.objectContaining({ sender_allowed: expected })
+      );
+    }
+  );
+
+  it.each`
+    title                                                     | responseKind                | maybeProfile
+    ${"the requested profile doesn't have the inbox enabled"} | ${"IResponseErrorNotFound"} | ${taskEither.of(some({ ...aRetrievedProfile, isInboxEnabled: false }))}
+    ${"the requested profile is not found in the db"}         | ${"IResponseErrorNotFound"} | ${taskEither.of(none)}
+    ${"a database error occurs"}                              | ${"IResponseErrorQuery"}    | ${fromLeft({})}
+  `(
+    "should respond with $responseKind when $title",
+    async ({ responseKind, maybeProfile }) => {
+      const mockProfileModel = ({
+        findLastVersionByModelId: jest.fn(() => maybeProfile)
+      } as unknown) as ProfileModel;
+      const response = await getLimitedProfileTask(
+        {
+          ...anAzureApiAuthorization,
+          groups: new Set([UserGroup.ApiMessageWrite])
+        },
+        anAzureUserAttributes,
+        aFiscalCode,
+        mockProfileModel,
+        true,
+        [],
+        mockServicePreferenceModel
+      ).run();
+
+      expect(mockProfileModel.findLastVersionByModelId).toHaveBeenCalledTimes(
+        1
+      );
+      expect(mockProfileModel.findLastVersionByModelId).toBeCalledWith([
+        aFiscalCode
+      ]);
+      expect(response.kind).toBe(responseKind);
+    }
+  );
+
+  it.each`
+    title                                              | groups                                | service
+    ${"the service hasn't the required quality field"} | ${[UserGroup.ApiMessageWrite]}        | ${anIncompleteService}
+    ${"the service is sandboxed"}                      | ${[UserGroup.ApiLimitedMessageWrite]} | ${anAzureUserAttributes.service}
+  `(
+    "should respond with 403 IResponseErrorForbiddenNotAuthorizedForRecipient when $title",
+    async ({ groups, service }) => {
+      const mockProfileModel = ({
+        findLastVersionByModelId: jest.fn(() =>
+          taskEither.of(some(aRetrievedProfile))
+        )
+      } as unknown) as ProfileModel;
+      const response = await getLimitedProfileTask(
+        {
+          ...anAzureApiAuthorization,
+          groups: new Set(groups)
+        },
+        {
+          ...anAzureUserAttributes,
+          service: {
+            ...service,
+            // note that we're not including aFiscalCode in the allowed recipients
+            authorizedRecipients: new Set([anotherFiscalCode])
+          }
+        },
+        aFiscalCode,
+        mockProfileModel,
+        true,
+        [],
+        mockServicePreferenceModel
+      ).run();
+
+      expect(mockProfileModel.findLastVersionByModelId).not.toHaveBeenCalled();
+
+      expect(response.kind).toBe(
+        "IResponseErrorForbiddenNotAuthorizedForRecipient"
       );
     }
   );
