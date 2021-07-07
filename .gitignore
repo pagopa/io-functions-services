@@ -53,3 +53,5 @@ azure-functions-core-tools/**/*
 # eslint section
 !.eslintrc.js
 .eslintcache
+
+yarn-error.log
