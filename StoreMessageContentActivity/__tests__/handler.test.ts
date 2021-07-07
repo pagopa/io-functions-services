@@ -507,7 +507,7 @@ describe("getStoreMessageContentActivityHandler", () => {
     expect(findServicePreferenceMock).not.toHaveBeenCalled();
   });
 
-  it("should not throw if user's service preference retrieval fails and return failure if inbox is disabled in blockedInboxOrChannels (LEGACY SETTINGS)", async () => {
+  it("should return a success with a blocked INBOX for service in blockedInboxOrChannels with inbox disabled (LEGACY SETTINGS)", async () => {
     // LEGACY settings should not run any query on service preferences
     // so this should not throw any error because query is not run
 
