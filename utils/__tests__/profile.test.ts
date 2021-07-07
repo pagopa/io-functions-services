@@ -119,18 +119,16 @@ const mockServicePreferenceModel = ({
 } as unknown) as ServicesPreferencesModel;
 
 // utility that adds a given set of serviceIds to the profile's inbox blacklist
-const withBlacklist = (profile: RetrievedProfile, services = []) =>
-  services.reduce((p, serviceId) => {
-    const { blockedInboxOrChannels = {}, ...restOfProfile } = p;
-    return {
-      ...restOfProfile,
-      blockedInboxOrChannels: {
-        ...blockedInboxOrChannels,
-        [serviceId]: [BlockedInboxOrChannelEnum.INBOX]
-      }
-    };
-  }, profile);
-
+const withBlacklist = (profile: RetrievedProfile, services = []) => ({
+  ...profile,
+  blockedInboxOrChannels: services.reduce(
+    (obj, serviceId) => ({
+      ...obj,
+      [serviceId]: BlockedInboxOrChannelEnum.INBOX
+    }),
+    {}
+  )
+});
 describe("getLimitedProfileTask", () => {
   const mockExpresseResponse = MockResponse();
 
