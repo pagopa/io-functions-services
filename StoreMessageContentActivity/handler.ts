@@ -151,6 +151,13 @@ const servicePreferenceToBlockedInboxOrChannels: (
     // map to BlockedInboxOrChannelEnum
     .map(([name, _]) => channelToBlockedInboxOrChannelEnum[name]);
 
+/**
+ * Converts a preferemce to a remapped blockedInboxOrChannels if it exists
+ * or goes left for legacy or unexpected modes and any cosmos error.
+ *
+ * @param servicePreferencesModel
+ * @returns
+ */
 const getServicePreferenceValueOrError = (
   servicePreferencesModel: ServicesPreferencesModel
 ): ServicePreferenceValueOrError => ({
@@ -172,7 +179,7 @@ const getServicePreferenceValueOrError = (
         skippedMode
       )
     )
-    .map(() =>
+    .map(_ =>
       makeServicesPreferencesDocumentId(
         fiscalCode,
         serviceId,
@@ -199,7 +206,7 @@ const getServicePreferenceValueOrError = (
             ? taskEither.of([])
             : userServicePreferencesMode === ServicesPreferencesModeEnum.MANUAL
             ? taskEither.of([BlockedInboxOrChannelEnum.INBOX])
-            : // The following code should never be reached
+            : // The following code should never happen
             // LEGACY is managed above and any other case should be managed explicitly
             userServicePreferencesMode === ServicesPreferencesModeEnum.LEGACY
             ? fromLeft(skippedMode(userServicePreferencesMode))
@@ -207,6 +214,48 @@ const getServicePreferenceValueOrError = (
         s => taskEither.of(servicePreferenceToBlockedInboxOrChannels(s))
       )
     );
+
+const createMessageOrThrow = async (
+  context: Context,
+  lMessageModel: MessageModel,
+  lBlobService: BlobService,
+  createdMessageEvent: CreatedMessageEvent
+): Promise<void> => {
+  const newMessageWithoutContent = createdMessageEvent.message;
+  const logPrefix = `StoreMessageContentActivity|MESSAGE_ID=${newMessageWithoutContent.id}`;
+
+  // Save the content of the message to the blob storage.
+  // In case of a retry this operation will overwrite the message content with itself
+  // (this is fine as we don't know if the operation succeeded at first)
+  const errorOrAttachment = await lMessageModel
+    .storeContentAsBlob(
+      lBlobService,
+      newMessageWithoutContent.id,
+      createdMessageEvent.content
+    )
+    .run();
+
+  if (isLeft(errorOrAttachment)) {
+    context.log.error(`${logPrefix}|ERROR=${errorOrAttachment.value}`);
+    throw new Error("Error while storing message content");
+  }
+
+  // Now that the message content has been stored, we can make the message
+  // visible to getMessages by changing the pending flag to false
+  const updatedMessageOrError = await lMessageModel
+    .upsert({
+      ...newMessageWithoutContent,
+      isPending: false
+    })
+    .run();
+
+  if (isLeft(updatedMessageOrError)) {
+    context.log.error(
+      `${logPrefix}|ERROR=${JSON.stringify(updatedMessageOrError.value)}`
+    );
+    throw new Error("Error while updating message pending status");
+  }
+};
 
 /**
  * Returns a function for handling storeMessageContentActivity
@@ -327,37 +376,12 @@ export const getStoreMessageContentActivityHandler = (
           return { kind: "FAILURE", reason: "SENDER_BLOCKED" };
         }
 
-        // Save the content of the message to the blob storage.
-        // In case of a retry this operation will overwrite the message content with itself
-        // (this is fine as we don't know if the operation succeeded at first)
-        const errorOrAttachment = await lMessageModel
-          .storeContentAsBlob(
-            lBlobService,
-            newMessageWithoutContent.id,
-            createdMessageEvent.content
-          )
-          .run();
-
-        if (isLeft(errorOrAttachment)) {
-          context.log.error(`${logPrefix}|ERROR=${errorOrAttachment.value}`);
-          throw new Error("Error while storing message content");
-        }
-
-        // Now that the message content has been stored, we can make the message
-        // visible to getMessages by changing the pending flag to false
-        const updatedMessageOrError = await lMessageModel
-          .upsert({
-            ...newMessageWithoutContent,
-            isPending: false
-          })
-          .run();
-
-        if (isLeft(updatedMessageOrError)) {
-          context.log.error(
-            `${logPrefix}|ERROR=${JSON.stringify(updatedMessageOrError.value)}`
-          );
-          throw new Error("Error while updating message pending status");
-        }
+        await createMessageOrThrow(
+          context,
+          lMessageModel,
+          lBlobService,
+          createdMessageEvent
+        );
 
         context.log.verbose(`${logPrefix}|RESULT=SUCCESS`);
 
