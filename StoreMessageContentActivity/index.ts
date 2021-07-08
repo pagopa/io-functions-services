@@ -30,7 +30,8 @@ const activityFunctionHandler: AzureFunction = getStoreMessageContentActivityHan
   profileModel,
   messageModel,
   blobService,
-  config.OPT_OUT_EMAIL_SWITCH_DATE
+  config.OPT_OUT_EMAIL_SWITCH_DATE,
+  config.FF_OPT_IN_EMAIL_ENABLED
 );
 
 export default activityFunctionHandler;
