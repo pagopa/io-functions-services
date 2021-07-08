@@ -256,7 +256,7 @@ describe("GetSubscriptionsFeedHandler", () => {
     // service subscriptions
     queryEntities.mockImplementationOnce(
       queryEntitiesServiceSubscriptionMock(
-        [anHashedFiscalCode, anotherHashedFiscalCode],
+        [anHashedFiscalCode],
         "S"
       )
     );
@@ -283,7 +283,7 @@ describe("GetSubscriptionsFeedHandler", () => {
       expect(result.value).toEqual({
         dateUTC: yesterdayUTC,
         subscriptions: [],
-        unsubscriptions: [anHashedFiscalCode, anotherHashedFiscalCode]
+        unsubscriptions: [anotherHashedFiscalCode]
       });
     }
   });
