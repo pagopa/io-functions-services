@@ -50,6 +50,7 @@ export const IConfig = t.intersection([
     FF_DISABLE_INCOMPLETE_SERVICES: t.boolean,
     FF_DISABLE_WEBHOOK_MESSAGE_CONTENT: t.boolean,
     FF_INCOMPLETE_SERVICE_WHITELIST: CommaSeparatedListOf(ServiceId),
+    FF_OPT_IN_EMAIL_ENABLED: t.boolean,
 
     isProduction: t.boolean
   }),
@@ -71,6 +72,9 @@ const errorOrConfig: t.Validation<IConfig> = IConfig.decode({
     process.env.FF_DISABLE_WEBHOOK_MESSAGE_CONTENT
   )
     .map(_ => _.toLowerCase() === "true")
+    .getOrElse(false),
+  FF_OPT_IN_EMAIL_ENABLED: fromNullable(process.env.FF_OPT_IN_EMAIL_ENABLED)
+    .map(_ => _.toLocaleLowerCase() === "true")
     .getOrElse(false),
   OPT_OUT_EMAIL_SWITCH_DATE: fromNullableE(DEFAULT_OPT_OUT_EMAIL_SWITCH_DATE)(
     process.env.OPT_OUT_EMAIL_SWITCH_DATE

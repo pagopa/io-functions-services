@@ -265,16 +265,26 @@ const createMessageOrThrow = async (
   }
 };
 
+export interface IStoreMessageContentActivityHandlerInput {
+  readonly lProfileModel: ProfileModel;
+  readonly lMessageModel: MessageModel;
+  readonly lBlobService: BlobService;
+  readonly lServicePreferencesModel: ServicesPreferencesModel;
+  readonly optOutEmailSwitchDate: UTCISODateFromString;
+  readonly isOptInEmailEnabled: boolean;
+}
+
 /**
  * Returns a function for handling storeMessageContentActivity
  */
-export const getStoreMessageContentActivityHandler = (
-  lProfileModel: ProfileModel,
-  lMessageModel: MessageModel,
-  lBlobService: BlobService,
-  lServicePreferencesModel: ServicesPreferencesModel,
-  optOutEmailSwitchDate: UTCISODateFromString
-) => async (
+export const getStoreMessageContentActivityHandler = ({
+  lProfileModel,
+  lMessageModel,
+  lBlobService,
+  lServicePreferencesModel,
+  optOutEmailSwitchDate,
+  isOptInEmailEnabled
+}: IStoreMessageContentActivityHandlerInput) => async (
   context: Context,
   input: unknown
 ): Promise<StoreMessageContentActivityResult> => {
@@ -396,10 +406,12 @@ export const getStoreMessageContentActivityHandler = (
           profile: {
             ...profile,
             // if profile's timestamp is before email opt out switch limit date we must force isEmailEnabled to false
-            // eslint-disable-next-line no-underscore-dangle
-            isEmailEnabled: isBefore(profile._ts, optOutEmailSwitchDate)
-              ? false
-              : profile.isEmailEnabled
+            isEmailEnabled:
+              isOptInEmailEnabled &&
+              // eslint-disable-next-line no-underscore-dangle
+              isBefore(profile._ts, optOutEmailSwitchDate)
+                ? false
+                : profile.isEmailEnabled
           }
         };
       }
