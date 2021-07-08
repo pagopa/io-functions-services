@@ -215,6 +215,14 @@ const getServicePreferenceValueOrError = (
       )
     );
 
+/**
+ * Creates the message and makes it visible or throw an error
+ *
+ * @param context
+ * @param lMessageModel
+ * @param lBlobService
+ * @param createdMessageEvent
+ */
 const createMessageOrThrow = async (
   context: Context,
   lMessageModel: MessageModel,
@@ -363,12 +371,10 @@ export const getStoreMessageContentActivityHandler = (
       return blockedInboxOrChannels;
     }, identity)
     .map<Promise<StoreMessageContentActivityResult>>(
-      async remappedBlockedInboxOrChannels => {
-        // whether the user has blocked inbox storage for messages from this sender
+      async blockedInboxOrChannels => {
+        // check whether the user has blocked inbox storage for messages from this sender
         const isMessageStorageBlockedForService =
-          remappedBlockedInboxOrChannels.indexOf(
-            BlockedInboxOrChannelEnum.INBOX
-          ) >= 0;
+          blockedInboxOrChannels.indexOf(BlockedInboxOrChannelEnum.INBOX) >= 0;
 
         if (isMessageStorageBlockedForService) {
           context.log.warn(`${logPrefix}|RESULT=SENDER_BLOCKED`);
@@ -385,7 +391,7 @@ export const getStoreMessageContentActivityHandler = (
         context.log.verbose(`${logPrefix}|RESULT=SUCCESS`);
 
         return {
-          blockedInboxOrChannels: remappedBlockedInboxOrChannels,
+          blockedInboxOrChannels,
           kind: "SUCCESS",
           profile: {
             ...profile,
