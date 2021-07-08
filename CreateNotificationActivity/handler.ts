@@ -29,6 +29,7 @@ import { RetrievedProfile } from "@pagopa/io-functions-commons/dist/src/models/p
 import { ulidGenerator } from "@pagopa/io-functions-commons/dist/src/utils/strings";
 
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
+import { ServicesPreferencesModeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServicesPreferencesMode";
 import { SuccessfulStoreMessageContentActivityResult } from "../StoreMessageContentActivity/handler";
 
 /**
@@ -166,8 +167,13 @@ export const getCreateNotificationActivityHandler = (
 
   // first we check whether the user has blocked emails notifications for the
   // service that is sending the message
+  // Since we are not handling email service preferences for App version 1.29.0.1
+  // not Legacy profiles will use only profile level email preference.
   const isEmailBlockedForService =
-    blockedInboxOrChannels.indexOf(BlockedInboxOrChannelEnum.EMAIL) >= 0;
+    profile.servicePreferencesSettings.mode ===
+    ServicesPreferencesModeEnum.LEGACY
+      ? blockedInboxOrChannels.includes(BlockedInboxOrChannelEnum.EMAIL)
+      : false;
 
   // If the message is sent to the SANDBOX_FISCAL_CODE we consider it a test message
   // so we send the email notification to the email associated to the user owner
