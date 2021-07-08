@@ -36,12 +36,14 @@ const servicePreferencesModel = new ServicesPreferencesModel(
 );
 
 const activityFunctionHandler: AzureFunction = getStoreMessageContentActivityHandler(
-  profileModel,
-  messageModel,
-  blobService,
-  servicePreferencesModel,
-  config.OPT_OUT_EMAIL_SWITCH_DATE,
-  config.FF_OPT_IN_EMAIL_ENABLED
+  {
+    isOptInEmailEnabled: config.FF_OPT_IN_EMAIL_ENABLED,
+    lBlobService: blobService,
+    lMessageModel: messageModel,
+    lProfileModel: profileModel,
+    lServicePreferencesModel: servicePreferencesModel,
+    optOutEmailSwitchDate: config.OPT_OUT_EMAIL_SWITCH_DATE
+  }
 );
 
 export default activityFunctionHandler;
