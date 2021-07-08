@@ -152,7 +152,7 @@ const servicePreferenceToBlockedInboxOrChannels: (
     .map(([name, _]) => channelToBlockedInboxOrChannelEnum[name]);
 
 /**
- * Converts a preferemce to a remapped blockedInboxOrChannels if it exists
+ * Converts a preference to a remapped blockedInboxOrChannels if it exists
  * or goes left for legacy or unexpected modes and any cosmos error.
  *
  * @param servicePreferencesModel
