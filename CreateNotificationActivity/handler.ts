@@ -171,9 +171,8 @@ export const getCreateNotificationActivityHandler = (
   // not Legacy profiles will use only profile level email preference.
   const isEmailBlockedForService =
     profile.servicePreferencesSettings.mode ===
-    ServicesPreferencesModeEnum.LEGACY
-      ? blockedInboxOrChannels.includes(BlockedInboxOrChannelEnum.EMAIL)
-      : false;
+      ServicesPreferencesModeEnum.LEGACY &&
+    blockedInboxOrChannels.includes(BlockedInboxOrChannelEnum.EMAIL);
 
   // If the message is sent to the SANDBOX_FISCAL_CODE we consider it a test message
   // so we send the email notification to the email associated to the user owner
