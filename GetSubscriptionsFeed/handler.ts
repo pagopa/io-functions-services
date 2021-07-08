@@ -174,11 +174,14 @@ export function GetSubscriptionsFeedHandler(
 
     const unsubscriptions = new Array<FiscalCodeHash>();
 
-    profileUnsubscriptionsSet.forEach(pu =>
-      // add all users that deleted its own account
-      // eslint-disable-next-line functional/immutable-data
-      unsubscriptions.push(pu)
-    );
+    profileUnsubscriptionsSet.forEach(pu => {
+      if (!serviceSubscriptionsSet.has(pu)) {
+        // add all users that deleted its own account skipping those that
+        // subscribed to this service
+        // eslint-disable-next-line functional/immutable-data
+        unsubscriptions.push(pu);
+      }
+    });
 
     serviceUnsubscriptionsSet.forEach(su => {
       if (
