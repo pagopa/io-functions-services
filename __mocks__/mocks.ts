@@ -192,3 +192,22 @@ export const aRetrievedServicePreference: ServicePreference = {
   serviceId: aServiceId,
   settingsVersion: 0 as NonNegativeInteger
 };
+
+export const anEnabledServicePreference: ServicePreference = {
+  fiscalCode: aFiscalCode,
+  isEmailEnabled: true,
+  isInboxEnabled: true,
+  isWebhookEnabled: true,
+  serviceId: "01234567890" as NonEmptyString,
+  settingsVersion: 0 as NonNegativeInteger
+}
+
+
+export const aDisabledServicePreference: ServicePreference = {
+  fiscalCode: aFiscalCode,
+  isEmailEnabled: false,
+  isInboxEnabled: false,
+  isWebhookEnabled: false,
+  serviceId: "01234567890" as NonEmptyString,
+  settingsVersion: 0 as NonNegativeInteger
+}

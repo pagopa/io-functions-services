@@ -9,6 +9,10 @@ import {
   PROFILE_COLLECTION_NAME,
   ProfileModel
 } from "@pagopa/io-functions-commons/dist/src/models/profile";
+import {
+  ServicesPreferencesModel,
+  SERVICE_PREFERENCES_COLLECTION_NAME
+} from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 import { cosmosdbInstance } from "../utils/cosmosdb";
 import { getConfigOrThrow } from "../utils/config";
 import { getStoreMessageContentActivityHandler } from "./handler";
@@ -26,12 +30,20 @@ const messageModel = new MessageModel(
 
 const blobService = createBlobService(config.QueueStorageConnection);
 
+const servicePreferencesModel = new ServicesPreferencesModel(
+  cosmosdbInstance.container(SERVICE_PREFERENCES_COLLECTION_NAME),
+  SERVICE_PREFERENCES_COLLECTION_NAME
+);
+
 const activityFunctionHandler: AzureFunction = getStoreMessageContentActivityHandler(
-  profileModel,
-  messageModel,
-  blobService,
-  config.OPT_OUT_EMAIL_SWITCH_DATE,
-  config.FF_OPT_IN_EMAIL_ENABLED
+  {
+    isOptInEmailEnabled: config.FF_OPT_IN_EMAIL_ENABLED,
+    lBlobService: blobService,
+    lMessageModel: messageModel,
+    lProfileModel: profileModel,
+    lServicePreferencesModel: servicePreferencesModel,
+    optOutEmailSwitchDate: config.OPT_OUT_EMAIL_SWITCH_DATE
+  }
 );
 
 export default activityFunctionHandler;

@@ -15,8 +15,28 @@ import { BlobService } from "azure-storage";
 import { isLeft } from "fp-ts/lib/Either";
 import { fromNullable, isNone } from "fp-ts/lib/Option";
 import { readableReport } from "italia-ts-commons/lib/reporters";
+import {
+  makeServicesPreferencesDocumentId,
+  ServicePreference,
+  ServicesPreferencesModel
+} from "@pagopa/io-functions-commons/dist/src/models/service_preference";
+import { NonEmptyString } from "italia-ts-commons/lib/strings";
+import { NonNegativeInteger } from "italia-ts-commons/lib/numbers";
+import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
+import {
+  ServicesPreferencesMode,
+  ServicesPreferencesModeEnum
+} from "@pagopa/io-functions-commons/dist/generated/definitions/ServicesPreferencesMode";
+import { identity } from "fp-ts/lib/function";
+import {
+  fromLeft,
+  fromPredicate,
+  taskEither,
+  TaskEither
+} from "fp-ts/lib/TaskEither";
 import { isBefore } from "date-fns";
 import { UTCISODateFromString } from "@pagopa/ts-commons/lib/dates";
+import { CosmosErrors } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
 
 export const SuccessfulStoreMessageContentActivityResult = t.interface({
   blockedInboxOrChannels: t.readonlyArray(BlockedInboxOrChannel),
@@ -53,16 +73,218 @@ export type StoreMessageContentActivityResult = t.TypeOf<
   typeof StoreMessageContentActivityResult
 >;
 
+// Interface that marks an unexpected value
+interface IUnexpectedValue {
+  readonly kind: "UNEXPECTED_VALUE";
+  readonly value: unknown;
+}
+
+/**
+ * Creates a IUnexpectedValue error object
+ * value is defined as never so the function can be used for exhaustive checks
+ *
+ * @param value the unexpected value
+ * @returns a formatted IUnexpectedValue error
+ */
+const unexpectedValue = (value: never): IUnexpectedValue => ({
+  kind: "UNEXPECTED_VALUE",
+  value
+});
+
+// Interface that marks a skipped service preference mode value
+interface ISkippedMode {
+  readonly kind: "INVALID_MODE";
+  readonly message: NonEmptyString;
+}
+
+/**
+ * Creates a ISkippedMode error object
+ *
+ * @param value the unexpected value
+ * @returns a formatted IUnexpectedValue error
+ */
+const skippedMode = (mode: ServicesPreferencesModeEnum): ISkippedMode => ({
+  kind: "INVALID_MODE",
+  message: `${mode} is managed as default` as NonEmptyString
+});
+
+type ServicePreferenceError = ISkippedMode | CosmosErrors | IUnexpectedValue;
+
+export type ServicePreferenceValueOrError = (params: {
+  readonly serviceId: NonEmptyString;
+  readonly fiscalCode: FiscalCode;
+  readonly userServicePreferencesMode: ServicesPreferencesMode;
+  readonly userServicePreferencesVersion: number;
+}) => TaskEither<
+  ServicePreferenceError,
+  ReadonlyArray<BlockedInboxOrChannelEnum>
+>;
+
+type ServicePreferencesValues = Omit<
+  ServicePreference,
+  "serviceId" | "fiscalCode" | "settingsVersion"
+>;
+
+const channelToBlockedInboxOrChannelEnum: {
+  readonly [key in keyof ServicePreferencesValues]: BlockedInboxOrChannelEnum;
+} = {
+  isEmailEnabled: BlockedInboxOrChannelEnum.EMAIL,
+  isInboxEnabled: BlockedInboxOrChannelEnum.INBOX,
+  isWebhookEnabled: BlockedInboxOrChannelEnum.WEBHOOK
+};
+
+const servicePreferenceToBlockedInboxOrChannels: (
+  servicePreference: ServicePreference
+) => ReadonlyArray<BlockedInboxOrChannelEnum> = servicePreference =>
+  /**
+   * Reduce the complexity of User's preferences into an array of BlockedInboxOrChannelEnum
+   * In case a preference is set to false, it is translated to proper BlockedInboxOrChannelEnum
+   * and added to returned array.
+   * By adding a `channelToBlockedInboxOrChannelEnum` map we are prepared to handle new
+   * service preferences
+   */
+  Object.entries(servicePreference)
+    // take only attributes of ServicePreferencesValues
+    .filter(([name, _]) => channelToBlockedInboxOrChannelEnum[name])
+    // take values set to false
+    .filter(([_, isEnabled]) => !isEnabled)
+    // map to BlockedInboxOrChannelEnum
+    .map(([name, _]) => channelToBlockedInboxOrChannelEnum[name]);
+
+/**
+ * Converts a preference to a remapped blockedInboxOrChannels if it exists
+ * or goes left for legacy or unexpected modes and any cosmos error.
+ *
+ * @param servicePreferencesModel
+ * @returns
+ */
+const getServicePreferenceValueOrError = (
+  servicePreferencesModel: ServicesPreferencesModel
+): ServicePreferenceValueOrError => ({
+  fiscalCode,
+  serviceId,
+  userServicePreferencesMode,
+  userServicePreferencesVersion
+}): TaskEither<
+  ServicePreferenceError,
+  ReadonlyArray<BlockedInboxOrChannelEnum>
+> =>
+  taskEither
+    .of<ServicePreferenceError, ServicesPreferencesMode>(
+      userServicePreferencesMode
+    )
+    .chain(
+      fromPredicate(
+        mode => mode !== ServicesPreferencesModeEnum.LEGACY,
+        skippedMode
+      )
+    )
+    .map(_ =>
+      makeServicesPreferencesDocumentId(
+        fiscalCode,
+        serviceId,
+        userServicePreferencesVersion as NonNegativeInteger
+      )
+    )
+    .chain(documentId =>
+      servicePreferencesModel
+        .find([documentId, fiscalCode])
+        .mapLeft<ServicePreferenceError>(identity)
+    )
+    .chain(maybeServicePref =>
+      maybeServicePref.foldL<
+        TaskEither<
+          ServicePreferenceError,
+          ReadonlyArray<BlockedInboxOrChannelEnum>
+        >
+      >(
+        () =>
+          // if we do not have a preference we return an empty array only
+          // if we have preference mode AUTO, else we must return an array
+          // with BlockedInboxOrChannelEnum.INBOX
+          userServicePreferencesMode === ServicesPreferencesModeEnum.AUTO
+            ? taskEither.of([])
+            : userServicePreferencesMode === ServicesPreferencesModeEnum.MANUAL
+            ? taskEither.of([BlockedInboxOrChannelEnum.INBOX])
+            : // The following code should never happen
+            // LEGACY is managed above and any other case should be managed explicitly
+            userServicePreferencesMode === ServicesPreferencesModeEnum.LEGACY
+            ? fromLeft(skippedMode(userServicePreferencesMode))
+            : fromLeft(unexpectedValue(userServicePreferencesMode)),
+        s => taskEither.of(servicePreferenceToBlockedInboxOrChannels(s))
+      )
+    );
+
+/**
+ * Creates the message and makes it visible or throw an error
+ *
+ * @param context
+ * @param lMessageModel
+ * @param lBlobService
+ * @param createdMessageEvent
+ */
+const createMessageOrThrow = async (
+  context: Context,
+  lMessageModel: MessageModel,
+  lBlobService: BlobService,
+  createdMessageEvent: CreatedMessageEvent
+): Promise<void> => {
+  const newMessageWithoutContent = createdMessageEvent.message;
+  const logPrefix = `StoreMessageContentActivity|MESSAGE_ID=${newMessageWithoutContent.id}`;
+
+  // Save the content of the message to the blob storage.
+  // In case of a retry this operation will overwrite the message content with itself
+  // (this is fine as we don't know if the operation succeeded at first)
+  const errorOrAttachment = await lMessageModel
+    .storeContentAsBlob(
+      lBlobService,
+      newMessageWithoutContent.id,
+      createdMessageEvent.content
+    )
+    .run();
+
+  if (isLeft(errorOrAttachment)) {
+    context.log.error(`${logPrefix}|ERROR=${errorOrAttachment.value}`);
+    throw new Error("Error while storing message content");
+  }
+
+  // Now that the message content has been stored, we can make the message
+  // visible to getMessages by changing the pending flag to false
+  const updatedMessageOrError = await lMessageModel
+    .upsert({
+      ...newMessageWithoutContent,
+      isPending: false
+    })
+    .run();
+
+  if (isLeft(updatedMessageOrError)) {
+    context.log.error(
+      `${logPrefix}|ERROR=${JSON.stringify(updatedMessageOrError.value)}`
+    );
+    throw new Error("Error while updating message pending status");
+  }
+};
+
+export interface IStoreMessageContentActivityHandlerInput {
+  readonly lProfileModel: ProfileModel;
+  readonly lMessageModel: MessageModel;
+  readonly lBlobService: BlobService;
+  readonly lServicePreferencesModel: ServicesPreferencesModel;
+  readonly optOutEmailSwitchDate: UTCISODateFromString;
+  readonly isOptInEmailEnabled: boolean;
+}
+
 /**
  * Returns a function for handling storeMessageContentActivity
  */
-export const getStoreMessageContentActivityHandler = (
-  lProfileModel: ProfileModel,
-  lMessageModel: MessageModel,
-  lBlobService: BlobService,
-  optOutEmailSwitchDate: UTCISODateFromString,
-  isOptInEmailEnabled: boolean
-) => async (
+export const getStoreMessageContentActivityHandler = ({
+  lProfileModel,
+  lMessageModel,
+  lBlobService,
+  lServicePreferencesModel,
+  optOutEmailSwitchDate,
+  isOptInEmailEnabled
+}: IStoreMessageContentActivityHandlerInput) => async (
   context: Context,
   input: unknown
 ): Promise<StoreMessageContentActivityResult> => {
@@ -114,15 +336,6 @@ export const getStoreMessageContentActivityHandler = (
 
   const profile = maybeProfile.value;
 
-  // channels the user has blocked for this sender service
-  const blockedInboxOrChannels = fromNullable(profile.blockedInboxOrChannels)
-    .chain(bc => fromNullable(bc[newMessageWithoutContent.senderServiceId]))
-    .getOrElse([]);
-
-  context.log.verbose(
-    `${logPrefix}|BLOCKED_CHANNELS=${JSON.stringify(blockedInboxOrChannels)}`
-  );
-
   //
   //  Inbox storage
   //
@@ -136,63 +349,72 @@ export const getStoreMessageContentActivityHandler = (
     return { kind: "FAILURE", reason: "MASTER_INBOX_DISABLED" };
   }
 
-  // whether the user has blocked inbox storage for messages from this sender
-  const isMessageStorageBlockedForService =
-    blockedInboxOrChannels.indexOf(BlockedInboxOrChannelEnum.INBOX) >= 0;
+  //
+  // check Service Preferences Settings
+  //
+  return await getServicePreferenceValueOrError(lServicePreferencesModel)({
+    fiscalCode: newMessageWithoutContent.fiscalCode,
+    serviceId: newMessageWithoutContent.senderServiceId,
+    userServicePreferencesMode: profile.servicePreferencesSettings.mode,
+    userServicePreferencesVersion: profile.servicePreferencesSettings.version
+  })
+    .fold<ReadonlyArray<BlockedInboxOrChannelEnum>>(servicePreferenceError => {
+      if (servicePreferenceError.kind !== "INVALID_MODE") {
+        // The query has failed, we consider this as a transient error.
+        context.log.error(`${logPrefix}|${servicePreferenceError.kind}`);
+        throw Error("Error while retrieving user's service preference");
+      }
 
-  if (isMessageStorageBlockedForService) {
-    // the recipient's inbox is disabled
-    context.log.warn(`${logPrefix}|RESULT=SENDER_BLOCKED`);
-    return { kind: "FAILURE", reason: "SENDER_BLOCKED" };
-  }
+      // channels the user has blocked for this sender service
+      const blockedInboxOrChannels = fromNullable(
+        profile.blockedInboxOrChannels
+      )
+        .chain(bc => fromNullable(bc[newMessageWithoutContent.senderServiceId]))
+        .getOrElse([]);
 
-  // Save the content of the message to the blob storage.
-  // In case of a retry this operation will overwrite the message content with itself
-  // (this is fine as we don't know if the operation succeeded at first)
-  const errorOrAttachment = await lMessageModel
-    .storeContentAsBlob(
-      lBlobService,
-      newMessageWithoutContent.id,
-      createdMessageEvent.content
+      context.log.verbose(
+        `${logPrefix}|BLOCKED_CHANNELS=${JSON.stringify(
+          blockedInboxOrChannels
+        )}`
+      );
+
+      return blockedInboxOrChannels;
+    }, identity)
+    .map<Promise<StoreMessageContentActivityResult>>(
+      async blockedInboxOrChannels => {
+        // check whether the user has blocked inbox storage for messages from this sender
+        const isMessageStorageBlockedForService =
+          blockedInboxOrChannels.indexOf(BlockedInboxOrChannelEnum.INBOX) >= 0;
+
+        if (isMessageStorageBlockedForService) {
+          context.log.warn(`${logPrefix}|RESULT=SENDER_BLOCKED`);
+          return { kind: "FAILURE", reason: "SENDER_BLOCKED" };
+        }
+
+        await createMessageOrThrow(
+          context,
+          lMessageModel,
+          lBlobService,
+          createdMessageEvent
+        );
+
+        context.log.verbose(`${logPrefix}|RESULT=SUCCESS`);
+
+        return {
+          blockedInboxOrChannels,
+          kind: "SUCCESS",
+          profile: {
+            ...profile,
+            // if profile's timestamp is before email opt out switch limit date we must force isEmailEnabled to false
+            isEmailEnabled:
+              isOptInEmailEnabled &&
+              // eslint-disable-next-line no-underscore-dangle
+              isBefore(profile._ts, optOutEmailSwitchDate)
+                ? false
+                : profile.isEmailEnabled
+          }
+        };
+      }
     )
     .run();
-
-  if (isLeft(errorOrAttachment)) {
-    context.log.error(`${logPrefix}|ERROR=${errorOrAttachment.value}`);
-    throw new Error("Error while storing message content");
-  }
-
-  // Now that the message content has been stored, we can make the message
-  // visible to getMessages by changing the pending flag to false
-  const updatedMessageOrError = await lMessageModel
-    .upsert({
-      ...newMessageWithoutContent,
-      isPending: false
-    })
-    .run();
-
-  if (isLeft(updatedMessageOrError)) {
-    context.log.error(
-      `${logPrefix}|ERROR=${JSON.stringify(updatedMessageOrError.value)}`
-    );
-    throw new Error("Error while updating message pending status");
-  }
-
-  context.log.verbose(`${logPrefix}|RESULT=SUCCESS`);
-
-  return {
-    // being blockedInboxOrChannels a Set, we explicitly convert it to an array
-    // since a Set can't be serialized to JSON
-    blockedInboxOrChannels: Array.from(blockedInboxOrChannels),
-    kind: "SUCCESS",
-    profile: {
-      ...profile,
-      // if profile's timestamp is before email opt out switch limit date we must force isEmailEnabled to false
-      isEmailEnabled:
-        // eslint-disable-next-line no-underscore-dangle
-        isOptInEmailEnabled && isBefore(profile._ts, optOutEmailSwitchDate)
-          ? false
-          : profile.isEmailEnabled
-    }
-  };
 };
