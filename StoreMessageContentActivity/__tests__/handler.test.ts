@@ -82,7 +82,7 @@ const aCreatedMessageEvent: CreatedMessageEvent = {
 
 const aRetrievedProfileWithAValidTimestamp = {
   ...aRetrievedProfile,
-  _ts: 1625172947000
+  _ts: 1625172947
 };
 
 const aRetrievedProfileWithLegacyPreferences = {
