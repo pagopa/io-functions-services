@@ -12,7 +12,7 @@ import {
   RetrievedProfile
 } from "@pagopa/io-functions-commons/dist/src/models/profile";
 import { BlobService } from "azure-storage";
-import { isLeft, toError } from "fp-ts/lib/Either";
+import { isLeft } from "fp-ts/lib/Either";
 import { fromNullable, isNone } from "fp-ts/lib/Option";
 import { readableReport } from "italia-ts-commons/lib/reporters";
 import {
@@ -32,10 +32,9 @@ import {
   fromLeft,
   fromPredicate,
   taskEither,
-  TaskEither,
-  tryCatch
+  TaskEither
 } from "fp-ts/lib/TaskEither";
-import { fromUnixTime, isBefore } from "date-fns";
+import { isBefore } from "date-fns";
 import { UTCISODateFromString } from "@pagopa/ts-commons/lib/dates";
 import { CosmosErrors } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
 
@@ -359,16 +358,11 @@ export const getStoreMessageContentActivityHandler = ({
     userServicePreferencesMode: profile.servicePreferencesSettings.mode,
     userServicePreferencesVersion: profile.servicePreferencesSettings.version
   })
-    .foldTaskEither<
-      Error | FailedStoreMessageContentActivityResult,
-      ReadonlyArray<BlockedInboxOrChannelEnum>
-    >(servicePreferenceError => {
+    .fold<ReadonlyArray<BlockedInboxOrChannelEnum>>(servicePreferenceError => {
       if (servicePreferenceError.kind !== "INVALID_MODE") {
         // The query has failed, we consider this as a transient error.
         context.log.error(`${logPrefix}|${servicePreferenceError.kind}`);
-        return fromLeft(
-          new Error("Error while retrieving user's service preference")
-        );
+        throw Error("Error while retrieving user's service preference");
       }
 
       // channels the user has blocked for this sender service
@@ -384,53 +378,43 @@ export const getStoreMessageContentActivityHandler = ({
         )}`
       );
 
-      return taskEither.of(blockedInboxOrChannels);
-    }, taskEither.of)
-    .chain(
-      fromPredicate(
-        blockedInboxOrChannels =>
-          !blockedInboxOrChannels.includes(BlockedInboxOrChannelEnum.INBOX),
-        _ => {
+      return blockedInboxOrChannels;
+    }, identity)
+    .map<Promise<StoreMessageContentActivityResult>>(
+      async blockedInboxOrChannels => {
+        // check whether the user has blocked inbox storage for messages from this sender
+        const isMessageStorageBlockedForService =
+          blockedInboxOrChannels.indexOf(BlockedInboxOrChannelEnum.INBOX) >= 0;
+
+        if (isMessageStorageBlockedForService) {
           context.log.warn(`${logPrefix}|RESULT=SENDER_BLOCKED`);
           return { kind: "FAILURE", reason: "SENDER_BLOCKED" };
         }
-      )
-    )
-    .chain(_ =>
-      tryCatch(
-        () =>
-          createMessageOrThrow(
-            context,
-            lMessageModel,
-            lBlobService,
-            createdMessageEvent
-          ),
-        toError
-      ).map(() => _)
-    )
-    .fold<StoreMessageContentActivityResult>(
-      fail => {
-        if (FailedStoreMessageContentActivityResult.is(fail)) {
-          return fail;
-        }
-        throw fail;
-      },
-      blockedInboxOrChannels => ({
-        blockedInboxOrChannels,
-        kind: "SUCCESS",
-        profile: {
-          ...profile,
-          // if profile's timestamp is before email opt out switch limit date we must force isEmailEnabled to false
-          // Please note that cosmos timestamps are expressed in unix notation (in seconds), so we must transform
-          // it to a common Date representation.
-          isEmailEnabled:
-            isOptInEmailEnabled &&
-            // eslint-disable-next-line no-underscore-dangle
-            isBefore(fromUnixTime(profile._ts), optOutEmailSwitchDate)
-              ? false
-              : profile.isEmailEnabled
-        }
-      })
+
+        await createMessageOrThrow(
+          context,
+          lMessageModel,
+          lBlobService,
+          createdMessageEvent
+        );
+
+        context.log.verbose(`${logPrefix}|RESULT=SUCCESS`);
+
+        return {
+          blockedInboxOrChannels,
+          kind: "SUCCESS",
+          profile: {
+            ...profile,
+            // if profile's timestamp is before email opt out switch limit date we must force isEmailEnabled to false
+            isEmailEnabled:
+              isOptInEmailEnabled &&
+              // eslint-disable-next-line no-underscore-dangle
+              isBefore(profile._ts, optOutEmailSwitchDate)
+                ? false
+                : profile.isEmailEnabled
+          }
+        };
+      }
     )
     .run();
 };
