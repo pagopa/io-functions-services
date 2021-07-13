@@ -37,6 +37,7 @@ import {
 import { isBefore } from "date-fns";
 import { UTCISODateFromString } from "@pagopa/ts-commons/lib/dates";
 import { CosmosErrors } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
+import { initTelemetryClient } from "../utils/appinsights";
 
 export const SuccessfulStoreMessageContentActivityResult = t.interface({
   blockedInboxOrChannels: t.readonlyArray(BlockedInboxOrChannel),
@@ -272,6 +273,7 @@ export interface IStoreMessageContentActivityHandlerInput {
   readonly lServicePreferencesModel: ServicesPreferencesModel;
   readonly optOutEmailSwitchDate: UTCISODateFromString;
   readonly isOptInEmailEnabled: boolean;
+  readonly telemetryClient: ReturnType<typeof initTelemetryClient>;
 }
 
 /**
@@ -283,7 +285,8 @@ export const getStoreMessageContentActivityHandler = ({
   lBlobService,
   lServicePreferencesModel,
   optOutEmailSwitchDate,
-  isOptInEmailEnabled
+  isOptInEmailEnabled,
+  telemetryClient
 }: IStoreMessageContentActivityHandlerInput) => async (
   context: Context,
   input: unknown
@@ -383,6 +386,17 @@ export const getStoreMessageContentActivityHandler = ({
   // check whether the user has blocked inbox storage for messages from this sender
   const isMessageStorageBlockedForService =
     blockedInboxOrChannels.indexOf(BlockedInboxOrChannelEnum.INBOX) >= 0;
+
+  telemetryClient.trackEvent({
+    name: "api.messages.create.blockedstoremessage",
+    properties: {
+      isBlocked: String(isMessageStorageBlockedForService),
+      messageId: createdMessageEvent.message.id,
+      mode: profile.servicePreferencesSettings.mode,
+      senderId: createdMessageEvent.message.senderServiceId
+    },
+    tagOverrides: { samplingEnabled: "false" }
+  });
 
   if (isMessageStorageBlockedForService) {
     context.log.warn(`${logPrefix}|RESULT=SENDER_BLOCKED`);
