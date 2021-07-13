@@ -124,7 +124,7 @@ const withBlacklist = (profile: RetrievedProfile, services = []) => ({
   blockedInboxOrChannels: services.reduce(
     (obj, serviceId) => ({
       ...obj,
-      [serviceId]: BlockedInboxOrChannelEnum.INBOX
+      [serviceId]: [BlockedInboxOrChannelEnum.INBOX]
     }),
     {}
   )
