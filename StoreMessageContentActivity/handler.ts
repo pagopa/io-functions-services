@@ -38,6 +38,7 @@ import { isBefore } from "date-fns";
 import { UTCISODateFromString } from "@pagopa/ts-commons/lib/dates";
 import { CosmosErrors } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
 import { initTelemetryClient } from "../utils/appinsights";
+import { toHash } from "../utils/crypto";
 
 export const SuccessfulStoreMessageContentActivityResult = t.interface({
   blockedInboxOrChannels: t.readonlyArray(BlockedInboxOrChannel),
@@ -390,6 +391,7 @@ export const getStoreMessageContentActivityHandler = ({
   telemetryClient.trackEvent({
     name: "api.messages.create.blockedstoremessage",
     properties: {
+      fiscalCode: toHash(profile.fiscalCode),
       isBlocked: String(isMessageStorageBlockedForService),
       messageId: createdMessageEvent.message.id,
       mode: profile.servicePreferencesSettings.mode,
