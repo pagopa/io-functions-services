@@ -352,7 +352,9 @@ export const getStoreMessageContentActivityHandler = ({
   //
   // check Service Preferences Settings
   //
-  return await getServicePreferenceValueOrError(lServicePreferencesModel)({
+  const blockedInboxOrChannels = await getServicePreferenceValueOrError(
+    lServicePreferencesModel
+  )({
     fiscalCode: newMessageWithoutContent.fiscalCode,
     serviceId: newMessageWithoutContent.senderServiceId,
     userServicePreferencesMode: profile.servicePreferencesSettings.mode,
@@ -366,55 +368,48 @@ export const getStoreMessageContentActivityHandler = ({
       }
 
       // channels the user has blocked for this sender service
-      const blockedInboxOrChannels = fromNullable(
-        profile.blockedInboxOrChannels
-      )
+      const result = fromNullable(profile.blockedInboxOrChannels)
         .chain(bc => fromNullable(bc[newMessageWithoutContent.senderServiceId]))
         .getOrElse([]);
 
       context.log.verbose(
-        `${logPrefix}|BLOCKED_CHANNELS=${JSON.stringify(
-          blockedInboxOrChannels
-        )}`
+        `${logPrefix}|BLOCKED_CHANNELS=${JSON.stringify(result)}`
       );
 
-      return blockedInboxOrChannels;
+      return result;
     }, identity)
-    .map<Promise<StoreMessageContentActivityResult>>(
-      async blockedInboxOrChannels => {
-        // check whether the user has blocked inbox storage for messages from this sender
-        const isMessageStorageBlockedForService =
-          blockedInboxOrChannels.indexOf(BlockedInboxOrChannelEnum.INBOX) >= 0;
-
-        if (isMessageStorageBlockedForService) {
-          context.log.warn(`${logPrefix}|RESULT=SENDER_BLOCKED`);
-          return { kind: "FAILURE", reason: "SENDER_BLOCKED" };
-        }
-
-        await createMessageOrThrow(
-          context,
-          lMessageModel,
-          lBlobService,
-          createdMessageEvent
-        );
-
-        context.log.verbose(`${logPrefix}|RESULT=SUCCESS`);
-
-        return {
-          blockedInboxOrChannels,
-          kind: "SUCCESS",
-          profile: {
-            ...profile,
-            // if profile's timestamp is before email opt out switch limit date we must force isEmailEnabled to false
-            isEmailEnabled:
-              isOptInEmailEnabled &&
-              // eslint-disable-next-line no-underscore-dangle
-              isBefore(profile._ts, optOutEmailSwitchDate)
-                ? false
-                : profile.isEmailEnabled
-          }
-        };
-      }
-    )
     .run();
+
+  // check whether the user has blocked inbox storage for messages from this sender
+  const isMessageStorageBlockedForService =
+    blockedInboxOrChannels.indexOf(BlockedInboxOrChannelEnum.INBOX) >= 0;
+
+  if (isMessageStorageBlockedForService) {
+    context.log.warn(`${logPrefix}|RESULT=SENDER_BLOCKED`);
+    return { kind: "FAILURE", reason: "SENDER_BLOCKED" };
+  }
+
+  await createMessageOrThrow(
+    context,
+    lMessageModel,
+    lBlobService,
+    createdMessageEvent
+  );
+
+  context.log.verbose(`${logPrefix}|RESULT=SUCCESS`);
+
+  return {
+    blockedInboxOrChannels,
+    kind: "SUCCESS",
+    profile: {
+      ...profile,
+      // if profile's timestamp is before email opt out switch limit date we must force isEmailEnabled to false
+      isEmailEnabled:
+        isOptInEmailEnabled &&
+        // eslint-disable-next-line no-underscore-dangle
+        isBefore(profile._ts, optOutEmailSwitchDate)
+          ? false
+          : profile.isEmailEnabled
+    }
+  };
 };
