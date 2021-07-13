@@ -70,15 +70,10 @@ const lServicePreferencesModel = ({
   find: findServicePreferenceMock
 } as unknown) as ServicesPreferencesModel;
 
-const nowTimestamp = Math.floor(new Date().getTime() / 1000);
-const aFutureOptOutEmailSwitchDate = new Date(nowTimestamp + 10);
+const lastUpdateTimestamp = Math.floor(new Date().getTime() / 1000);
+const aFutureOptOutEmailSwitchDate = new Date(lastUpdateTimestamp + 10);
 
-const aPastOptOutEmailSwitchDate = new Date(nowTimestamp - 10);
-
-console.log(nowTimestamp);
-console.log(aFutureOptOutEmailSwitchDate);
-console.log(aPastOptOutEmailSwitchDate);
-console.log(isBefore(nowTimestamp, aFutureOptOutEmailSwitchDate));
+const aPastOptOutEmailSwitchDate = new Date(lastUpdateTimestamp - 10);
 
 const aCreatedMessageEvent: CreatedMessageEvent = {
   content: aMessageContent,
@@ -89,7 +84,7 @@ const aCreatedMessageEvent: CreatedMessageEvent = {
 
 const aRetrievedProfileWithAValidTimestamp = {
   ...aRetrievedProfile,
-  _ts: nowTimestamp
+  _ts: lastUpdateTimestamp
 };
 
 const aRetrievedProfileWithLegacyPreferences = {
