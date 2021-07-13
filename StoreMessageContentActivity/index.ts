@@ -15,6 +15,7 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 import { cosmosdbInstance } from "../utils/cosmosdb";
 import { getConfigOrThrow } from "../utils/config";
+import { initTelemetryClient } from "../utils/appinsights";
 import { getStoreMessageContentActivityHandler } from "./handler";
 
 const config = getConfigOrThrow();
@@ -35,6 +36,10 @@ const servicePreferencesModel = new ServicesPreferencesModel(
   SERVICE_PREFERENCES_COLLECTION_NAME
 );
 
+const telemetryClient = initTelemetryClient(
+  config.APPINSIGHTS_INSTRUMENTATIONKEY
+);
+
 const activityFunctionHandler: AzureFunction = getStoreMessageContentActivityHandler(
   {
     isOptInEmailEnabled: config.FF_OPT_IN_EMAIL_ENABLED,
@@ -42,7 +47,8 @@ const activityFunctionHandler: AzureFunction = getStoreMessageContentActivityHan
     lMessageModel: messageModel,
     lProfileModel: profileModel,
     lServicePreferencesModel: servicePreferencesModel,
-    optOutEmailSwitchDate: config.OPT_OUT_EMAIL_SWITCH_DATE
+    optOutEmailSwitchDate: config.OPT_OUT_EMAIL_SWITCH_DATE,
+    telemetryClient
   }
 );
 

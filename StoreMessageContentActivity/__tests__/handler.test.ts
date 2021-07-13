@@ -8,12 +8,12 @@ import {
   RetrievedProfile
 } from "@pagopa/io-functions-commons/dist/src/models/profile";
 import { ServicesPreferencesModel } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
-import { UTCISODateFromString } from "@pagopa/ts-commons/lib/dates";
 import { NonNegativeNumber } from "@pagopa/ts-commons/lib/numbers";
-import { addDays, isBefore } from "date-fns";
+import { isBefore } from "date-fns";
 import { fromLeft } from "fp-ts/lib/IOEither";
 import { none, some } from "fp-ts/lib/Option";
 import { taskEither } from "fp-ts/lib/TaskEither";
+import { initTelemetryClient } from "../../utils/appinsights";
 import {
   aCreatedMessageEventSenderMetadata,
   aDisabledServicePreference,
@@ -38,6 +38,10 @@ const mockContext = {
     warn: console.warn
   }
 } as any;
+
+const mockTelemetryClient = ({
+  trackEvent: jest.fn()
+} as unknown) as ReturnType<typeof initTelemetryClient>;
 
 const findLastVersionByModelIdMock = jest
   .fn()
@@ -125,6 +129,7 @@ const withBlockedEmail = (profile: RetrievedProfile, services = []) => ({
     {}
   )
 });
+
 describe("getStoreMessageContentActivityHandler", () => {
   beforeEach(() => {
     jest.resetAllMocks();
@@ -180,7 +185,8 @@ describe("getStoreMessageContentActivityHandler", () => {
           lBlobService: {} as any,
           lServicePreferencesModel,
           optOutEmailSwitchDate,
-          isOptInEmailEnabled: optInEmailEnabled
+          isOptInEmailEnabled: optInEmailEnabled,
+          telemetryClient: mockTelemetryClient
         }
       );
 
@@ -240,7 +246,8 @@ describe("getStoreMessageContentActivityHandler", () => {
           lBlobService: {} as any,
           lServicePreferencesModel,
           optOutEmailSwitchDate: aPastOptOutEmailSwitchDate,
-          isOptInEmailEnabled: false
+          isOptInEmailEnabled: false,
+          telemetryClient: mockTelemetryClient
         }
       );
 
@@ -305,7 +312,8 @@ describe("getStoreMessageContentActivityHandler", () => {
           lBlobService: {} as any,
           lServicePreferencesModel,
           optOutEmailSwitchDate: aPastOptOutEmailSwitchDate,
-          isOptInEmailEnabled: false
+          isOptInEmailEnabled: false,
+          telemetryClient: mockTelemetryClient
         }
       );
 

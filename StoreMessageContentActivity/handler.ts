@@ -12,7 +12,7 @@ import {
   RetrievedProfile
 } from "@pagopa/io-functions-commons/dist/src/models/profile";
 import { BlobService } from "azure-storage";
-import { isLeft, toError } from "fp-ts/lib/Either";
+import { isLeft } from "fp-ts/lib/Either";
 import { fromNullable, isNone } from "fp-ts/lib/Option";
 import { readableReport } from "italia-ts-commons/lib/reporters";
 import {
@@ -32,12 +32,13 @@ import {
   fromLeft,
   fromPredicate,
   taskEither,
-  TaskEither,
-  tryCatch
+  TaskEither
 } from "fp-ts/lib/TaskEither";
 import { isBefore } from "date-fns";
 import { UTCISODateFromString } from "@pagopa/ts-commons/lib/dates";
 import { CosmosErrors } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
+import { initTelemetryClient } from "../utils/appinsights";
+import { toHash } from "../utils/crypto";
 
 export const SuccessfulStoreMessageContentActivityResult = t.interface({
   blockedInboxOrChannels: t.readonlyArray(BlockedInboxOrChannel),
@@ -273,6 +274,7 @@ export interface IStoreMessageContentActivityHandlerInput {
   readonly lServicePreferencesModel: ServicesPreferencesModel;
   readonly optOutEmailSwitchDate: UTCISODateFromString;
   readonly isOptInEmailEnabled: boolean;
+  readonly telemetryClient: ReturnType<typeof initTelemetryClient>;
 }
 
 /**
@@ -284,7 +286,8 @@ export const getStoreMessageContentActivityHandler = ({
   lBlobService,
   lServicePreferencesModel,
   optOutEmailSwitchDate,
-  isOptInEmailEnabled
+  isOptInEmailEnabled,
+  telemetryClient
 }: IStoreMessageContentActivityHandlerInput) => async (
   context: Context,
   input: unknown
@@ -353,84 +356,76 @@ export const getStoreMessageContentActivityHandler = ({
   //
   // check Service Preferences Settings
   //
-  return await getServicePreferenceValueOrError(lServicePreferencesModel)({
+  const blockedInboxOrChannels = await getServicePreferenceValueOrError(
+    lServicePreferencesModel
+  )({
     fiscalCode: newMessageWithoutContent.fiscalCode,
     serviceId: newMessageWithoutContent.senderServiceId,
     userServicePreferencesMode: profile.servicePreferencesSettings.mode,
     userServicePreferencesVersion: profile.servicePreferencesSettings.version
   })
-    .foldTaskEither<
-      Error | FailedStoreMessageContentActivityResult,
-      ReadonlyArray<BlockedInboxOrChannelEnum>
-    >(servicePreferenceError => {
+    .fold<ReadonlyArray<BlockedInboxOrChannelEnum>>(servicePreferenceError => {
       if (servicePreferenceError.kind !== "INVALID_MODE") {
         // The query has failed, we consider this as a transient error.
         context.log.error(`${logPrefix}|${servicePreferenceError.kind}`);
-        return fromLeft(
-          new Error("Error while retrieving user's service preference")
-        );
+        throw Error("Error while retrieving user's service preference");
       }
 
       // channels the user has blocked for this sender service
-      const blockedInboxOrChannels = fromNullable(
-        profile.blockedInboxOrChannels
-      )
+      const result = fromNullable(profile.blockedInboxOrChannels)
         .chain(bc => fromNullable(bc[newMessageWithoutContent.senderServiceId]))
         .getOrElse([]);
 
       context.log.verbose(
-        `${logPrefix}|BLOCKED_CHANNELS=${JSON.stringify(
-          blockedInboxOrChannels
-        )}`
+        `${logPrefix}|BLOCKED_CHANNELS=${JSON.stringify(result)}`
       );
 
-      return taskEither.of(blockedInboxOrChannels);
-    }, taskEither.of)
-    .chain(
-      fromPredicate(
-        blockedInboxOrChannels =>
-          !blockedInboxOrChannels.includes(BlockedInboxOrChannelEnum.INBOX),
-        _ => {
-          context.log.warn(`${logPrefix}|RESULT=SENDER_BLOCKED`);
-          return { kind: "FAILURE", reason: "SENDER_BLOCKED" };
-        }
-      )
-    )
-    .chain(_ =>
-      tryCatch(
-        () =>
-          createMessageOrThrow(
-            context,
-            lMessageModel,
-            lBlobService,
-            createdMessageEvent
-          ),
-        toError
-      ).map(() => _)
-    )
-    .fold<StoreMessageContentActivityResult>(
-      fail => {
-        if (FailedStoreMessageContentActivityResult.is(fail)) {
-          return fail;
-        }
-        throw fail;
-      },
-      blockedInboxOrChannels => ({
-        blockedInboxOrChannels,
-        kind: "SUCCESS",
-        profile: {
-          ...profile,
-          // if profile's timestamp is before email opt out switch limit date we must force isEmailEnabled to false
-          // Please note that cosmos timestamps are expressed in unix notation (in seconds), so we must transform
-          // it to a common Date representation.
-          isEmailEnabled:
-            isOptInEmailEnabled &&
-            // eslint-disable-next-line no-underscore-dangle
-            isBefore(profile._ts, optOutEmailSwitchDate)
-              ? false
-              : profile.isEmailEnabled
-        }
-      })
-    )
+      return result;
+    }, identity)
     .run();
+
+  // check whether the user has blocked inbox storage for messages from this sender
+  const isMessageStorageBlockedForService =
+    blockedInboxOrChannels.indexOf(BlockedInboxOrChannelEnum.INBOX) >= 0;
+
+  telemetryClient.trackEvent({
+    name: "api.messages.create.blockedstoremessage",
+    properties: {
+      fiscalCode: toHash(profile.fiscalCode),
+      isBlocked: String(isMessageStorageBlockedForService),
+      messageId: createdMessageEvent.message.id,
+      mode: profile.servicePreferencesSettings.mode,
+      senderId: createdMessageEvent.message.senderServiceId
+    },
+    tagOverrides: { samplingEnabled: "false" }
+  });
+
+  if (isMessageStorageBlockedForService) {
+    context.log.warn(`${logPrefix}|RESULT=SENDER_BLOCKED`);
+    return { kind: "FAILURE", reason: "SENDER_BLOCKED" };
+  }
+
+  await createMessageOrThrow(
+    context,
+    lMessageModel,
+    lBlobService,
+    createdMessageEvent
+  );
+
+  context.log.verbose(`${logPrefix}|RESULT=SUCCESS`);
+
+  return {
+    blockedInboxOrChannels,
+    kind: "SUCCESS",
+    profile: {
+      ...profile,
+      // if profile's timestamp is before email opt out switch limit date we must force isEmailEnabled to false
+      isEmailEnabled:
+        isOptInEmailEnabled &&
+        // eslint-disable-next-line no-underscore-dangle
+        isBefore(profile._ts, optOutEmailSwitchDate)
+          ? false
+          : profile.isEmailEnabled
+    }
+  };
 };
