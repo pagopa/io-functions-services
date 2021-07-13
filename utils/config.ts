@@ -57,7 +57,9 @@ export const IConfig = t.intersection([
   MailerConfig
 ]);
 
-const DEFAULT_OPT_OUT_EMAIL_SWITCH_DATE = 1625781600000;
+// Default value is expressed as a Unix timestamp so it can be safely compared with Cosmos timestamp
+// This means that Date representation is in the past compared to the effectively switch Date we want to set
+const DEFAULT_OPT_OUT_EMAIL_SWITCH_DATE = 1625781600;
 
 // No need to re-evaluate this object for each call
 const errorOrConfig: t.Validation<IConfig> = IConfig.decode({

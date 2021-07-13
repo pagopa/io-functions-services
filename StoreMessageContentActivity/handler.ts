@@ -35,7 +35,7 @@ import {
   TaskEither,
   tryCatch
 } from "fp-ts/lib/TaskEither";
-import { fromUnixTime, isBefore } from "date-fns";
+import { isBefore } from "date-fns";
 import { UTCISODateFromString } from "@pagopa/ts-commons/lib/dates";
 import { CosmosErrors } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
 
@@ -426,7 +426,7 @@ export const getStoreMessageContentActivityHandler = ({
           isEmailEnabled:
             isOptInEmailEnabled &&
             // eslint-disable-next-line no-underscore-dangle
-            isBefore(fromUnixTime(profile._ts), optOutEmailSwitchDate)
+            isBefore(profile._ts, optOutEmailSwitchDate)
               ? false
               : profile.isEmailEnabled
         }
