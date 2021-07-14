@@ -16,6 +16,7 @@ import { setAppContext } from "@pagopa/io-functions-commons/dist/src/utils/middl
 import cors = require("cors");
 import express = require("express");
 import createAzureFunctionHandler from "io-functions-express/dist/src/createAzureFunctionsHandler";
+import { initTelemetryClient } from "../utils/appinsights";
 import { getConfigOrThrow } from "../utils/config";
 import { cosmosdbInstance } from "../utils/cosmosdb";
 
@@ -35,6 +36,9 @@ const servicesPreferencesModel = new ServicesPreferencesModel(
 );
 
 const config = getConfigOrThrow();
+const telemetryClient = initTelemetryClient(
+  config.APPINSIGHTS_INSTRUMENTATIONKEY
+);
 
 // Setup Express
 const app = express();
@@ -50,7 +54,8 @@ app.post(
     profileModel,
     config.FF_DISABLE_INCOMPLETE_SERVICES,
     config.FF_INCOMPLETE_SERVICE_WHITELIST,
-    servicesPreferencesModel
+    servicesPreferencesModel,
+    telemetryClient
   )
 );
 

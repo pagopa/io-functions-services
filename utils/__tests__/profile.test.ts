@@ -29,10 +29,15 @@ import {
 
 import MockResponse from "../../__mocks__/response";
 
+const mockTelemetryClient = ({
+  trackEvent: jest.fn()
+} as unknown) as ReturnType<typeof initTelemetryClient>;
+
 import { ServicesPreferencesModel } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 import { some, none } from "fp-ts/lib/Option";
 import { fromLeft, taskEither } from "fp-ts/lib/TaskEither";
 import { UserGroup } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
+import { initTelemetryClient } from "../appinsights";
 
 describe("isSenderAllowed", () => {
   it("should return false if the service is not allowed to send notifications to the user", async () => {
@@ -164,7 +169,8 @@ describe("getLimitedProfileTask", () => {
         mockProfileModel,
         false,
         [],
-        mockServicePreferenceModel
+        mockServicePreferenceModel,
+        mockTelemetryClient
       ).run();
       result.apply(mockExpresseResponse);
 
@@ -177,12 +183,12 @@ describe("getLimitedProfileTask", () => {
   );
 
   it.each`
-    title                                                     | responseKind                | maybeProfile
-    ${"the requested profile doesn't have the inbox enabled"} | ${"IResponseErrorNotFound"} | ${taskEither.of(some({ ...aRetrievedProfile, isInboxEnabled: false }))}
-    ${"the requested profile is not found in the db"}         | ${"IResponseErrorNotFound"} | ${taskEither.of(none)}
-    ${"a database error occurs"}                              | ${"IResponseErrorQuery"}    | ${fromLeft({})}
+    scenario                                                   | responseKind                | maybeProfile
+    ${"the requested profile does not have the inbox enabled"} | ${"IResponseErrorNotFound"} | ${taskEither.of(some({ ...aRetrievedProfile, isInboxEnabled: false }))}
+    ${"the requested profile is not found in the db"}          | ${"IResponseErrorNotFound"} | ${taskEither.of(none)}
+    ${"a database error occurs"}                               | ${"IResponseErrorQuery"}    | ${fromLeft({})}
   `(
-    "should respond with $responseKind when $title",
+    "should respond with $responseKind when $scenario",
     async ({ responseKind, maybeProfile }) => {
       const mockProfileModel = ({
         findLastVersionByModelId: jest.fn(() => maybeProfile)
@@ -197,7 +203,8 @@ describe("getLimitedProfileTask", () => {
         mockProfileModel,
         true,
         [],
-        mockServicePreferenceModel
+        mockServicePreferenceModel,
+        mockTelemetryClient
       ).run();
 
       expect(mockProfileModel.findLastVersionByModelId).toHaveBeenCalledTimes(
@@ -211,11 +218,11 @@ describe("getLimitedProfileTask", () => {
   );
 
   it.each`
-    title                                              | groups                                | service
-    ${"the service hasn't the required quality field"} | ${[UserGroup.ApiMessageWrite]}        | ${anIncompleteService}
-    ${"the service is sandboxed"}                      | ${[UserGroup.ApiLimitedMessageWrite]} | ${anAzureUserAttributes.service}
+    scenario                                                   | groups                                | service
+    ${"the service does not have the required quality fields"} | ${[UserGroup.ApiMessageWrite]}        | ${anIncompleteService}
+    ${"the service is sandboxed"}                              | ${[UserGroup.ApiLimitedMessageWrite]} | ${anAzureUserAttributes.service}
   `(
-    "should respond with 403 IResponseErrorForbiddenNotAuthorizedForRecipient when $title",
+    "should respond with 403 IResponseErrorForbiddenNotAuthorizedForRecipient when $scenario",
     async ({ groups, service }) => {
       const mockProfileModel = ({
         findLastVersionByModelId: jest.fn(() =>
@@ -239,7 +246,8 @@ describe("getLimitedProfileTask", () => {
         mockProfileModel,
         true,
         [],
-        mockServicePreferenceModel
+        mockServicePreferenceModel,
+        mockTelemetryClient
       ).run();
 
       expect(mockProfileModel.findLastVersionByModelId).not.toHaveBeenCalled();

@@ -26,6 +26,7 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
 import * as express from "express";
 import { FiscalCode } from "italia-ts-commons/lib/strings";
+import { initTelemetryClient } from "../utils/appinsights";
 
 import {
   getLimitedProfileTask,
@@ -53,7 +54,8 @@ export function GetLimitedProfileHandler(
   profileModel: ProfileModel,
   disableIncompleteServices: boolean,
   incompleteServiceWhitelist: ReadonlyArray<ServiceId>,
-  servicesPreferencesModel: ServicesPreferencesModel
+  servicesPreferencesModel: ServicesPreferencesModel,
+  telemetryClient: ReturnType<typeof initTelemetryClient>
 ): IGetLimitedProfileHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   return async (auth, __, userAttributes, fiscalCode) =>
@@ -64,26 +66,29 @@ export function GetLimitedProfileHandler(
       profileModel,
       disableIncompleteServices,
       incompleteServiceWhitelist,
-      servicesPreferencesModel
+      servicesPreferencesModel,
+      telemetryClient
     ).run();
 }
 
 /**
  * Wraps a GetLimitedProfile handler inside an Express request handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
+// eslint-disable-next-line max-params,prefer-arrow/prefer-arrow-functions
 export function GetLimitedProfile(
   serviceModel: ServiceModel,
   profileModel: ProfileModel,
   disableIncompleteServices: boolean,
   incompleteServiceWhitelist: ReadonlyArray<ServiceId>,
-  servicesPreferencesModel: ServicesPreferencesModel
+  servicesPreferencesModel: ServicesPreferencesModel,
+  telemetryClient: ReturnType<typeof initTelemetryClient>
 ): express.RequestHandler {
   const handler = GetLimitedProfileHandler(
     profileModel,
     disableIncompleteServices,
     incompleteServiceWhitelist,
-    servicesPreferencesModel
+    servicesPreferencesModel,
+    telemetryClient
   );
 
   const middlewaresWrap = withRequestMiddlewares(
