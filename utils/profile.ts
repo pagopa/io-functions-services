@@ -256,7 +256,7 @@ Task<IGetLimitedProfileResponses> =>
         )
         .map(_ => {
           telemetryClient.trackEvent({
-            name: "api.messages.subscription.senderallowed",
+            name: "api.limitedprofile.sender-allowed",
             properties: {
               fiscalCode: toHash(profile.fiscalCode),
               isAllowed: String(_.isAllowed),
