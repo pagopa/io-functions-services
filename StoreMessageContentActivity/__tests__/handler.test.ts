@@ -141,7 +141,7 @@ describe("getStoreMessageContentActivityHandler", () => {
     ${"blocked EMAIL if message sender service exists and has EMAIL disabled in user service preference (MANUAL SETTINGS)"}        | ${aRetrievedProfileWithAutoPreferences}                                                                     | ${aBlobResult} | ${aRetrievedMessage} | ${some({ ...anEnabledServicePreference, isEmailEnabled: false })} | ${aCreatedMessageEvent} | ${[BlockedInboxOrChannelEnum.EMAIL]} | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"none"}
     ${"blocked EMAIL for a service in blockedInboxOrChannels with email disabled (LEGACY SETTINGS)"}                               | ${withBlockedEmail(aRetrievedProfileWithLegacyPreferences, [aCreatedMessageEvent.message.senderServiceId])} | ${aBlobResult} | ${aRetrievedMessage} | ${"not-called"}                                                   | ${aCreatedMessageEvent} | ${[BlockedInboxOrChannelEnum.EMAIL]} | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"none"}
     ${"empty blockedInboxOrChannels if the service is not in user's blockedInboxOrChannels (LEGACY SETTINGS)"}                     | ${withBlacklist(aRetrievedProfileWithLegacyPreferences, ["another-service"])}                               | ${aBlobResult} | ${aRetrievedMessage} | ${"not-called"}                                                   | ${aCreatedMessageEvent} | ${[]}                                | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"none"}
-    ${"isEmailEnabled overridden to false if profile's timestamp is before optOutEmailSwitchDate"}                                 | ${aRetrievedProfileWithAValidTimestamp}                                                                     | ${aBlobResult} | ${aRetrievedMessage} | ${"not-called"}                                                   | ${aCreatedMessageEvent} | ${[]}                                | ${aFutureOptOutEmailSwitchDate} | ${true}           | ${({...aRetrievedProfileWithAValidTimestamp, isEmailEnabled: false})}
+    ${"isEmailEnabled overridden to false if profile's timestamp is before optOutEmailSwitchDate"}                                 | ${aRetrievedProfileWithAValidTimestamp}                                                                     | ${aBlobResult} | ${aRetrievedMessage} | ${"not-called"}                                                   | ${aCreatedMessageEvent} | ${[]}                                | ${aFutureOptOutEmailSwitchDate} | ${true}           | ${{ ...aRetrievedProfileWithAValidTimestamp, isEmailEnabled: false }}
     ${"isEmailEnabled not overridden if profile's timestamp is after optOutEmailSwitchDate"}                                       | ${aRetrievedProfileWithAValidTimestamp}                                                                     | ${aBlobResult} | ${aRetrievedMessage} | ${"not-called"}                                                   | ${aCreatedMessageEvent} | ${[]}                                | ${aPastOptOutEmailSwitchDate}   | ${true}           | ${"none"}
   `(
     "should succeed with $scenario",
@@ -193,7 +193,11 @@ describe("getStoreMessageContentActivityHandler", () => {
       expect(result.kind).toBe("SUCCESS");
       if (result.kind === "SUCCESS") {
         expect(result.blockedInboxOrChannels).toEqual(expectedBIOC);
-        expect(result.profile).toEqual(overrideProfileResult === "none" ? profileResult : overrideProfileResult);
+        expect(result.profile).toEqual(
+          overrideProfileResult === "none"
+            ? profileResult
+            : overrideProfileResult
+        );
       }
 
       // success means message has been stored and status has been updated

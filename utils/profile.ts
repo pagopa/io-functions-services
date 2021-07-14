@@ -46,6 +46,8 @@ import {
 } from "@pagopa/ts-commons/lib/responses";
 import { GetLimitedProfileByPOSTPayload } from "../generated/definitions/GetLimitedProfileByPOSTPayload";
 import { canWriteMessage } from "../CreateMessage/handler";
+import { initTelemetryClient } from "./appinsights";
+import { toHash } from "./crypto";
 
 // Map an error when an unexpected value is passed
 interface IUnexpectedValue {
@@ -167,9 +169,10 @@ export const getLimitedProfileTask = (
   profileModel: ProfileModel,
   disableIncompleteServices: boolean,
   incompleteServiceWhitelist: ReadonlyArray<ServiceId>,
-  servicesPreferencesModel: ServicesPreferencesModel
-  // eslint-disable-next-line max-params
-): Task<IGetLimitedProfileResponses> =>
+  servicesPreferencesModel: ServicesPreferencesModel,
+  telemetryClient: ReturnType<typeof initTelemetryClient>
+): // eslint-disable-next-line max-params
+Task<IGetLimitedProfileResponses> =>
   taskEither
     .of<IGetLimitedProfileFailureResponses, void>(void 0)
     .chainSecond(
@@ -237,19 +240,33 @@ export const getLimitedProfileTask = (
               profile.servicePreferencesSettings
             );
 
-      return isSenderAllowedTask.bimap(
-        error =>
-          error.kind === "UNEXPECTED_VALUE"
-            ? ResponseErrorInternal(`Unexpected mode: ${error.value}`)
-            : ResponseErrorQuery(
-                "Failed to read preference for the given service",
-                error
-              ),
-        isAllowed => ({
-          isAllowed,
-          profile
-        })
-      );
+      return isSenderAllowedTask
+        .bimap(
+          error =>
+            error.kind === "UNEXPECTED_VALUE"
+              ? ResponseErrorInternal(`Unexpected mode: ${error.value}`)
+              : ResponseErrorQuery(
+                  "Failed to read preference for the given service",
+                  error
+                ),
+          isAllowed => ({
+            isAllowed,
+            profile
+          })
+        )
+        .map(_ => {
+          telemetryClient.trackEvent({
+            name: "api.limitedprofile.sender-allowed",
+            properties: {
+              fiscalCode: toHash(profile.fiscalCode),
+              isAllowed: String(_.isAllowed),
+              mode: profile.servicePreferencesSettings.mode,
+              serviceId: userAttributes.service.serviceId
+            },
+            tagOverrides: { samplingEnabled: "false" }
+          });
+          return _;
+        });
     })
     .fold<IGetLimitedProfileResponses>(identity, ({ isAllowed, profile }) =>
       ResponseSuccessJson(retrievedProfileToLimitedProfile(profile, isAllowed))
