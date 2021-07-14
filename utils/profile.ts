@@ -256,11 +256,12 @@ Task<IGetLimitedProfileResponses> =>
         )
         .map(_ => {
           telemetryClient.trackEvent({
-            name: "api.messages.create.sender-allowed-by-preferences",
+            name: "api.messages.subscription.senderallowed",
             properties: {
               fiscalCode: toHash(profile.fiscalCode),
               isAllowed: String(_.isAllowed),
-              mode: profile.servicePreferencesSettings.mode
+              mode: profile.servicePreferencesSettings.mode,
+              serviceId: userAttributes.service.serviceId
             },
             tagOverrides: { samplingEnabled: "false" }
           });
