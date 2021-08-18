@@ -25,7 +25,7 @@
     },
     "storageProvider": {
       "connectionStringName": "AzureWebJobsStorage",
-      "partitionCount": 16
+      "partitionCount": 4
     },
     "tracing": {
       "traceInputsAndOutputs": false,
