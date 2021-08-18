@@ -1,6 +1,6 @@
 swagger: '2.0'
 info:
-  version: 1.21.2
+  version: 1.21.3
   title: IO API for Public Administration Services
   contact:
     name: Digital Transformation Team
