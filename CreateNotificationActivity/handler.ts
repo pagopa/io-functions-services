@@ -156,15 +156,6 @@ export const getCreateNotificationActivityHandler = (
   // Decide whether to send an email notification
   //
 
-  // whether email notifications are enabled in this user profile - this is
-  // true by default, it's false only for users that have isEmailEnabled = false
-  // in their profile.
-  const isEmailEnabledInProfile = profile.isEmailEnabled !== false;
-
-  // Check if the email in the user profile is validated.
-  // we assume it's true when not defined in user's profile.
-  const isEmailValidatedInProfile = profile.isEmailValidated !== false;
-
   // first we check whether the user has blocked emails notifications for the
   // service that is sending the message
   // Since we are not handling email service preferences for App version 1.29.0.1
@@ -193,6 +184,21 @@ export const getCreateNotificationActivityHandler = (
   const isEmailDisabledForService = lEmailNotificationServiceBlackList.includes(
     createdMessageEvent.message.senderServiceId
   );
+
+  // whether email notifications are enabled in this user profile - this is
+  // true by default, it's false only for users that have isEmailEnabled = false
+  // in their profile.
+  // Email is enabled if the message is sent to the SANDBOX_FISCAL_CODE
+  const isEmailEnabledInProfile =
+    newMessageWithoutContent.fiscalCode === lSandboxFiscalCode ||
+    profile.isEmailEnabled !== false;
+
+  // Check if the email in the user profile is validated.
+  // we assume it's true when not defined in user's profile.
+  // Email is validated if the message is sent to the SANDBOX_FISCAL_CODE
+  const isEmailValidatedInProfile =
+    newMessageWithoutContent.fiscalCode === lSandboxFiscalCode ||
+    profile.isEmailValidated !== false;
 
   // finally we decide whether we should send the email notification or not -
   // we send an email notification when all the following conditions are met:
