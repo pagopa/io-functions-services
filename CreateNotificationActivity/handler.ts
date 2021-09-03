@@ -4,10 +4,11 @@ import { Context } from "@azure/functions";
 
 import * as t from "io-ts";
 
-import { isLeft } from "fp-ts/lib/Either";
-import { fromNullable, none, Option, some } from "fp-ts/lib/Option";
+import * as E from "fp-ts/lib/Either";
+import * as O from "fp-ts/lib/Option";
+import { Option } from "fp-ts/lib/Option";
 
-import { readableReport } from "italia-ts-commons/lib/reporters";
+import { readableReport } from "@pagopa/ts-commons/lib/reporters";
 
 import { BlockedInboxOrChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
 import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
@@ -30,6 +31,7 @@ import { ulidGenerator } from "@pagopa/io-functions-commons/dist/src/utils/strin
 
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { ServicesPreferencesModeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServicesPreferencesMode";
+import { pipe } from "fp-ts/lib/function";
 import { SuccessfulStoreMessageContentActivityResult } from "../StoreMessageContentActivity/handler";
 
 /**
@@ -39,10 +41,13 @@ import { SuccessfulStoreMessageContentActivityResult } from "../StoreMessageCont
 const getEmailAddressFromProfile = (
   profile: RetrievedProfile
 ): Option<NotificationChannelEmail> =>
-  fromNullable(profile.email).map(email => ({
-    addressSource: NotificationAddressSourceEnum.PROFILE_ADDRESS,
-    toAddress: email
-  }));
+  pipe(
+    O.fromNullable(profile.email),
+    O.map(email => ({
+      addressSource: NotificationAddressSourceEnum.PROFILE_ADDRESS,
+      toAddress: email
+    }))
+  );
 
 /**
  * Try to create (save) a new notification
@@ -55,17 +60,17 @@ async function createNotification(
   newMessageContent: MessageContent,
   newNotification: NewNotification
 ): Promise<NotificationEvent> {
-  const errorOrNotification = await lNotificationModel
-    .create(newNotification)
-    .run();
+  const errorOrNotification = await lNotificationModel.create(
+    newNotification
+  )();
 
-  if (isLeft(errorOrNotification)) {
+  if (E.isLeft(errorOrNotification)) {
     throw new Error(
-      `Cannot save notification to database: ${errorOrNotification.value}`
+      `Cannot save notification to database: ${errorOrNotification.left}`
     );
   }
 
-  const notification = errorOrNotification.value;
+  const notification = errorOrNotification.right;
 
   return {
     content: newMessageContent,
@@ -123,13 +128,13 @@ export const getCreateNotificationActivityHandler = (
   lWebhookNotificationServiceBlackList: ReadonlyArray<ServiceId>
 ) => async (context: Context, input: unknown): Promise<unknown> => {
   const inputOrError = CreateNotificationActivityInput.decode(input);
-  if (inputOrError.isLeft()) {
+  if (E.isLeft(inputOrError)) {
     context.log.error(
       `CreateNotificationActivity|Unable to parse CreateNotificationActivityHandlerInput`
     );
     context.log.verbose(
       `CreateNotificationActivity|ERROR_DETAILS=${readableReport(
-        inputOrError.value
+        inputOrError.left
       )}`
     );
     return CreateNotificationActivityResult.encode({
@@ -140,7 +145,7 @@ export const getCreateNotificationActivityHandler = (
   const {
     createdMessageEvent,
     storeMessageContentActivityResult
-  } = inputOrError.value;
+  } = inputOrError.right;
 
   const logPrefix = `CreateNotificationActivity|MESSAGE_ID=${createdMessageEvent.message.id}`;
 
@@ -155,6 +160,15 @@ export const getCreateNotificationActivityHandler = (
   //
   // Decide whether to send an email notification
   //
+
+  // whether email notifications are enabled in this user profile - this is
+  // true by default, it's false only for users that have isEmailEnabled = false
+  // in their profile.
+  const isEmailEnabledInProfile = profile.isEmailEnabled !== false;
+
+  // Check if the email in the user profile is validated.
+  // we assume it's true when not defined in user's profile.
+  const isEmailValidatedInProfile = profile.isEmailValidated !== false;
 
   // first we check whether the user has blocked emails notifications for the
   // service that is sending the message
@@ -171,7 +185,7 @@ export const getCreateNotificationActivityHandler = (
   // Otherwise we try to get the email from the user profile.
   const maybeNotificationEmailAddress: Option<NotificationChannelEmail> =
     newMessageWithoutContent.fiscalCode === lSandboxFiscalCode
-      ? some({
+      ? O.some({
           addressSource: NotificationAddressSourceEnum.SERVICE_USER_ADDRESS,
           toAddress: senderMetadata.serviceUserEmail
         })
@@ -184,21 +198,6 @@ export const getCreateNotificationActivityHandler = (
   const isEmailDisabledForService = lEmailNotificationServiceBlackList.includes(
     createdMessageEvent.message.senderServiceId
   );
-
-  // whether email notifications are enabled in this user profile - this is
-  // true by default, it's false only for users that have isEmailEnabled = false
-  // in their profile.
-  // Email is enabled if the message is sent to the SANDBOX_FISCAL_CODE
-  const isEmailEnabledInProfile =
-    newMessageWithoutContent.fiscalCode === lSandboxFiscalCode ||
-    profile.isEmailEnabled !== false;
-
-  // Check if the email in the user profile is validated.
-  // we assume it's true when not defined in user's profile.
-  // Email is validated if the message is sent to the SANDBOX_FISCAL_CODE
-  const isEmailValidatedInProfile =
-    newMessageWithoutContent.fiscalCode === lSandboxFiscalCode ||
-    profile.isEmailValidated !== false;
 
   // finally we decide whether we should send the email notification or not -
   // we send an email notification when all the following conditions are met:
@@ -217,10 +216,12 @@ export const getCreateNotificationActivityHandler = (
     !isEmailBlockedForService &&
     isEmailChannelAllowed
       ? maybeNotificationEmailAddress
-      : none;
+      : O.none;
 
   context.log.verbose(
-    `${logPrefix}|CHANNEL=EMAIL|PROFILE_ENABLED=${isEmailEnabledInProfile}|SERVICE_BLOCKED=${isEmailBlockedForService}|PROFILE_EMAIL=${maybeEmailNotificationAddress.isSome()}|WILL_NOTIFY=${maybeEmailNotificationAddress.isSome()}`
+    `${logPrefix}|CHANNEL=EMAIL|PROFILE_ENABLED=${isEmailEnabledInProfile}|SERVICE_BLOCKED=${isEmailBlockedForService}|PROFILE_EMAIL=${O.isSome(
+      maybeEmailNotificationAddress
+    )}|WILL_NOTIFY=${O.isSome(maybeEmailNotificationAddress)}`
   );
 
   //
@@ -250,13 +251,15 @@ export const getCreateNotificationActivityHandler = (
     isWebhookEnabledInProfile &&
     !isWebhookBlockedForService &&
     !isWebhookDisabledForService
-      ? some({
+      ? O.some({
           url: lDefaultWebhookUrl
         })
-      : none;
+      : O.none;
 
   context.log.verbose(
-    `${logPrefix}|CHANNEL=WEBHOOK|CHANNEL_ENABLED=${isWebhookEnabledInProfile}|SERVICE_BLOCKED=${isWebhookBlockedForService}|WILL_NOTIFY=${maybeWebhookNotificationUrl.isSome()}`
+    `${logPrefix}|CHANNEL=WEBHOOK|CHANNEL_ENABLED=${isWebhookEnabledInProfile}|SERVICE_BLOCKED=${isWebhookBlockedForService}|WILL_NOTIFY=${O.isSome(
+      maybeWebhookNotificationUrl
+    )}`
   );
 
   //
@@ -265,8 +268,8 @@ export const getCreateNotificationActivityHandler = (
   //
 
   const noChannelsConfigured =
-    maybeEmailNotificationAddress.isNone() &&
-    maybeWebhookNotificationUrl.isNone();
+    O.isNone(maybeEmailNotificationAddress) &&
+    O.isNone(maybeWebhookNotificationUrl);
 
   if (noChannelsConfigured) {
     context.log.warn(`${logPrefix}|RESULT=NO_CHANNELS_ENABLED`);
@@ -287,8 +290,12 @@ export const getCreateNotificationActivityHandler = (
       newMessageWithoutContent.id
     ),
     channels: {
-      [NotificationChannelEnum.EMAIL]: maybeEmailNotificationAddress.toUndefined(),
-      [NotificationChannelEnum.WEBHOOK]: maybeWebhookNotificationUrl.toUndefined()
+      [NotificationChannelEnum.EMAIL]: O.toUndefined(
+        maybeEmailNotificationAddress
+      ),
+      [NotificationChannelEnum.WEBHOOK]: O.toUndefined(
+        maybeWebhookNotificationUrl
+      )
     }
   };
 
@@ -307,8 +314,8 @@ export const getCreateNotificationActivityHandler = (
   // Return the notification event to the orchestrator
   // The orchestrato will then run the actual notification activities
   return CreateNotificationActivityResult.encode({
-    hasEmail: maybeEmailNotificationAddress.isSome(),
-    hasWebhook: maybeWebhookNotificationUrl.isSome(),
+    hasEmail: O.isSome(maybeEmailNotificationAddress),
+    hasWebhook: O.isSome(maybeWebhookNotificationUrl),
     kind: "some",
     notificationEvent
   });

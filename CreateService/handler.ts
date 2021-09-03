@@ -25,7 +25,7 @@ import {
   IResponseErrorTooManyRequests,
   IResponseSuccessJson,
   ResponseSuccessJson
-} from "italia-ts-commons/lib/responses";
+} from "@pagopa/ts-commons/lib/responses";
 
 import {
   checkSourceIpForHandler,
@@ -40,14 +40,15 @@ import {
   ObjectIdGenerator,
   ulidGenerator
 } from "@pagopa/io-functions-commons/dist/src/utils/strings";
-import { identity } from "fp-ts/lib/function";
 import { TaskEither } from "fp-ts/lib/TaskEither";
-import { initAppInsights } from "italia-ts-commons/lib/appinsights";
+import * as TE from "fp-ts/lib/TaskEither";
+import { initAppInsights } from "@pagopa/ts-commons/lib/appinsights";
 import {
   EmailString,
   FiscalCode,
   NonEmptyString
-} from "italia-ts-commons/lib/strings";
+} from "@pagopa/ts-commons/lib/strings";
+import { pipe } from "fp-ts/lib/function";
 import { APIClient } from "../clients/admin";
 import { Service } from "../generated/api-admin/Service";
 import { Subscription } from "../generated/api-admin/Subscription";
@@ -159,45 +160,52 @@ export function CreateServiceHandler(
     context.log.info(
       `${logPrefix}| Creating new service with subscriptionId=${subscriptionId}`
     );
-    return createSubscriptionTask(
-      getLogger(context, logPrefix, "CreateSubscription"),
-      apiClient,
-      userAttributes.email,
-      subscriptionId,
-      productName
-    )
-      .chain(subscription =>
-        getUserTask(
-          getLogger(context, logPrefix, "GetUser"),
-          apiClient,
-          userAttributes.email
-        ).chain(userInfo =>
-          createServiceTask(
-            getLogger(context, logPrefix, "CreateService"),
+    return pipe(
+      createSubscriptionTask(
+        getLogger(context, logPrefix, "CreateSubscription"),
+        apiClient,
+        userAttributes.email,
+        subscriptionId,
+        productName
+      ),
+      TE.chain(subscription =>
+        pipe(
+          getUserTask(
+            getLogger(context, logPrefix, "GetUser"),
             apiClient,
-            servicePayload,
-            subscriptionId,
-            (sandboxFiscalCode as unknown) as FiscalCode,
-            userInfo.token_name
-          ).map(service => {
-            telemetryClient.trackEvent({
-              name: "api.services.create",
-              properties: {
-                isVisible: String(service.is_visible),
-                requesterUserEmail: userAttributes.email,
-                subscriptionId
-              }
-            });
-            return ResponseSuccessJson({
-              ...service,
-              primary_key: subscription.primary_key,
-              secondary_key: subscription.secondary_key
-            });
-          })
+            userAttributes.email
+          ),
+          TE.chain(userInfo =>
+            pipe(
+              createServiceTask(
+                getLogger(context, logPrefix, "CreateService"),
+                apiClient,
+                servicePayload,
+                subscriptionId,
+                (sandboxFiscalCode as unknown) as FiscalCode,
+                userInfo.token_name
+              ),
+              TE.map(service => {
+                telemetryClient.trackEvent({
+                  name: "api.services.create",
+                  properties: {
+                    isVisible: String(service.is_visible),
+                    requesterUserEmail: userAttributes.email,
+                    subscriptionId
+                  }
+                });
+                return ResponseSuccessJson({
+                  ...service,
+                  primary_key: subscription.primary_key,
+                  secondary_key: subscription.secondary_key
+                });
+              })
+            )
+          )
         )
-      )
-      .fold<ResponseTypes>(identity, identity)
-      .run();
+      ),
+      TE.toUnion
+    )();
   };
 }
 

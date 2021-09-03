@@ -3,9 +3,9 @@ import {
   ApiHeaderJson,
   createFetchRequestForApi,
   TypeofApiCall
-} from "italia-ts-commons/lib/requests";
-import * as r from "italia-ts-commons/lib/requests";
-import { ProblemJson } from "italia-ts-commons/lib/responses";
+} from "@pagopa/ts-commons/lib/requests";
+import * as r from "@pagopa/ts-commons/lib/requests";
+import { ProblemJson } from "@pagopa/ts-commons/lib/responses";
 import { Notification } from "../generated/notifications/Notification";
 import { notifyDefaultDecoder } from "../generated/notifications/requestTypes";
 import { SuccessResponse } from "../generated/notifications/SuccessResponse";

@@ -7,14 +7,14 @@
 
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { MailerConfig } from "@pagopa/io-functions-commons/dist/src/mailer";
-import { fromNullable } from "fp-ts/lib/Option";
-import { fromNullable as fromNullableE } from "fp-ts/lib/Either";
+import * as O from "fp-ts/lib/Option";
+import * as E from "fp-ts/lib/Either";
 import * as t from "io-ts";
-import { readableReport } from "italia-ts-commons/lib/reporters";
-import { NonEmptyString } from "italia-ts-commons/lib/strings";
+import { readableReport } from "@pagopa/ts-commons/lib/reporters";
+import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 import { DateFromTimestamp } from "@pagopa/ts-commons/lib/dates";
 import { NumberFromString } from "@pagopa/ts-commons/lib/numbers";
-import { identity } from "fp-ts/lib/function";
+import { pipe } from "fp-ts/lib/function";
 import { CommaSeparatedListOf } from "./comma-separated-list";
 
 // global app configuration
@@ -65,28 +65,33 @@ const DEFAULT_OPT_OUT_EMAIL_SWITCH_DATE = 1625781600;
 const errorOrConfig: t.Validation<IConfig> = IConfig.decode({
   ...process.env,
 
-  FF_DISABLE_INCOMPLETE_SERVICES: fromNullable(
-    process.env.FF_DISABLE_INCOMPLETE_SERVICES
-  )
-    .map(_ => _.toLowerCase() === "true")
-    .getOrElse(false),
-  FF_DISABLE_WEBHOOK_MESSAGE_CONTENT: fromNullable(
-    process.env.FF_DISABLE_WEBHOOK_MESSAGE_CONTENT
-  )
-    .map(_ => _.toLowerCase() === "true")
-    .getOrElse(false),
-  FF_OPT_IN_EMAIL_ENABLED: fromNullable(process.env.FF_OPT_IN_EMAIL_ENABLED)
-    .map(_ => _.toLocaleLowerCase() === "true")
-    .getOrElse(false),
-  OPT_OUT_EMAIL_SWITCH_DATE: fromNullableE(DEFAULT_OPT_OUT_EMAIL_SWITCH_DATE)(
-    process.env.OPT_OUT_EMAIL_SWITCH_DATE
-  )
-    .chain(_ =>
-      NumberFromString.decode(_).mapLeft(
-        () => DEFAULT_OPT_OUT_EMAIL_SWITCH_DATE
+  FF_DISABLE_INCOMPLETE_SERVICES: pipe(
+    O.fromNullable(process.env.FF_DISABLE_INCOMPLETE_SERVICES),
+    O.map(_ => _.toLowerCase() === "true"),
+    O.getOrElse(() => false)
+  ),
+  FF_DISABLE_WEBHOOK_MESSAGE_CONTENT: pipe(
+    O.fromNullable(process.env.FF_DISABLE_WEBHOOK_MESSAGE_CONTENT),
+    O.map(_ => _.toLowerCase() === "true"),
+    O.getOrElse(() => false)
+  ),
+  FF_OPT_IN_EMAIL_ENABLED: pipe(
+    O.fromNullable(process.env.FF_OPT_IN_EMAIL_ENABLED),
+    O.map(_ => _.toLocaleLowerCase() === "true"),
+    O.getOrElse(() => false)
+  ),
+  OPT_OUT_EMAIL_SWITCH_DATE: pipe(
+    E.fromNullable(DEFAULT_OPT_OUT_EMAIL_SWITCH_DATE)(
+      process.env.OPT_OUT_EMAIL_SWITCH_DATE
+    ),
+    E.chain(_ =>
+      pipe(
+        NumberFromString.decode(_),
+        E.mapLeft(() => DEFAULT_OPT_OUT_EMAIL_SWITCH_DATE)
       )
-    )
-    .fold(identity, identity),
+    ),
+    E.toUnion
+  ),
   isProduction: process.env.NODE_ENV === "production"
 });
 
@@ -110,7 +115,10 @@ export function getConfig(): t.Validation<IConfig> {
  */
 // eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function getConfigOrThrow(): IConfig {
-  return errorOrConfig.getOrElseL(errors => {
-    throw new Error(`Invalid configuration: ${readableReport(errors)}`);
-  });
+  return pipe(
+    errorOrConfig,
+    E.getOrElse(errors => {
+      throw new Error(`Invalid configuration: ${readableReport(errors)}`);
+    })
+  );
 }

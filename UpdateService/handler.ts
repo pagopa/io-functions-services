@@ -26,7 +26,7 @@ import {
   IResponseErrorTooManyRequests,
   IResponseSuccessJson,
   ResponseSuccessJson
-} from "italia-ts-commons/lib/responses";
+} from "@pagopa/ts-commons/lib/responses";
 
 import {
   checkSourceIpForHandler,
@@ -37,10 +37,11 @@ import { Context } from "@azure/functions";
 import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { RequiredParamMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_param";
-import { identity } from "fp-ts/lib/function";
 import { TaskEither } from "fp-ts/lib/TaskEither";
-import { initAppInsights } from "italia-ts-commons/lib/appinsights";
-import { EmailString, NonEmptyString } from "italia-ts-commons/lib/strings";
+import * as TE from "fp-ts/lib/TaskEither";
+import { initAppInsights } from "@pagopa/ts-commons/lib/appinsights";
+import { EmailString, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
+import { pipe } from "fp-ts/lib/function";
 import { APIClient } from "../clients/admin";
 import { Service } from "../generated/api-admin/Service";
 import { SubscriptionKeys } from "../generated/api-admin/SubscriptionKeys";
@@ -156,54 +157,65 @@ export function UpdateServiceHandler(
 ): IUpdateServiceHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, max-params
   return (_, apiAuth, ___, userAttributes, serviceId, servicePayload) =>
-    serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId)
-      .chain(() =>
-        getServiceTask(
-          getLogger(_, logPrefix, "GetService"),
-          apiClient,
-          serviceId
-        ).chain(retrievedService =>
-          getUserTask(
-            getLogger(_, logPrefix, "GetUser"),
-            apiClient,
-            userAttributes.email
-          )
-            .chain(userInfo =>
-              updateServiceTask(
-                getLogger(_, logPrefix, "UpdateService"),
-                apiClient,
-                servicePayload,
-                serviceId,
-                retrievedService,
-                userInfo.token_name
+    pipe(
+      pipe(
+        serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId),
+        TE.chain(() =>
+          pipe(
+            getServiceTask(
+              getLogger(_, logPrefix, "GetService"),
+              apiClient,
+              serviceId
+            ),
+            TE.chain(retrievedService =>
+              pipe(
+                getUserTask(
+                  getLogger(_, logPrefix, "GetUser"),
+                  apiClient,
+                  userAttributes.email
+                ),
+                TE.chain(userInfo =>
+                  updateServiceTask(
+                    getLogger(_, logPrefix, "UpdateService"),
+                    apiClient,
+                    servicePayload,
+                    serviceId,
+                    retrievedService,
+                    userInfo.token_name
+                  )
+                ),
+                TE.chain(service => {
+                  if (retrievedService.is_visible !== service.is_visible) {
+                    telemetryClient.trackEvent({
+                      name: "api.services.update",
+                      properties: {
+                        isVisible: String(service.is_visible),
+                        requesterUserEmail: userAttributes.email,
+                        serviceId
+                      }
+                    });
+                  }
+                  return pipe(
+                    getSubscriptionKeysTask(
+                      getLogger(_, logPrefix, "GetSubscriptionKeys"),
+                      apiClient,
+                      serviceId
+                    ),
+                    TE.map(subscriptionKeys =>
+                      ResponseSuccessJson({
+                        ...service,
+                        ...subscriptionKeys
+                      })
+                    )
+                  );
+                })
               )
             )
-            .chain(service => {
-              if (retrievedService.is_visible !== service.is_visible) {
-                telemetryClient.trackEvent({
-                  name: "api.services.update",
-                  properties: {
-                    isVisible: String(service.is_visible),
-                    requesterUserEmail: userAttributes.email,
-                    serviceId
-                  }
-                });
-              }
-              return getSubscriptionKeysTask(
-                getLogger(_, logPrefix, "GetSubscriptionKeys"),
-                apiClient,
-                serviceId
-              ).map(subscriptionKeys =>
-                ResponseSuccessJson({
-                  ...service,
-                  ...subscriptionKeys
-                })
-              );
-            })
+          )
         )
-      )
-      .fold<ResponseTypes>(identity, identity)
-      .run();
+      ),
+      TE.toUnion
+    )();
 }
 
 /**

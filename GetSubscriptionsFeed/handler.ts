@@ -33,8 +33,8 @@ import {
   ResponseErrorForbiddenNotAuthorized,
   ResponseErrorNotFound,
   ResponseSuccessJson
-} from "italia-ts-commons/lib/responses";
-import { PatternString } from "italia-ts-commons/lib/strings";
+} from "@pagopa/ts-commons/lib/responses";
+import { PatternString } from "@pagopa/ts-commons/lib/strings";
 
 import {
   checkSourceIpForHandler,

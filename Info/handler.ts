@@ -5,7 +5,11 @@ import {
   IResponseSuccessJson,
   ResponseErrorInternal,
   ResponseSuccessJson
-} from "italia-ts-commons/lib/responses";
+} from "@pagopa/ts-commons/lib/responses";
+
+import * as TE from "fp-ts/lib/TaskEither";
+import { pipe } from "fp-ts/lib/function";
+
 import * as packageJson from "../package.json";
 import { checkApplicationHealth, HealthCheck } from "../utils/healthcheck";
 
@@ -22,16 +26,17 @@ type InfoHandler = () => Promise<
 export function InfoHandler(healthCheck: HealthCheck): InfoHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   return () =>
-    healthCheck
-      .fold<IResponseSuccessJson<IInfo> | IResponseErrorInternal>(
-        problems => ResponseErrorInternal(problems.join("\n\n")),
-        _ =>
-          ResponseSuccessJson({
-            name: packageJson.name,
-            version: packageJson.version
-          })
-      )
-      .run();
+    pipe(
+      healthCheck,
+      TE.mapLeft(problems => ResponseErrorInternal(problems.join("\n\n"))),
+      TE.map(_ =>
+        ResponseSuccessJson({
+          name: packageJson.name,
+          version: packageJson.version
+        })
+      ),
+      TE.toUnion
+    )();
 }
 
 // eslint-disable-next-line prefer-arrow/prefer-arrow-functions

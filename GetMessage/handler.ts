@@ -37,8 +37,8 @@ import {
   ResponseErrorNotFound,
   ResponseErrorValidation,
   ResponseSuccessJson
-} from "italia-ts-commons/lib/responses";
-import { FiscalCode, NonEmptyString } from "italia-ts-commons/lib/strings";
+} from "@pagopa/ts-commons/lib/responses";
+import { FiscalCode, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 
 import {
   checkSourceIpForHandler,
@@ -52,8 +52,8 @@ import { BlobService } from "azure-storage";
 
 import { MessageModel } from "@pagopa/io-functions-commons/dist/src/models/message";
 
-import { isLeft } from "fp-ts/lib/Either";
-import { isNone } from "fp-ts/lib/Option";
+import * as E from "fp-ts/lib/Either";
+import * as O from "fp-ts/lib/Option";
 
 import { MessageStatusModel } from "@pagopa/io-functions-commons/dist/src/models/message_status";
 import { NotificationStatusModel } from "@pagopa/io-functions-commons/dist/src/models/notification_status";
@@ -68,7 +68,8 @@ import { MessageResponseWithContent } from "@pagopa/io-functions-commons/dist/ge
 import { MessageResponseWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageResponseWithoutContent";
 import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
-import { readableReport } from "italia-ts-commons/lib/reporters";
+import { readableReport } from "@pagopa/ts-commons/lib/reporters";
+import { pipe } from "fp-ts/lib/function";
 
 /**
  * Type of a GetMessage handler.
@@ -110,26 +111,27 @@ export function GetMessageHandler(
   return async (context, _, __, userAttributes, fiscalCode, messageId) => {
     const errorOrMessageId = NonEmptyString.decode(messageId);
 
-    if (errorOrMessageId.isLeft()) {
+    if (E.isLeft(errorOrMessageId)) {
       return ResponseErrorValidation(
         "Invalid messageId",
-        readableReport(errorOrMessageId.value)
+        readableReport(errorOrMessageId.left)
       );
     }
-    const errorOrMaybeDocument = await messageModel
-      .findMessageForRecipient(fiscalCode, errorOrMessageId.value)
-      .run();
+    const errorOrMaybeDocument = await messageModel.findMessageForRecipient(
+      fiscalCode,
+      errorOrMessageId.right
+    )();
 
-    if (isLeft(errorOrMaybeDocument)) {
+    if (E.isLeft(errorOrMaybeDocument)) {
       // the query failed
       return ResponseErrorQuery(
         "Error while retrieving the message",
-        errorOrMaybeDocument.value
+        errorOrMaybeDocument.left
       );
     }
 
-    const maybeDocument = errorOrMaybeDocument.value;
-    if (isNone(maybeDocument)) {
+    const maybeDocument = errorOrMaybeDocument.right;
+    if (O.isNone(maybeDocument)) {
       // the document does not exist
       return ResponseErrorNotFound(
         "Message not found",
@@ -149,20 +151,21 @@ export function GetMessageHandler(
     }
 
     // fetch the content of the message from the blob storage
-    const errorOrMaybeContent = await messageModel
-      .getContentFromBlob(blobService, retrievedMessage.id)
-      .run();
+    const errorOrMaybeContent = await messageModel.getContentFromBlob(
+      blobService,
+      retrievedMessage.id
+    )();
 
-    if (isLeft(errorOrMaybeContent)) {
+    if (E.isLeft(errorOrMaybeContent)) {
       context.log.error(
-        `GetMessageHandler|${JSON.stringify(errorOrMaybeContent.value)}`
+        `GetMessageHandler|${JSON.stringify(errorOrMaybeContent.left)}`
       );
       return ResponseErrorInternal(
-        `${errorOrMaybeContent.value.name}: ${errorOrMaybeContent.value.message}`
+        `${errorOrMaybeContent.left.name}: ${errorOrMaybeContent.left.message}`
       );
     }
 
-    const content = errorOrMaybeContent.value.toUndefined();
+    const content = pipe(errorOrMaybeContent.right, O.toUndefined);
 
     const message = {
       content,
@@ -173,38 +176,40 @@ export function GetMessageHandler(
       notificationModel,
       notificationStatusModel,
       retrievedMessage.id
-    ).run();
+    )();
 
-    if (isLeft(errorOrNotificationStatuses)) {
+    if (E.isLeft(errorOrNotificationStatuses)) {
       return ResponseErrorInternal(
-        `Error retrieving NotificationStatus: ${errorOrNotificationStatuses.value.name}|${errorOrNotificationStatuses.value.message}`
+        `Error retrieving NotificationStatus: ${errorOrNotificationStatuses.left.name}|${errorOrNotificationStatuses.left.message}`
       );
     }
-    const notificationStatuses = errorOrNotificationStatuses.value;
+    const notificationStatuses = errorOrNotificationStatuses.right;
 
-    const errorOrMaybeMessageStatus = await messageStatusModel
-      .findLastVersionByModelId([retrievedMessage.id])
-      .run();
+    const errorOrMaybeMessageStatus = await messageStatusModel.findLastVersionByModelId(
+      [retrievedMessage.id]
+    )();
 
-    if (isLeft(errorOrMaybeMessageStatus)) {
+    if (E.isLeft(errorOrMaybeMessageStatus)) {
       return ResponseErrorInternal(
         `Error retrieving MessageStatus: ${JSON.stringify(
-          errorOrMaybeMessageStatus.value
+          errorOrMaybeMessageStatus.left
         )}`
       );
     }
-    const maybeMessageStatus = errorOrMaybeMessageStatus.value;
+    const maybeMessageStatus = errorOrMaybeMessageStatus.right;
 
     const returnedMessage = {
       message,
-      notification: notificationStatuses.toUndefined(),
+      notification: pipe(notificationStatuses, O.toUndefined),
       // we do not return the status date-time
-      status: maybeMessageStatus
-        .map(messageStatus => messageStatus.status)
+      status: pipe(
+        maybeMessageStatus,
+        O.map(messageStatus => messageStatus.status),
         // when the message has been received but a MessageStatus
         // does not exist yet, the message is considered to be
         // in the ACCEPTED state (not yet stored in the inbox)
-        .getOrElse(MessageStatusValueEnum.ACCEPTED)
+        O.getOrElse(() => MessageStatusValueEnum.ACCEPTED)
+      )
     };
 
     return ResponseSuccessJson(returnedMessage);

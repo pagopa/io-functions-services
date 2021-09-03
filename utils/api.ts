@@ -1,11 +1,9 @@
-import {
-  fromLeft,
-  TaskEither,
-  taskEither,
-  tryCatch
-} from "fp-ts/lib/TaskEither";
+import * as TE from "fp-ts/lib/TaskEither";
+import * as E from "fp-ts/lib/Either";
 import * as t from "io-ts";
-import { IResponseType } from "italia-ts-commons/lib/requests";
+import { IResponseType } from "@pagopa/ts-commons/lib/requests";
+import { TaskEither } from "fp-ts/lib/TaskEither";
+import { pipe } from "fp-ts/lib/function";
 import { ILogger } from "./logging";
 import {
   ErrorResponses,
@@ -20,23 +18,29 @@ export const withApiRequestWrapper = <T>(
   >,
   successStatusCode: 200 | 201 | 202 = 200
 ): TaskEither<ErrorResponses, T> =>
-  tryCatch(
-    () => apiCallWithParams(),
-    errs => {
-      logger.logUnknown(errs);
-      return toDefaultResponseErrorInternal(errs);
-    }
-  ).foldTaskEither(
-    err => fromLeft(err),
-    errorOrResponse =>
-      errorOrResponse.fold(
-        errs => {
-          logger.logErrors(errs);
-          return fromLeft(toDefaultResponseErrorInternal(errs));
-        },
-        responseType =>
-          responseType.status !== successStatusCode
-            ? fromLeft(toErrorServerResponse(responseType))
-            : taskEither.of(responseType.value)
-      )
+  pipe(
+    TE.tryCatch(
+      () => apiCallWithParams(),
+      errs => {
+        logger.logUnknown(errs);
+        return toDefaultResponseErrorInternal(errs);
+      }
+    ),
+    TE.fold(
+      err => TE.left(err),
+      errorOrResponse =>
+        pipe(
+          errorOrResponse,
+          E.fold(
+            errs => {
+              logger.logErrors(errs);
+              return TE.left(toDefaultResponseErrorInternal(errs));
+            },
+            responseType =>
+              responseType.status !== successStatusCode
+                ? TE.left(toErrorServerResponse(responseType))
+                : TE.of(responseType.value)
+          )
+        )
+    )
   );
