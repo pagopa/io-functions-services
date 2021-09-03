@@ -25,7 +25,7 @@ import {
   clientIPAndCidrTuple as ipTuple
 } from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
 import * as express from "express";
-import { FiscalCode } from "italia-ts-commons/lib/strings";
+import { FiscalCode } from "@pagopa/ts-commons/lib/strings";
 import { initTelemetryClient } from "../utils/appinsights";
 
 import {
@@ -68,7 +68,7 @@ export function GetLimitedProfileHandler(
       incompleteServiceWhitelist,
       servicesPreferencesModel,
       telemetryClient
-    ).run();
+    )();
 }
 
 /**

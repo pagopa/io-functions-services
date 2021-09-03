@@ -12,31 +12,27 @@ import {
   RetrievedProfile
 } from "@pagopa/io-functions-commons/dist/src/models/profile";
 import { BlobService } from "azure-storage";
-import { isLeft } from "fp-ts/lib/Either";
-import { fromNullable, isNone } from "fp-ts/lib/Option";
-import { readableReport } from "italia-ts-commons/lib/reporters";
+import * as E from "fp-ts/lib/Either";
+import * as O from "fp-ts/lib/Option";
+import { readableReport } from "@pagopa/ts-commons/lib/reporters";
 import {
   makeServicesPreferencesDocumentId,
   ServicePreference,
   ServicesPreferencesModel
 } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
-import { NonEmptyString } from "italia-ts-commons/lib/strings";
-import { NonNegativeInteger } from "italia-ts-commons/lib/numbers";
+import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
+import { NonNegativeInteger } from "@pagopa/ts-commons/lib/numbers";
 import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
 import {
   ServicesPreferencesMode,
   ServicesPreferencesModeEnum
 } from "@pagopa/io-functions-commons/dist/generated/definitions/ServicesPreferencesMode";
-import { identity } from "fp-ts/lib/function";
-import {
-  fromLeft,
-  fromPredicate,
-  taskEither,
-  TaskEither
-} from "fp-ts/lib/TaskEither";
+import * as TE from "fp-ts/lib/TaskEither";
 import { isBefore } from "date-fns";
 import { UTCISODateFromString } from "@pagopa/ts-commons/lib/dates";
 import { CosmosErrors } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
+import { TaskEither } from "fp-ts/lib/TaskEither";
+import { pipe } from "fp-ts/lib/function";
 import { initTelemetryClient } from "../utils/appinsights";
 import { toHash } from "../utils/crypto";
 
@@ -171,51 +167,49 @@ const getServicePreferenceValueOrError = (
   ServicePreferenceError,
   ReadonlyArray<BlockedInboxOrChannelEnum>
 > =>
-  taskEither
-    .of<ServicePreferenceError, ServicesPreferencesMode>(
+  pipe(
+    TE.of<ServicePreferenceError, ServicesPreferencesMode>(
       userServicePreferencesMode
-    )
-    .chain(
-      fromPredicate(
+    ),
+    TE.chain(
+      TE.fromPredicate(
         mode => mode !== ServicesPreferencesModeEnum.LEGACY,
         skippedMode
       )
-    )
-    .map(_ =>
+    ),
+    TE.map(_ =>
       makeServicesPreferencesDocumentId(
         fiscalCode,
         serviceId,
         userServicePreferencesVersion as NonNegativeInteger
       )
-    )
-    .chain(documentId =>
-      servicePreferencesModel
-        .find([documentId, fiscalCode])
-        .mapLeft<ServicePreferenceError>(identity)
-    )
-    .chain(maybeServicePref =>
-      maybeServicePref.foldL<
-        TaskEither<
-          ServicePreferenceError,
-          ReadonlyArray<BlockedInboxOrChannelEnum>
-        >
-      >(
-        () =>
-          // if we do not have a preference we return an empty array only
-          // if we have preference mode AUTO, else we must return an array
-          // with BlockedInboxOrChannelEnum.INBOX
-          userServicePreferencesMode === ServicesPreferencesModeEnum.AUTO
-            ? taskEither.of([])
-            : userServicePreferencesMode === ServicesPreferencesModeEnum.MANUAL
-            ? taskEither.of([BlockedInboxOrChannelEnum.INBOX])
-            : // The following code should never happen
-            // LEGACY is managed above and any other case should be managed explicitly
-            userServicePreferencesMode === ServicesPreferencesModeEnum.LEGACY
-            ? fromLeft(skippedMode(userServicePreferencesMode))
-            : fromLeft(unexpectedValue(userServicePreferencesMode)),
-        s => taskEither.of(servicePreferenceToBlockedInboxOrChannels(s))
+    ),
+    TE.chainW(documentId =>
+      servicePreferencesModel.find([documentId, fiscalCode])
+    ),
+    TE.chain(maybeServicePref =>
+      pipe(
+        maybeServicePref,
+        O.foldW(
+          () =>
+            // if we do not have a preference we return an empty array only
+            // if we have preference mode AUTO, else we must return an array
+            // with BlockedInboxOrChannelEnum.INBOX
+            userServicePreferencesMode === ServicesPreferencesModeEnum.AUTO
+              ? TE.of([])
+              : userServicePreferencesMode ===
+                ServicesPreferencesModeEnum.MANUAL
+              ? TE.of([BlockedInboxOrChannelEnum.INBOX])
+              : // The following code should never happen
+              // LEGACY is managed above and any other case should be managed explicitly
+              userServicePreferencesMode === ServicesPreferencesModeEnum.LEGACY
+              ? TE.left(skippedMode(userServicePreferencesMode))
+              : TE.left(unexpectedValue(userServicePreferencesMode)),
+          s => TE.of(servicePreferenceToBlockedInboxOrChannels(s))
+        )
       )
-    );
+    )
+  );
 
 /**
  * Creates the message and makes it visible or throw an error
@@ -237,31 +231,27 @@ const createMessageOrThrow = async (
   // Save the content of the message to the blob storage.
   // In case of a retry this operation will overwrite the message content with itself
   // (this is fine as we don't know if the operation succeeded at first)
-  const errorOrAttachment = await lMessageModel
-    .storeContentAsBlob(
-      lBlobService,
-      newMessageWithoutContent.id,
-      createdMessageEvent.content
-    )
-    .run();
+  const errorOrAttachment = await lMessageModel.storeContentAsBlob(
+    lBlobService,
+    newMessageWithoutContent.id,
+    createdMessageEvent.content
+  )();
 
-  if (isLeft(errorOrAttachment)) {
-    context.log.error(`${logPrefix}|ERROR=${errorOrAttachment.value}`);
+  if (E.isLeft(errorOrAttachment)) {
+    context.log.error(`${logPrefix}|ERROR=${errorOrAttachment.left}`);
     throw new Error("Error while storing message content");
   }
 
   // Now that the message content has been stored, we can make the message
   // visible to getMessages by changing the pending flag to false
-  const updatedMessageOrError = await lMessageModel
-    .upsert({
-      ...newMessageWithoutContent,
-      isPending: false
-    })
-    .run();
+  const updatedMessageOrError = await lMessageModel.upsert({
+    ...newMessageWithoutContent,
+    isPending: false
+  })();
 
-  if (isLeft(updatedMessageOrError)) {
+  if (E.isLeft(updatedMessageOrError)) {
     context.log.error(
-      `${logPrefix}|ERROR=${JSON.stringify(updatedMessageOrError.value)}`
+      `${logPrefix}|ERROR=${JSON.stringify(updatedMessageOrError.left)}`
     );
     throw new Error("Error while updating message pending status");
   }
@@ -294,19 +284,19 @@ export const getStoreMessageContentActivityHandler = ({
 ): Promise<StoreMessageContentActivityResult> => {
   const createdMessageEventOrError = CreatedMessageEvent.decode(input);
 
-  if (createdMessageEventOrError.isLeft()) {
+  if (E.isLeft(createdMessageEventOrError)) {
     context.log.error(
       `StoreMessageContentActivity|Unable to parse CreatedMessageEvent`
     );
     context.log.verbose(
       `StoreMessageContentActivity|ERROR_DETAILS=${readableReport(
-        createdMessageEventOrError.value
+        createdMessageEventOrError.left
       )}`
     );
     return { kind: "FAILURE", reason: "BAD_DATA" };
   }
 
-  const createdMessageEvent = createdMessageEventOrError.value;
+  const createdMessageEvent = createdMessageEventOrError.right;
 
   const newMessageWithoutContent = createdMessageEvent.message;
 
@@ -316,23 +306,23 @@ export const getStoreMessageContentActivityHandler = ({
 
   // fetch user's profile associated to the fiscal code
   // of the recipient of the message
-  const errorOrMaybeProfile = await lProfileModel
-    .findLastVersionByModelId([newMessageWithoutContent.fiscalCode])
-    .run();
+  const errorOrMaybeProfile = await lProfileModel.findLastVersionByModelId([
+    newMessageWithoutContent.fiscalCode
+  ])();
 
-  if (isLeft(errorOrMaybeProfile)) {
+  if (E.isLeft(errorOrMaybeProfile)) {
     // The query has failed, we consider this as a transient error.
     // It's *critical* to trigger a retry here, otherwise no message
     // content will be saved.
     context.log.error(
-      `${logPrefix}|ERROR=${JSON.stringify(errorOrMaybeProfile.value)}`
+      `${logPrefix}|ERROR=${JSON.stringify(errorOrMaybeProfile.left)}`
     );
     throw Error("Error while fetching profile");
   }
 
-  const maybeProfile = errorOrMaybeProfile.value;
+  const maybeProfile = errorOrMaybeProfile.right;
 
-  if (isNone(maybeProfile)) {
+  if (O.isNone(maybeProfile)) {
     // the recipient doesn't have any profile yet
     context.log.warn(`${logPrefix}|RESULT=PROFILE_NOT_FOUND`);
     return { kind: "FAILURE", reason: "PROFILE_NOT_FOUND" };
@@ -356,15 +346,14 @@ export const getStoreMessageContentActivityHandler = ({
   //
   // check Service Preferences Settings
   //
-  const blockedInboxOrChannels = await getServicePreferenceValueOrError(
-    lServicePreferencesModel
-  )({
-    fiscalCode: newMessageWithoutContent.fiscalCode,
-    serviceId: newMessageWithoutContent.senderServiceId,
-    userServicePreferencesMode: profile.servicePreferencesSettings.mode,
-    userServicePreferencesVersion: profile.servicePreferencesSettings.version
-  })
-    .fold<ReadonlyArray<BlockedInboxOrChannelEnum>>(servicePreferenceError => {
+  const blockedInboxOrChannels = await pipe(
+    getServicePreferenceValueOrError(lServicePreferencesModel)({
+      fiscalCode: newMessageWithoutContent.fiscalCode,
+      serviceId: newMessageWithoutContent.senderServiceId,
+      userServicePreferencesMode: profile.servicePreferencesSettings.mode,
+      userServicePreferencesVersion: profile.servicePreferencesSettings.version
+    }),
+    TE.mapLeft(servicePreferenceError => {
       if (servicePreferenceError.kind !== "INVALID_MODE") {
         // The query has failed, we consider this as a transient error.
         context.log.error(`${logPrefix}|${servicePreferenceError.kind}`);
@@ -372,17 +361,22 @@ export const getStoreMessageContentActivityHandler = ({
       }
 
       // channels the user has blocked for this sender service
-      const result = fromNullable(profile.blockedInboxOrChannels)
-        .chain(bc => fromNullable(bc[newMessageWithoutContent.senderServiceId]))
-        .getOrElse([]);
+      const result = pipe(
+        O.fromNullable(profile.blockedInboxOrChannels),
+        O.chain(bc =>
+          O.fromNullable(bc[newMessageWithoutContent.senderServiceId])
+        ),
+        O.getOrElse(() => new Array<BlockedInboxOrChannelEnum>())
+      );
 
       context.log.verbose(
         `${logPrefix}|BLOCKED_CHANNELS=${JSON.stringify(result)}`
       );
 
       return result;
-    }, identity)
-    .run();
+    }),
+    TE.toUnion
+  )();
 
   // check whether the user has blocked inbox storage for messages from this sender
   const isMessageStorageBlockedForService =

@@ -8,9 +8,10 @@
 
 import * as t from "io-ts";
 
-import { Either, left, right } from "fp-ts/lib/Either";
+import * as E from "fp-ts/lib/Either";
+import * as O from "fp-ts/lib/Option";
 
-import { readableReport } from "italia-ts-commons/lib/reporters";
+import { readableReport } from "@pagopa/ts-commons/lib/reporters";
 
 import { Context } from "@azure/functions";
 
@@ -37,11 +38,13 @@ import { HttpsUrl } from "@pagopa/io-functions-commons/dist/generated/definition
 import { MessageContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageContent";
 import { SenderMetadata } from "@pagopa/io-functions-commons/dist/generated/definitions/SenderMetadata";
 
-import { fromEither, TaskEither, tryCatch } from "fp-ts/lib/TaskEither";
+import * as TE from "fp-ts/lib/TaskEither";
 import {
   TypeofApiCall,
   TypeofApiResponse
-} from "italia-ts-commons/lib/requests";
+} from "@pagopa/ts-commons/lib/requests";
+import { pipe } from "fp-ts/lib/function";
+import { TaskEither } from "fp-ts/lib/TaskEither";
 import { Notification } from "../generated/notifications/Notification";
 import { WebhookNotifyT } from "./client";
 
@@ -114,53 +117,60 @@ export const sendToWebhook = (
   disableWebhookMessageContent: boolean
   // eslint-disable-next-line max-params
 ): TaskEither<RuntimeError, TypeofApiResponse<WebhookNotifyT>> =>
-  tryCatch(
-    () =>
-      notifyApiCall({
-        notification: {
-          // If the service requires secure channels
-          // or the message content is disabled for all services
-          // we send an empty (generic) push notification
-          // generic content is provided by `io-backend` https://github.com/pagopa/io-backend/blob/v7.16.0/src/controllers/notificationController.ts#L62
-          message:
-            senderMetadata.requireSecureChannels || disableWebhookMessageContent
-              ? newMessageToPublic(message)
-              : newMessageToPublic(message, content),
-          sender_metadata: senderMetadataToPublic(senderMetadata)
-        },
-        webhookEndpoint
-      }),
-    err =>
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (err as any).name === "AbortError"
-        ? (TransientError(`Timeout calling webhook: ${err}`) as RuntimeError)
-        : (PermanentError(
-            `Unexpected exception raised calling webhook: ${err}`
-          ) as RuntimeError)
-  ).chain(response =>
-    fromEither(
-      response.fold<Either<RuntimeError, TypeofApiResponse<WebhookNotifyT>>>(
-        errs =>
-          left(
-            PermanentError(
-              `Decoding error calling webhook: ${readableReport(errs)}`
-            )
-          ),
-        r =>
-          r.status === 200
-            ? right(r)
-            : r.status === 500
-            ? // in case of server HTTP 5xx errors we trigger a retry
-              left(
-                TransientError(
-                  `Transient HTTP error calling webhook: ${r.status}`
-                )
-              )
-            : left(
+  pipe(
+    TE.tryCatch(
+      () =>
+        notifyApiCall({
+          notification: {
+            // If the service requires secure channels
+            // or the message content is disabled for all services
+            // we send an empty (generic) push notification
+            // generic content is provided by `io-backend` https://github.com/pagopa/io-backend/blob/v7.16.0/src/controllers/notificationController.ts#L62
+            message:
+              senderMetadata.requireSecureChannels ||
+              disableWebhookMessageContent
+                ? newMessageToPublic(message)
+                : newMessageToPublic(message, content),
+            sender_metadata: senderMetadataToPublic(senderMetadata)
+          },
+          webhookEndpoint
+        }),
+      err =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (err as any).name === "AbortError"
+          ? (TransientError(`Timeout calling webhook: ${err}`) as RuntimeError)
+          : (PermanentError(
+              `Unexpected exception raised calling webhook: ${err}`
+            ) as RuntimeError)
+    ),
+    TE.chain(response =>
+      TE.fromEither(
+        pipe(
+          response,
+          E.foldW(
+            errs =>
+              E.left(
                 PermanentError(
-                  `Permanent HTTP error calling webhook: ${r.status}`
+                  `Decoding error calling webhook: ${readableReport(errs)}`
                 )
-              )
+              ),
+            r =>
+              r.status === 200
+                ? E.right(r)
+                : r.status === 500
+                ? // in case of server HTTP 5xx errors we trigger a retry
+                  E.left(
+                    TransientError(
+                      `Transient HTTP error calling webhook: ${r.status}`
+                    )
+                  )
+                : E.left(
+                    PermanentError(
+                      `Permanent HTTP error calling webhook: ${r.status}`
+                    )
+                  )
+          )
+        )
       )
     )
   );
@@ -175,11 +185,11 @@ export const getWebhookNotificationActivityHandler = (
 ) => async (context: Context, input: unknown): Promise<unknown> => {
   const inputOrError = WebhookNotificationActivityInput.decode(input);
 
-  if (inputOrError.isLeft()) {
+  if (E.isLeft(inputOrError)) {
     context.log.error(`WebhookNotificationActivity|Cannot decode input`);
     context.log.verbose(
       `WebhookNotificationActivity|ERROR_DETAILS=${readableReport(
-        inputOrError.value
+        inputOrError.left
       )}`
     );
     return WebhookNotificationActivityResult.encode({
@@ -188,7 +198,7 @@ export const getWebhookNotificationActivityHandler = (
     });
   }
 
-  const { notificationEvent } = inputOrError.value;
+  const { notificationEvent } = inputOrError.right;
 
   const {
     content,
@@ -202,7 +212,7 @@ export const getWebhookNotificationActivityHandler = (
   // Check whether the message is expired
   const errorOrActiveMessage = ActiveMessage.decode(message);
 
-  if (errorOrActiveMessage.isLeft()) {
+  if (E.isLeft(errorOrActiveMessage)) {
     // if the message is expired no more processing is necessary
     context.log.warn(`${logPrefix}|RESULT=TTL_EXPIRED`);
     return WebhookNotificationActivityResult.encode({
@@ -212,19 +222,20 @@ export const getWebhookNotificationActivityHandler = (
   }
 
   // fetch the notification
-  const errorOrMaybeNotification = await lNotificationModel
-    .find([notificationId, message.id])
-    .run();
+  const errorOrMaybeNotification = await lNotificationModel.find([
+    notificationId,
+    message.id
+  ])();
 
-  if (errorOrMaybeNotification.isLeft()) {
-    const error = errorOrMaybeNotification.value;
+  if (E.isLeft(errorOrMaybeNotification)) {
+    const error = errorOrMaybeNotification.left;
     // we got an error while fetching the notification
     context.log.warn(`${logPrefix}|ERROR=${error.kind}`);
     throw new Error(`Error while fetching the notification: ${error.kind}`);
   }
 
-  const maybeWebhookNotification = errorOrMaybeNotification.value;
-  if (maybeWebhookNotification.isNone()) {
+  const maybeWebhookNotification = errorOrMaybeNotification.right;
+  if (O.isNone(maybeWebhookNotification)) {
     // it may happen that the object is not yet visible to this function due to latency
     // as the notification object is retrieved from database and we may be hitting a
     // replica that is not yet in sync - throwing an error will trigger a retry
@@ -236,9 +247,9 @@ export const getWebhookNotificationActivityHandler = (
     maybeWebhookNotification.value
   );
 
-  if (errorOrWebhookNotification.isLeft()) {
+  if (E.isLeft(errorOrWebhookNotification)) {
     // The notification object is not compatible with this code
-    const error = readableReport(errorOrWebhookNotification.value);
+    const error = readableReport(errorOrWebhookNotification.left);
     context.log.error(`${logPrefix}|ERROR`);
     context.log.verbose(`${logPrefix}|ERROR_DETAILS=${error}`);
     return WebhookNotificationActivityResult.encode({
@@ -247,7 +258,7 @@ export const getWebhookNotificationActivityHandler = (
     });
   }
 
-  const webhookNotification = errorOrWebhookNotification.value.channels.WEBHOOK;
+  const webhookNotification = errorOrWebhookNotification.right.channels.WEBHOOK;
 
   const sendResult = await sendToWebhook(
     notifyApiCall,
@@ -256,9 +267,9 @@ export const getWebhookNotificationActivityHandler = (
     content,
     senderMetadata,
     disableWebhookMessageContent
-  ).run();
-  if (sendResult.isLeft()) {
-    const error = sendResult.value;
+  )();
+  if (E.isLeft(sendResult)) {
+    const error = sendResult.left;
     context.log.error(`${logPrefix}|ERROR=${error.message}`);
     if (isTransientError(error)) {
       throw new Error(`Error while calling webhook: ${error.message}`);

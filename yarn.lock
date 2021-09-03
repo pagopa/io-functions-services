@@ -739,20 +739,19 @@
     eslint-plugin-sonarjs "^0.5.0"
     prettier "^2.1.2"
 
-"@pagopa/io-functions-commons@^20.6.6":
-  version "20.6.6"
-  resolved "https://registry.yarnpkg.com/@pagopa/io-functions-commons/-/io-functions-commons-20.6.6.tgz#973027c4a51fd2f1f4a7218094f144faba40c875"
-  integrity sha512-SWxJpEW1KfHAE7WMfPUXnX0JOMJrupWNXItKyjx3tNmZw7EzfvRBfi7y4c2ysX0CpkcWq0hewhl8XT8ZEWH//w==
+"@pagopa/io-functions-commons@../../commons/io-functions-commons/pagopa-io-functions-commons-21.0.0.tgz":
+  version "21.0.0"
+  resolved "../../commons/io-functions-commons/pagopa-io-functions-commons-21.0.0.tgz#ca4396f60b0a6c1ca0bfa266cfdad76acd6830fe"
   dependencies:
     "@azure/cosmos" "^3.11.5"
-    "@pagopa/ts-commons" "^9.5.1"
+    "@pagopa/ts-commons" "^10.0.0"
     applicationinsights "^1.8.10"
     azure-storage "^2.10.4"
     cidr-matcher "^2.1.1"
-    fp-ts "1.17.4"
+    fp-ts "^2.11.1"
     helmet "^4.6.0"
     helmet-csp "^2.5.1"
-    io-ts "1.8.5"
+    io-ts "^2.2.16"
     node-fetch "^2.6.1"
     nodemailer "^6.6.1"
     nodemailer-sendgrid "^1.0.3"
@@ -766,12 +765,11 @@
     unified "^9.2.1"
     winston "^3.1.0"
 
-"@pagopa/openapi-codegen-ts@^9.2.0":
+"@pagopa/openapi-codegen-ts@../../utils/openapi-codegen-ts/pagopa-openapi-codegen-ts-9.2.0.tgz":
   version "9.2.0"
-  resolved "https://registry.yarnpkg.com/@pagopa/openapi-codegen-ts/-/openapi-codegen-ts-9.2.0.tgz#032936e3d0b5673bbd2013e120e3a7b029facefd"
-  integrity sha512-B7w8/lSap5cEs7TBpBhlHCSMzqEFkr5oU6KLj6pXwSvO38F/l3Ts7ArphtpmjUEj6LOS6Zj+hRhB3CAumR7MNQ==
+  resolved "../../utils/openapi-codegen-ts/pagopa-openapi-codegen-ts-9.2.0.tgz#93dddfce5f86b0f9efbf4d5af4e6c371084575e3"
   dependencies:
-    "@pagopa/ts-commons" "^9.2.0"
+    "@pagopa/ts-commons" "../../commons/io-ts-commons/pagopa-ts-commons-10.0.0.tgz"
     fs-extra "^6.0.0"
     nunjucks "^3.2.2"
     prettier "^1.12.1"
@@ -788,8 +786,8 @@
     abort-controller "^3.0.0"
     agentkeepalive "^4.1.4"
     applicationinsights "^1.8.10"
-    fp-ts "1.17.4"
-    io-ts "1.8.5"
+    fp-ts "^2.10.5"
+    io-ts "^2.2.16"
     json-set-map "^1.1.2"
     node-fetch "^2.6.0"
     validator "^10.1.0"
@@ -1242,7 +1240,7 @@ agent-base@6:
   dependencies:
     debug "4"
 
-agentkeepalive@^4.1.2, agentkeepalive@^4.1.4:
+agentkeepalive@^4.1.4:
   version "4.1.4"
   resolved "https://registry.yarnpkg.com/agentkeepalive/-/agentkeepalive-4.1.4.tgz#d928028a4862cb11718e55227872e842a44c945b"
   integrity sha512-+V/rGa3EuU74H6wR04plBb7Ks10FbtUQgRj/FQOG7uUIEuaINI+AiqJR1k6t3SVNs7o7ZjIdus6706qqzVq8jQ==
@@ -3328,10 +3326,10 @@ forwarded@0.2.0:
   resolved "https://registry.yarnpkg.com/forwarded/-/forwarded-0.2.0.tgz#2269936428aad4c15c7ebe9779a84bf0b2a81811"
   integrity sha512-buRG0fpBtRHSTCOASe6hD258tEubFoRLb4ZNA6NxMVHNw2gOcwHo9wyablzMzOA5z9xA9L1KNjk/Nt6MT9aYow==
 
-fp-ts@1.17.4, fp-ts@^1.0.0:
-  version "1.17.4"
-  resolved "https://registry.yarnpkg.com/fp-ts/-/fp-ts-1.17.4.tgz#f41eeeb2a8924b51b11521f93f5f59d28d0503be"
-  integrity sha512-OaIM5w0FceJm6zO0OjMY05Rdg02nlFCpilTrMitzGnHORh/8neP0NH9OcRvnGQdOEh2T5xjtcutzzctvWOQtCQ==
+fp-ts@^2.10.5, fp-ts@^2.11.1:
+  version "2.11.1"
+  resolved "https://registry.yarnpkg.com/fp-ts/-/fp-ts-2.11.1.tgz#b1eeb2540728b6328542664888442f8f805d2443"
+  integrity sha512-CJOfs+Heq/erkE5mqH2mhpsxCKABGmcLyeEwPxtbTlkLkItGUs6bmk2WqjB2SgoVwNwzTE5iKjPQJiq06CPs5g==
 
 fragment-cache@^0.2.1:
   version "0.2.1"
@@ -3918,12 +3916,10 @@ io-functions-express@^0.1.1:
   resolved "https://registry.yarnpkg.com/io-functions-express/-/io-functions-express-0.1.1.tgz#6ae954fe89ec1d797c5e5d10eca5e77f08ff4a4d"
   integrity sha512-Co7sovRyB0lxgU6NFh5v72Apude3XbgKQtqA7slryvKoEqLAvlnLU7DtsYVoF62O3ZJdtSHYf9JWuhDc/di1mg==
 
-io-ts@1.8.5:
-  version "1.8.5"
-  resolved "https://registry.yarnpkg.com/io-ts/-/io-ts-1.8.5.tgz#2e102f7f518abe17b0f7e7ede0db54a4c4ddc188"
-  integrity sha512-4HzDeg7mTygFjFIKh7ajBSanoVaFryYSFI0ocdwndSWl3eWQXhg3wVR0WI+Li5Vq11TIsoIngQszVbN4dy//9A==
-  dependencies:
-    fp-ts "^1.0.0"
+io-ts@^2.2.16:
+  version "2.2.16"
+  resolved "https://registry.yarnpkg.com/io-ts/-/io-ts-2.2.16.tgz#597dffa03db1913fc318c9c6df6931cb4ed808b2"
+  integrity sha512-y5TTSa6VP6le0hhmIyN0dqEXkrZeJLeC5KApJq6VLci3UEKF80lZ+KuoUs02RhBxNWlrqSNxzfI7otLX1Euv8Q==
 
 ip6addr@^0.2.2:
   version "0.2.3"
@@ -4319,20 +4315,6 @@ istanbul-reports@^2.2.6:
   integrity sha512-uu1F/L1o5Y6LzPVSVZXNOoD/KXpJue9aeLRd0sM9uMXfZvzomB0WxVamWb5ue8kA2vVWEmW7EG+A5n3f1kqHKg==
   dependencies:
     html-escaper "^2.0.0"
-
-italia-ts-commons@^8.6.0:
-  version "8.6.0"
-  resolved "https://registry.yarnpkg.com/italia-ts-commons/-/italia-ts-commons-8.6.0.tgz#d0e944ae7fb52d63ec016e172e6950529924f2fb"
-  integrity sha512-fMBhaqcGa5GD7/PmXWbjnCVUGcUWuRnZ5wF0hswkh0UMCGSozg3t3neSAqZGTF3eZaUEUk9WLkYSpTNxfeH1jw==
-  dependencies:
-    abort-controller "^3.0.0"
-    agentkeepalive "^4.1.2"
-    applicationinsights "^1.7.4"
-    fp-ts "1.17.4"
-    io-ts "1.8.5"
-    json-set-map "^1.0.2"
-    node-fetch "^2.6.0"
-    validator "^10.1.0"
 
 jest-changed-files@^24.9.0:
   version "24.9.0"
@@ -4846,7 +4828,7 @@ json-schema@0.2.3:
   resolved "https://registry.yarnpkg.com/json-schema/-/json-schema-0.2.3.tgz#b480c892e59a2f05954ce727bd3f2a4e882f9e13"
   integrity sha1-tIDIkuWaLwWVTOcnvT8qTogvnhM=
 
-json-set-map@^1.0.2, json-set-map@^1.1.2:
+json-set-map@^1.1.2:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/json-set-map/-/json-set-map-1.1.2.tgz#536cbc6549d06e8af11f76cb4fbd441ed2389e6e"
   integrity sha512-x0TGwgcOG21jOa8wV1PWXDpSXUAKa1WuhMSHPBQhXU5Pb+4DdMrxOw5HMAWztVLP8KhSG5Kl5BoAOVF0aW63wA==

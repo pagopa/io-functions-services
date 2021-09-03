@@ -1,13 +1,14 @@
 ﻿import * as df from "durable-functions";
 import { IOrchestrationFunctionContext } from "durable-functions/lib/src/classes";
 
-import { readableReport } from "italia-ts-commons/lib/reporters";
+import { readableReport } from "@pagopa/ts-commons/lib/reporters";
 
 import { NotificationChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/NotificationChannel";
 import { NotificationChannelStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/NotificationChannelStatusValue";
 import { CreatedMessageEvent } from "@pagopa/io-functions-commons/dist/src/models/created_message_event";
 
 import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
+import * as E from "fp-ts/lib/Either";
 import {
   CreateNotificationActivityInput,
   CreateNotificationActivityResult
@@ -38,13 +39,13 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
 
   // decode input CreatedMessageEvent
   const errorOrCreatedMessageEvent = CreatedMessageEvent.decode(input);
-  if (errorOrCreatedMessageEvent.isLeft()) {
+  if (E.isLeft(errorOrCreatedMessageEvent)) {
     context.log.error(
       `CreatedMessageOrchestrator|ORCHESTRATOR_ID=${context.df.instanceId}|ERROR=DECODE_ERROR`
     );
     context.log.verbose(
       `CreatedMessageOrchestrator|ERROR_DETAILS=${readableReport(
-        errorOrCreatedMessageEvent.value
+        errorOrCreatedMessageEvent.left
       )}`
     );
 
@@ -52,7 +53,7 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
       {
         name: MessageProcessingEventNames.DECODE_INPUT,
         properties: {
-          details: readableReport(errorOrCreatedMessageEvent.value),
+          details: readableReport(errorOrCreatedMessageEvent.left),
           isSuccess: "false",
           messageId: "",
           serviceId: ""
@@ -64,7 +65,7 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
     return [];
   }
 
-  const createdMessageEvent = errorOrCreatedMessageEvent.value;
+  const createdMessageEvent = errorOrCreatedMessageEvent.right;
   const newMessageWithContent = createdMessageEvent.message;
 
   const logPrefix = `CreatedMessageOrchestrator|ORCHESTRATOR_ID=${context.df.instanceId}|MESSAGE_ID=${newMessageWithContent.id}`;
@@ -88,11 +89,11 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
       storeMessageContentActivityResultJson
     );
 
-    if (storeMessageContentActivityResultOrError.isLeft()) {
+    if (E.isLeft(storeMessageContentActivityResultOrError)) {
       context.log.error(`${logPrefix}|ERROR=DECODE_ERROR`);
       context.log.verbose(
         `${logPrefix}|ERROR_DETAILS=${readableReport(
-          storeMessageContentActivityResultOrError.value
+          storeMessageContentActivityResultOrError.left
         )}`
       );
 
@@ -101,7 +102,7 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
           name: MessageProcessingEventNames.STORE_MESSAGE_DECODE,
           properties: {
             details: readableReport(
-              storeMessageContentActivityResultOrError.value
+              storeMessageContentActivityResultOrError.left
             ),
             isSuccess: "false",
             messageId: newMessageWithContent.id,
@@ -115,7 +116,7 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
     }
 
     const storeMessageContentActivityResult =
-      storeMessageContentActivityResultOrError.value;
+      storeMessageContentActivityResultOrError.right;
 
     context.log.verbose(
       `${logPrefix}|StoreMessageContentActivity completed|RESULT=${storeMessageContentActivityResult.kind}` +
@@ -174,11 +175,11 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
       createNotificationActivityResultJson
     );
 
-    if (createNotificationActivityResultOrError.isLeft()) {
+    if (E.isLeft(createNotificationActivityResultOrError)) {
       context.log.error(`${logPrefix}|ERROR=DECODE_ERROR`);
       context.log.verbose(
         `${logPrefix}|ERROR_DETAILS=${readableReport(
-          createNotificationActivityResultOrError.value
+          createNotificationActivityResultOrError.left
         )}`
       );
 
@@ -187,7 +188,7 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
           name: MessageProcessingEventNames.UPDATE_NOTIFICATION_STATUS,
           properties: {
             details: readableReport(
-              createNotificationActivityResultOrError.value
+              createNotificationActivityResultOrError.left
             ),
             isSuccess: "false",
             messageId: newMessageWithContent.id,
@@ -213,7 +214,7 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
     );
 
     const createNotificationActivityResult =
-      createNotificationActivityResultOrError.value;
+      createNotificationActivityResultOrError.right;
 
     if (createNotificationActivityResult.kind === "none") {
       // no channel configured, no notifications need to be delivered
@@ -257,17 +258,17 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
           emailNotificationActivityResultJson
         );
 
-        if (emailNotificationActivityResultOrError.isLeft()) {
+        if (E.isLeft(emailNotificationActivityResultOrError)) {
           context.log.error(
             `${logPrefix}|ERROR=DECODE_ERROR|DETAILS=${readableReport(
-              emailNotificationActivityResultOrError.value
+              emailNotificationActivityResultOrError.left
             )}`
           );
           // not that the activity may have succeeded but we cannot decode its
           // result, so we can't even update the notification status
         } else {
           const emailNotificationActivityResult =
-            emailNotificationActivityResultOrError.value;
+            emailNotificationActivityResultOrError.right;
 
           if (emailNotificationActivityResult.kind === "FAILURE") {
             context.log.error(
@@ -382,17 +383,17 @@ function* handler(context: IOrchestrationFunctionContext): Generator<unknown> {
           webhookNotificationActivityResultJson
         );
 
-        if (webhookNotificationActivityResultOrError.isLeft()) {
+        if (E.isLeft(webhookNotificationActivityResultOrError)) {
           context.log.error(
             `${logPrefix}|ERROR=DECODE_ERROR|DETAILS=${readableReport(
-              webhookNotificationActivityResultOrError.value
+              webhookNotificationActivityResultOrError.left
             )}`
           );
           // not that the activity may have succeeded but we cannot decode its
           // result, so we can't even update the notification status
         } else {
           const webhookNotificationActivityResult =
-            webhookNotificationActivityResultOrError.value;
+            webhookNotificationActivityResultOrError.right;
 
           if (webhookNotificationActivityResult.kind === "FAILURE") {
             context.log.error(

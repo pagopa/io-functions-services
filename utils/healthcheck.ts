@@ -6,17 +6,14 @@ import {
   createQueueService,
   createTableService
 } from "azure-storage";
-import { sequenceT } from "fp-ts/lib/Apply";
-import { array } from "fp-ts/lib/Array";
-import { toError } from "fp-ts/lib/Either";
-import {
-  fromEither,
-  taskEither,
-  TaskEither,
-  tryCatch
-} from "fp-ts/lib/TaskEither";
-import { readableReport } from "italia-ts-commons/lib/reporters";
+import * as AP from "fp-ts/lib/Apply";
+import * as A from "fp-ts/lib/Array";
+import * as E from "fp-ts/lib/Either";
+import * as TE from "fp-ts/lib/TaskEither";
+import { readableReport } from "@pagopa/ts-commons/lib/reporters";
 import fetch from "node-fetch";
+import { TaskEither } from "fp-ts/lib/TaskEither";
+import { pipe } from "fp-ts/lib/function";
 import { getConfig, IConfig } from "./config";
 
 type ProblemSource = "AzureCosmosDB" | "AzureStorage" | "Config" | "Url";
@@ -39,7 +36,7 @@ const formatProblem = <S extends ProblemSource>(
 const toHealthProblems = <S extends ProblemSource>(source: S) => (
   e: unknown
 ): ReadonlyArray<HealthProblem<S>> => [
-  formatProblem(source, toError(e).message)
+  formatProblem(source, E.toError(e).message)
 ];
 
 /**
@@ -48,10 +45,13 @@ const toHealthProblems = <S extends ProblemSource>(source: S) => (
  * @returns either true or an array of error messages
  */
 export const checkConfigHealth = (): HealthCheck<"Config", IConfig> =>
-  fromEither(getConfig()).mapLeft(errors =>
-    errors.map(e =>
-      // give each problem its own line
-      formatProblem("Config", readableReport([e]))
+  pipe(
+    TE.fromEither(getConfig()),
+    TE.mapLeft(errors =>
+      errors.map(e =>
+        // give each problem its own line
+        formatProblem("Config", readableReport([e]))
+      )
     )
   );
 
@@ -67,13 +67,16 @@ export const checkAzureCosmosDbHealth = (
   dbUri: string,
   dbKey?: string
 ): HealthCheck<"AzureCosmosDB", true> =>
-  tryCatch(() => {
-    const client = new CosmosClient({
-      endpoint: dbUri,
-      key: dbKey
-    });
-    return client.getDatabaseAccount();
-  }, toHealthProblems("AzureCosmosDB")).map(_ => true);
+  pipe(
+    TE.tryCatch(() => {
+      const client = new CosmosClient({
+        endpoint: dbUri,
+        key: dbKey
+      });
+      return client.getDatabaseAccount();
+    }, toHealthProblems("AzureCosmosDB")),
+    TE.map(_ => true)
+  );
 
 /**
  * Check the application can connect to an Azure Storage
@@ -85,8 +88,8 @@ export const checkAzureCosmosDbHealth = (
 export const checkAzureStorageHealth = (
   connStr: string
 ): HealthCheck<"AzureStorage"> =>
-  array
-    .sequence(taskEither)(
+  pipe(
+    A.sequence(TE.taskEither)(
       // try to instantiate a client for each product of azure storage
       [
         createBlobService,
@@ -96,7 +99,7 @@ export const checkAzureStorageHealth = (
       ]
         // for each, create a task that wraps getServiceProperties
         .map(createService =>
-          tryCatch(
+          TE.tryCatch(
             () =>
               new Promise<
                 azurestorageCommon.models.ServicePropertiesResult.ServiceProperties
@@ -111,8 +114,9 @@ export const checkAzureStorageHealth = (
             toHealthProblems("AzureStorage")
           )
         )
-    )
-    .map(_ => true);
+    ),
+    TE.map(_ => true)
+  );
 
 /**
  * Check a url is reachable
@@ -122,8 +126,9 @@ export const checkAzureStorageHealth = (
  * @returns either true or an array of error messages
  */
 export const checkUrlHealth = (url: string): HealthCheck<"Url", true> =>
-  tryCatch(() => fetch(url, { method: "HEAD" }), toHealthProblems("Url")).map(
-    _ => true
+  pipe(
+    TE.tryCatch(() => fetch(url, { method: "HEAD" }), toHealthProblems("Url")),
+    TE.map(_ => true)
   );
 
 /**
@@ -132,12 +137,12 @@ export const checkUrlHealth = (url: string): HealthCheck<"Url", true> =>
  * @returns either true or an array of error messages
  */
 export const checkApplicationHealth = (): HealthCheck<ProblemSource, true> =>
-  taskEither
-    .of<ReadonlyArray<HealthProblem<ProblemSource>>, void>(void 0)
-    .chain(_ => checkConfigHealth())
-    .chain(config =>
+  pipe(
+    TE.of<ReadonlyArray<HealthProblem<ProblemSource>>, void>(void 0),
+    TE.chain(_ => checkConfigHealth()),
+    TE.chain(config =>
       // TODO: once we upgrade to fp-ts >= 1.19 we can use Validation to collect all errors, not just the first to happen
-      sequenceT(taskEither)<
+      AP.sequenceT(TE.taskEither)<
         ReadonlyArray<HealthProblem<ProblemSource>>,
         // eslint-disable-next-line functional/prefer-readonly-type
         Array<TaskEither<ReadonlyArray<HealthProblem<ProblemSource>>, true>>
@@ -146,5 +151,6 @@ export const checkApplicationHealth = (): HealthCheck<ProblemSource, true> =>
         checkAzureStorageHealth(config.QueueStorageConnection),
         checkUrlHealth(config.WEBHOOK_CHANNEL_URL)
       )
-    )
-    .map(_ => true);
+    ),
+    TE.map(_ => true)
+  );

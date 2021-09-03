@@ -17,6 +17,8 @@ import {
   NOTIFICATION_COLLECTION_NAME,
   NotificationModel
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
+import * as E from "fp-ts/lib/Either";
+import { pipe } from "fp-ts/lib/function";
 import { cosmosdbInstance } from "../utils/cosmosdb";
 
 import { getConfigOrThrow } from "../utils/config";
@@ -24,13 +26,14 @@ import { getCreateNotificationActivityHandler } from "./handler";
 
 const config = getConfigOrThrow();
 
-const sandboxFiscalCode = FiscalCode.decode(
-  config.SANDBOX_FISCAL_CODE
-).getOrElseL(_ => {
-  throw new Error(
-    `Check that the environment variable SANDBOX_FISCAL_CODE is set to a valid FiscalCode`
-  );
-});
+const sandboxFiscalCode = pipe(
+  FiscalCode.decode(config.SANDBOX_FISCAL_CODE),
+  E.getOrElse(_ => {
+    throw new Error(
+      `Check that the environment variable SANDBOX_FISCAL_CODE is set to a valid FiscalCode`
+    );
+  })
+);
 
 const emailNotificationServiceBlackList =
   config.EMAIL_NOTIFICATION_SERVICE_BLACKLIST;
@@ -42,13 +45,14 @@ const notificationModel = new NotificationModel(
   cosmosdbInstance.container(NOTIFICATION_COLLECTION_NAME)
 );
 
-const defaultWebhookUrl = HttpsUrl.decode(
-  config.WEBHOOK_CHANNEL_URL
-).getOrElseL(_ => {
-  throw new Error(
-    `Check that the environment variable WEBHOOK_CHANNEL_URL is set to a valid URL`
-  );
-});
+const defaultWebhookUrl = pipe(
+  HttpsUrl.decode(config.WEBHOOK_CHANNEL_URL),
+  E.getOrElse(_ => {
+    throw new Error(
+      `Check that the environment variable WEBHOOK_CHANNEL_URL is set to a valid URL`
+    );
+  })
+);
 
 const activityFunctionHandler: AzureFunction = getCreateNotificationActivityHandler(
   notificationModel,

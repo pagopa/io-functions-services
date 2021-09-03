@@ -21,8 +21,8 @@ import {
 import {
   IResponseSuccessJson,
   ResponseSuccessJson
-} from "italia-ts-commons/lib/responses";
-import { EmailString, NonEmptyString } from "italia-ts-commons/lib/strings";
+} from "@pagopa/ts-commons/lib/responses";
+import { EmailString, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 
 import {
   checkSourceIpForHandler,
@@ -33,7 +33,8 @@ import { Context } from "@azure/functions";
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
-import { identity } from "fp-ts/lib/function";
+import { pipe } from "fp-ts/lib/function";
+import * as TE from "fp-ts/lib/TaskEither";
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import { APIClient } from "../clients/admin";
 import { UserInfo } from "../generated/api-admin/UserInfo";
@@ -79,23 +80,21 @@ export function GetUserServicesHandler(
 ): IGetUserServicesHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   return (_, __, ___, userAttributes) =>
-    getUserTask(
-      getLogger(_, logPrefix, "GetUser"),
-      apiClient,
-      userAttributes.email
-    )
-      .map(userInfo =>
+    pipe(
+      getUserTask(
+        getLogger(_, logPrefix, "GetUser"),
+        apiClient,
+        userAttributes.email
+      ),
+      TE.map(userInfo =>
         ResponseSuccessJson({
           items: userInfo.subscriptions.map(it =>
             ServiceId.encode(it.id as NonEmptyString)
           )
         })
-      )
-      .fold<IResponseSuccessJson<ServiceIdCollection> | ErrorResponses>(
-        identity,
-        identity
-      )
-      .run();
+      ),
+      TE.toUnion
+    )();
 }
 
 /**

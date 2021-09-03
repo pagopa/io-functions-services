@@ -23,8 +23,8 @@ import {
 import {
   IResponseSuccessJson,
   ResponseSuccessJson
-} from "italia-ts-commons/lib/responses";
-import { NonEmptyString } from "italia-ts-commons/lib/strings";
+} from "@pagopa/ts-commons/lib/responses";
+import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 
 import {
   checkSourceIpForHandler,
@@ -34,8 +34,9 @@ import {
 import { Context } from "@azure/functions";
 import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
-import { identity } from "fp-ts/lib/function";
+import { pipe } from "fp-ts/lib/function";
 import { TaskEither } from "fp-ts/lib/TaskEither";
+import * as TE from "fp-ts/lib/TaskEither";
 import { APIClient } from "../clients/admin";
 import { Service } from "../generated/api-admin/Service";
 import { SubscriptionKeys } from "../generated/api-admin/SubscriptionKeys";
@@ -99,30 +100,34 @@ const getSubscriptionKeysTask = (
 export function GetServiceHandler(apiClient: APIClient): IGetServiceHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   return (_, apiAuth, ___, ____, serviceId) =>
-    serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId)
-      .chain(() =>
-        getServiceTask(
-          getLogger(_, logPrefix, "GetService"),
-          apiClient,
-          serviceId
-        ).chain(service =>
-          getSubscriptionKeysTask(
-            getLogger(_, logPrefix, "GetSubscriptionKeys"),
+    pipe(
+      serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId),
+      TE.chain(() =>
+        pipe(
+          getServiceTask(
+            getLogger(_, logPrefix, "GetService"),
             apiClient,
             serviceId
-          ).map(subscriptionKeys =>
-            ResponseSuccessJson({
-              ...service,
-              ...subscriptionKeys
-            })
+          ),
+          TE.chain(service =>
+            pipe(
+              getSubscriptionKeysTask(
+                getLogger(_, logPrefix, "GetSubscriptionKeys"),
+                apiClient,
+                serviceId
+              ),
+              TE.map(subscriptionKeys =>
+                ResponseSuccessJson({
+                  ...service,
+                  ...subscriptionKeys
+                })
+              )
+            )
           )
         )
-      )
-      .fold<IResponseSuccessJson<ServiceWithSubscriptionKeys> | ErrorResponses>(
-        identity,
-        identity
-      )
-      .run();
+      ),
+      TE.toUnion
+    )();
 }
 
 /**
