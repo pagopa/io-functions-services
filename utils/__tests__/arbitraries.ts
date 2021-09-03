@@ -7,17 +7,21 @@ import { Service } from "@pagopa/io-functions-commons/dist/src/models/service";
 import { ClientIp } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
 import * as assert from "assert";
 import * as fc from "fast-check";
-import { some } from "fp-ts/lib/Option";
+
+import { flow, pipe } from "fp-ts/lib/function";
+import * as E from "fp-ts/lib/Either";
+import * as O from "fp-ts/lib/Option";
+
 import {
   NonNegativeInteger,
   WithinRangeInteger
-} from "italia-ts-commons/lib/numbers";
+} from "@pagopa/ts-commons/lib/numbers";
 import {
   EmailString,
   FiscalCode,
   NonEmptyString,
   PatternString
-} from "italia-ts-commons/lib/strings";
+} from "@pagopa/ts-commons/lib/strings";
 import { legacyProfileServicePreferencesSettings } from "../../__mocks__/mocks";
 
 //
@@ -70,7 +74,7 @@ export const fiscalCodeArrayArb = fc.array(fiscalCodeArb);
 
 export const fiscalCodeSetArb = fiscalCodeArrayArb.map(_ => new Set(_));
 
-export const clientIpArb = fc.ipV4().map(_ => some(_) as ClientIp);
+export const clientIpArb = fc.ipV4().map(_ => O.some(_) as ClientIp);
 
 const messageContentSubject = fc.string(10, 120);
 const messageContentMarkdown = fc.string(80, 10000);
@@ -78,12 +82,15 @@ const messageContentMarkdown = fc.string(80, 10000);
 export const newMessageArb = fc
   .tuple(messageContentSubject, messageContentMarkdown)
   .map(([subject, markdown]) =>
-    NewMessage.decode({
-      content: {
-        markdown,
-        subject
-      }
-    }).getOrElse(undefined)
+    pipe(
+      NewMessage.decode({
+        content: {
+          markdown,
+          subject
+        }
+      }),
+      E.getOrElse(undefined)
+    )
   )
   .filter(_ => _ !== undefined);
 
@@ -104,9 +111,7 @@ export const messageTimeToLiveArb = fc
 export const amountArb = fc
   .integer(1, 9999999999)
   .map(_ =>
-    WithinRangeInteger(1, 9999999999)
-      .decode(_)
-      .getOrElse(undefined)
+    pipe(WithinRangeInteger(1, 9999999999).decode(_), E.getOrElse(undefined))
   )
   .filter(_ => _ !== undefined);
 

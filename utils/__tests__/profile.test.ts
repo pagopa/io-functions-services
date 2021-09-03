@@ -1,6 +1,6 @@
 import * as fc from "fast-check";
 
-import { NonEmptyString } from "italia-ts-commons/lib/strings";
+import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 
 import { BlockedInboxOrChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
 
@@ -34,8 +34,13 @@ const mockTelemetryClient = ({
 } as unknown) as ReturnType<typeof initTelemetryClient>;
 
 import { ServicesPreferencesModel } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
+
 import { some, none } from "fp-ts/lib/Option";
-import { fromLeft, taskEither } from "fp-ts/lib/TaskEither";
+import { pipe } from "fp-ts/lib/function";
+import * as E from "fp-ts/lib/Either";
+import * as TE from "fp-ts/lib/TaskEither";
+import * as O from "fp-ts/lib/Option";
+
 import { UserGroup } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
 import { initTelemetryClient } from "../appinsights";
 
@@ -48,13 +53,16 @@ describe("isSenderAllowed", () => {
     const result = await isSenderAllowedLegacy(
       blockedInboxOrChannels,
       "01234567890" as NonEmptyString
-    ).run();
+    )();
 
-    result.fold(
-      _ => fail("Unexpected failure"),
-      isAllowed => {
-        expect(isAllowed).toBe(false);
-      }
+    pipe(
+      result,
+      E.fold(
+        _ => fail("Unexpected failure"),
+        isAllowed => {
+          expect(isAllowed).toBe(false);
+        }
+      )
     );
   });
 
@@ -64,13 +72,16 @@ describe("isSenderAllowed", () => {
     const result = await isSenderAllowedLegacy(
       blockedInboxOrChannels,
       "01234567890" as NonEmptyString
-    ).run();
+    )();
 
-    result.fold(
-      _ => fail("Unexpected failure"),
-      isAllowed => {
-        expect(isAllowed).toBe(true);
-      }
+    pipe(
+      result,
+      E.fold(
+        _ => fail("Unexpected failure"),
+        isAllowed => {
+          expect(isAllowed).toBe(true);
+        }
+      )
     );
   });
 });
@@ -112,7 +123,7 @@ const aRetrievedProfileWithAutoPreferences = {
 };
 
 const mockProfileFindLast = jest.fn(() =>
-  taskEither.of(some(aRetrievedProfileWithLegacyPreferences))
+  TE.of(some(aRetrievedProfileWithLegacyPreferences))
 );
 const mockProfileModel = ({
   findLastVersionByModelId: mockProfileFindLast
@@ -155,11 +166,9 @@ describe("getLimitedProfileTask", () => {
   `(
     "should $allowOrNot a sender if the user uses $mode subscription mode and $preferencesConfiguration",
     async ({ maybeProfile, maybePreference, expected }) => {
-      mockProfileFindLast.mockImplementationOnce(() =>
-        taskEither.of(maybeProfile)
-      );
+      mockProfileFindLast.mockImplementationOnce(() => TE.of(maybeProfile));
       mockServicePreferenceFind.mockImplementationOnce(() =>
-        taskEither.of(maybePreference)
+        TE.of(maybePreference)
       );
 
       const result = await getLimitedProfileTask(
@@ -171,7 +180,7 @@ describe("getLimitedProfileTask", () => {
         [],
         mockServicePreferenceModel,
         mockTelemetryClient
-      ).run();
+      )();
       result.apply(mockExpresseResponse);
 
       expect(result.kind).toBe("IResponseSuccessJson");
@@ -184,9 +193,9 @@ describe("getLimitedProfileTask", () => {
 
   it.each`
     scenario                                                   | responseKind                | maybeProfile
-    ${"the requested profile does not have the inbox enabled"} | ${"IResponseErrorNotFound"} | ${taskEither.of(some({ ...aRetrievedProfile, isInboxEnabled: false }))}
-    ${"the requested profile is not found in the db"}          | ${"IResponseErrorNotFound"} | ${taskEither.of(none)}
-    ${"a database error occurs"}                               | ${"IResponseErrorQuery"}    | ${fromLeft({})}
+    ${"the requested profile does not have the inbox enabled"} | ${"IResponseErrorNotFound"} | ${TE.of(some({ ...aRetrievedProfile, isInboxEnabled: false }))}
+    ${"the requested profile is not found in the db"}          | ${"IResponseErrorNotFound"} | ${TE.of(none)}
+    ${"a database error occurs"}                               | ${"IResponseErrorQuery"}    | ${TE.left({})}
   `(
     "should respond with $responseKind when $scenario",
     async ({ responseKind, maybeProfile }) => {
@@ -205,7 +214,7 @@ describe("getLimitedProfileTask", () => {
         [],
         mockServicePreferenceModel,
         mockTelemetryClient
-      ).run();
+      )();
 
       expect(mockProfileModel.findLastVersionByModelId).toHaveBeenCalledTimes(
         1
@@ -225,9 +234,7 @@ describe("getLimitedProfileTask", () => {
     "should respond with 403 IResponseErrorForbiddenNotAuthorizedForRecipient when $scenario",
     async ({ groups, service }) => {
       const mockProfileModel = ({
-        findLastVersionByModelId: jest.fn(() =>
-          taskEither.of(some(aRetrievedProfile))
-        )
+        findLastVersionByModelId: jest.fn(() => TE.of(some(aRetrievedProfile)))
       } as unknown) as ProfileModel;
       const response = await getLimitedProfileTask(
         {
@@ -248,7 +255,7 @@ describe("getLimitedProfileTask", () => {
         [],
         mockServicePreferenceModel,
         mockTelemetryClient
-      ).run();
+      )();
 
       expect(mockProfileModel.findLastVersionByModelId).not.toHaveBeenCalled();
 

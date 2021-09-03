@@ -120,6 +120,7 @@ export type CreateNotificationActivityResult = t.TypeOf<
 /**
  * Returns a function for handling createNotificationActivity
  */
+// eslint-disable-next-line max-lines-per-function
 export const getCreateNotificationActivityHandler = (
   lNotificationModel: NotificationModel,
   lDefaultWebhookUrl: HttpsUrl,

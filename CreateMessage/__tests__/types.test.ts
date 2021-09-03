@@ -1,9 +1,14 @@
 import { WithinRangeString } from "@pagopa/ts-commons/lib/strings";
 import * as t from "io-ts";
-import { toString } from "fp-ts/lib/function";
-import { readableReport } from "italia-ts-commons/lib/reporters";
+import { readableReport } from "@pagopa/ts-commons/lib/reporters";
 import { ApiNewMessageWithContentOf } from "../types";
 import { PaymentData } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentData";
+import { json } from "express";
+
+import { pipe } from "fp-ts/lib/function";
+import * as E from "fp-ts/lib/Either";
+
+const toString = (x: any) => JSON.stringify(x);
 
 const aMessageContent = { subject: "a".repeat(10), markdown: "a".repeat(80) };
 
@@ -23,19 +28,25 @@ describe("ApiNewMessageWithContentOf", () => {
     const codec = ApiNewMessageWithContentOf(pattern);
 
     // positive scenario: we expect a match
-    codec.decode(aMessageWithSuchSubject).fold(
-      e => fail(`Should have decoded the value: ${readableReport(e)}`),
-      e => {
-        expect(e.content.subject).toBe(aSubject);
-      }
+    pipe(
+      codec.decode(aMessageWithSuchSubject),
+      E.fold(
+        e => fail(`Should have decoded the value: ${readableReport(e)}`),
+        e => {
+          expect(e.content.subject).toBe(aSubject);
+        }
+      )
     );
 
     // negative scenario: we expect a no-match
-    codec.decode(aMessageWithDifferentSubject).fold(
-      _ => {
-        expect(true).toBe(true);
-      },
-      e => fail(`Should have not decoded the value: ${toString(e)}`)
+    pipe(
+      codec.decode(aMessageWithDifferentSubject),
+      E.fold(
+        _ => {
+          expect(true).toBe(true);
+        },
+        e => fail(`Should have not decoded the value: ${toString(e)}`)
+      )
     );
   });
 
@@ -67,27 +78,36 @@ describe("ApiNewMessageWithContentOf", () => {
     const codec = ApiNewMessageWithContentOf(pattern);
 
     // positive scenario: we expect a match
-    codec.decode(aMessageWithSuchPaymentData).fold(
-      e => fail(`Should have decoded the value: ${readableReport(e)}`),
-      e => {
-        expect(e.content.payment_data).toEqual(
-          expect.objectContaining(aPaymentData)
-        );
-      }
+    pipe(
+      codec.decode(aMessageWithSuchPaymentData),
+      E.fold(
+        e => fail(`Should have decoded the value: ${readableReport(e)}`),
+        e => {
+          expect(e.content.payment_data).toEqual(
+            expect.objectContaining(aPaymentData)
+          );
+        }
+      )
     );
 
     // negative scenario: we expect a no-match
-    codec.decode(aMessageWithNoPaymentData).fold(
-      _ => {
-        expect(true).toBe(true);
-      },
-      e => fail(`Should have not decoded the value: ${toString(e)}`)
+    pipe(
+      codec.decode(aMessageWithNoPaymentData),
+      E.fold(
+        _ => {
+          expect(true).toBe(true);
+        },
+        e => fail(`Should have not decoded the value: ${toString(e)}`)
+      )
     );
-    codec.decode(aMessageWithAnotherPaymentData).fold(
-      _ => {
-        expect(true).toBe(true);
-      },
-      e => fail(`Should have not decoded the value: ${toString(e)}`)
+    pipe(
+      codec.decode(aMessageWithAnotherPaymentData),
+      E.fold(
+        _ => {
+          expect(true).toBe(true);
+        },
+        e => fail(`Should have not decoded the value: ${toString(e)}`)
+      )
     );
   });
 });
