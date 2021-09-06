@@ -43,7 +43,7 @@
     "@types/jest": "^24.0.15",
     "@types/nodemailer": "^4.6.2",
     "auto-changelog": "^2.2.1",
-    "danger": "^4.0.2",
+    "danger": "^10.6.6",
     "dependency-check": "^4.1.0",
     "eslint-plugin-prettier": "^3.3.1",
     "fast-check": "^1.16.0",
