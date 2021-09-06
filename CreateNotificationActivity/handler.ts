@@ -42,7 +42,8 @@ const getEmailAddressFromProfile = (
   profile: RetrievedProfile
 ): Option<NotificationChannelEmail> =>
   pipe(
-    O.fromNullable(profile.email),
+    profile.email,
+    O.fromNullable,
     O.map(email => ({
       addressSource: NotificationAddressSourceEnum.PROFILE_ADDRESS,
       toAddress: email

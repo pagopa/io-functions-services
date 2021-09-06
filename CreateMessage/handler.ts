@@ -95,7 +95,9 @@ export const MessagePayloadMiddleware: IRequestMiddleware<
   ApiNewMessageWithDefaults
 > = request =>
   pipe(
-    TE.fromEither(ApiNewMessageWithDefaults.decode(request.body)),
+    request.body,
+    ApiNewMessageWithDefaults.decode,
+    TE.fromEither,
     TE.mapLeft(ResponseErrorFromValidationErrors(ApiNewMessageWithDefaults))
   )();
 
