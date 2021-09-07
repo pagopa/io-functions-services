@@ -100,10 +100,8 @@ export const isSenderAllowed = (
   }
 ): TaskEither<CosmosErrors | IUnexpectedValue, boolean> =>
   pipe(
-    TE.of<
-      CosmosErrors | IUnexpectedValue,
-      ReturnType<typeof makeServicesPreferencesDocumentId>
-    >(makeServicesPreferencesDocumentId(fiscalCode, serviceId, version)),
+    makeServicesPreferencesDocumentId(fiscalCode, serviceId, version),
+    TE.of,
     TE.chain(docId => servicesPreferencesModel.find([docId, fiscalCode])),
     TE.chain(maybeDoc =>
       pipe(
@@ -148,7 +146,8 @@ export const GetLimitedProfileByPOSTPayloadMiddleware: IRequestMiddleware<
 > = request =>
   Promise.resolve(
     pipe(
-      GetLimitedProfileByPOSTPayload.decode(request.body),
+      request.body,
+      GetLimitedProfileByPOSTPayload.decode,
       E.mapLeft(
         ResponseErrorFromValidationErrors(GetLimitedProfileByPOSTPayload)
       )
@@ -176,20 +175,19 @@ export const getLimitedProfileTask = (
 ): // eslint-disable-next-line max-params
 Task<IGetLimitedProfileResponses> =>
   pipe(
-    TE.of<IGetLimitedProfileFailureResponses, void>(void 0),
+    TE.of(void 0),
     TE.chain(() =>
       // Sandboxed accounts will receive 403
       // if they're not authorized to send a messages to this fiscal code.
       // This prevents leaking the information, to sandboxed account,
       // that the fiscal code belongs to a subscribed user
       pipe(
-        TE.fromEither(
-          canWriteMessage(
-            apiAuthorization.groups,
-            userAttributes.service.authorizedRecipients,
-            fiscalCode
-          )
+        canWriteMessage(
+          apiAuthorization.groups,
+          userAttributes.service.authorizedRecipients,
+          fiscalCode
         ),
+        TE.fromEither,
         TE.mapLeft(_ => ResponseErrorForbiddenNotAuthorizedForRecipient)
       )
     ), // Verify if the Service has the required quality to sent message
@@ -201,14 +199,13 @@ Task<IGetLimitedProfileResponses> =>
         ) &&
         !userAttributes.service.authorizedRecipients.has(fiscalCode)
       ) {
-        return TE.fromEither(
-          pipe(
-            ValidService.decode(userAttributes.service),
-            E.bimap(
-              _1 => ResponseErrorForbiddenNotAuthorizedForRecipient,
-              _1 => true
-            )
-          )
+        return pipe(
+          ValidService.decode(userAttributes.service),
+          E.bimap(
+            _1 => ResponseErrorForbiddenNotAuthorizedForRecipient,
+            _1 => true
+          ),
+          TE.fromEither
         );
       }
       return TE.fromEither(E.right(true));

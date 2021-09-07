@@ -46,7 +46,8 @@ const toHealthProblems = <S extends ProblemSource>(source: S) => (
  */
 export const checkConfigHealth = (): HealthCheck<"Config", IConfig> =>
   pipe(
-    TE.fromEither(getConfig()),
+    getConfig(),
+    TE.fromEither,
     TE.mapLeft(errors =>
       errors.map(e =>
         // give each problem its own line

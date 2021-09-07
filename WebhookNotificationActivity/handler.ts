@@ -43,7 +43,7 @@ import {
   TypeofApiCall,
   TypeofApiResponse
 } from "@pagopa/ts-commons/lib/requests";
-import { pipe } from "fp-ts/lib/function";
+import { flow, pipe } from "fp-ts/lib/function";
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import { Notification } from "../generated/notifications/Notification";
 import { WebhookNotifyT } from "./client";
@@ -143,34 +143,32 @@ export const sendToWebhook = (
               `Unexpected exception raised calling webhook: ${err}`
             ) as RuntimeError)
     ),
-    TE.chain(response =>
-      TE.fromEither(
-        pipe(
-          response,
-          E.foldW(
-            errs =>
-              E.left(
-                PermanentError(
-                  `Decoding error calling webhook: ${readableReport(errs)}`
+    TE.chain(
+      flow(
+        E.foldW(
+          errs =>
+            E.left(
+              PermanentError(
+                `Decoding error calling webhook: ${readableReport(errs)}`
+              )
+            ),
+          r =>
+            r.status === 200
+              ? E.right(r)
+              : r.status === 500
+              ? // in case of server HTTP 5xx errors we trigger a retry
+                E.left(
+                  TransientError(
+                    `Transient HTTP error calling webhook: ${r.status}`
+                  )
                 )
-              ),
-            r =>
-              r.status === 200
-                ? E.right(r)
-                : r.status === 500
-                ? // in case of server HTTP 5xx errors we trigger a retry
-                  E.left(
-                    TransientError(
-                      `Transient HTTP error calling webhook: ${r.status}`
-                    )
+              : E.left(
+                  PermanentError(
+                    `Permanent HTTP error calling webhook: ${r.status}`
                   )
-                : E.left(
-                    PermanentError(
-                      `Permanent HTTP error calling webhook: ${r.status}`
-                    )
-                  )
-          )
-        )
+                )
+        ),
+        TE.fromEither
       )
     )
   );
