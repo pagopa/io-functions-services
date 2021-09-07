@@ -27,6 +27,8 @@ import { UserInfo } from "../../generated/api-admin/UserInfo";
 import { ServicePayload } from "../../generated/definitions/ServicePayload";
 import { CreateServiceHandler } from "../handler";
 
+import * as E from "fp-ts/lib/Either";
+
 const mockContext = {
   // eslint-disable no-console
   log: {
@@ -34,11 +36,6 @@ const mockContext = {
     info: console.log
   }
 } as any;
-
-afterEach(() => {
-  jest.resetAllMocks();
-  jest.restoreAllMocks();
-});
 
 const anOrganizationFiscalCode = "01234567890" as OrganizationFiscalCode;
 const anEmail = "test@example.com" as EmailString;
@@ -118,20 +115,36 @@ const mockAppinsights = {
   trackEvent: jest.fn()
 };
 
-describe("CreateServiceHandler", () => {
-  it("should respond with a created service with subscriptionKeys by providing a servicePayload", async () => {
-    const apiClientMock = {
-      createService: jest.fn(() =>
-        Promise.resolve(right({ status: 200, value: aService }))
-      ),
-      createSubscription: jest.fn(() =>
-        Promise.resolve(right({ status: 200, value: aSubscription }))
-      ),
-      getUser: jest.fn(() =>
-        Promise.resolve(right({ status: 200, value: aUserInfo }))
-      )
-    };
+// --------------------
 
+const timeoutResult = async () => {
+  throw new Error("Timeout");
+};
+
+const createServiceOk = async () => E.right({ status: 200, value: aService });
+
+const createSubscriptionOk = async () =>
+  right({ status: 200, value: aSubscription });
+const createSubscriptionKO = (status: number) => async () => right({ status });
+
+const getUserOk = async () => right({ status: 200, value: aUserInfo });
+const getUserKO = (status: number) => async () => right({ status }) as any;
+
+const createServiceMock = jest.fn(createServiceOk);
+const createSubscriptionMock = jest.fn(createSubscriptionOk);
+const getUserMock = jest.fn(getUserOk);
+
+const apiClientMock = {
+  createService: createServiceMock,
+  createSubscription: createSubscriptionMock,
+  getUser: getUserMock
+};
+
+describe("CreateServiceHandler", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+  it("should respond with a created service with subscriptionKeys by providing a servicePayload", async () => {
     const createServiceHandler = CreateServiceHandler(
       mockAppinsights as any,
       apiClientMock as any,
@@ -161,18 +174,6 @@ describe("CreateServiceHandler", () => {
   });
 
   it("should create a service with token_name from ADB2C even if servicePayload metadata contains another token_name", async () => {
-    const apiClientMock = {
-      createService: jest.fn(() =>
-        Promise.resolve(right({ status: 200, value: aService }))
-      ),
-      createSubscription: jest.fn(() =>
-        Promise.resolve(right({ status: 200, value: aSubscription }))
-      ),
-      getUser: jest.fn(() =>
-        Promise.resolve(right({ status: 200, value: aUserInfo }))
-      )
-    };
-
     const createServiceHandler = CreateServiceHandler(
       mockAppinsights as any,
       apiClientMock as any,
@@ -207,12 +208,7 @@ describe("CreateServiceHandler", () => {
   });
 
   it("should respond with an internal error if createSubscription does not respond", async () => {
-    const apiClientMock = {
-      createService: jest.fn(() =>
-        Promise.resolve(right({ status: 200, value: aService }))
-      ),
-      createSubscription: jest.fn(() => Promise.reject(new Error("Timeout")))
-    };
+    createSubscriptionMock.mockImplementationOnce(timeoutResult);
 
     const createServiceHandler = CreateServiceHandler(
       mockAppinsights as any,
@@ -236,14 +232,9 @@ describe("CreateServiceHandler", () => {
   });
 
   it("should respond with an internal error if createSubscription returns Errors", async () => {
-    const apiClientMock = {
-      createService: jest.fn(() =>
-        Promise.resolve(right({ status: 200, value: aService }))
-      ),
-      createSubscription: jest.fn(() =>
-        Promise.resolve(left({ err: "ValidationError" }))
-      )
-    };
+    createSubscriptionMock.mockImplementationOnce(
+      () => Promise.resolve(left({ err: "ValidationError" })) as any
+    );
 
     jest
       .spyOn(reporters, "errorsToReadableMessages")
@@ -271,12 +262,9 @@ describe("CreateServiceHandler", () => {
   });
 
   it("should respond with an internal error if createSubscription returns Bad Request", async () => {
-    const apiClientMock = {
-      createService: jest.fn(() =>
-        Promise.resolve(right({ status: 200, value: aService }))
-      ),
-      createSubscription: jest.fn(() => Promise.resolve(right({ status: 400 })))
-    };
+    createSubscriptionMock.mockImplementationOnce(
+      createSubscriptionKO(400) as any
+    );
 
     const createServiceHandler = CreateServiceHandler(
       mockAppinsights as any,
@@ -301,12 +289,9 @@ describe("CreateServiceHandler", () => {
   });
 
   it("should respond with a Forbidden error if createSubscription returns Forbidden", async () => {
-    const apiClientMock = {
-      createService: jest.fn(() =>
-        Promise.resolve(right({ status: 200, value: aService }))
-      ),
-      createSubscription: jest.fn(() => Promise.resolve(right({ status: 403 })))
-    };
+    createSubscriptionMock.mockImplementationOnce(
+      createSubscriptionKO(403) as any
+    );
 
     const createServiceHandler = CreateServiceHandler(
       mockAppinsights as any,
@@ -330,12 +315,9 @@ describe("CreateServiceHandler", () => {
   });
 
   it("should respond with a Not found error if createSubscription returns Not found", async () => {
-    const apiClientMock = {
-      createService: jest.fn(() =>
-        Promise.resolve(right({ status: 200, value: aService }))
-      ),
-      createSubscription: jest.fn(() => Promise.resolve(right({ status: 404 })))
-    };
+    apiClientMock.createSubscription.mockImplementationOnce(
+      createSubscriptionKO(404) as any
+    );
 
     const createServiceHandler = CreateServiceHandler(
       mockAppinsights as any,
@@ -362,15 +344,7 @@ describe("CreateServiceHandler", () => {
   });
 
   it("should respond with an internal error if getUser does not respond", async () => {
-    const apiClientMock = {
-      createService: jest.fn(() =>
-        Promise.resolve(right({ status: 200, value: aService }))
-      ),
-      createSubscription: jest.fn(() =>
-        Promise.resolve(right({ status: 200, value: aSubscription }))
-      ),
-      getUser: jest.fn(() => Promise.reject(new Error("Timeout")))
-    };
+    getUserMock.mockImplementationOnce(timeoutResult);
 
     const createServiceHandler = CreateServiceHandler(
       mockAppinsights as any,
@@ -395,15 +369,9 @@ describe("CreateServiceHandler", () => {
   });
 
   it("should respond with an internal error if getService returns Errors", async () => {
-    const apiClientMock = {
-      createService: jest.fn(() =>
-        Promise.resolve(right({ status: 200, value: aService }))
-      ),
-      createSubscription: jest.fn(() =>
-        Promise.resolve(right({ status: 200, value: aSubscription }))
-      ),
-      getUser: jest.fn(() => Promise.resolve(left({ err: "ValidationError" })))
-    };
+    getUserMock.mockImplementationOnce(
+      async () => left({ err: "ValidationError" }) as any
+    );
 
     jest
       .spyOn(reporters, "errorsToReadableMessages")
@@ -431,15 +399,7 @@ describe("CreateServiceHandler", () => {
   });
 
   it("should respond with Not found if no user was found", async () => {
-    const apiClientMock = {
-      createService: jest.fn(() =>
-        Promise.resolve(right({ status: 200, value: aService }))
-      ),
-      createSubscription: jest.fn(() =>
-        Promise.resolve(right({ status: 200, value: aSubscription }))
-      ),
-      getUser: jest.fn(() => Promise.resolve(right({ status: 404 })))
-    };
+    getUserMock.mockImplementationOnce(getUserKO(404));
 
     const createServiceHandler = CreateServiceHandler(
       mockAppinsights as any,
@@ -467,15 +427,7 @@ describe("CreateServiceHandler", () => {
   });
 
   it("should respond with an internal error if getUser returns Bad request", async () => {
-    const apiClientMock = {
-      createService: jest.fn(() =>
-        Promise.resolve(right({ status: 200, value: aService }))
-      ),
-      createSubscription: jest.fn(() =>
-        Promise.resolve(right({ status: 200, value: aSubscription }))
-      ),
-      getUser: jest.fn(() => Promise.resolve(right({ status: 400 })))
-    };
+    getUserMock.mockImplementationOnce(getUserKO(400));
 
     const createServiceHandler = CreateServiceHandler(
       mockAppinsights as any,
@@ -500,15 +452,7 @@ describe("CreateServiceHandler", () => {
   });
 
   it("should respond with forbidden if getUser returns Forbidden", async () => {
-    const apiClientMock = {
-      createService: jest.fn(() =>
-        Promise.resolve(right({ status: 200, value: aService }))
-      ),
-      createSubscription: jest.fn(() =>
-        Promise.resolve(right({ status: 200, value: aSubscription }))
-      ),
-      getUser: jest.fn(() => Promise.resolve(right({ status: 403 })))
-    };
+    getUserMock.mockImplementationOnce(getUserKO(403));
 
     const createServiceHandler = CreateServiceHandler(
       mockAppinsights as any,
@@ -532,15 +476,7 @@ describe("CreateServiceHandler", () => {
     expect(result.kind).toBe("IResponseErrorForbiddenNotAuthorized");
   });
   it("should respond with an internal error if createService does not respond", async () => {
-    const apiClientMock = {
-      createService: jest.fn(() => Promise.reject(new Error("Timeout"))),
-      createSubscription: jest.fn(() =>
-        Promise.resolve(right({ status: 200, value: aSubscription }))
-      ),
-      getUser: jest.fn(() =>
-        Promise.resolve(right({ status: 200, value: aUserInfo }))
-      )
-    };
+    createServiceMock.mockImplementationOnce(timeoutResult);
 
     const createServiceHandler = CreateServiceHandler(
       mockAppinsights as any,
@@ -565,17 +501,9 @@ describe("CreateServiceHandler", () => {
   });
 
   it("should respond with an internal error if createService returns Errors", async () => {
-    const apiClientMock = {
-      createService: jest.fn(() =>
-        Promise.resolve(left({ err: "ValidationError" }))
-      ),
-      createSubscription: jest.fn(() =>
-        Promise.resolve(right({ status: 200, value: aSubscription }))
-      ),
-      getUser: jest.fn(() =>
-        Promise.resolve(right({ status: 200, value: aUserInfo }))
-      )
-    };
+    createServiceMock.mockImplementationOnce(
+      async () => E.left({ err: "ValidationError" }) as any
+    );
 
     jest
       .spyOn(reporters, "errorsToReadableMessages")
@@ -604,15 +532,9 @@ describe("CreateServiceHandler", () => {
   });
 
   it("should respond with Unauthorized if createService returns Unauthorized", async () => {
-    const apiClientMock = {
-      createService: jest.fn(() => Promise.resolve(right({ status: 401 }))),
-      createSubscription: jest.fn(() =>
-        Promise.resolve(right({ status: 200, value: aSubscription }))
-      ),
-      getUser: jest.fn(() =>
-        Promise.resolve(right({ status: 200, value: aUserInfo }))
-      )
-    };
+    createServiceMock.mockImplementationOnce(
+      async () => right({ status: 401 }) as any
+    );
 
     const createServiceHandler = CreateServiceHandler(
       mockAppinsights as any,

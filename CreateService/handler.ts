@@ -162,7 +162,7 @@ export function CreateServiceHandler(
       `${logPrefix}| Creating new service with subscriptionId=${subscriptionId}`
     );
     return pipe(
-      sequenceS(TE.ApplicativeSeq)({
+      sequenceS(TE.ApplicativePar)({
         subscription: createSubscriptionTask(
           getLogger(context, logPrefix, "CreateSubscription"),
           apiClient,
