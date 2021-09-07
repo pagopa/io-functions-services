@@ -49,6 +49,7 @@ import {
   NonEmptyString
 } from "@pagopa/ts-commons/lib/strings";
 import { pipe } from "fp-ts/lib/function";
+import { sequenceS } from "fp-ts/lib/Apply";
 import { APIClient } from "../clients/admin";
 import { Service } from "../generated/api-admin/Service";
 import { Subscription } from "../generated/api-admin/Subscription";
@@ -161,49 +162,45 @@ export function CreateServiceHandler(
       `${logPrefix}| Creating new service with subscriptionId=${subscriptionId}`
     );
     return pipe(
-      createSubscriptionTask(
-        getLogger(context, logPrefix, "CreateSubscription"),
-        apiClient,
-        userAttributes.email,
-        subscriptionId,
-        productName
-      ),
-      TE.chain(subscription =>
-        pipe(
-          getUserTask(
-            getLogger(context, logPrefix, "GetUser"),
-            apiClient,
-            userAttributes.email
-          ),
-          TE.chain(userInfo =>
-            pipe(
-              createServiceTask(
-                getLogger(context, logPrefix, "CreateService"),
-                apiClient,
-                servicePayload,
-                subscriptionId,
-                (sandboxFiscalCode as unknown) as FiscalCode,
-                userInfo.token_name
-              ),
-              TE.map(service => {
-                telemetryClient.trackEvent({
-                  name: "api.services.create",
-                  properties: {
-                    isVisible: String(service.is_visible),
-                    requesterUserEmail: userAttributes.email,
-                    subscriptionId
-                  }
-                });
-                return ResponseSuccessJson({
-                  ...service,
-                  primary_key: subscription.primary_key,
-                  secondary_key: subscription.secondary_key
-                });
-              })
-            )
-          )
+      sequenceS(TE.ApplicativeSeq)({
+        subscription: createSubscriptionTask(
+          getLogger(context, logPrefix, "CreateSubscription"),
+          apiClient,
+          userAttributes.email,
+          subscriptionId,
+          productName
+        ),
+        user: getUserTask(
+          getLogger(context, logPrefix, "GetUser"),
+          apiClient,
+          userAttributes.email
+        )
+      }),
+      TE.bind("service", ({ user }) =>
+        createServiceTask(
+          getLogger(context, logPrefix, "CreateService"),
+          apiClient,
+          servicePayload,
+          subscriptionId,
+          (sandboxFiscalCode as unknown) as FiscalCode,
+          user.token_name
         )
       ),
+      TE.map(({ service, subscription }) => {
+        telemetryClient.trackEvent({
+          name: "api.services.create",
+          properties: {
+            isVisible: String(service.is_visible),
+            requesterUserEmail: userAttributes.email,
+            subscriptionId
+          }
+        });
+        return ResponseSuccessJson({
+          ...service,
+          primary_key: subscription.primary_key,
+          secondary_key: subscription.secondary_key
+        });
+      }),
       TE.toUnion
     )();
   };

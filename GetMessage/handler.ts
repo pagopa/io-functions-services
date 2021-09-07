@@ -165,7 +165,7 @@ export function GetMessageHandler(
       );
     }
 
-    const content = pipe(errorOrMaybeContent.right, O.toUndefined);
+    const content = O.toUndefined(errorOrMaybeContent.right);
 
     const message = {
       content,

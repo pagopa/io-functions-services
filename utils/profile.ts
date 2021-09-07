@@ -200,7 +200,8 @@ Task<IGetLimitedProfileResponses> =>
         !userAttributes.service.authorizedRecipients.has(fiscalCode)
       ) {
         return pipe(
-          ValidService.decode(userAttributes.service),
+          userAttributes.service,
+          ValidService.decode,
           E.bimap(
             _1 => ResponseErrorForbiddenNotAuthorizedForRecipient,
             _1 => true

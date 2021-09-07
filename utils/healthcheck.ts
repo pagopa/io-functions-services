@@ -143,7 +143,7 @@ export const checkApplicationHealth = (): HealthCheck<ProblemSource, true> =>
     TE.chain(_ => checkConfigHealth()),
     TE.chain(config =>
       // TODO: once we upgrade to fp-ts >= 1.19 we can use Validation to collect all errors, not just the first to happen
-      AP.sequenceT(TE.taskEither)<
+      AP.sequenceT(TE.ApplicativeSeq)<
         ReadonlyArray<HealthProblem<ProblemSource>>,
         // eslint-disable-next-line functional/prefer-readonly-type
         Array<TaskEither<ReadonlyArray<HealthProblem<ProblemSource>>, true>>

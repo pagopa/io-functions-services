@@ -111,12 +111,12 @@ const getMockNotificationEvent = (
   }
 ) => {
   return pipe(
-    NotificationEvent.decode(
-      Object.assign({}, aNotificationEvent, {
-        content: messageContent,
-        message: aNotificationEvent.message
-      })
-    ),
+    {
+      ...aNotificationEvent,
+      content: messageContent,
+      message: aNotificationEvent.message
+    },
+    NotificationEvent.decode,
     E.getOrElseW(errs => {
       throw new Error(
         "Cannot deserialize NotificationEvent: " + readableReport(errs)
