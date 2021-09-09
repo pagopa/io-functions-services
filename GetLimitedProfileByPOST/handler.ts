@@ -68,7 +68,7 @@ export function GetLimitedProfileByPOSTHandler(
       incompleteServiceWhitelist,
       servicesPreferencesModel,
       telemetryClient
-    ).run();
+    )();
 }
 
 /**

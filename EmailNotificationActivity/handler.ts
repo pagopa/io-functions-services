@@ -1,12 +1,16 @@
 import * as t from "io-ts";
+import * as E from "fp-ts/lib/Either";
+import * as O from "fp-ts/lib/Option";
+import * as TE from "fp-ts/lib/TaskEither";
+import { pipe } from "fp-ts/lib/function";
 
 import { Context } from "@azure/functions";
 
 import * as HtmlToText from "html-to-text";
 import * as NodeMailer from "nodemailer";
 
-import { readableReport } from "italia-ts-commons/lib/reporters";
-import { NonEmptyString } from "italia-ts-commons/lib/strings";
+import { readableReport } from "@pagopa/ts-commons/lib/reporters";
+import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 
 import { ActiveMessage } from "@pagopa/io-functions-commons/dist/src/models/message";
 import {
@@ -60,11 +64,11 @@ export const getEmailNotificationActivityHandler = (
 ): Promise<EmailNotificationActivityResult> => {
   const inputOrError = EmailNotificationActivityInput.decode(input);
 
-  if (inputOrError.isLeft()) {
+  if (E.isLeft(inputOrError)) {
     context.log.error(`EmailNotificationActivity|Cannot decode input`);
     context.log.verbose(
       `EmailNotificationActivity|ERROR_DETAILS=${readableReport(
-        inputOrError.value
+        inputOrError.left
       )}`
     );
     return EmailNotificationActivityResult.encode({
@@ -73,7 +77,7 @@ export const getEmailNotificationActivityHandler = (
     });
   }
 
-  const { notificationEvent } = inputOrError.value;
+  const { notificationEvent } = inputOrError.right;
 
   const {
     message,
@@ -87,7 +91,7 @@ export const getEmailNotificationActivityHandler = (
   // Check whether the message is expired
   const errorOrActiveMessage = ActiveMessage.decode(message);
 
-  if (errorOrActiveMessage.isLeft()) {
+  if (E.isLeft(errorOrActiveMessage)) {
     // if the message is expired no more processing is necessary
     context.log.warn(`${logPrefix}|RESULT=TTL_EXPIRED`);
     return EmailNotificationActivityResult.encode({
@@ -97,12 +101,13 @@ export const getEmailNotificationActivityHandler = (
   }
 
   // fetch the notification
-  const errorOrMaybeNotification = await lNotificationModel
-    .find([notificationId, message.id])
-    .run();
+  const errorOrMaybeNotification = await lNotificationModel.find([
+    notificationId,
+    message.id
+  ])();
 
-  if (errorOrMaybeNotification.isLeft()) {
-    const error = errorOrMaybeNotification.value;
+  if (E.isLeft(errorOrMaybeNotification)) {
+    const error = errorOrMaybeNotification.left;
     // we got an error while fetching the notification
     context.log.warn(`${logPrefix}|ERROR=${JSON.stringify(error)}`);
     throw new Error(
@@ -110,9 +115,9 @@ export const getEmailNotificationActivityHandler = (
     );
   }
 
-  const maybeEmailNotification = errorOrMaybeNotification.value;
+  const maybeEmailNotification = errorOrMaybeNotification.right;
 
-  if (maybeEmailNotification.isNone()) {
+  if (O.isNone(maybeEmailNotification)) {
     // it may happen that the object is not yet visible to this function due to latency
     // as the notification object is retrieved from database and we may be hitting a
     // replica that is not yet in sync - throwing an error will trigger a retry
@@ -124,9 +129,9 @@ export const getEmailNotificationActivityHandler = (
     maybeEmailNotification.value
   );
 
-  if (errorOrEmailNotification.isLeft()) {
+  if (E.isLeft(errorOrEmailNotification)) {
     // The notification object is not compatible with this code
-    const error = readableReport(errorOrEmailNotification.value);
+    const error = readableReport(errorOrEmailNotification.left);
     context.log.error(`${logPrefix}|ERROR`);
     context.log.verbose(`${logPrefix}|ERROR_DETAILS=${error}`);
     return EmailNotificationActivityResult.encode({
@@ -135,7 +140,7 @@ export const getEmailNotificationActivityHandler = (
     });
   }
 
-  const emailNotification = errorOrEmailNotification.value.channels.EMAIL;
+  const emailNotification = errorOrEmailNotification.right.channels.EMAIL;
 
   const documentHtml = await generateDocumentHtml(
     content.subject,
@@ -151,29 +156,30 @@ export const getEmailNotificationActivityHandler = (
 
   // trigger email delivery
   // see https://nodemailer.com/message/
-  await sendMail(lMailerTransporter, {
-    from: notificationDefaultParams.MAIL_FROM,
-    headers: {
-      "X-Italia-Messages-MessageId": message.id,
-      "X-Italia-Messages-NotificationId": notificationId
-    },
-    html: documentHtml,
-    messageId: message.id,
-    subject: content.subject,
-    text: bodyText,
-    to: emailNotification.toAddress
-    // priority: "high", // TODO: set based on kind of notification
-    // disableFileAccess: true,
-    // disableUrlAccess: true,
-  })
-    .bimap(
+  await pipe(
+    sendMail(lMailerTransporter, {
+      from: notificationDefaultParams.MAIL_FROM,
+      headers: {
+        "X-Italia-Messages-MessageId": message.id,
+        "X-Italia-Messages-NotificationId": notificationId
+      },
+      html: documentHtml,
+      messageId: message.id,
+      subject: content.subject,
+      text: bodyText,
+      to: emailNotification.toAddress
+      // priority: "high", // TODO: set based on kind of notification
+      // disableFileAccess: true,
+      // disableUrlAccess: true,
+    }),
+    TE.bimap(
       error => {
         context.log.error(`${logPrefix}|ERROR=${error.message}`);
         throw new Error(`Error while sending email: ${error.message}`);
       },
       () => context.log.verbose(`${logPrefix}|RESULT=SUCCESS`)
     )
-    .run();
+  )();
 
   // TODO: handling bounces and delivery updates
   // see https://nodemailer.com/usage/#sending-mail

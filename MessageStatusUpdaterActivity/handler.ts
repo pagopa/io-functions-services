@@ -1,15 +1,16 @@
 import { Context } from "@azure/functions";
 
 import * as t from "io-ts";
+import * as E from "fp-ts/lib/Either";
 
-import { NonEmptyString } from "italia-ts-commons/lib/strings";
+import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 
 import { MessageStatusValue } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
 import {
   getMessageStatusUpdater,
   MessageStatusModel
 } from "@pagopa/io-functions-commons/dist/src/models/message_status";
-import { ReadableReporter } from "italia-ts-commons/lib/reporters";
+import { ReadableReporter } from "@pagopa/ts-commons/lib/reporters";
 
 export const Input = t.interface({
   messageId: NonEmptyString,
@@ -24,7 +25,7 @@ export const getMessageStatusUpdaterActivityHandler = (
   messageStatusModel: MessageStatusModel
 ) => async (context: Context, input: unknown): Promise<IResponse> => {
   const decodedInput = Input.decode(input);
-  if (decodedInput.isLeft()) {
+  if (E.isLeft(decodedInput)) {
     context.log.error(
       `MessageStatusUpdaterActivity|ERROR=${ReadableReporter.report(
         decodedInput
@@ -33,20 +34,20 @@ export const getMessageStatusUpdaterActivityHandler = (
     return { kind: "FAILURE" };
   }
 
-  const { messageId, status } = decodedInput.value;
+  const { messageId, status } = decodedInput.right;
 
   const result = await getMessageStatusUpdater(
     messageStatusModel,
     messageId
-  )(status).run();
+  )(status)();
 
-  if (result.isLeft()) {
+  if (E.isLeft(result)) {
     context.log.error(
       `MessageStatusUpdaterActivity|MESSAGE_ID=${messageId}|STATUS=${status}|ERROR=${JSON.stringify(
-        result.value
+        result.left
       )}`
     );
-    throw new Error(JSON.stringify(result.value));
+    throw new Error(JSON.stringify(result.left));
   }
 
   context.log.verbose(

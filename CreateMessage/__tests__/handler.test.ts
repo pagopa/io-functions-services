@@ -10,6 +10,9 @@ import {
 
 import { none, some } from "fp-ts/lib/Option";
 
+import { pipe } from "fp-ts/lib/function";
+import * as E from "fp-ts/lib/Either";
+
 import {
   canDefaultAddresses,
   canPaymentAmount,
@@ -41,7 +44,7 @@ import {
   anIncompleteService,
   anotherFiscalCode
 } from "../../__mocks__/mocks";
-import { initAppInsights } from "italia-ts-commons/lib/appinsights";
+import { initAppInsights } from "@pagopa/ts-commons/lib/appinsights";
 import { mockOrchestratorContext } from "../../__mocks__/durable-functions";
 import { ApiNewMessageWithDefaults } from "../types";
 
@@ -64,9 +67,9 @@ describe("canWriteMessage", () => {
             ), // any authorized recipient, possibly also the current one
             recipient // one random recipient
           );
-          expect(response.isLeft()).toBeTruthy();
-          if (response.isLeft()) {
-            expect(response.value.kind).toEqual(
+          expect(E.isLeft(response)).toBeTruthy();
+          if (E.isLeft(response)) {
+            expect(response.left.kind).toEqual(
               "IResponseErrorForbiddenNotAuthorizedForProduction"
             );
           }
@@ -86,9 +89,9 @@ describe("canWriteMessage", () => {
             new Set(authorizedRecipients.filter(_ => _ !== recipient)), // current recipient is not authorized
             recipient
           );
-          expect(response.isLeft()).toBeTruthy();
-          if (response.isLeft()) {
-            expect(response.value.kind).toEqual(
+          expect(E.isLeft(response)).toBeTruthy();
+          if (E.isLeft(response)) {
+            expect(response.left.kind).toEqual(
               "IResponseErrorForbiddenNotAuthorizedForRecipient"
             );
           }
@@ -108,7 +111,7 @@ describe("canWriteMessage", () => {
             new Set([...authorizedRecipients, recipient]), // current recipient always authorized
             recipient
           );
-          expect(response.isRight()).toBeTruthy();
+          expect(E.isRight(response)).toBeTruthy();
         }
       )
     );
@@ -125,7 +128,7 @@ describe("canWriteMessage", () => {
             authorizedRecipients,
             recipient
           );
-          expect(response.isRight()).toBeTruthy();
+          expect(E.isRight(response)).toBeTruthy();
         }
       )
     );
@@ -137,7 +140,7 @@ describe("canDefaultAddresses", () => {
     fc.assert(
       fc.property(newMessageWithDefaultEmailArb, m => {
         const response = canDefaultAddresses(m);
-        expect(response.isLeft()).toBeTruthy();
+        expect(E.isLeft(response)).toBeTruthy();
       })
     );
   });
@@ -150,11 +153,13 @@ describe("canPaymentAmount", () => {
         newMessageWithPaymentDataArb,
         maxAmountArb,
         (message, maxAmount) => {
+          const p = message.content.payment_data;
+
           const response = canPaymentAmount(message.content, maxAmount);
           if (message.content.payment_data.amount <= maxAmount) {
-            expect(response.isRight()).toBeTruthy();
+            expect(E.isRight(response)).toBeTruthy();
           } else {
-            expect(response.isLeft()).toBeTruthy();
+            expect(E.isLeft(response)).toBeTruthy();
           }
         }
       )
@@ -188,11 +193,11 @@ describe("createMessageDocument", () => {
             senderServiceId
           );
 
-          const response = await responseTask.run();
+          const response = await responseTask();
 
           expect(mockMessageModel.create).toHaveBeenCalledTimes(1);
-          expect(response.isRight()).toBeTruthy();
-          expect(response.getOrElse(undefined)).toMatchObject({
+          expect(E.isRight(response)).toBeTruthy();
+          expect(pipe(response, E.getOrElse(undefined))).toMatchObject({
             fiscalCode,
             id: messageId,
             indexedId: messageId,
@@ -233,8 +238,8 @@ describe("forkOrchestrator", () => {
             service,
             newMessageWithoutContent,
             serviceUserEmail
-          ).run();
-          expect(response.isRight()).toBeTruthy();
+          )();
+          expect(E.isRight(response)).toBeTruthy();
           expect(getDfClient).toHaveBeenCalledTimes(1);
           expect(mockDfClient.startNew).toHaveBeenCalledTimes(1);
           expect(mockDfClient.startNew).toHaveBeenCalledWith(
@@ -255,7 +260,9 @@ describe("forkOrchestrator", () => {
               serviceVersion: service.version
             })
           );
-          expect(response.getOrElse(undefined)).toEqual("orchestratorId");
+          expect(pipe(response, E.getOrElse(undefined))).toEqual(
+            "orchestratorId"
+          );
         }
       )
     );

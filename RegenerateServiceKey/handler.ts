@@ -27,8 +27,8 @@ import {
   IResponseErrorTooManyRequests,
   IResponseSuccessJson,
   ResponseSuccessJson
-} from "italia-ts-commons/lib/responses";
-import { NonEmptyString } from "italia-ts-commons/lib/strings";
+} from "@pagopa/ts-commons/lib/responses";
+import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 
 import {
   checkSourceIpForHandler,
@@ -39,7 +39,8 @@ import { Context } from "@azure/functions";
 import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { RequiredBodyPayloadMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_body_payload";
-import { identity } from "fp-ts/lib/function";
+import { pipe } from "fp-ts/lib/function";
+import * as TE from "fp-ts/lib/TaskEither";
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import { APIClient } from "../clients/admin";
 import { SubscriptionKeys } from "../generated/definitions/SubscriptionKeys";
@@ -80,15 +81,18 @@ const regenerateServiceKeyTask = (
   serviceId: NonEmptyString,
   subscriptionKeyTypePayload: SubscriptionKeyTypePayload
 ): TaskEither<ErrorResponses, IResponseSuccessJson<SubscriptionKeys>> =>
-  withApiRequestWrapper(
-    logger,
-    () =>
-      apiClient.RegenerateSubscriptionKeys({
-        body: subscriptionKeyTypePayload,
-        service_id: serviceId
-      }),
-    200
-  ).map(ResponseSuccessJson);
+  pipe(
+    withApiRequestWrapper(
+      logger,
+      () =>
+        apiClient.RegenerateSubscriptionKeys({
+          body: subscriptionKeyTypePayload,
+          service_id: serviceId
+        }),
+      200
+    ),
+    TE.map(ResponseSuccessJson)
+  );
 
 /**
  * Handles requests for upload a service logo by a service ID and a base64 logo' s string.
@@ -99,17 +103,18 @@ export function RegenerateServiceKeyHandler(
 ): IRegenerateServiceKeyHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, max-params
   return (_, apiAuth, ___, ____, serviceId, subscriptionKeyTypePayload) =>
-    serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId)
-      .chain(() =>
+    pipe(
+      serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId),
+      TE.chain(() =>
         regenerateServiceKeyTask(
           getLogger(_, logPrefix, "RegenerateServiceKey"),
           apiClient,
           serviceId,
           subscriptionKeyTypePayload
         )
-      )
-      .fold<ResponseTypes>(identity, identity)
-      .run();
+      ),
+      TE.toUnion
+    )();
 }
 
 /**

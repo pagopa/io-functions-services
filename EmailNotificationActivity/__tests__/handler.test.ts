@@ -6,15 +6,17 @@
 import {
   NonEmptyString,
   OrganizationFiscalCode
-} from "italia-ts-commons/lib/strings";
+} from "@pagopa/ts-commons/lib/strings";
 
 import {
   EmailNotificationActivityInput,
   getEmailNotificationActivityHandler
 } from "../handler";
 
-import { some } from "fp-ts/lib/Option";
-import { fromLeft, taskEither } from "fp-ts/lib/TaskEither";
+import { pipe } from "fp-ts/lib/function";
+import * as E from "fp-ts/lib/Either";
+import * as TE from "fp-ts/lib/TaskEither";
+import * as O from "fp-ts/lib/Option";
 
 import { EmailAddress } from "@pagopa/io-functions-commons/dist/generated/definitions/EmailAddress";
 import { MessageBodyMarkdown } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageBodyMarkdown";
@@ -72,7 +74,7 @@ const aRetrievedNotification: RetrievedNotification = {
 };
 
 const notificationModelMock = ({
-  find: jest.fn(() => taskEither.of(some(aRetrievedNotification)))
+  find: jest.fn(() => TE.of(O.some(aRetrievedNotification)))
 } as unknown) as NotificationModel;
 
 const aNotificationId = "A_NOTIFICATION_ID" as NonEmptyString;
@@ -129,7 +131,7 @@ const lMailerTransporterMock = ({} as unknown) as mail.MailerTransporter;
 
 describe("getEmailNotificationActivityHandler", () => {
   it("should respond with 'SUCCESS' if the mail is sent", async () => {
-    jest.spyOn(mail, "sendMail").mockReturnValueOnce(taskEither.of("SUCCESS"));
+    jest.spyOn(mail, "sendMail").mockReturnValueOnce(TE.of("SUCCESS"));
 
     const GetEmailNotificationActivityHandler = getEmailNotificationActivityHandler(
       lMailerTransporterMock,
@@ -150,7 +152,7 @@ describe("getEmailNotificationActivityHandler", () => {
 
     jest
       .spyOn(mail, "sendMail")
-      .mockReturnValueOnce(fromLeft(new Error(errorMessage)));
+      .mockReturnValueOnce(TE.left(new Error(errorMessage)));
 
     const GetEmailNotificationActivityHandler = getEmailNotificationActivityHandler(
       lMailerTransporterMock,

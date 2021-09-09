@@ -6,10 +6,11 @@ import { Context } from "@azure/functions";
 import * as express from "express";
 import * as df from "durable-functions";
 
-import { Either, isLeft, left, right } from "fp-ts/lib/Either";
-import { identity, Lazy } from "fp-ts/lib/function";
-import { fromNullable, isNone, isSome, Option } from "fp-ts/lib/Option";
-import { fromEither, TaskEither, tryCatch } from "fp-ts/lib/TaskEither";
+import * as E from "fp-ts/lib/Either";
+import { Lazy, pipe } from "fp-ts/lib/function";
+import * as O from "fp-ts/lib/Option";
+import * as TE from "fp-ts/lib/TaskEither";
+import * as T from "fp-ts/lib/Task";
 
 import * as t from "io-ts";
 
@@ -60,8 +61,8 @@ import {
   ulidGenerator
 } from "@pagopa/io-functions-commons/dist/src/utils/strings";
 
-import { initAppInsights } from "italia-ts-commons/lib/appinsights";
-import { readableReport } from "italia-ts-commons/lib/reporters";
+import { initAppInsights } from "@pagopa/ts-commons/lib/appinsights";
+import { readableReport } from "@pagopa/ts-commons/lib/reporters";
 import {
   IResponseErrorForbiddenNotAuthorized,
   IResponseErrorForbiddenNotAuthorizedForDefaultAddresses,
@@ -77,10 +78,13 @@ import {
   ResponseErrorInternal,
   ResponseErrorValidation,
   ResponseSuccessRedirectToResource
-} from "italia-ts-commons/lib/responses";
-import { NonEmptyString } from "italia-ts-commons/lib/strings";
-import { PromiseType } from "italia-ts-commons/lib/types";
+} from "@pagopa/ts-commons/lib/responses";
+import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
+import { PromiseType } from "@pagopa/ts-commons/lib/types";
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
+import { Option } from "fp-ts/lib/Option";
+import { Either } from "fp-ts/lib/Either";
+import { TaskEither } from "fp-ts/lib/TaskEither";
 import { ApiNewMessageWithContentOf, ApiNewMessageWithDefaults } from "./types";
 
 /**
@@ -90,13 +94,12 @@ export const MessagePayloadMiddleware: IRequestMiddleware<
   "IResponseErrorValidation",
   ApiNewMessageWithDefaults
 > = request =>
-  new Promise(resolve =>
-    resolve(
-      ApiNewMessageWithDefaults.decode(request.body).mapLeft(
-        ResponseErrorFromValidationErrors(ApiNewMessageWithDefaults)
-      )
-    )
-  );
+  pipe(
+    request.body,
+    ApiNewMessageWithDefaults.decode,
+    TE.fromEither,
+    TE.mapLeft(ResponseErrorFromValidationErrors(ApiNewMessageWithDefaults))
+  )();
 
 /**
  * Type of a CreateMessage handler.
@@ -147,14 +150,14 @@ export const canWriteMessage = (
     // user is in limited message creation mode, check whether he's sending
     // the message to an authorized recipient
     if (!authorizedRecipients.has(fiscalCode)) {
-      return left(ResponseErrorForbiddenNotAuthorizedForRecipient);
+      return E.left(ResponseErrorForbiddenNotAuthorizedForRecipient);
     }
   } else if (!authGroups.has(UserGroup.ApiMessageWrite)) {
     // the user is doing a production call but he's not enabled
-    return left(ResponseErrorForbiddenNotAuthorizedForProduction);
+    return E.left(ResponseErrorForbiddenNotAuthorizedForProduction);
   }
 
-  return right(true);
+  return E.right(true);
 };
 
 /**
@@ -170,9 +173,9 @@ export const canDefaultAddresses = (
   if (messagePayload.default_addresses) {
     // sending messages with default addresses is deprecated, always
     // respond with a forbidden status
-    return left(ResponseErrorForbiddenNotAuthorizedForDefaultAddresses);
+    return E.left(ResponseErrorForbiddenNotAuthorizedForDefaultAddresses);
   }
-  return right(true);
+  return E.right(true);
 };
 
 /**
@@ -192,14 +195,14 @@ export const canPaymentAmount = (
 
   // check if the service wants to charge a valid amount to the user
   if (hasExceededAmount) {
-    return left(
+    return E.left(
       ResponseErrorValidation(
         "Error while sending payment metadata",
         `The requested amount (${requestedAmount} cents) exceeds the maximum allowed for this service (${maxAllowedPaymentAmount} cents)`
       )
     );
   }
-  return right(true);
+  return E.right(true);
 };
 
 /**
@@ -240,14 +243,15 @@ export const createMessageDocument = (
   //
 
   // attempt to create the message
-  return messageModel
-    .create(newMessageWithoutContent)
-    .mapLeft<IResponseErrorInternal | IResponseErrorQuery>(e =>
+  return pipe(
+    messageModel.create(newMessageWithoutContent),
+    TE.mapLeft(e =>
       e.kind === "COSMOS_ERROR_RESPONSE"
         ? ResponseErrorInternal(JSON.stringify(e))
         : ResponseErrorQuery("Error while creating Message", e)
-    )
-    .map(() => newMessageWithoutContent);
+    ),
+    TE.map(() => newMessageWithoutContent)
+  );
 };
 
 /**
@@ -283,13 +287,11 @@ export const forkOrchestrator = (
     serviceVersion: service.version
   });
 
-  if (isLeft(createdMessageEventOrError)) {
-    return fromEither(
-      left(
-        ResponseErrorValidation(
-          "Unable to decode CreatedMessageEvent",
-          readableReport(createdMessageEventOrError.value)
-        )
+  if (E.isLeft(createdMessageEventOrError)) {
+    return TE.left(
+      ResponseErrorValidation(
+        "Unable to decode CreatedMessageEvent",
+        readableReport(createdMessageEventOrError.left)
       )
     );
   }
@@ -300,12 +302,12 @@ export const forkOrchestrator = (
   // eslint-disable-next-line extra-rules/no-commented-out-code
   // context.bindings.createdMessage = createdMessageEventOrError.value;
   const dfClient = getDfClient();
-  return tryCatch(
+  return TE.tryCatch(
     () =>
       dfClient.startNew(
         "CreatedMessageOrchestrator",
         undefined,
-        createdMessageEventOrError.value
+        createdMessageEventOrError.right
       ),
     e => ResponseErrorInternal(String(e))
   );
@@ -345,18 +347,21 @@ export function CreateMessageHandler(
     maybeFiscalCodeInPath
     // eslint-disable-next-line max-params
   ) => {
-    const maybeFiscalCodeInPayload = fromNullable(messagePayload.fiscal_code);
+    const maybeFiscalCodeInPayload = O.fromNullable(messagePayload.fiscal_code);
 
     // The fiscal_code parameter must be specified in the path or in the payload but not in both
-    if (isSome(maybeFiscalCodeInPath) && isSome(maybeFiscalCodeInPayload)) {
+    if (O.isSome(maybeFiscalCodeInPath) && O.isSome(maybeFiscalCodeInPayload)) {
       return ResponseErrorValidation(
         "Bad parameters",
         "The fiscalcode parameter must be specified in the path or in the payload but not in both"
       );
     }
 
-    const maybeFiscalCode = maybeFiscalCodeInPath.alt(maybeFiscalCodeInPayload);
-    if (isNone(maybeFiscalCode)) {
+    const maybeFiscalCode = pipe(
+      maybeFiscalCodeInPath,
+      O.alt(() => maybeFiscalCodeInPayload)
+    );
+    if (O.isNone(maybeFiscalCode)) {
       return ResponseErrorValidation(
         "Bad parameters",
         "The fiscalcode parameter must be specified in the path or in the payload"
@@ -407,76 +412,76 @@ export function CreateMessageHandler(
       );
 
     // here we create an async Task that processes the request
-    const task =
-      // this is a dummy value, it's just used to set the type of error
-      // see https://github.com/gcanti/fp-ts/issues/528#issuecomment-407749612
-      fromEither<CreateMessageHandlerResponse, boolean>(right(true))
-        .chainSecond(
-          // check whether the client can create a message for the recipient
-          fromEither(
-            canWriteMessage(auth.groups, authorizedRecipients, fiscalCode)
-          )
-        )
-        // Verify if the Service has the required quality to sent message
-        .chain(_ =>
-          disableIncompleteServices &&
-          !incompleteServiceWhitelist.includes(serviceId) &&
-          !authorizedRecipients.has(fiscalCode)
-            ? fromEither(
-                ValidService.decode(userAttributes.service).bimap(
+    return pipe(
+      // check whether the client can create a message for the recipient
+      TE.fromEither(
+        canWriteMessage(auth.groups, authorizedRecipients, fiscalCode)
+      ),
+      // Verify if the Service has the required quality to sent message
+      TE.chain(_ =>
+        disableIncompleteServices &&
+        !incompleteServiceWhitelist.includes(serviceId) &&
+        !authorizedRecipients.has(fiscalCode)
+          ? TE.fromEither(
+              pipe(
+                ValidService.decode(userAttributes.service),
+                E.bimap(
                   _1 => ResponseErrorForbiddenNotAuthorizedForRecipient,
                   _1 => true
                 )
               )
-            : fromEither(right(true))
-        )
-        .chain(_ =>
-          // check whether the client can provide default addresses
-          fromEither(canDefaultAddresses(messagePayload))
-        )
-        .chain(_ =>
-          // check whether the client can ask for payment
-          fromEither(
-            canPaymentAmount(
-              messagePayload.content,
-              service.maxAllowedPaymentAmount
             )
+          : TE.right(true)
+      ),
+      TE.chainW(_ =>
+        // check whether the client can provide default addresses
+        TE.fromEither(canDefaultAddresses(messagePayload))
+      ),
+      TE.chainW(_ =>
+        // check whether the client can ask for payment
+        TE.fromEither(
+          canPaymentAmount(
+            messagePayload.content,
+            service.maxAllowedPaymentAmount
           )
         )
-        .chain(_ =>
-          // create a Message document in the database
-          createMessageDocument(
-            messageId,
-            messageModel,
-            auth.userId,
-            fiscalCode,
-            messagePayload.time_to_live,
-            serviceId
-          )
+      ),
+      TE.chainW(_ =>
+        // create a Message document in the database
+        createMessageDocument(
+          messageId,
+          messageModel,
+          auth.userId,
+          fiscalCode,
+          messagePayload.time_to_live,
+          serviceId
         )
-        .chain(newMessageWithoutContent =>
-          // fork the durable function orchestrator that will complete
-          // processing the message asynchrnously
+      ),
+      TE.chain(newMessageWithoutContent =>
+        // fork the durable function orchestrator that will complete
+        // processing the message asynchrnously
+        pipe(
           forkOrchestrator(
             () => df.getClient(context),
             messagePayload.content,
             service,
             newMessageWithoutContent,
             serviceUserEmail
-          ).map(() => redirectToNewMessage(newMessageWithoutContent))
+          ),
+          TE.map(() => redirectToNewMessage(newMessageWithoutContent))
         )
-        // fold failure responses (left) and success responses (right) to a
-        // single response
-        .fold(identity, identity)
-        .map(r => {
-          // before returning the response to the client we log the result
-          const isSuccess = r.kind === "IResponseSuccessRedirectToResource";
-          trackResponse(r, isSuccess);
-          logResponse(r, isSuccess);
-          return r;
-        });
-
-    return task.run();
+      ),
+      // fold failure responses (left) and success responses (right) to a
+      // single response
+      TE.toUnion,
+      T.map(r => {
+        // before returning the response to the client we log the result
+        const isSuccess = r.kind === "IResponseSuccessRedirectToResource";
+        trackResponse(r, isSuccess);
+        logResponse(r, isSuccess);
+        return r;
+      })
+    )();
   };
 }
 

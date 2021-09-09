@@ -14,16 +14,9 @@ import {
   IResponseErrorQuery,
   ResponseErrorQuery
 } from "@pagopa/io-functions-commons/dist/src/utils/response";
-import { Some, isSome } from "fp-ts/lib/Option";
-import {
-  fromEither,
-  fromLeft,
-  fromPredicate,
-  TaskEither,
-  taskEither
-} from "fp-ts/lib/TaskEither";
-import { right } from "fp-ts/lib/Either";
-import { identity } from "io-ts";
+import * as O from "fp-ts/lib/Option";
+import * as TE from "fp-ts/lib/TaskEither";
+import * as E from "fp-ts/lib/Either";
 
 import { Task } from "fp-ts/lib/Task";
 import { ServicesPreferencesModeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServicesPreferencesMode";
@@ -44,6 +37,8 @@ import {
   ResponseSuccessJson,
   IResponseErrorInternal
 } from "@pagopa/ts-commons/lib/responses";
+import { TaskEither } from "fp-ts/lib/TaskEither";
+import { pipe } from "fp-ts/lib/function";
 import { GetLimitedProfileByPOSTPayload } from "../generated/definitions/GetLimitedProfileByPOSTPayload";
 import { canWriteMessage } from "../CreateMessage/handler";
 import { initTelemetryClient } from "./appinsights";
@@ -77,7 +72,7 @@ export const isSenderAllowedLegacy = (
     | undefined,
   serviceId: ServiceId
 ): TaskEither<never, boolean> =>
-  taskEither.of(
+  TE.of(
     blockedInboxOrChannels === undefined ||
       blockedInboxOrChannels[serviceId] === undefined ||
       !blockedInboxOrChannels[serviceId].includes(
@@ -104,26 +99,28 @@ export const isSenderAllowed = (
     readonly version: NonNegativeInteger;
   }
 ): TaskEither<CosmosErrors | IUnexpectedValue, boolean> =>
-  taskEither
-    .of<
-      CosmosErrors | IUnexpectedValue,
-      ReturnType<typeof makeServicesPreferencesDocumentId>
-    >(makeServicesPreferencesDocumentId(fiscalCode, serviceId, version))
-    .chain(docId => servicesPreferencesModel.find([docId, fiscalCode]))
-    .chain(maybeDoc =>
-      maybeDoc.foldL(
-        // In case the user hasn't a specific preference for the service,
-        //   use default behaviour depending on profile's mode
-        () =>
-          mode === ServicesPreferencesModeEnum.AUTO
-            ? taskEither.of(true)
-            : mode === ServicesPreferencesModeEnum.MANUAL
-            ? taskEither.of(false)
-            : fromLeft(unexpectedValue(mode)),
-        // Read straight from the preference
-        doc => taskEither.of(doc.isInboxEnabled)
+  pipe(
+    makeServicesPreferencesDocumentId(fiscalCode, serviceId, version),
+    TE.of,
+    TE.chain(docId => servicesPreferencesModel.find([docId, fiscalCode])),
+    TE.chain(maybeDoc =>
+      pipe(
+        maybeDoc,
+        O.fold(
+          // In case the user hasn't a specific preference for the service,
+          //   use default behaviour depending on profile's mode
+          () =>
+            mode === ServicesPreferencesModeEnum.AUTO
+              ? TE.of(true)
+              : mode === ServicesPreferencesModeEnum.MANUAL
+              ? TE.of(false)
+              : TE.left(unexpectedValue(mode)),
+          // Read straight from the preference
+          doc => TE.of(doc.isInboxEnabled)
+        )
       )
-    );
+    )
+  );
 
 /**
  * Converts the RetrievedProfile model to LimitedProfile type.
@@ -148,8 +145,12 @@ export const GetLimitedProfileByPOSTPayloadMiddleware: IRequestMiddleware<
   GetLimitedProfileByPOSTPayload
 > = request =>
   Promise.resolve(
-    GetLimitedProfileByPOSTPayload.decode(request.body).mapLeft(
-      ResponseErrorFromValidationErrors(GetLimitedProfileByPOSTPayload)
+    pipe(
+      request.body,
+      GetLimitedProfileByPOSTPayload.decode,
+      E.mapLeft(
+        ResponseErrorFromValidationErrors(GetLimitedProfileByPOSTPayload)
+      )
     )
   );
 
@@ -173,22 +174,24 @@ export const getLimitedProfileTask = (
   telemetryClient: ReturnType<typeof initTelemetryClient>
 ): // eslint-disable-next-line max-params
 Task<IGetLimitedProfileResponses> =>
-  taskEither
-    .of<IGetLimitedProfileFailureResponses, void>(void 0)
-    .chainSecond(
+  pipe(
+    TE.of(void 0),
+    TE.chain(() =>
       // Sandboxed accounts will receive 403
       // if they're not authorized to send a messages to this fiscal code.
       // This prevents leaking the information, to sandboxed account,
       // that the fiscal code belongs to a subscribed user
-      fromEither(
+      pipe(
         canWriteMessage(
           apiAuthorization.groups,
           userAttributes.service.authorizedRecipients,
           fiscalCode
-        )
-      ).mapLeft(_ => ResponseErrorForbiddenNotAuthorizedForRecipient)
-    ) // Verify if the Service has the required quality to sent message
-    .chain(_ => {
+        ),
+        TE.fromEither,
+        TE.mapLeft(_ => ResponseErrorForbiddenNotAuthorizedForRecipient)
+      )
+    ), // Verify if the Service has the required quality to sent message
+    TE.chain(_ => {
       if (
         disableIncompleteServices &&
         !incompleteServiceWhitelist.includes(
@@ -196,35 +199,45 @@ Task<IGetLimitedProfileResponses> =>
         ) &&
         !userAttributes.service.authorizedRecipients.has(fiscalCode)
       ) {
-        return fromEither(
-          ValidService.decode(userAttributes.service).bimap(
+        return pipe(
+          userAttributes.service,
+          ValidService.decode,
+          E.bimap(
             _1 => ResponseErrorForbiddenNotAuthorizedForRecipient,
             _1 => true
-          )
+          ),
+          TE.fromEither
         );
       }
-      return fromEither(right(true));
-    })
-    .chain(_ =>
-      profileModel
-        .findLastVersionByModelId([fiscalCode])
-        .mapLeft(error =>
+      return TE.fromEither(E.right(true));
+    }),
+    TE.chainW(_ =>
+      pipe(
+        profileModel.findLastVersionByModelId([fiscalCode]),
+        TE.mapLeft(error =>
           ResponseErrorQuery("Error while retrieving the profile", error)
         )
-    )
-    .chain(
-      fromPredicate<IResponseErrorNotFound, Some<RetrievedProfile>>(
+      )
+    ),
+    TE.chainW(
+      TE.fromPredicate(
         maybeProfile =>
-          isSome(maybeProfile) && maybeProfile.value.isInboxEnabled,
+          O.isSome(maybeProfile) && maybeProfile.value.isInboxEnabled,
         _ =>
           ResponseErrorNotFound(
             "Profile not found",
             "The profile you requested was not found in the system."
           )
       )
-    )
-    .map(_ => _.value)
-    .chain(profile => {
+    ),
+    TE.chain(
+      TE.fromOption(() => {
+        throw new Error(
+          "You should not be here: profileModel.findLastVersionByModelId option result should already be tested."
+        );
+      })
+    ),
+    TE.chainW(profile => {
       // To determine allowance, use a different algorithm depending in subscription mode
       const isSenderAllowedTask =
         profile.servicePreferencesSettings.mode ===
@@ -240,8 +253,9 @@ Task<IGetLimitedProfileResponses> =>
               profile.servicePreferencesSettings
             );
 
-      return isSenderAllowedTask
-        .bimap(
+      return pipe(
+        isSenderAllowedTask,
+        TE.bimap(
           error =>
             error.kind === "UNEXPECTED_VALUE"
               ? ResponseErrorInternal(`Unexpected mode: ${error.value}`)
@@ -253,8 +267,8 @@ Task<IGetLimitedProfileResponses> =>
             isAllowed,
             profile
           })
-        )
-        .map(_ => {
+        ),
+        TE.map(_ => {
           telemetryClient.trackEvent({
             name: "api.limitedprofile.sender-allowed",
             properties: {
@@ -266,8 +280,11 @@ Task<IGetLimitedProfileResponses> =>
             tagOverrides: { samplingEnabled: "false" }
           });
           return _;
-        });
-    })
-    .fold<IGetLimitedProfileResponses>(identity, ({ isAllowed, profile }) =>
+        })
+      );
+    }),
+    TE.map(({ isAllowed, profile }) =>
       ResponseSuccessJson(retrievedProfileToLimitedProfile(profile, isAllowed))
-    );
+    ),
+    TE.toUnion
+  );

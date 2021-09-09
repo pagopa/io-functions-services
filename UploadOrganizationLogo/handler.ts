@@ -26,8 +26,8 @@ import {
   IResponseErrorTooManyRequests,
   IResponseSuccessAccepted,
   ResponseSuccessAccepted
-} from "italia-ts-commons/lib/responses";
-import { OrganizationFiscalCode } from "italia-ts-commons/lib/strings";
+} from "@pagopa/ts-commons/lib/responses";
+import { OrganizationFiscalCode } from "@pagopa/ts-commons/lib/strings";
 
 import {
   checkSourceIpForHandler,
@@ -38,8 +38,9 @@ import { Context } from "@azure/functions";
 import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { RequiredBodyPayloadMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_body_payload";
-import { identity } from "fp-ts/lib/function";
 import { TaskEither } from "fp-ts/lib/TaskEither";
+import * as TE from "fp-ts/lib/TaskEither";
+import { pipe } from "fp-ts/lib/function";
 import { APIClient } from "../clients/admin";
 import { Logo } from "../generated/api-admin/Logo";
 import { withApiRequestWrapper } from "../utils/api";
@@ -80,15 +81,18 @@ const uploadOrganizationLogoTask = (
   organizationFiscalCode: OrganizationFiscalCode,
   logo: Logo
 ): TaskEither<ErrorResponses, IResponseSuccessAccepted> =>
-  withApiRequestWrapper(
-    logger,
-    () =>
-      apiClient.uploadOrganizationLogo({
-        body: logo,
-        organization_fiscal_code: organizationFiscalCode
-      }),
-    201
-  ).map(_ => ResponseSuccessAccepted());
+  pipe(
+    withApiRequestWrapper(
+      logger,
+      () =>
+        apiClient.uploadOrganizationLogo({
+          body: logo,
+          organization_fiscal_code: organizationFiscalCode
+        }),
+      201
+    ),
+    TE.map(_ => ResponseSuccessAccepted())
+  );
 
 /**
  * Handles requests for upload an organization logo.
@@ -99,20 +103,21 @@ export function UploadOrganizationLogoHandler(
 ): IUploadOrganizationLogoHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, max-params
   return (_, __, ___, ____, organizationFiscalCode, logoPayload) =>
-    uploadOrganizationLogoTask(
-      getLogger(_, logPrefix, "UploadOrganizationLogo"),
-      apiClient,
-      organizationFiscalCode,
-      logoPayload
-    )
-      .mapLeft(errs =>
+    pipe(
+      uploadOrganizationLogoTask(
+        getLogger(_, logPrefix, "UploadOrganizationLogo"),
+        apiClient,
+        organizationFiscalCode,
+        logoPayload
+      ),
+      TE.mapLeft(errs =>
         // Not found is never returned by uploadOrganizationLogo but, due to request wrapping return type, we have to wrap it
         errs.kind !== "IResponseErrorNotFound"
           ? errs
           : toDefaultResponseErrorInternal(errs)
-      )
-      .fold<ResponseTypes>(identity, identity)
-      .run();
+      ),
+      TE.toUnion
+    )();
 }
 
 /**

@@ -12,13 +12,13 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
 import { IAzureUserAttributes } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
 
-import { NonNegativeInteger } from "italia-ts-commons/lib/numbers";
+import { NonNegativeInteger } from "@pagopa/ts-commons/lib/numbers";
 import {
   EmailString,
   FiscalCode,
   NonEmptyString,
   OrganizationFiscalCode
-} from "italia-ts-commons/lib/strings";
+} from "@pagopa/ts-commons/lib/strings";
 
 import {
   NewMessageWithoutContent,
@@ -44,7 +44,8 @@ import { NotificationChannelStatusValueEnum } from "@pagopa/io-functions-commons
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { TimeToLiveSeconds } from "@pagopa/io-functions-commons/dist/generated/definitions/TimeToLiveSeconds";
 
-import { fromLeft, taskEither, TaskEither } from "fp-ts/lib/TaskEither";
+import * as TE from "fp-ts/lib/TaskEither";
+
 import { GetMessageHandler } from "../handler";
 
 describe("GetMessageHandler", () => {
@@ -152,7 +153,7 @@ describe("GetMessageHandler", () => {
   ): any {
     return {
       findNotificationForMessage: jest.fn(() =>
-        taskEither.of(some(aRetrievedNotification))
+        TE.of(some(aRetrievedNotification))
       )
     };
   }
@@ -183,9 +184,7 @@ describe("GetMessageHandler", () => {
   };
 
   function getNotificationStatusModelMock(
-    retrievedNotificationStatus: any = taskEither.of(
-      some(aRetrievedNotificationStatus)
-    )
+    retrievedNotificationStatus: any = TE.of(some(aRetrievedNotificationStatus))
   ): any {
     return {
       findOneNotificationStatusByNotificationChannel: jest.fn(
@@ -195,21 +194,21 @@ describe("GetMessageHandler", () => {
   }
 
   function getMessageStatusModelMock(
-    s: TaskEither<QueryError, Option<MessageStatus>> = taskEither.of(
+    s: TE.TaskEither<QueryError, Option<MessageStatus>> = TE.of(
       some(aMessageStatus)
     )
   ): any {
     return {
       findLastVersionByModelId: jest.fn().mockReturnValue(s),
-      upsert: jest.fn(status => fromLeft(status))
+      upsert: jest.fn(status => TE.left(status))
     };
   }
   it("should respond with a message if requesting user is the sender", async () => {
     const mockMessageModel = {
       findMessageForRecipient: jest.fn(() =>
-        taskEither.of(some(aRetrievedMessageWithoutContent))
+        TE.of(some(aRetrievedMessageWithoutContent))
       ),
-      getContentFromBlob: jest.fn(() => taskEither.of(none))
+      getContentFromBlob: jest.fn(() => TE.of(none))
     };
 
     const getMessageHandler = GetMessageHandler(
@@ -244,9 +243,9 @@ describe("GetMessageHandler", () => {
   it("should fail if any error occurs trying to retrieve the message content", async () => {
     const mockMessageModel = {
       findMessageForRecipient: jest.fn(() =>
-        taskEither.of(some(aRetrievedMessageWithoutContent))
+        TE.of(some(aRetrievedMessageWithoutContent))
       ),
-      getContentFromBlob: jest.fn(() => fromLeft(new Error()))
+      getContentFromBlob: jest.fn(() => TE.left(new Error()))
     };
 
     const getMessageHandler = GetMessageHandler(
@@ -279,9 +278,9 @@ describe("GetMessageHandler", () => {
   it("should respond with a message if requesting user is a trusted application", async () => {
     const mockMessageModel = {
       findMessageForRecipient: jest.fn(() =>
-        taskEither.of(some(aRetrievedMessageWithoutContent))
+        TE.of(some(aRetrievedMessageWithoutContent))
       ),
-      getContentFromBlob: jest.fn(() => taskEither.of(none))
+      getContentFromBlob: jest.fn(() => TE.of(none))
     };
 
     const getMessageHandler = GetMessageHandler(
@@ -321,8 +320,8 @@ describe("GetMessageHandler", () => {
     };
 
     const mockMessageModel = {
-      findMessageForRecipient: jest.fn(() => taskEither.of(some(message))),
-      getContentFromBlob: jest.fn(() => taskEither.of(none))
+      findMessageForRecipient: jest.fn(() => TE.of(some(message))),
+      getContentFromBlob: jest.fn(() => TE.of(none))
     };
 
     const getMessageHandler = GetMessageHandler(
@@ -353,8 +352,8 @@ describe("GetMessageHandler", () => {
 
   it("should respond with not found a message doesn not exist", async () => {
     const mockMessageModel = {
-      findMessageForRecipient: jest.fn(() => taskEither.of(none)),
-      getContentFromBlob: jest.fn(() => taskEither.of(none))
+      findMessageForRecipient: jest.fn(() => TE.of(none)),
+      getContentFromBlob: jest.fn(() => TE.of(none))
     };
 
     const getMessageHandler = GetMessageHandler(
@@ -399,9 +398,9 @@ describe("GetMessageHandler", () => {
 
     const mockMessageModel = {
       findMessageForRecipient: jest.fn(() =>
-        taskEither.of(some(aRetrievedMessageWithoutContent))
+        TE.of(some(aRetrievedMessageWithoutContent))
       ),
-      getContentFromBlob: jest.fn(() => taskEither.of(none))
+      getContentFromBlob: jest.fn(() => TE.of(none))
     };
 
     const getMessageHandler = GetMessageHandler(
@@ -437,15 +436,15 @@ describe("GetMessageHandler", () => {
   it("should fail if any error occurs trying to retrieve the message status", async () => {
     const mockMessageModel = {
       findMessageForRecipient: jest.fn(() =>
-        taskEither.of(some(aRetrievedMessageWithoutContent))
+        TE.of(some(aRetrievedMessageWithoutContent))
       ),
-      getContentFromBlob: jest.fn(() => taskEither.of(none))
+      getContentFromBlob: jest.fn(() => TE.of(none))
     };
 
     const getMessageHandler = GetMessageHandler(
       mockMessageModel as any,
       getMessageStatusModelMock(
-        fromLeft<QueryError, Option<MessageStatus>>({
+        TE.left<QueryError, Option<MessageStatus>>({
           body: "error",
           code: 1
         })
@@ -469,9 +468,9 @@ describe("GetMessageHandler", () => {
   it("should fail if any error occurs trying to retrieve the notification status", async () => {
     const mockMessageModel = {
       findMessageForRecipient: jest.fn(() =>
-        taskEither.of(some(aRetrievedMessageWithoutContent))
+        TE.of(some(aRetrievedMessageWithoutContent))
       ),
-      getContentFromBlob: jest.fn(() => taskEither.of(none))
+      getContentFromBlob: jest.fn(() => TE.of(none))
     };
 
     const getMessageHandler = GetMessageHandler(
@@ -479,7 +478,7 @@ describe("GetMessageHandler", () => {
       getMessageStatusModelMock(),
       {
         findNotificationForMessage: jest.fn(() =>
-          fromLeft({
+          TE.left({
             body: "error",
             code: 1
           })

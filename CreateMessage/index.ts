@@ -14,7 +14,7 @@ import {
 import { secureExpressApp } from "@pagopa/io-functions-commons/dist/src/utils/express";
 import { setAppContext } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 
-import createAzureFunctionHandler from "io-functions-express/dist/src/createAzureFunctionsHandler";
+import createAzureFunctionHandler from "@pagopa/express-azure-functions/dist/src/createAzureFunctionsHandler";
 
 import { withAppInsightsContext } from "@pagopa/io-functions-commons/dist/src/utils/application_insights";
 import { cosmosdbInstance } from "../utils/cosmosdb";

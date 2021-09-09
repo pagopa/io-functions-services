@@ -27,8 +27,8 @@ import {
   IResponseErrorTooManyRequests,
   IResponseSuccessJson,
   ResponseSuccessJson
-} from "italia-ts-commons/lib/responses";
-import { NonEmptyString } from "italia-ts-commons/lib/strings";
+} from "@pagopa/ts-commons/lib/responses";
+import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 
 import {
   checkSourceIpForHandler,
@@ -39,8 +39,9 @@ import { Context } from "@azure/functions";
 import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { RequiredBodyPayloadMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_body_payload";
-import { identity } from "fp-ts/lib/function";
+import { pipe } from "fp-ts/lib/function";
 import { TaskEither } from "fp-ts/lib/TaskEither";
+import * as TE from "fp-ts/lib/TaskEither";
 import { APIClient } from "../clients/admin";
 import { Logo } from "../generated/api-admin/Logo";
 import { withApiRequestWrapper } from "../utils/api";
@@ -79,15 +80,18 @@ const uploadServiceLogoTask = (
   serviceId: string,
   logo: Logo
 ): TaskEither<ErrorResponses, IResponseSuccessJson<undefined>> =>
-  withApiRequestWrapper(
-    logger,
-    () =>
-      apiClient.uploadServiceLogo({
-        body: logo,
-        service_id: serviceId
-      }),
-    201
-  ).map(_ => ResponseSuccessJson(undefined));
+  pipe(
+    withApiRequestWrapper(
+      logger,
+      () =>
+        apiClient.uploadServiceLogo({
+          body: logo,
+          service_id: serviceId
+        }),
+      201
+    ),
+    TE.map(_ => ResponseSuccessJson(undefined))
+  );
 
 /**
  * Handles requests for upload a service logo by a service ID and a base64 logo' s string.
@@ -98,17 +102,18 @@ export function UploadServiceLogoHandler(
 ): IUploadServiceLogoHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, max-params
   return (_, apiAuth, ___, ____, serviceId, logoPayload) =>
-    serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId)
-      .chain(() =>
+    pipe(
+      serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId),
+      TE.chain(() =>
         uploadServiceLogoTask(
           getLogger(_, logPrefix, "UploadServiceLogo"),
           apiClient,
           serviceId,
           logoPayload
         )
-      )
-      .fold<ResponseTypes>(identity, identity)
-      .run();
+      ),
+      TE.toUnion
+    )();
 }
 
 /**

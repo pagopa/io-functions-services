@@ -1,16 +1,7 @@
-import { Function2 } from "fp-ts/lib/function";
 import * as t from "io-ts";
 import { initTelemetryClient } from "../utils/appinsights";
 
 import { getConfigOrThrow } from "../utils/config";
-
-/**
- * Extracts the input type of an activity handler
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type HandlerInputType<T> = T extends Function2<any, infer A, any>
-  ? A
-  : never;
 
 const MessageProcessingEvent = t.interface({
   name: t.string,

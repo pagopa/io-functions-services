@@ -1,6 +1,7 @@
 import { ServiceResponse, TableQuery, TableService } from "azure-storage";
 
-import { Either, isLeft, left, right } from "fp-ts/lib/Either";
+import * as E from "fp-ts/lib/Either";
+import { Either } from "fp-ts/lib/Either";
 
 import { FiscalCodeHash } from "../generated/definitions/FiscalCodeHash";
 
@@ -38,7 +39,7 @@ export const getPagedQuery = (tableService: TableService, table: string) => (
         error: Error,
         result: TableService.QueryEntitiesResult<TableEntry>,
         response: ServiceResponse
-      ) => resolve(response.isSuccessful ? right(result) : left(error))
+      ) => resolve(response.isSuccessful ? E.right(result) : E.left(error))
     )
   );
 
@@ -56,12 +57,12 @@ async function* iterateOnPages(
   do {
     // query for a page of entries
     const errorOrResults = await pagedQuery(token);
-    if (isLeft(errorOrResults)) {
+    if (E.isLeft(errorOrResults)) {
       // throw an exception in case of error
-      throw errorOrResults.value;
+      throw errorOrResults.left;
     }
     // call the async callback with the current page of entries
-    const results = errorOrResults.value;
+    const results = errorOrResults.right;
     yield results.entries;
     // update the continuation token, the loop will continue until
     // the token is defined

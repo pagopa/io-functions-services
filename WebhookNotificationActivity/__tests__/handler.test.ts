@@ -5,14 +5,12 @@
 jest.mock("applicationinsights");
 jest.mock("azure-storage");
 
-import { isLeft, isRight, right } from "fp-ts/lib/Either";
-import { none, some } from "fp-ts/lib/Option";
 import {
   EmailString,
   FiscalCode,
   NonEmptyString,
   OrganizationFiscalCode
-} from "italia-ts-commons/lib/strings";
+} from "@pagopa/ts-commons/lib/strings";
 
 import { CreatedMessageEventSenderMetadata } from "@pagopa/io-functions-commons/dist/src/models/created_message_sender_metadata";
 import { Notification } from "@pagopa/io-functions-commons/dist/src/models/notification";
@@ -20,7 +18,7 @@ import { isTransientError } from "@pagopa/io-functions-commons/dist/src/utils/er
 
 import { NotificationEvent } from "@pagopa/io-functions-commons/dist/src/models/notification_event";
 
-import { readableReport } from "italia-ts-commons/lib/reporters";
+import { readableReport } from "@pagopa/ts-commons/lib/reporters";
 
 import {
   getWebhookNotificationActivityHandler,
@@ -36,15 +34,18 @@ import { NotificationChannelEnum } from "@pagopa/io-functions-commons/dist/gener
 import { TimeToLiveSeconds } from "@pagopa/io-functions-commons/dist/generated/definitions/TimeToLiveSeconds";
 import { getNotifyClient } from "../client";
 
-import { agent } from "italia-ts-commons";
+import { agent } from "@pagopa/ts-commons";
 import {
   AbortableFetch,
   setFetchTimeout,
   toFetch
-} from "italia-ts-commons/lib/fetch";
-import { Millisecond } from "italia-ts-commons/lib/units";
-import { taskEither } from "fp-ts/lib/TaskEither";
-import { fromLeft } from "fp-ts/lib/IOEither";
+} from "@pagopa/ts-commons/lib/fetch";
+import { Millisecond } from "@pagopa/ts-commons/lib/units";
+
+import { pipe } from "fp-ts/lib/function";
+import * as E from "fp-ts/lib/Either";
+import * as TE from "fp-ts/lib/TaskEither";
+import * as O from "fp-ts/lib/Option";
 
 afterEach(() => {
   jest.restoreAllMocks();
@@ -109,16 +110,19 @@ const getMockNotificationEvent = (
     subject: aMessageBodySubject
   }
 ) => {
-  return NotificationEvent.decode(
-    Object.assign({}, aNotificationEvent, {
+  return pipe(
+    {
+      ...aNotificationEvent,
       content: messageContent,
       message: aNotificationEvent.message
+    },
+    NotificationEvent.decode,
+    E.getOrElseW(errs => {
+      throw new Error(
+        "Cannot deserialize NotificationEvent: " + readableReport(errs)
+      );
     })
-  ).getOrElseL(errs => {
-    throw new Error(
-      "Cannot deserialize NotificationEvent: " + readableReport(errs)
-    );
-  });
+  );
 };
 
 const aNotification: Notification = {
@@ -163,8 +167,8 @@ describe("sendToWebhook", () => {
       aMessageContent,
       aSenderMetadata,
       false
-    ).run();
-    expect(isRight(ret)).toBeTruthy();
+    )();
+    expect(E.isRight(ret)).toBeTruthy();
   });
 
   it("should remove message content if the service require secure channel", async () => {
@@ -181,13 +185,13 @@ describe("sendToWebhook", () => {
         requireSecureChannels: true
       },
       false
-    ).run();
+    )();
     expect(fetchApi.mock.calls[0][1]).toHaveProperty("body");
     const body = JSON.parse(fetchApi.mock.calls[0][1].body);
     expect(body).toHaveProperty("message");
     expect(body).toHaveProperty("sender_metadata");
     expect(body).not.toHaveProperty("content");
-    expect(isRight(ret)).toBeTruthy();
+    expect(E.isRight(ret)).toBeTruthy();
   });
   it("should remove message content if webhook message content is disabled", async () => {
     const expectedResponse = { message: "OK" };
@@ -200,13 +204,13 @@ describe("sendToWebhook", () => {
       aMessageContent,
       aSenderMetadata,
       true
-    ).run();
+    )();
     expect(fetchApi.mock.calls[0][1]).toHaveProperty("body");
     const body = JSON.parse(fetchApi.mock.calls[0][1].body);
     expect(body).toHaveProperty("message");
     expect(body).toHaveProperty("sender_metadata");
     expect(body).not.toHaveProperty("content");
-    expect(isRight(ret)).toBeTruthy();
+    expect(E.isRight(ret)).toBeTruthy();
   });
   it("should return a transient error in case of timeout", async () => {
     const abortableFetch = AbortableFetch(agent.getHttpsFetch(process.env));
@@ -219,10 +223,10 @@ describe("sendToWebhook", () => {
       aMessageContent,
       aSenderMetadata,
       false
-    ).run();
-    expect(isLeft(ret)).toBeTruthy();
-    if (isLeft(ret)) {
-      expect(isTransientError(ret.value)).toBeTruthy();
+    )();
+    expect(E.isLeft(ret)).toBeTruthy();
+    if (E.isLeft(ret)) {
+      expect(isTransientError(ret.left)).toBeTruthy();
     }
   });
 
@@ -236,11 +240,11 @@ describe("sendToWebhook", () => {
       {} as any,
       {} as any,
       false
-    ).run();
+    )();
     expect(fetchApi).toHaveBeenCalledTimes(1);
-    expect(isLeft(ret)).toBeTruthy();
-    if (isLeft(ret)) {
-      expect(isTransientError(ret.value)).toBeTruthy();
+    expect(E.isLeft(ret)).toBeTruthy();
+    if (E.isLeft(ret)) {
+      expect(isTransientError(ret.left)).toBeTruthy();
     }
   });
 
@@ -254,11 +258,11 @@ describe("sendToWebhook", () => {
       {} as any,
       {} as any,
       false
-    ).run();
+    )();
     expect(fetchApi).toHaveBeenCalledTimes(1);
-    expect(isLeft(ret)).toBeTruthy();
-    if (isLeft(ret)) {
-      expect(isTransientError(ret.value)).toBeFalsy();
+    expect(E.isLeft(ret)).toBeTruthy();
+    if (E.isLeft(ret)) {
+      expect(isTransientError(ret.left)).toBeFalsy();
     }
   });
 });
@@ -266,7 +270,7 @@ describe("sendToWebhook", () => {
 describe("handler", () => {
   it("should return a transient error when there's an error while retrieving the notification", async () => {
     const notificationModelMock = {
-      find: jest.fn(() => fromLeft("error"))
+      find: jest.fn(() => TE.left("error"))
     };
 
     await expect(
@@ -282,7 +286,7 @@ describe("handler", () => {
 
   it("should return a transient error when the notification does not exist", async () => {
     const notificationModelMock = {
-      find: jest.fn(() => taskEither.of(none))
+      find: jest.fn(() => TE.of(O.none))
     };
 
     await expect(
@@ -298,7 +302,7 @@ describe("handler", () => {
 
   it("should return a permanent error when the notification does not contain the webhook url", async () => {
     const notificationModelMock = {
-      find: jest.fn(() => taskEither.of(some({})))
+      find: jest.fn(() => TE.of(O.some({})))
     };
 
     await expect(
@@ -314,13 +318,13 @@ describe("handler", () => {
 
   it("should forward a notification", async () => {
     const notificationModelMock = {
-      find: jest.fn(() => taskEither.of(some(aNotification))),
-      update: jest.fn(() => taskEither.of(some(aNotification)))
+      find: jest.fn(() => TE.of(O.some(aNotification))),
+      update: jest.fn(() => TE.of(O.some(aNotification)))
     };
 
     const notifyCallApiMock = jest
       .fn()
-      .mockReturnValue(Promise.resolve(right({ status: 200 })));
+      .mockReturnValue(Promise.resolve(E.right({ status: 200 })));
 
     const result = await getWebhookNotificationActivityHandler(
       notificationModelMock as any,
@@ -341,7 +345,7 @@ describe("handler", () => {
 
     const notifyCallApiMock = jest
       .fn()
-      .mockReturnValue(Promise.resolve(right({ status: 200 })));
+      .mockReturnValue(Promise.resolve(E.right({ status: 200 })));
 
     const aLongMessageContent = {
       markdown: aMessageBodyMarkdown,
@@ -349,8 +353,8 @@ describe("handler", () => {
     };
 
     const notificationModelMock = {
-      find: jest.fn(() => taskEither.of(some(aNotification))),
-      update: jest.fn(() => taskEither.of(some(aNotification)))
+      find: jest.fn(() => TE.of(O.some(aNotification))),
+      update: jest.fn(() => TE.of(O.some(aNotification)))
     };
 
     const result = await getWebhookNotificationActivityHandler(
@@ -370,11 +374,11 @@ describe("handler", () => {
   it("should track delivery failures", async () => {
     const notifyCallApiMock = jest
       .fn()
-      .mockReturnValue(Promise.resolve(right({ status: 401 })));
+      .mockReturnValue(Promise.resolve(E.right({ status: 401 })));
 
     const notificationModelMock = {
-      find: jest.fn(() => taskEither.of(some(aNotification))),
-      update: jest.fn(() => taskEither.of(some(aNotification)))
+      find: jest.fn(() => TE.of(O.some(aNotification))),
+      update: jest.fn(() => TE.of(O.some(aNotification)))
     };
 
     await expect(
@@ -392,7 +396,7 @@ describe("handler", () => {
 
   it("should stop processing in case the message is expired", async () => {
     const notificationModelMock = {
-      find: jest.fn(() => right(some({})))
+      find: jest.fn(() => E.right(O.some({})))
     };
 
     const notificationEvent = getMockNotificationEvent();
