@@ -31,7 +31,6 @@ export const IConfig = t.intersection([
 
     EMAIL_NOTIFICATION_SERVICE_BLACKLIST: CommaSeparatedListOf(ServiceId),
     WEBHOOK_NOTIFICATION_SERVICE_BLACKLIST: CommaSeparatedListOf(ServiceId),
-
     // eslint-disable-next-line sort-keys
     IO_FUNCTIONS_ADMIN_API_TOKEN: NonEmptyString,
     IO_FUNCTIONS_ADMIN_BASE_URL: NonEmptyString,
@@ -61,8 +60,7 @@ export const IConfig = t.intersection([
 // This means that Date representation is in the past compared to the effectively switch Date we want to set
 const DEFAULT_OPT_OUT_EMAIL_SWITCH_DATE = 1625781600;
 
-// No need to re-evaluate this object for each call
-const errorOrConfig: t.Validation<IConfig> = IConfig.decode({
+export const envConfig = {
   ...process.env,
 
   FF_DISABLE_INCOMPLETE_SERVICES: pipe(
@@ -93,7 +91,10 @@ const errorOrConfig: t.Validation<IConfig> = IConfig.decode({
     E.toUnion
   ),
   isProduction: process.env.NODE_ENV === "production"
-});
+};
+
+// No need to re-evaluate this object for each call
+const errorOrConfig: t.Validation<IConfig> = IConfig.decode(envConfig);
 
 /**
  * Read the application configuration and check for invalid values.
