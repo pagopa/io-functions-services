@@ -634,6 +634,10 @@ definitions:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/NotificationChannelStatusValue"
   MessageResponseWithContent:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/MessageResponseWithContent"
+  EUCovidCert:
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/EUCovidCert"
+  OrganizationFiscalCode:
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/OrganizationFiscalCode"
   FiscalCode:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/FiscalCode"
   LimitedProfile:
@@ -642,8 +646,20 @@ definitions:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/Timestamp"
   TimeToLiveSeconds:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/TimeToLiveSeconds"
+  PrescriptionData:
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PrescriptionData"
+  PrescriptionNRE:
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PrescriptionNRE"
+  PrescriptionIUP:
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PrescriptionIUP"
+  PrescriberFiscalCode:
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PrescriberFiscalCode"
+  MessageContentBase:
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/MessageContentBase"
   MessageContent:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/MessageContent"
+  NewMessageContent:
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/NewMessageContent"
   NewMessage:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/NewMessage"
   CIDR:
@@ -670,6 +686,14 @@ definitions:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/OrganizationName"
   DepartmentName:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/DepartmentName"
+  PaymentDataBase:
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PaymentDataBase"
+  PaymentData:
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PaymentData"
+  Payee:
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/Payee"
+  PaymentDataWithRequiredPayee:
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PaymentDataWithRequiredPayee"
   SubscriptionKeys:
     type: object
     properties:

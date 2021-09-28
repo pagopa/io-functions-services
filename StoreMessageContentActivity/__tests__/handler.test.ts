@@ -28,6 +28,8 @@ import {
   manualProfileServicePreferencesSettings
 } from "../../__mocks__/mocks";
 import { getStoreMessageContentActivityHandler } from "../handler";
+import { PaymentData } from "../../generated/definitions/PaymentData";
+import { OrganizationFiscalCode } from "@pagopa/ts-commons/lib/strings";
 
 const mockContext = {
   // eslint-disable no-console
@@ -73,13 +75,36 @@ const aFutureOptOutEmailSwitchDate = new Date(lastUpdateTimestamp + 10);
 
 const aPastOptOutEmailSwitchDate = new Date(lastUpdateTimestamp - 10);
 
+const anOrgFiscalCode = "01111111111" as OrganizationFiscalCode;
+
+const aPaymentData = {
+  amount: 1000,
+  invalid_after_due_date: false,
+  notice_number: "177777777777777777"
+}
+
+const aPaymentDataWithPayee = {
+  ...aPaymentData,
+  payee: {
+    fiscal_code: anOrgFiscalCode
+  }
+}
+
 const aCreatedMessageEvent: CreatedMessageEvent = {
   content: aMessageContent,
   message: aNewMessageWithoutContent,
   senderMetadata: aCreatedMessageEventSenderMetadata,
   serviceVersion: 1 as NonNegativeNumber
 };
+const aMessageContentWithPaymentData = {
+  ...aMessageContent,
+  payment_data: aPaymentData
+}
 
+const aMessageContentWithPaymentDataWithPayee = {
+  ...aMessageContent,
+  payment_data: aPaymentDataWithPayee
+}
 const aRetrievedProfileWithAValidTimestamp = {
   ...aRetrievedProfile,
   _ts: lastUpdateTimestamp
@@ -201,6 +226,72 @@ describe("getStoreMessageContentActivityHandler", () => {
       // success means message has been stored and status has been updated
       expect(upsertMessageMock).toHaveBeenCalledTimes(1);
       expect(storeContentAsBlobMock).toHaveBeenCalledTimes(1);
+    }
+  );
+
+  it.each`
+    scenario                                            | profileResult                           | storageResult  | upsertResult         | preferenceResult                       | messageEvent                                                                   | optOutEmailSwitchDate           | optInEmailEnabled | expectedMessagePaymentData
+    ${"with original payment message with payee"}       | ${aRetrievedProfileWithAValidTimestamp} | ${aBlobResult} | ${aRetrievedMessage} | ${O.some(aRetrievedServicePreference)} | ${{...aCreatedMessageEvent, content: aMessageContentWithPaymentDataWithPayee}} | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${aPaymentDataWithPayee}
+    ${"with overridden payee if no payee is provided"}  | ${aRetrievedProfileWithAValidTimestamp} | ${aBlobResult} | ${aRetrievedMessage} | ${O.some(aRetrievedServicePreference)} | ${{...aCreatedMessageEvent, content: aMessageContentWithPaymentData}}          | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${{...aPaymentData, payee: {fiscal_code: aCreatedMessageEvent.senderMetadata.organizationFiscalCode}}}
+    ${"with a no payment message"}                      | ${aRetrievedProfileWithAValidTimestamp} | ${aBlobResult} | ${aRetrievedMessage} | ${O.none}                              | ${aCreatedMessageEvent}                                                        | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${undefined}
+  `(
+    "should succeed with $scenario",
+    async ({
+      profileResult,
+      storageResult,
+      upsertResult,
+      preferenceResult,
+      messageEvent,
+      optOutEmailSwitchDate,
+      optInEmailEnabled,
+      expectedMessagePaymentData,
+      // mock implementation must be set only if we expect the function to be called, otherwise it will interfere with other tests
+      //   we use "not-called" to determine such
+      skipPreferenceMock = preferenceResult === "not-called"
+    }) => {
+      findLastVersionByModelIdMock.mockImplementationOnce(() =>
+        TE.of(O.some(profileResult))
+      );
+      storeContentAsBlobMock.mockImplementationOnce(() =>
+        TE.of(O.some(storageResult))
+      );
+      upsertMessageMock.mockImplementationOnce(() =>
+        TE.of(O.some(upsertResult))
+      );
+      !skipPreferenceMock &&
+        findServicePreferenceMock.mockImplementationOnce(() =>
+          TE.of(preferenceResult)
+        );
+
+      const storeMessageContentActivityHandler = getStoreMessageContentActivityHandler(
+        {
+          lProfileModel,
+          lMessageModel,
+          lBlobService: {} as any,
+          lServicePreferencesModel,
+          optOutEmailSwitchDate,
+          isOptInEmailEnabled: optInEmailEnabled,
+          telemetryClient: mockTelemetryClient
+        }
+      );
+
+      const result = await storeMessageContentActivityHandler(
+        mockContext,
+        messageEvent
+      );
+
+      expect(result.kind).toBe("SUCCESS");
+
+      const msgEvt = messageEvent as CreatedMessageEvent;
+      // success means message has been stored and status has been updated
+      expect(storeContentAsBlobMock).toHaveBeenCalledWith(
+        {} as any,
+        msgEvt.message.id,
+        {
+          ...msgEvt.content,
+          payment_data: expectedMessagePaymentData
+        }
+      );
     }
   );
 

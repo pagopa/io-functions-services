@@ -24,7 +24,6 @@ import {
   OrganizationFiscalCode
 } from "@pagopa/ts-commons/lib/strings";
 
-import { CIDR } from "../generated/definitions/CIDR";
 
 import { MessageBodyMarkdown } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageBodyMarkdown";
 import { MessageSubject } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageSubject";
@@ -38,6 +37,7 @@ import {
 import { CreatedMessageEventSenderMetadata } from "@pagopa/io-functions-commons/dist/src/models/created_message_sender_metadata";
 
 import { MessageContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageContent";
+import { CIDR } from "@pagopa/io-functions-commons/dist/generated/definitions/CIDR";
 
 export const aFiscalCode = "AAABBB01C02D345D" as FiscalCode;
 export const anotherFiscalCode = "AAABBB01C02D345W" as FiscalCode;

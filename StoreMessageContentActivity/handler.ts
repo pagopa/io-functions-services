@@ -32,9 +32,11 @@ import { isBefore } from "date-fns";
 import { UTCISODateFromString } from "@pagopa/ts-commons/lib/dates";
 import { CosmosErrors } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
 import { TaskEither } from "fp-ts/lib/TaskEither";
-import { pipe } from "fp-ts/lib/function";
+import { flow, pipe } from "fp-ts/lib/function";
+import { PaymentDataWithRequiredPayee } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentDataWithRequiredPayee";
 import { initTelemetryClient } from "../utils/appinsights";
 import { toHash } from "../utils/crypto";
+import { PaymentData } from "../generated/definitions/PaymentData";
 
 export const SuccessfulStoreMessageContentActivityResult = t.interface({
   blockedInboxOrChannels: t.readonlyArray(BlockedInboxOrChannel),
@@ -228,13 +230,38 @@ const createMessageOrThrow = async (
   const newMessageWithoutContent = createdMessageEvent.message;
   const logPrefix = `StoreMessageContentActivity|MESSAGE_ID=${newMessageWithoutContent.id}`;
 
+  // If a message is a payment message, we must override payee if it is not specified by sender
+  const messagePaymentData = pipe(
+    createdMessageEvent.content.payment_data,
+    O.fromPredicate(PaymentData.is),
+    O.chain(
+      flow(
+        O.fromPredicate(PaymentDataWithRequiredPayee.is),
+        O.getOrElse(() =>
+          PaymentDataWithRequiredPayee.encode({
+            ...createdMessageEvent.content.payment_data,
+            payee: {
+              fiscal_code:
+                createdMessageEvent.senderMetadata.organizationFiscalCode
+            }
+          })
+        ),
+        O.some
+      )
+    ),
+    O.toUndefined
+  );
+
   // Save the content of the message to the blob storage.
   // In case of a retry this operation will overwrite the message content with itself
   // (this is fine as we don't know if the operation succeeded at first)
   const errorOrAttachment = await lMessageModel.storeContentAsBlob(
     lBlobService,
     newMessageWithoutContent.id,
-    createdMessageEvent.content
+    {
+      ...createdMessageEvent.content,
+      payment_data: messagePaymentData
+    }
   )();
 
   if (E.isLeft(errorOrAttachment)) {
