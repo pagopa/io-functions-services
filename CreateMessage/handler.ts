@@ -16,7 +16,6 @@ import * as t from "io-ts";
 
 import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
 import { EUCovidCert } from "@pagopa/io-functions-commons/dist/generated/definitions/EUCovidCert";
-import { NewMessage as ApiNewMessage } from "@pagopa/io-functions-commons/dist/generated/definitions/NewMessage";
 import { CreatedMessageEvent } from "@pagopa/io-functions-commons/dist/src/models/created_message_event";
 import {
   Message,
@@ -85,6 +84,8 @@ import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitio
 import { Option } from "fp-ts/lib/Option";
 import { Either } from "fp-ts/lib/Either";
 import { TaskEither } from "fp-ts/lib/TaskEither";
+import { PaymentDataWithRequiredPayee } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentDataWithRequiredPayee";
+import { NewMessage as ApiNewMessage } from "@pagopa/io-functions-commons/dist/generated/definitions/NewMessage";
 import { ApiNewMessageWithContentOf, ApiNewMessageWithDefaults } from "./types";
 
 /**
@@ -522,6 +523,13 @@ export function CreateMessage(
     AzureAllowBodyPayloadMiddleware(
       ApiNewMessageWithContentOf(t.interface({ eu_covid_cert: EUCovidCert })),
       new Set([UserGroup.ApiMessageWriteEUCovidCert])
+    ),
+    // Ensures only users in ApiMessageWriteWithPayee group can send payment messages with payee payload
+    AzureAllowBodyPayloadMiddleware(
+      ApiNewMessageWithContentOf(
+        t.interface({ payment_data: PaymentDataWithRequiredPayee })
+      ),
+      new Set([UserGroup.ApiMessageWriteWithPayee])
     )
   );
   return wrapRequestHandler(
