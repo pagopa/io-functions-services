@@ -13,8 +13,6 @@ import {
   getEmailNotificationActivityHandler
 } from "../handler";
 
-import { pipe } from "fp-ts/lib/function";
-import * as E from "fp-ts/lib/Either";
 import * as TE from "fp-ts/lib/TaskEither";
 import * as O from "fp-ts/lib/Option";
 
@@ -33,6 +31,7 @@ import {
   NotificationModel,
   RetrievedNotification
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
+import { HtmlToTextOptions } from "html-to-text";
 
 beforeEach(() => jest.clearAllMocks());
 

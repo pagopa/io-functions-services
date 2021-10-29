@@ -23,7 +23,7 @@ import { sendMail } from "@pagopa/io-functions-commons/dist/src/mailer";
 import { generateDocumentHtml } from "./utils";
 
 export interface INotificationDefaults {
-  readonly HTML_TO_TEXT_OPTIONS: HtmlToTextOptions;
+  readonly HTML_TO_TEXT_OPTIONS: HtmlToText.HtmlToTextOptions;
   readonly MAIL_FROM: NonEmptyString;
 }
 
