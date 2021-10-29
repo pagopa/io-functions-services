@@ -16,6 +16,7 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
 
 import { getMailerTransporter } from "@pagopa/io-functions-commons/dist/src/mailer";
+import { HtmlToTextOptions } from "html-to-text";
 import { cosmosdbInstance } from "../utils/cosmosdb";
 import { getConfigOrThrow } from "../utils/config";
 import { getEmailNotificationActivityHandler } from "./handler";
