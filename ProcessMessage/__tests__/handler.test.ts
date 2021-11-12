@@ -305,7 +305,6 @@ describe("getprocessMessageHandler", () => {
   `(
     "should fail if $scenario",
     async ({
-      failureReason,
       profileResult,
       preferenceResult,
       messageEvent,
@@ -338,10 +337,7 @@ describe("getprocessMessageHandler", () => {
 
       const result = context.bindings.processedMessage;
 
-      expect(result.kind).toBe("FAILURE");
-      if (result.kind === "FAILURE") {
-        expect(result.reason).toEqual(failureReason);
-      }
+      expect(result).toBe(undefined);
 
       // check if models are being used only when expected
       expect(findLastVersionByModelIdMock).toBeCalledTimes(

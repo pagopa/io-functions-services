@@ -324,11 +324,7 @@ export const getProcessMessageHandler = ({
           createdMessageEventOrError.left
         )}`
       );
-      // eslint-disable-next-line functional/immutable-data
-      context.bindings.processedMessage = {
-        kind: "FAILURE",
-        reason: "BAD_DATA"
-      };
+
       return;
     }
 
@@ -363,11 +359,7 @@ export const getProcessMessageHandler = ({
     if (O.isNone(maybeProfile)) {
       // the recipient doesn't have any profile yet
       context.log.warn(`${logPrefixWithMessage}|RESULT=PROFILE_NOT_FOUND`);
-      // eslint-disable-next-line functional/immutable-data
-      context.bindings.processedMessage = {
-        kind: "FAILURE",
-        reason: "PROFILE_NOT_FOUND"
-      };
+
       return;
     }
 
@@ -384,10 +376,7 @@ export const getProcessMessageHandler = ({
       // the recipient's inbox is disabled
       context.log.warn(`${logPrefixWithMessage}|RESULT=MASTER_INBOX_DISABLED`);
       // eslint-disable-next-line functional/immutable-data
-      context.bindings.processedMessage = {
-        kind: "FAILURE",
-        reason: "MASTER_INBOX_DISABLED"
-      };
+
       return;
     }
 
@@ -447,11 +436,7 @@ export const getProcessMessageHandler = ({
 
     if (isMessageStorageBlockedForService) {
       context.log.warn(`${logPrefixWithMessage}|RESULT=SENDER_BLOCKED`);
-      // eslint-disable-next-line functional/immutable-data
-      context.bindings.processedMessage = {
-        kind: "FAILURE",
-        reason: "SENDER_BLOCKED"
-      };
+
       return;
     }
 
