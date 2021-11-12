@@ -79,37 +79,15 @@ async function createNotification(
   };
 }
 
+export type CreateNotificationInput = t.TypeOf<typeof CreateNotificationInput>;
 export const CreateNotificationInput = ProcessedMessageEvent;
 
-export type CreateNotificationInput = t.TypeOf<typeof CreateNotificationInput>;
-
-const CreateNotificationSomeResult = t.interface({
-  hasEmail: t.boolean,
-  hasWebhook: t.boolean,
-  kind: t.literal("some"),
+export type NotificationCreatedEvent = t.TypeOf<
+  typeof NotificationCreatedEvent
+>;
+export const NotificationCreatedEvent = t.interface({
   notificationEvent: NotificationEvent
 });
-
-type CreateNotificationSomeResult = t.TypeOf<
-  typeof CreateNotificationSomeResult
->;
-
-const CreateNotificationNoneResult = t.interface({
-  kind: t.literal("none")
-});
-
-type CreateNotificationNoneResult = t.TypeOf<
-  typeof CreateNotificationNoneResult
->;
-
-export const CreateNotificationResult = t.taggedUnion("kind", [
-  CreateNotificationSomeResult,
-  CreateNotificationNoneResult
-]);
-
-export type CreateNotificationResult = t.TypeOf<
-  typeof CreateNotificationResult
->;
 
 /**
  * Returns a function for handling createNotification
@@ -122,6 +100,7 @@ export const getCreateNotificationHandler = (
   lEmailNotificationServiceBlackList: ReadonlyArray<ServiceId>,
   lWebhookNotificationServiceBlackList: ReadonlyArray<ServiceId>
 ) =>
+  // eslint-disable-next-line max-lines-per-function
   withJsonInput(async (context, input) => {
     const inputOrError = CreateNotificationInput.decode(input);
     if (E.isLeft(inputOrError)) {
@@ -133,9 +112,13 @@ export const getCreateNotificationHandler = (
           context.executionContext.functionName
         }|ERROR_DETAILS=${readableReport(inputOrError.left)}`
       );
-      return CreateNotificationResult.encode({
-        kind: "none"
-      });
+
+      // no channel configured, no notifications need to be delivered
+      context.log.verbose(
+        `${context.executionContext.functionName}|No notifications will be delivered`
+      );
+
+      return;
     }
 
     const {
@@ -145,6 +128,8 @@ export const getCreateNotificationHandler = (
       blockedInboxOrChannels,
       senderMetadata
     } = inputOrError.right;
+
+    context.log.error("---->", inputOrError.right);
 
     const logPrefix = `${context.executionContext.functionName}|MESSAGE_ID=${newMessageWithoutContent.id}`;
 
@@ -273,9 +258,7 @@ export const getCreateNotificationHandler = (
     if (noChannelsConfigured) {
       context.log.warn(`${logPrefix}|RESULT=NO_CHANNELS_ENABLED`);
       // return no notifications
-      return {
-        kind: "none"
-      };
+      return;
     }
 
     //
@@ -310,12 +293,21 @@ export const getCreateNotificationHandler = (
 
     context.log.verbose(util.inspect(notificationEvent));
 
-    // Return the notification event to the orchestrator
-    // The orchestrato will then run the actual notification activities
-    return CreateNotificationResult.encode({
-      hasEmail: O.isSome(maybeEmailNotificationAddress),
-      hasWebhook: O.isSome(maybeWebhookNotificationUrl),
-      kind: "some",
-      notificationEvent
-    });
+    if (O.isSome(maybeEmailNotificationAddress)) {
+      // eslint-disable-next-line functional/immutable-data
+      context.bindings.notificationCreatedEmail = NotificationCreatedEvent.encode(
+        {
+          notificationEvent
+        }
+      );
+    }
+
+    if (O.isSome(maybeWebhookNotificationUrl)) {
+      // eslint-disable-next-line functional/immutable-data
+      context.bindings.notificationCreatedWebhook = NotificationCreatedEvent.encode(
+        {
+          notificationEvent
+        }
+      );
+    }
   });
