@@ -170,7 +170,7 @@ stages:
       dependsOn:
         - Deploy_${{ app.Key }}_to_staging
       pool:
-        name: $(AGENT_POOL)  
+        name: io-prod-linux
       jobs:
         - job: 'do_healthcheck_${{ app.Key }}'       
           steps:  
