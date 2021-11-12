@@ -29,16 +29,14 @@ import {
 } from "../../__mocks__/mocks";
 import { getProcessMessageHandler } from "../handler";
 import { OrganizationFiscalCode } from "@pagopa/ts-commons/lib/strings";
+import { Context } from "@azure/functions";
 
-const mockContext = {
-  // eslint-disable no-console
-  log: {
-    error: console.error,
-    info: console.log,
-    verbose: console.log,
-    warn: console.warn
-  }
-} as any;
+const createContext = (): Context =>
+  (({
+    bindings: {},
+    // eslint-disable no-console
+    log: { ...console, verbose: console.log }
+  } as unknown) as Context);
 
 const mockTelemetryClient = ({
   trackEvent: jest.fn()
@@ -205,10 +203,11 @@ describe("getprocessMessageHandler", () => {
         telemetryClient: mockTelemetryClient
       });
 
-      const result = await processMessageHandler(
-        mockContext,
-        JSON.stringify(messageEvent)
-      );
+      const context = createContext();
+
+      await processMessageHandler(context, JSON.stringify(messageEvent));
+
+      const result = context.bindings.processedMessage;
 
       expect(result.kind).toBe("SUCCESS");
       if (result.kind === "SUCCESS") {
@@ -270,10 +269,11 @@ describe("getprocessMessageHandler", () => {
         telemetryClient: mockTelemetryClient
       });
 
-      const result = await processMessageHandler(
-        mockContext,
-        JSON.stringify(messageEvent)
-      );
+      const context = createContext();
+
+      await processMessageHandler(context, JSON.stringify(messageEvent));
+
+      const result = context.bindings.processedMessage;
 
       expect(result.kind).toBe("SUCCESS");
 
@@ -332,10 +332,11 @@ describe("getprocessMessageHandler", () => {
         telemetryClient: mockTelemetryClient
       });
 
-      const result = await processMessageHandler(
-        mockContext,
-        JSON.stringify(messageEvent)
-      );
+      const context = createContext();
+
+      await processMessageHandler(context, JSON.stringify(messageEvent));
+
+      const result = context.bindings.processedMessage;
 
       expect(result.kind).toBe("FAILURE");
       if (result.kind === "FAILURE") {
@@ -396,8 +397,10 @@ describe("getprocessMessageHandler", () => {
         telemetryClient: mockTelemetryClient
       });
 
+      const context = createContext();
+
       await expect(
-        processMessageHandler(mockContext, JSON.stringify(aCreatedMessageEvent))
+        processMessageHandler(context, JSON.stringify(aCreatedMessageEvent))
       ).rejects.toThrow();
 
       // check if models are being used only when expected

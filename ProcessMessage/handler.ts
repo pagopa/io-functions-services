@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 import * as t from "io-ts";
 
 import { Context } from "@azure/functions";
@@ -299,7 +300,7 @@ export interface IProcessMessageHandlerInput {
   readonly telemetryClient: ReturnType<typeof initTelemetryClient>;
 }
 
-type Handler = (c: Context, i: unknown) => Promise<any>;
+type Handler = (c: Context, i: unknown) => Promise<void>;
 
 /**
  * Returns a function for handling ProcessMessage
@@ -313,9 +314,7 @@ export const getProcessMessageHandler = ({
   isOptInEmailEnabled,
   telemetryClient
 }: IProcessMessageHandlerInput): Handler =>
-  withJsonInput(async (context: Context, input: unknown): Promise<
-    ProcessMessageResult
-  > => {
+  withJsonInput(async (context, input) => {
     const createdMessageEventOrError = CreatedMessageEvent.decode(input);
 
     if (E.isLeft(createdMessageEventOrError)) {
@@ -325,7 +324,12 @@ export const getProcessMessageHandler = ({
           createdMessageEventOrError.left
         )}`
       );
-      return { kind: "FAILURE", reason: "BAD_DATA" };
+      // eslint-disable-next-line functional/immutable-data
+      context.bindings.processedMessage = {
+        kind: "FAILURE",
+        reason: "BAD_DATA"
+      };
+      return;
     }
 
     const createdMessageEvent = createdMessageEventOrError.right;
@@ -359,7 +363,12 @@ export const getProcessMessageHandler = ({
     if (O.isNone(maybeProfile)) {
       // the recipient doesn't have any profile yet
       context.log.warn(`${logPrefixWithMessage}|RESULT=PROFILE_NOT_FOUND`);
-      return { kind: "FAILURE", reason: "PROFILE_NOT_FOUND" };
+      // eslint-disable-next-line functional/immutable-data
+      context.bindings.processedMessage = {
+        kind: "FAILURE",
+        reason: "PROFILE_NOT_FOUND"
+      };
+      return;
     }
 
     const profile = maybeProfile.value;
@@ -374,7 +383,12 @@ export const getProcessMessageHandler = ({
     if (!isInboxEnabled) {
       // the recipient's inbox is disabled
       context.log.warn(`${logPrefixWithMessage}|RESULT=MASTER_INBOX_DISABLED`);
-      return { kind: "FAILURE", reason: "MASTER_INBOX_DISABLED" };
+      // eslint-disable-next-line functional/immutable-data
+      context.bindings.processedMessage = {
+        kind: "FAILURE",
+        reason: "MASTER_INBOX_DISABLED"
+      };
+      return;
     }
 
     //
@@ -433,7 +447,12 @@ export const getProcessMessageHandler = ({
 
     if (isMessageStorageBlockedForService) {
       context.log.warn(`${logPrefixWithMessage}|RESULT=SENDER_BLOCKED`);
-      return { kind: "FAILURE", reason: "SENDER_BLOCKED" };
+      // eslint-disable-next-line functional/immutable-data
+      context.bindings.processedMessage = {
+        kind: "FAILURE",
+        reason: "SENDER_BLOCKED"
+      };
+      return;
     }
 
     await createMessageOrThrow(
@@ -445,7 +464,8 @@ export const getProcessMessageHandler = ({
 
     context.log.verbose(`${logPrefixWithMessage}|RESULT=SUCCESS`);
 
-    return {
+    // eslint-disable-next-line functional/immutable-data
+    context.bindings.processedMessage = {
       blockedInboxOrChannels,
       kind: "SUCCESS",
       profile: {
