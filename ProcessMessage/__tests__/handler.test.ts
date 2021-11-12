@@ -205,7 +205,10 @@ describe("getprocessMessageHandler", () => {
         telemetryClient: mockTelemetryClient
       });
 
-      const result = await processMessageHandler(mockContext, messageEvent);
+      const result = await processMessageHandler(
+        mockContext,
+        JSON.stringify(messageEvent)
+      );
 
       expect(result.kind).toBe("SUCCESS");
       if (result.kind === "SUCCESS") {
@@ -267,7 +270,10 @@ describe("getprocessMessageHandler", () => {
         telemetryClient: mockTelemetryClient
       });
 
-      const result = await processMessageHandler(mockContext, messageEvent);
+      const result = await processMessageHandler(
+        mockContext,
+        JSON.stringify(messageEvent)
+      );
 
       expect(result.kind).toBe("SUCCESS");
 
@@ -326,7 +332,10 @@ describe("getprocessMessageHandler", () => {
         telemetryClient: mockTelemetryClient
       });
 
-      const result = await processMessageHandler(mockContext, messageEvent);
+      const result = await processMessageHandler(
+        mockContext,
+        JSON.stringify(messageEvent)
+      );
 
       expect(result.kind).toBe("FAILURE");
       if (result.kind === "FAILURE") {
@@ -388,7 +397,7 @@ describe("getprocessMessageHandler", () => {
       });
 
       await expect(
-        processMessageHandler(mockContext, aCreatedMessageEvent)
+        processMessageHandler(mockContext, JSON.stringify(aCreatedMessageEvent))
       ).rejects.toThrow();
 
       // check if models are being used only when expected
