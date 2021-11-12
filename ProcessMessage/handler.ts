@@ -35,6 +35,11 @@ import { CosmosErrors } from "@pagopa/io-functions-commons/dist/src/utils/cosmos
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import { flow, pipe } from "fp-ts/lib/function";
 import { PaymentDataWithRequiredPayee } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentDataWithRequiredPayee";
+import {
+  getMessageStatusUpdater,
+  MessageStatusModel
+} from "@pagopa/io-functions-commons/dist/src/models/message_status";
+import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
 import { initTelemetryClient } from "../utils/appinsights";
 import { toHash } from "../utils/crypto";
 import { PaymentData } from "../generated/definitions/PaymentData";
@@ -295,6 +300,7 @@ export interface IProcessMessageHandlerInput {
   readonly lMessageModel: MessageModel;
   readonly lBlobService: BlobService;
   readonly lServicePreferencesModel: ServicesPreferencesModel;
+  readonly lMessageStatusModel: MessageStatusModel;
   readonly optOutEmailSwitchDate: UTCISODateFromString;
   readonly isOptInEmailEnabled: boolean;
   readonly telemetryClient: ReturnType<typeof initTelemetryClient>;
@@ -310,6 +316,7 @@ export const getProcessMessageHandler = ({
   lMessageModel,
   lBlobService,
   lServicePreferencesModel,
+  lMessageStatusModel,
   optOutEmailSwitchDate,
   isOptInEmailEnabled,
   telemetryClient
@@ -359,6 +366,10 @@ export const getProcessMessageHandler = ({
     if (O.isNone(maybeProfile)) {
       // the recipient doesn't have any profile yet
       context.log.warn(`${logPrefixWithMessage}|RESULT=PROFILE_NOT_FOUND`);
+      await getMessageStatusUpdater(
+        lMessageStatusModel,
+        createdMessageEvent.message.id
+      )(MessageStatusValueEnum.REJECTED)();
 
       return;
     }
@@ -375,8 +386,10 @@ export const getProcessMessageHandler = ({
     if (!isInboxEnabled) {
       // the recipient's inbox is disabled
       context.log.warn(`${logPrefixWithMessage}|RESULT=MASTER_INBOX_DISABLED`);
-      // eslint-disable-next-line functional/immutable-data
-
+      await getMessageStatusUpdater(
+        lMessageStatusModel,
+        createdMessageEvent.message.id
+      )(MessageStatusValueEnum.REJECTED)();
       return;
     }
 
@@ -436,7 +449,10 @@ export const getProcessMessageHandler = ({
 
     if (isMessageStorageBlockedForService) {
       context.log.warn(`${logPrefixWithMessage}|RESULT=SENDER_BLOCKED`);
-
+      await getMessageStatusUpdater(
+        lMessageStatusModel,
+        createdMessageEvent.message.id
+      )(MessageStatusValueEnum.REJECTED)();
       return;
     }
 
@@ -448,6 +464,11 @@ export const getProcessMessageHandler = ({
     );
 
     context.log.verbose(`${logPrefixWithMessage}|RESULT=SUCCESS`);
+
+    await getMessageStatusUpdater(
+      lMessageStatusModel,
+      createdMessageEvent.message.id
+    )(MessageStatusValueEnum.PROCESSED)();
 
     // eslint-disable-next-line functional/immutable-data
     context.bindings.processedMessage = {

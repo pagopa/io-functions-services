@@ -30,6 +30,7 @@ import {
 import { getProcessMessageHandler } from "../handler";
 import { OrganizationFiscalCode } from "@pagopa/ts-commons/lib/strings";
 import { Context } from "@azure/functions";
+import { MessageStatusModel } from "@pagopa/io-functions-commons/dist/src/models/message_status";
 
 const createContext = (): Context =>
   (({
@@ -66,6 +67,10 @@ const findServicePreferenceMock = jest.fn<any, any>(() =>
 const lServicePreferencesModel = ({
   find: findServicePreferenceMock
 } as unknown) as ServicesPreferencesModel;
+
+const lMessageStatusModel = ({
+  upsert: (...args) => TE.of({} /* anything */)
+} as unknown) as MessageStatusModel;
 
 const lastUpdateTimestamp = Math.floor(new Date().getTime() / 1000);
 const aFutureOptOutEmailSwitchDate = new Date(lastUpdateTimestamp + 10);
@@ -198,6 +203,7 @@ describe("getprocessMessageHandler", () => {
         lMessageModel,
         lBlobService: {} as any,
         lServicePreferencesModel,
+        lMessageStatusModel,
         optOutEmailSwitchDate,
         isOptInEmailEnabled: optInEmailEnabled,
         telemetryClient: mockTelemetryClient
@@ -264,6 +270,7 @@ describe("getprocessMessageHandler", () => {
         lMessageModel,
         lBlobService: {} as any,
         lServicePreferencesModel,
+        lMessageStatusModel,
         optOutEmailSwitchDate,
         isOptInEmailEnabled: optInEmailEnabled,
         telemetryClient: mockTelemetryClient
@@ -326,6 +333,7 @@ describe("getprocessMessageHandler", () => {
         lMessageModel,
         lBlobService: {} as any,
         lServicePreferencesModel,
+        lMessageStatusModel,
         optOutEmailSwitchDate: aPastOptOutEmailSwitchDate,
         isOptInEmailEnabled: false,
         telemetryClient: mockTelemetryClient
@@ -388,6 +396,7 @@ describe("getprocessMessageHandler", () => {
         lMessageModel,
         lBlobService: {} as any,
         lServicePreferencesModel,
+        lMessageStatusModel,
         optOutEmailSwitchDate: aPastOptOutEmailSwitchDate,
         isOptInEmailEnabled: false,
         telemetryClient: mockTelemetryClient

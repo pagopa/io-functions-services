@@ -13,6 +13,10 @@ import {
   ServicesPreferencesModel,
   SERVICE_PREFERENCES_COLLECTION_NAME
 } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
+import {
+  MESSAGE_STATUS_COLLECTION_NAME,
+  MessageStatusModel
+} from "@pagopa/io-functions-commons/dist/src/models/message_status";
 import { cosmosdbInstance } from "../utils/cosmosdb";
 import { getConfigOrThrow } from "../utils/config";
 import { initTelemetryClient } from "../utils/appinsights";
@@ -36,6 +40,10 @@ const servicePreferencesModel = new ServicesPreferencesModel(
   SERVICE_PREFERENCES_COLLECTION_NAME
 );
 
+const messageStatusModel = new MessageStatusModel(
+  cosmosdbInstance.container(MESSAGE_STATUS_COLLECTION_NAME)
+);
+
 const telemetryClient = initTelemetryClient(
   config.APPINSIGHTS_INSTRUMENTATIONKEY
 );
@@ -44,6 +52,7 @@ const activityFunctionHandler: AzureFunction = getProcessMessageHandler({
   isOptInEmailEnabled: config.FF_OPT_IN_EMAIL_ENABLED,
   lBlobService: blobService,
   lMessageModel: messageModel,
+  lMessageStatusModel: messageStatusModel,
   lProfileModel: profileModel,
   lServicePreferencesModel: servicePreferencesModel,
   optOutEmailSwitchDate: config.OPT_OUT_EMAIL_SWITCH_DATE,
