@@ -1,0 +1,19 @@
+{
+  "bindings": [
+    {
+      "queueName": "%MESSAGE_CREATED_QUEUE_NAME%",
+      "connection": "INTERNAL_STORAGE_CONNECTION_STRING",
+      "name": "createdMessage",
+      "type": "queueTrigger",
+      "direction": "in"
+    },
+    {
+      "queueName": "%MESSAGE_PROCESSED_QUEUE_NAME%",
+      "connection": "INTERNAL_STORAGE_CONNECTION_STRING",
+      "name": "processedMessage",
+      "type": "queue",
+      "direction": "out"
+    }
+  ],
+  "scriptFile": "../dist/ProcessMessage/index.js"
+}
