@@ -50,8 +50,6 @@ import { toHash } from "../utils/crypto";
 import { PaymentData } from "../generated/definitions/PaymentData";
 import { withJsonInput } from "../utils/with-json-input";
 
-const logPrefix = "ProcessMessage";
-
 export const ProcessedMessageEvent = t.interface({
   blockedInboxOrChannels: t.readonlyArray(BlockedInboxOrChannel),
   content: MessageContent,
@@ -217,6 +215,7 @@ const createMessageOrThrow = async (
   createdMessageEvent: CreatedMessageEvent
 ): Promise<void> => {
   const newMessageWithoutContent = createdMessageEvent.message;
+  const logPrefix = context.executionContext.functionName;
   const logPrefixWithMessage = `${logPrefix}|MESSAGE_ID=${newMessageWithoutContent.id}`;
 
   // If a message is a payment message, we must override payee if it is not specified by sender
@@ -304,6 +303,7 @@ export const getProcessMessageHandler = ({
   telemetryClient
 }: IProcessMessageHandlerInput): Handler =>
   withJsonInput(async (context, input) => {
+    const logPrefix = context.executionContext.functionName;
     const createdMessageEventOrError = CreatedMessageEvent.decode(input);
 
     if (E.isLeft(createdMessageEventOrError)) {
@@ -469,4 +469,4 @@ export const getProcessMessageHandler = ({
       },
       senderMetadata: createdMessageEvent.senderMetadata
     });
-  }, logPrefix);
+  });

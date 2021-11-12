@@ -38,6 +38,7 @@ import { readableReport } from "@pagopa/ts-commons/lib/reporters";
 const createContext = (): Context =>
   (({
     bindings: {},
+    executionContext: { functionName: "funcname" },
     // eslint-disable no-console
     log: { ...console, verbose: console.log }
   } as unknown) as Context);
