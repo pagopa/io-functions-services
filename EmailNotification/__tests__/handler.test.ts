@@ -142,7 +142,7 @@ describe("getEmailNotificationActivityHandler", () => {
 
     const result = await GetEmailNotificationActivityHandler(
       mockContext,
-      input
+      JSON.stringify(input)
     );
 
     expect(result.kind).toBe("SUCCESS");
@@ -162,7 +162,10 @@ describe("getEmailNotificationActivityHandler", () => {
     );
 
     try {
-      await GetEmailNotificationActivityHandler(mockContext, input);
+      await GetEmailNotificationActivityHandler(
+        mockContext,
+        JSON.stringify(input)
+      );
     } catch (e) {
       expect(e.message).toBe("Error while sending email: " + errorMessage);
     }
