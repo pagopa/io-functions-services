@@ -7,7 +7,10 @@ import {
   BlockedInboxOrChannelEnum
 } from "@pagopa/io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
 import { CreatedMessageEvent } from "@pagopa/io-functions-commons/dist/src/models/created_message_event";
-import { MessageModel } from "@pagopa/io-functions-commons/dist/src/models/message";
+import {
+  MessageModel,
+  NewMessageWithoutContent
+} from "@pagopa/io-functions-commons/dist/src/models/message";
 import {
   ProfileModel,
   RetrievedProfile
@@ -40,6 +43,8 @@ import {
   MessageStatusModel
 } from "@pagopa/io-functions-commons/dist/src/models/message_status";
 import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
+import { CreatedMessageEventSenderMetadata } from "@pagopa/io-functions-commons/dist/src/models/created_message_sender_metadata";
+import { MessageContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageContent";
 import { initTelemetryClient } from "../utils/appinsights";
 import { toHash } from "../utils/crypto";
 import { PaymentData } from "../generated/definitions/PaymentData";
@@ -47,38 +52,15 @@ import { withJsonInput } from "../utils/with-json-input";
 
 const logPrefix = "ProcessMessage";
 
-export const SuccessfulProcessMessageResult = t.interface({
+export const ProcessedMessageEvent = t.interface({
   blockedInboxOrChannels: t.readonlyArray(BlockedInboxOrChannel),
-  kind: t.literal("SUCCESS"),
-  profile: RetrievedProfile
+  content: MessageContent,
+  message: NewMessageWithoutContent,
+  profile: RetrievedProfile,
+  senderMetadata: CreatedMessageEventSenderMetadata
 });
 
-export type SuccessfulProcessMessageResult = t.TypeOf<
-  typeof SuccessfulProcessMessageResult
->;
-
-export const FailedProcessMessageResult = t.interface({
-  kind: t.literal("FAILURE"),
-  reason: t.keyof({
-    // see https://github.com/gcanti/io-ts#union-of-string-literals
-    BAD_DATA: null,
-    MASTER_INBOX_DISABLED: null,
-    PERMANENT_ERROR: null,
-    PROFILE_NOT_FOUND: null,
-    SENDER_BLOCKED: null
-  })
-});
-
-export type FailedProcessMessageResult = t.TypeOf<
-  typeof FailedProcessMessageResult
->;
-
-export const ProcessMessageResult = t.taggedUnion("kind", [
-  SuccessfulProcessMessageResult,
-  FailedProcessMessageResult
-]);
-
-export type ProcessMessageResult = t.TypeOf<typeof ProcessMessageResult>;
+export type ProcessedMessageEvent = t.TypeOf<typeof ProcessedMessageEvent>;
 
 // Interface that marks an unexpected value
 interface IUnexpectedValue {
@@ -117,7 +99,7 @@ const skippedMode = (mode: ServicesPreferencesModeEnum): ISkippedMode => ({
 
 type ServicePreferenceError = ISkippedMode | CosmosErrors | IUnexpectedValue;
 
-export type ServicePreferenceValueOrError = (params: {
+type ServicePreferenceValueOrError = (params: {
   readonly serviceId: NonEmptyString;
   readonly fiscalCode: FiscalCode;
   readonly userServicePreferencesMode: ServicesPreferencesMode;
@@ -471,9 +453,10 @@ export const getProcessMessageHandler = ({
     )(MessageStatusValueEnum.PROCESSED)();
 
     // eslint-disable-next-line functional/immutable-data
-    context.bindings.processedMessage = {
+    context.bindings.processedMessage = ProcessedMessageEvent.encode({
       blockedInboxOrChannels,
-      kind: "SUCCESS",
+      content: createdMessageEvent.content,
+      message: createdMessageEvent.message,
       profile: {
         ...profile,
         // if profile's timestamp is before email opt out switch limit date we must force isEmailEnabled to false
@@ -483,6 +466,7 @@ export const getProcessMessageHandler = ({
           isBefore(profile._ts, optOutEmailSwitchDate)
             ? false
             : profile.isEmailEnabled
-      }
-    };
+      },
+      senderMetadata: createdMessageEvent.senderMetadata
+    });
   }, logPrefix);

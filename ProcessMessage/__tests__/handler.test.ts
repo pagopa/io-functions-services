@@ -10,6 +10,7 @@ import {
 import { ServicesPreferencesModel } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 import { NonNegativeNumber } from "@pagopa/ts-commons/lib/numbers";
 
+import * as E from "fp-ts/lib/Either";
 import * as TE from "fp-ts/lib/TaskEither";
 import * as O from "fp-ts/lib/Option";
 
@@ -27,10 +28,12 @@ import {
   legacyProfileServicePreferencesSettings,
   manualProfileServicePreferencesSettings
 } from "../../__mocks__/mocks";
-import { getProcessMessageHandler } from "../handler";
+import { getProcessMessageHandler, ProcessedMessageEvent } from "../handler";
 import { OrganizationFiscalCode } from "@pagopa/ts-commons/lib/strings";
 import { Context } from "@azure/functions";
 import { MessageStatusModel } from "@pagopa/io-functions-commons/dist/src/models/message_status";
+import { pipe } from "fp-ts/lib/function";
+import { readableReport } from "@pagopa/ts-commons/lib/reporters";
 
 const createContext = (): Context =>
   (({
@@ -169,7 +172,7 @@ describe("getprocessMessageHandler", () => {
     ${"isEmailEnabled overridden to false if profile's timestamp is before optOutEmailSwitchDate"}                                 | ${aRetrievedProfileWithAValidTimestamp}                                                                     | ${aBlobResult} | ${aRetrievedMessage} | ${"not-called"}                                                     | ${aCreatedMessageEvent} | ${[]}                                | ${aFutureOptOutEmailSwitchDate} | ${true}           | ${{ ...aRetrievedProfileWithAValidTimestamp, isEmailEnabled: false }}
     ${"isEmailEnabled not overridden if profile's timestamp is after optOutEmailSwitchDate"}                                       | ${aRetrievedProfileWithAValidTimestamp}                                                                     | ${aBlobResult} | ${aRetrievedMessage} | ${"not-called"}                                                     | ${aCreatedMessageEvent} | ${[]}                                | ${aPastOptOutEmailSwitchDate}   | ${true}           | ${"O.none"}
   `(
-    "should succeed with $scenario",
+    "XXXshould succeed with $scenario",
     async ({
       profileResult,
       storageResult,
@@ -213,17 +216,21 @@ describe("getprocessMessageHandler", () => {
 
       await processMessageHandler(context, JSON.stringify(messageEvent));
 
-      const result = context.bindings.processedMessage;
-
-      expect(result.kind).toBe("SUCCESS");
-      if (result.kind === "SUCCESS") {
-        expect(result.blockedInboxOrChannels).toEqual(expectedBIOC);
-        expect(result.profile).toEqual(
-          overrideProfileResult === "O.none"
-            ? profileResult
-            : overrideProfileResult
-        );
-      }
+      pipe(
+        context.bindings.processedMessage,
+        ProcessedMessageEvent.decode,
+        E.fold(
+          err => fail(`Wrong result: ${readableReport(err)}`),
+          result => {
+            expect(result.blockedInboxOrChannels).toEqual(expectedBIOC);
+            expect(result.profile).toEqual(
+              overrideProfileResult === "O.none"
+                ? profileResult
+                : overrideProfileResult
+            );
+          }
+        )
+      );
 
       // success means message has been stored and status has been updated
       expect(upsertMessageMock).toHaveBeenCalledTimes(1);
@@ -282,7 +289,11 @@ describe("getprocessMessageHandler", () => {
 
       const result = context.bindings.processedMessage;
 
-      expect(result.kind).toBe("SUCCESS");
+      pipe(
+        context.bindings.processedMessage,
+        ProcessedMessageEvent.decode,
+        result => expect(E.isRight(result)).toBe(true)
+      );
 
       const msgEvt = messageEvent as CreatedMessageEvent;
       // success means message has been stored and status has been updated
