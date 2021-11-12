@@ -16,6 +16,7 @@ import {
   OrganizationFiscalCode
 } from "@pagopa/ts-commons/lib/strings";
 
+import { ServiceMetadata as ApiServiceMetadata } from "../../generated/definitions/ServiceMetadata";
 import { ServiceMetadata } from "@pagopa/io-functions-commons/dist/src/models/service";
 
 import { MaxAllowedPaymentAmount } from "@pagopa/io-functions-commons/dist/generated/definitions/MaxAllowedPaymentAmount";
@@ -28,6 +29,7 @@ import { Subscription } from "../../generated/api-admin/Subscription";
 import { UserInfo } from "../../generated/api-admin/UserInfo";
 import { ServicePayload } from "../../generated/definitions/ServicePayload";
 import { UpdateServiceHandler } from "../handler";
+import { StandardServiceCategoryEnum } from "../../generated/api-admin/StandardServiceCategory";
 
 const mockContext = {
   // eslint-disable no-console
@@ -47,9 +49,13 @@ const anEmail = "test@example.com" as EmailString;
 const aServiceId = "s123" as NonEmptyString;
 
 const aTokenName = "TOKEN_NAME" as NonEmptyString;
+const someApiServicesMetadata: ApiServiceMetadata = {
+  scope: ServiceScopeEnum.NATIONAL
+};
 const someServicesMetadata: ServiceMetadata = {
   scope: ServiceScopeEnum.NATIONAL,
-  tokenName: aTokenName
+  category: StandardServiceCategoryEnum.STANDARD,
+  customSpecialFlow: undefined
 };
 
 const aServicePayload: ServicePayload = {
@@ -58,15 +64,7 @@ const aServicePayload: ServicePayload = {
   is_visible: true,
   organization_fiscal_code: anOrganizationFiscalCode,
   organization_name: "AgID" as NonEmptyString,
-  service_metadata: someServicesMetadata,
-  service_name: "Test" as NonEmptyString
-};
-
-const aServicePayloadWithoutMetadata: ServicePayload = {
-  authorized_cidrs: [],
-  department_name: "IT" as NonEmptyString,
-  organization_fiscal_code: anOrganizationFiscalCode,
-  organization_name: "AgID" as NonEmptyString,
+  service_metadata: someApiServicesMetadata,
   service_name: "Test" as NonEmptyString
 };
 
@@ -85,41 +83,11 @@ const aService = {
   version: 1 as NonNegativeInteger
 };
 
-const aNotVisibleService = {
-  authorizedCIDRs: new Set([]),
-  authorizedRecipients: new Set([]),
-  departmentName: "IT" as NonEmptyString,
-  isVisible: false,
-  maxAllowedPaymentAmount: 0 as MaxAllowedPaymentAmount,
-  organizationFiscalCode: anOrganizationFiscalCode,
-  organizationName: "AgID" as NonEmptyString,
-  requireSecureChannels: false,
-  serviceId: aServiceId,
-  serviceMetadata: someServicesMetadata,
-  serviceName: "Test" as NonEmptyString,
-  version: 1 as NonNegativeInteger
-};
-
 const aRetrievedService: Service = {
   authorized_cidrs: [],
   authorized_recipients: [],
   department_name: "IT" as NonEmptyString,
   is_visible: true,
-  max_allowed_payment_amount: 0 as MaxAllowedPaymentAmount,
-  organization_fiscal_code: anOrganizationFiscalCode,
-  organization_name: "AgID" as NonEmptyString,
-  require_secure_channels: false,
-  service_id: aServiceId,
-  service_metadata: someServicesMetadata,
-  service_name: "Test" as NonEmptyString,
-  version: 1 as NonNegativeInteger
-};
-
-const aRetrievedNotVisibleService: Service = {
-  authorized_cidrs: [],
-  authorized_recipients: [],
-  department_name: "IT" as NonEmptyString,
-  is_visible: false,
   max_allowed_payment_amount: 0 as MaxAllowedPaymentAmount,
   organization_fiscal_code: anOrganizationFiscalCode,
   organization_name: "AgID" as NonEmptyString,

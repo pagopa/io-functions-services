@@ -59,6 +59,7 @@ import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWit
 import { withApiRequestWrapper } from "../utils/api";
 import { getLogger, ILogger } from "../utils/logging";
 import { ErrorResponses, IResponseErrorUnauthorized } from "../utils/responses";
+import { StandardServiceCategoryEnum } from "../generated/api-admin/StandardServiceCategory";
 
 type ResponseTypes =
   | IResponseSuccessJson<ServiceWithSubscriptionKeys>
@@ -137,6 +138,7 @@ const createServiceTask = (
           service_id: subscriptionId,
           service_metadata: {
             ...servicePayload.service_metadata,
+            category: StandardServiceCategoryEnum.STANDARD,
             token_name: adb2cTokenName
           }
         }

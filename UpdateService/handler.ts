@@ -52,6 +52,7 @@ import { withApiRequestWrapper } from "../utils/api";
 import { getLogger, ILogger } from "../utils/logging";
 import { ErrorResponses, IResponseErrorUnauthorized } from "../utils/responses";
 import { serviceOwnerCheckTask } from "../utils/subscription";
+import { StandardServiceCategoryEnum } from "../generated/api-admin/StandardServiceCategory";
 
 type ResponseTypes =
   | IResponseSuccessJson<ServiceWithSubscriptionKeys>
@@ -139,6 +140,7 @@ const updateServiceTask = (
           service_id: serviceId,
           service_metadata: {
             ...servicePayload.service_metadata,
+            category: StandardServiceCategoryEnum.STANDARD,
             token_name: adb2cTokenName
           }
         },

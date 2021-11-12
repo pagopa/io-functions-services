@@ -21,6 +21,7 @@ import { MaxAllowedPaymentAmount } from "@pagopa/io-functions-commons/dist/gener
 import { left, right } from "fp-ts/lib/Either";
 import { ServiceScopeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceScope";
 import { ServiceMetadata } from "@pagopa/io-functions-commons/dist/src/models/service";
+import { ServiceMetadata as ApiServiceMetadata } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceMetadata";
 import * as reporters from "@pagopa/ts-commons/lib/reporters";
 import { Subscription } from "../../generated/api-admin/Subscription";
 import { UserInfo } from "../../generated/api-admin/UserInfo";
@@ -28,6 +29,7 @@ import { ServicePayload } from "../../generated/definitions/ServicePayload";
 import { CreateServiceHandler } from "../handler";
 
 import * as E from "fp-ts/lib/Either";
+import { StandardServiceCategoryEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/StandardServiceCategory";
 
 const mockContext = {
   // eslint-disable no-console
@@ -46,7 +48,13 @@ const aTokenName = "TOKEN_NAME" as NonEmptyString;
 
 const someServicesMetadata: ServiceMetadata = {
   scope: ServiceScopeEnum.NATIONAL,
+  category: StandardServiceCategoryEnum.STANDARD,
+  customSpecialFlow: undefined,
   tokenName: aTokenName
+};
+
+const someApiServicesMetadata: ApiServiceMetadata = {
+  scope: ServiceScopeEnum.NATIONAL
 };
 
 const aServicePayload: ServicePayload = {
@@ -55,7 +63,7 @@ const aServicePayload: ServicePayload = {
   is_visible: true,
   organization_fiscal_code: anOrganizationFiscalCode,
   organization_name: "AgID" as NonEmptyString,
-  service_metadata: someServicesMetadata,
+  service_metadata: someApiServicesMetadata,
   service_name: "Test" as NonEmptyString
 };
 

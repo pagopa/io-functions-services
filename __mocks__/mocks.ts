@@ -24,7 +24,6 @@ import {
   OrganizationFiscalCode
 } from "@pagopa/ts-commons/lib/strings";
 
-
 import { MessageBodyMarkdown } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageBodyMarkdown";
 import { MessageSubject } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageSubject";
 
@@ -38,6 +37,7 @@ import { CreatedMessageEventSenderMetadata } from "@pagopa/io-functions-commons/
 
 import { MessageContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageContent";
 import { CIDR } from "@pagopa/io-functions-commons/dist/generated/definitions/CIDR";
+import { StandardServiceCategoryEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/StandardServiceCategory";
 
 export const aFiscalCode = "AAABBB01C02D345D" as FiscalCode;
 export const anotherFiscalCode = "AAABBB01C02D345W" as FiscalCode;
@@ -66,7 +66,9 @@ export const aValidService: ValidService = {
     description: "Service Description" as NonEmptyString,
     privacyUrl: "https://example.com/privacy.html" as NonEmptyString,
     supportUrl: "https://example.com/support.html" as NonEmptyString,
-    scope: ServiceScopeEnum.NATIONAL
+    scope: ServiceScopeEnum.NATIONAL,
+    category: StandardServiceCategoryEnum.STANDARD,
+    customSpecialFlow: undefined
   }
 };
 
@@ -88,6 +90,8 @@ export const anIncompleteService: Service & {
   serviceName: "Service" as NonEmptyString,
   serviceMetadata: {
     description: "Service Description" as NonEmptyString,
+    category: StandardServiceCategoryEnum.STANDARD,
+    customSpecialFlow: undefined,
     scope: ServiceScopeEnum.NATIONAL
   },
   version: 1 as NonNegativeInteger
@@ -200,8 +204,7 @@ export const anEnabledServicePreference: ServicePreference = {
   isWebhookEnabled: true,
   serviceId: "01234567890" as NonEmptyString,
   settingsVersion: 0 as NonNegativeInteger
-}
-
+};
 
 export const aDisabledServicePreference: ServicePreference = {
   fiscalCode: aFiscalCode,
@@ -210,4 +213,4 @@ export const aDisabledServicePreference: ServicePreference = {
   isWebhookEnabled: false,
   serviceId: "01234567890" as NonEmptyString,
   settingsVersion: 0 as NonNegativeInteger
-}
+};
