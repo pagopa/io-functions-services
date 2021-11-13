@@ -11,5 +11,6 @@
     "Dangerfile.ts",
     "**/__tests__",
     "__mocks__/**",
+    "__integrations__/**",
   ]
 }

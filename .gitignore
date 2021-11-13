@@ -55,3 +55,6 @@ azure-functions-core-tools/**/*
 .eslintcache
 
 yarn-error.log
+
+# integration tests
+!docker/fixtures/*.js

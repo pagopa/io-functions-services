@@ -7,6 +7,7 @@ module.exports = {
     "ignorePatterns": [
         "node_modules",
         "generated",
+        "**/__integrations__/*",
         "**/__tests__/*",
         "**/__mocks__/*",
         "Dangerfile.*",
