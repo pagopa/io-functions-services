@@ -1,0 +1,11 @@
+{
+  "name": "fixtures",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "license": "MIT",
+  "dependencies": {
+    "@azure/data-tables": "^13.0.0",
+    "@azure/storage-queue": "^12.7.0"
+  }
+}
