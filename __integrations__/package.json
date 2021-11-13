@@ -12,7 +12,9 @@
     "generate:env:cosmosdb": "dotenv -e environments/env.base envsub environments/env.cosmosdb environments/generated/env.cosmosdb",
     "generate:env:io-fixtures": "dotenv -e environments/env.base envsub environments/env.io-fixtures environments/generated/env.io-fixtures",
     "generate:env:io-functions-services": "dotenv -e environments/env.base envsub environments/env.io-functions-services environments/generated/env.io-functions-services",
-    "generate-env": "npm-run-all generate:env:*"
+    "generate:env:integration-tests": "dotenv -e environments/env.base envsub environments/env.integration-tests environments/generated/env.integration-tests",
+    "clean": "shx rm -rf environments/generated && shx mkdir environments/generated",
+    "generate-env": "npm-run-all clean generate:env:*"
   },
   "dependencies": {
     "@azure/storage-queue": "^12.7.0",
@@ -26,6 +28,7 @@
     "dotenv-cli": "^4.1.0",
     "envsub": "^4.0.7",
     "npm-run-all": "^4.1.5",
+    "shx": "^0.3.3",
     "typescript": "^4.4.4"
   }
 }

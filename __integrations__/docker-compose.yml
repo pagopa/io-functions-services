@@ -48,13 +48,14 @@ services:
       - storage-account
       - fixtures
 
-  # testagent:
-  #   image: node:16-alpine
-  #   working_dir: /usr/src/app
-  #   command: tail -f /dev/null # to keep it   up&running
-  #   env_file:
-  #     - environments/generated/env.integration-tests
-  #   volumes:
-  #     - "./:/usr/src/app"
-  #   depends_on:
-  #     - function
+  testagent:
+    image: node:16-alpine
+    working_dir: /usr/src/app
+    command: tail -f /dev/null # to keep it   up&running
+    env_file:
+      - environments/generated/env.integration-tests
+    volumes:
+      - "./:/usr/src/app"
+      - "../openapi:/usr/src/openapi"
+    depends_on:
+      - function

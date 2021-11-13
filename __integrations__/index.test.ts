@@ -1,11 +1,11 @@
-import { aFiscalCode, aMessageContent } from "../__mocks__/mocks";
-import { WAIT_MS } from "./env";
-import {
-  Client as FnServicesClient,
-  createClient
-} from "./generated/fn-services/client";
-
 import * as E from "fp-ts/Either";
+
+import { createClient } from "./generated/fn-services/client";
+
+import { FiscalCode } from "./generated/fn-services/FiscalCode";
+import { MessageContent } from "./generated/fn-services/MessageContent";
+
+import { WAIT_MS } from "./env";
 
 jest.setTimeout(WAIT_MS * 5);
 
@@ -16,6 +16,14 @@ beforeAll(async () => {});
 afterAll(async () => {});
 
 beforeEach(() => jest.clearAllMocks());
+
+export const aFiscalCode = "AAABBB01C02D345D" as FiscalCode;
+
+export const aMessageBodyMarkdown = "test".repeat(80);
+export const aMessageContent: MessageContent = {
+  markdown: aMessageBodyMarkdown,
+  subject: "test".repeat(10)
+};
 
 const aSubscriptionKey = "aSubscriptionKey";
 const aContent = aMessageContent;
