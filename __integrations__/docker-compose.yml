@@ -43,6 +43,8 @@ services:
       - "../:/usr/src/app"
     ports:
       - ${FUNCTIONS_SERVICES_PORT}:7071
+    links:
+      - testagent
     depends_on:
       - cosmosdb
       - storage-account
@@ -58,4 +60,6 @@ services:
       - "./:/usr/src/app"
       - "../openapi:/usr/src/openapi"
     depends_on:
-      - function
+      - cosmosdb
+      - storage-account
+      - fixtures

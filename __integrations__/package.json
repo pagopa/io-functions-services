@@ -6,8 +6,11 @@
   "keywords": [],
   "author": "",
   "scripts": {
-    "prestart": "npm-run-all generate:client:*",
-    "start": "jest --verbose --runInBand",
+    "prestart": "npm-run-all generate-env",
+    "start": "docker-compose --env-file environments/env.base up -d",
+    "stop": "docker-compose --env-file environments/env.base down && docker volume prune -f",
+    "pretest": "npm-run-all generate:client:*",
+    "test": "jest --verbose --runInBand",
     "generate:client:services": "rimraf generated/fn-services && gen-api-models --api-spec ../openapi/index.yaml --no-strict --out-dir generated/fn-services --request-types --response-decoders --client",
     "generate:env:cosmosdb": "dotenv -e environments/env.base envsub environments/env.cosmosdb environments/generated/env.cosmosdb",
     "generate:env:io-fixtures": "dotenv -e environments/env.base envsub environments/env.io-fixtures environments/generated/env.io-fixtures",
@@ -21,6 +24,7 @@
     "@types/jest": "^27.0.2",
     "@types/node": "^13.11.0",
     "jest": "^27.3.1",
+    "node-fetch": "^2.6.1",
     "ts-jest": "^27.0.7"
   },
   "devDependencies": {

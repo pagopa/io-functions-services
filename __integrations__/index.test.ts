@@ -1,3 +1,5 @@
+import nodeFetch from "node-fetch";
+
 import * as E from "fp-ts/Either";
 
 import { createClient } from "./generated/fn-services/client";
@@ -9,7 +11,6 @@ import { WAIT_MS } from "./env";
 
 jest.setTimeout(WAIT_MS * 5);
 
-const fetch = require("node-fetch");
 const baseUrl = "http://function:7071";
 
 beforeAll(async () => {});
@@ -30,8 +31,9 @@ const aContent = aMessageContent;
 
 describe("fn-services |> ping", () => {
   const client = createClient<"SubscriptionKey">({
+    basePath: "/api/v1",
     baseUrl,
-    fetchApi: fetch,
+    fetchApi: (nodeFetch as unknown) as typeof fetch,
     withDefaults: op => params =>
       op({
         ...params,
@@ -40,21 +42,38 @@ describe("fn-services |> ping", () => {
   });
 
   it("/info return 200", async () => {
-    const response = await fetch("http://function:7071/api/info");
+    const response = await nodeFetch("http://function:7071/api/info");
     const body = await response.text();
-
-    console.log(body);
 
     // We expects some configurations to fail
     expect(response.status).toEqual(500);
   });
 
   it("should return 403 Forbidden if no header has been provided", async () => {
-    const response = await client.submitMessageforUserWithFiscalCodeInBody({
+    const body = {
       message: { fiscal_code: aFiscalCode, content: aContent }
-    });
+    };
 
-    console.log(response);
+    const response = await client.submitMessageforUserWithFiscalCodeInBody(
+      body
+    );
+
+    if (E.isLeft(response)) console.log(response.left);
+
+    const nodeFetchResponse = await nodeFetch(
+      "http://function:7071/api/v1/messages",
+      {
+        method: "POST",
+        body: JSON.stringify(body),
+        headers: {
+          "Content-Type": "application/json",
+          SubscriptionKey: aSubscriptionKey
+        }
+      }
+    );
+
+    console.log("---> node response");
+    console.log(nodeFetchResponse);
 
     // We expects some configurations to fail
     expect(E.isRight(response)).toEqual(true);

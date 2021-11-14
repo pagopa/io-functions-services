@@ -109,12 +109,11 @@ stages:
         - script: |
             cd __integrations__
             yarn install --frozen-lockfile
-            yarn generate-env
-            docker-compose --env-file environments/env.base up -d
+            yarn start
           displayName: 'Start test resources'
         - script: |
             cd __integrations__
             yarn install --frozen-lockfile
-            docker exec integrations___testagent_1 yarn start
+            docker exec integrations___testagent_1 yarn test
             #           ^^^ FIXME: reference container using a less arbitrary name
           displayName: 'Execute tests'
