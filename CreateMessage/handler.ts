@@ -4,10 +4,9 @@
 import { Context } from "@azure/functions";
 
 import * as express from "express";
-import * as df from "durable-functions";
 
 import * as E from "fp-ts/lib/Either";
-import { Lazy, pipe } from "fp-ts/lib/function";
+import { pipe } from "fp-ts/lib/function";
 import * as O from "fp-ts/lib/Option";
 import * as TE from "fp-ts/lib/TaskEither";
 import * as T from "fp-ts/lib/Task";
@@ -256,65 +255,6 @@ export const createMessageDocument = (
 };
 
 /**
- * Forks the durable function orchestrator that will further process the message
- * asynchronously (storing the content into a blob, delivering notifications).
- */
-export const forkOrchestrator = (
-  getDfClient: Lazy<ReturnType<typeof df.getClient>>,
-  messageContent: ApiNewMessageWithDefaults["content"],
-  service: IAzureUserAttributes["service"],
-  newMessageWithoutContent: NewMessageWithoutContent,
-  serviceUserEmail: IAzureUserAttributes["email"]
-): TaskEither<IResponseErrorValidation | IResponseErrorInternal, string> => {
-  //
-  // emit created message event to the output queue
-  //
-
-  // prepare the created message event
-  // we filter out undefined values as they are
-  // deserialized to null(s) when enqueued
-  const createdMessageEventOrError = CreatedMessageEvent.decode({
-    content: messageContent,
-    defaultAddresses: {}, // deprecated feature
-    message: newMessageWithoutContent,
-    senderMetadata: {
-      departmentName: service.departmentName,
-      organizationFiscalCode: service.organizationFiscalCode,
-      organizationName: service.organizationName,
-      requireSecureChannels: service.requireSecureChannels,
-      serviceName: service.serviceName,
-      serviceUserEmail
-    },
-    serviceVersion: service.version
-  });
-
-  if (E.isLeft(createdMessageEventOrError)) {
-    return TE.left(
-      ResponseErrorValidation(
-        "Unable to decode CreatedMessageEvent",
-        readableReport(createdMessageEventOrError.left)
-      )
-    );
-  }
-
-  // queue the message to the created messages queue by setting
-  // the message to the output binding of this function
-  // eslint-disable-next-line functional/immutable-data
-  // eslint-disable-next-line extra-rules/no-commented-out-code
-  // context.bindings.createdMessage = createdMessageEventOrError.value;
-  const dfClient = getDfClient();
-  return TE.tryCatch(
-    () =>
-      dfClient.startNew(
-        "CreatedMessageOrchestrator",
-        undefined,
-        createdMessageEventOrError.right
-      ),
-    e => ResponseErrorInternal(String(e))
-  );
-};
-
-/**
  * Returns a redirect response for a newly created Message.
  */
 const redirectToNewMessage = (
@@ -458,18 +398,36 @@ export function CreateMessageHandler(
           serviceId
         )
       ),
+      // processing the message asynchrnously
       TE.chain(newMessageWithoutContent =>
-        // fork the durable function orchestrator that will complete
-        // processing the message asynchrnously
         pipe(
-          forkOrchestrator(
-            () => df.getClient(context),
-            messagePayload.content,
-            service,
-            newMessageWithoutContent,
-            serviceUserEmail
+          {
+            content: messagePayload.content,
+            defaultAddresses: {}, // deprecated feature
+            message: newMessageWithoutContent,
+            senderMetadata: {
+              departmentName: service.departmentName,
+              organizationFiscalCode: service.organizationFiscalCode,
+              organizationName: service.organizationName,
+              requireSecureChannels: service.requireSecureChannels,
+              serviceName: service.serviceName,
+              serviceUserEmail
+            },
+            serviceVersion: service.version
+          },
+          CreatedMessageEvent.decode,
+          TE.fromEither,
+          TE.mapLeft(err =>
+            ResponseErrorValidation(
+              "Unable to decode CreatedMessageEvent",
+              readableReport(err)
+            )
           ),
-          TE.map(() => redirectToNewMessage(newMessageWithoutContent))
+          TE.map(createdMessage => {
+            // eslint-disable-next-line functional/immutable-data
+            context.bindings.createdMessage = createdMessage;
+            return redirectToNewMessage(newMessageWithoutContent);
+          })
         )
       ),
       // fold failure responses (left) and success responses (right) to a

@@ -18,24 +18,19 @@ import {
   canPaymentAmount,
   canWriteMessage,
   createMessageDocument,
-  CreateMessageHandler,
-  forkOrchestrator
+  CreateMessageHandler
 } from "../handler";
 
 import { taskEither } from "fp-ts/lib/TaskEither";
 import {
   alphaStringArb,
-  emailStringArb,
   fiscalCodeArb,
   fiscalCodeArrayArb,
   fiscalCodeSetArb,
   maxAmountArb,
   messageTimeToLiveArb,
-  newMessageArb,
   newMessageWithDefaultEmailArb,
-  newMessageWithoutContentArb,
-  newMessageWithPaymentDataArb,
-  versionedServiceArb
+  newMessageWithPaymentDataArb
 } from "../../utils/__tests__/arbitraries";
 import { EmailString, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 import { IAzureUserAttributes } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
@@ -207,62 +202,6 @@ describe("createMessageDocument", () => {
             senderUserId,
             timeToLiveSeconds: ttl
           });
-        }
-      )
-    );
-  });
-});
-
-describe("forkOrchestrator", () => {
-  it("should fork a durable orchestrator", async () => {
-    await fc.assert(
-      fc.asyncProperty(
-        newMessageArb,
-        newMessageWithoutContentArb,
-        versionedServiceArb,
-        emailStringArb,
-        async (
-          newMessage,
-          newMessageWithoutContent,
-          service,
-          serviceUserEmail
-        ) => {
-          const mockDfClient = {
-            startNew: jest.fn(() => Promise.resolve("orchestratorId"))
-          };
-          const getDfClient = jest.fn(() => mockDfClient);
-          const response = await forkOrchestrator(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            getDfClient as any,
-            newMessage.content,
-            service,
-            newMessageWithoutContent,
-            serviceUserEmail
-          )();
-          expect(E.isRight(response)).toBeTruthy();
-          expect(getDfClient).toHaveBeenCalledTimes(1);
-          expect(mockDfClient.startNew).toHaveBeenCalledTimes(1);
-          expect(mockDfClient.startNew).toHaveBeenCalledWith(
-            "CreatedMessageOrchestrator",
-            undefined,
-            expect.objectContaining({
-              content: newMessage.content,
-              defaultAddresses: {}, // deprecated feature
-              message: newMessageWithoutContent,
-              senderMetadata: {
-                departmentName: service.departmentName,
-                organizationFiscalCode: service.organizationFiscalCode,
-                organizationName: service.organizationName,
-                requireSecureChannels: service.requireSecureChannels,
-                serviceName: service.serviceName,
-                serviceUserEmail
-              },
-              serviceVersion: service.version
-            })
-          );
-          expect(pipe(response, E.getOrElse(undefined))).toEqual(
-            "orchestratorId"
-          );
         }
       )
     );
