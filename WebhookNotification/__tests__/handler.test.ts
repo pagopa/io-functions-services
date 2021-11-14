@@ -275,9 +275,12 @@ describe("handler", () => {
         notificationModelMock as any,
         {} as any,
         false
-      )(mockContext, {
-        notificationEvent: getMockNotificationEvent()
-      })
+      )(
+        mockContext,
+        JSON.stringify({
+          notificationEvent: getMockNotificationEvent()
+        })
+      )
     ).rejects.toThrow();
   });
 
@@ -291,9 +294,12 @@ describe("handler", () => {
         notificationModelMock as any,
         {} as any,
         false
-      )(mockContext, {
-        notificationEvent: getMockNotificationEvent()
-      })
+      )(
+        mockContext,
+        JSON.stringify({
+          notificationEvent: getMockNotificationEvent()
+        })
+      )
     ).rejects.toThrow();
   });
 
@@ -307,9 +313,12 @@ describe("handler", () => {
         notificationModelMock as any,
         {} as any,
         false
-      )(mockContext, {
-        notificationEvent: getMockNotificationEvent()
-      })
+      )(
+        mockContext,
+        JSON.stringify({
+          notificationEvent: getMockNotificationEvent()
+        })
+      )
     ).resolves.toEqual({ kind: "FAILURE", reason: "DECODE_ERROR" });
   });
 
@@ -327,9 +336,12 @@ describe("handler", () => {
       notificationModelMock as any,
       notifyCallApiMock as any,
       false
-    )(mockContext, {
-      notificationEvent: getMockNotificationEvent(aMessageContent)
-    });
+    )(
+      mockContext,
+      JSON.stringify({
+        notificationEvent: getMockNotificationEvent(aMessageContent)
+      })
+    );
 
     expect(result).toEqual({
       kind: "SUCCESS",
@@ -358,9 +370,12 @@ describe("handler", () => {
       notificationModelMock as any,
       notifyCallApiMock,
       false
-    )(mockContext, {
-      notificationEvent: getMockNotificationEvent(aLongMessageContent)
-    });
+    )(
+      mockContext,
+      JSON.stringify({
+        notificationEvent: getMockNotificationEvent(aLongMessageContent)
+      })
+    );
 
     expect(result).toEqual({
       kind: "SUCCESS",
@@ -383,9 +398,12 @@ describe("handler", () => {
         notificationModelMock as any,
         notifyCallApiMock,
         false
-      )(mockContext, {
-        notificationEvent: getMockNotificationEvent(aMessageContent)
-      })
+      )(
+        mockContext,
+        JSON.stringify({
+          notificationEvent: getMockNotificationEvent(aMessageContent)
+        })
+      )
     ).resolves.toEqual({ kind: "FAILURE", reason: "SEND_TO_WEBHOOK_FAILED" });
 
     expect(notificationModelMock.update).not.toHaveBeenCalled();
@@ -402,15 +420,18 @@ describe("handler", () => {
       notificationModelMock as any,
       {} as any,
       false
-    )(mockContext, {
-      notificationEvent: {
-        ...notificationEvent,
-        message: {
-          ...notificationEvent.message,
-          createdAt: new Date("2012-12-12")
+    )(
+      mockContext,
+      JSON.stringify({
+        notificationEvent: {
+          ...notificationEvent,
+          message: {
+            ...notificationEvent.message,
+            createdAt: new Date("2012-12-12")
+          }
         }
-      }
-    });
+      })
+    );
 
     expect(ret).toEqual({ kind: "SUCCESS", result: "EXPIRED" });
   });

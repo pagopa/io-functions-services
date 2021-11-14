@@ -13,8 +13,6 @@ import * as O from "fp-ts/lib/Option";
 
 import { readableReport } from "@pagopa/ts-commons/lib/reporters";
 
-import { Context } from "@azure/functions";
-
 import {
   NotificationModel,
   WebhookNotification
@@ -46,6 +44,7 @@ import {
 import { flow, pipe } from "fp-ts/lib/function";
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import { Notification } from "../generated/notifications/Notification";
+import { withJsonInput } from "../utils/with-json-input";
 import { WebhookNotifyT } from "./client";
 
 export const WebhookNotificationInput = t.interface({
@@ -176,113 +175,116 @@ export const sendToWebhook = (
 /**
  * Returns a function for handling WebhookNotification
  */
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export const getWebhookNotificationHandler = (
   lNotificationModel: NotificationModel,
   notifyApiCall: TypeofApiCall<WebhookNotifyT>,
   disableWebhookMessageContent: boolean
-) => async (context: Context, input: unknown): Promise<unknown> => {
-  const inputOrError = WebhookNotificationInput.decode(input);
+) =>
+  withJsonInput(async (context, input) => {
+    const inputOrError = WebhookNotificationInput.decode(input);
 
-  if (E.isLeft(inputOrError)) {
-    context.log.error(
-      `${context.executionContext.functionName}|Cannot decode input`
-    );
-    context.log.verbose(
-      `${context.executionContext.functionName}|ERROR_DETAILS=${readableReport(
-        inputOrError.left
-      )}`
-    );
-    return WebhookNotificationResult.encode({
-      kind: "FAILURE",
-      reason: "DECODE_ERROR"
-    });
-  }
-
-  const { notificationEvent } = inputOrError.right;
-
-  const {
-    content,
-    message,
-    notificationId,
-    senderMetadata
-  } = notificationEvent;
-
-  const logPrefix = `${context.executionContext.functionName}|MESSAGE_ID=${message.id}|NOTIFICATION_ID=${notificationId}`;
-
-  // Check whether the message is expired
-  const errorOrActiveMessage = ActiveMessage.decode(message);
-
-  if (E.isLeft(errorOrActiveMessage)) {
-    // if the message is expired no more processing is necessary
-    context.log.warn(`${logPrefix}|RESULT=TTL_EXPIRED`);
-    return WebhookNotificationResult.encode({
-      kind: "SUCCESS",
-      result: "EXPIRED"
-    });
-  }
-
-  // fetch the notification
-  const errorOrMaybeNotification = await lNotificationModel.find([
-    notificationId,
-    message.id
-  ])();
-
-  if (E.isLeft(errorOrMaybeNotification)) {
-    const error = errorOrMaybeNotification.left;
-    // we got an error while fetching the notification
-    context.log.warn(`${logPrefix}|ERROR=${error.kind}`);
-    throw new Error(`Error while fetching the notification: ${error.kind}`);
-  }
-
-  const maybeWebhookNotification = errorOrMaybeNotification.right;
-  if (O.isNone(maybeWebhookNotification)) {
-    // it may happen that the object is not yet visible to this function due to latency
-    // as the notification object is retrieved from database and we may be hitting a
-    // replica that is not yet in sync - throwing an error will trigger a retry
-    context.log.warn(`${logPrefix}|RESULT=NOTIFICATION_NOT_FOUND`);
-    throw new Error(`Notification not found`);
-  }
-
-  const errorOrWebhookNotification = WebhookNotification.decode(
-    maybeWebhookNotification.value
-  );
-
-  if (E.isLeft(errorOrWebhookNotification)) {
-    // The notification object is not compatible with this code
-    const error = readableReport(errorOrWebhookNotification.left);
-    context.log.error(`${logPrefix}|ERROR`);
-    context.log.verbose(`${logPrefix}|ERROR_DETAILS=${error}`);
-    return WebhookNotificationResult.encode({
-      kind: "FAILURE",
-      reason: "DECODE_ERROR"
-    });
-  }
-
-  const webhookNotification = errorOrWebhookNotification.right.channels.WEBHOOK;
-
-  const sendResult = await sendToWebhook(
-    notifyApiCall,
-    webhookNotification.url,
-    message,
-    content,
-    senderMetadata,
-    disableWebhookMessageContent
-  )();
-  if (E.isLeft(sendResult)) {
-    const error = sendResult.left;
-    context.log.error(`${logPrefix}|ERROR=${error.message}`);
-    if (isTransientError(error)) {
-      throw new Error(`Error while calling webhook: ${error.message}`);
-    } else {
+    if (E.isLeft(inputOrError)) {
+      context.log.error(
+        `${context.executionContext.functionName}|Cannot decode input`
+      );
+      context.log.verbose(
+        `${
+          context.executionContext.functionName
+        }|ERROR_DETAILS=${readableReport(inputOrError.left)}`
+      );
       return WebhookNotificationResult.encode({
         kind: "FAILURE",
-        reason: "SEND_TO_WEBHOOK_FAILED"
+        reason: "DECODE_ERROR"
       });
     }
-  }
 
-  return WebhookNotificationResult.encode({
-    kind: "SUCCESS",
-    result: "OK"
+    const { notificationEvent } = inputOrError.right;
+
+    const {
+      content,
+      message,
+      notificationId,
+      senderMetadata
+    } = notificationEvent;
+
+    const logPrefix = `${context.executionContext.functionName}|MESSAGE_ID=${message.id}|NOTIFICATION_ID=${notificationId}`;
+
+    // Check whether the message is expired
+    const errorOrActiveMessage = ActiveMessage.decode(message);
+
+    if (E.isLeft(errorOrActiveMessage)) {
+      // if the message is expired no more processing is necessary
+      context.log.warn(`${logPrefix}|RESULT=TTL_EXPIRED`);
+      return WebhookNotificationResult.encode({
+        kind: "SUCCESS",
+        result: "EXPIRED"
+      });
+    }
+
+    // fetch the notification
+    const errorOrMaybeNotification = await lNotificationModel.find([
+      notificationId,
+      message.id
+    ])();
+
+    if (E.isLeft(errorOrMaybeNotification)) {
+      const error = errorOrMaybeNotification.left;
+      // we got an error while fetching the notification
+      context.log.warn(`${logPrefix}|ERROR=${error.kind}`);
+      throw new Error(`Error while fetching the notification: ${error.kind}`);
+    }
+
+    const maybeWebhookNotification = errorOrMaybeNotification.right;
+    if (O.isNone(maybeWebhookNotification)) {
+      // it may happen that the object is not yet visible to this function due to latency
+      // as the notification object is retrieved from database and we may be hitting a
+      // replica that is not yet in sync - throwing an error will trigger a retry
+      context.log.warn(`${logPrefix}|RESULT=NOTIFICATION_NOT_FOUND`);
+      throw new Error(`Notification not found`);
+    }
+
+    const errorOrWebhookNotification = WebhookNotification.decode(
+      maybeWebhookNotification.value
+    );
+
+    if (E.isLeft(errorOrWebhookNotification)) {
+      // The notification object is not compatible with this code
+      const error = readableReport(errorOrWebhookNotification.left);
+      context.log.error(`${logPrefix}|ERROR`);
+      context.log.verbose(`${logPrefix}|ERROR_DETAILS=${error}`);
+      return WebhookNotificationResult.encode({
+        kind: "FAILURE",
+        reason: "DECODE_ERROR"
+      });
+    }
+
+    const webhookNotification =
+      errorOrWebhookNotification.right.channels.WEBHOOK;
+
+    const sendResult = await sendToWebhook(
+      notifyApiCall,
+      webhookNotification.url,
+      message,
+      content,
+      senderMetadata,
+      disableWebhookMessageContent
+    )();
+    if (E.isLeft(sendResult)) {
+      const error = sendResult.left;
+      context.log.error(`${logPrefix}|ERROR=${error.message}`);
+      if (isTransientError(error)) {
+        throw new Error(`Error while calling webhook: ${error.message}`);
+      } else {
+        return WebhookNotificationResult.encode({
+          kind: "FAILURE",
+          reason: "SEND_TO_WEBHOOK_FAILED"
+        });
+      }
+    }
+
+    return WebhookNotificationResult.encode({
+      kind: "SUCCESS",
+      result: "OK"
+    });
   });
-};
