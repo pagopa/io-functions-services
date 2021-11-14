@@ -17,7 +17,6 @@ import {
   NotificationModel,
   WebhookNotification
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
-import { NotificationEvent } from "@pagopa/io-functions-commons/dist/src/models/notification_event";
 
 import {
   isTransientError,
@@ -45,11 +44,10 @@ import { flow, pipe } from "fp-ts/lib/function";
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import { Notification } from "../generated/notifications/Notification";
 import { withJsonInput } from "../utils/with-json-input";
+import { NotificationCreatedEvent } from "../CreateNotification/handler";
 import { WebhookNotifyT } from "./client";
 
-export const WebhookNotificationInput = t.interface({
-  notificationEvent: NotificationEvent
-});
+export const WebhookNotificationInput = NotificationCreatedEvent;
 
 export type WebhookNotificationInput = t.TypeOf<
   typeof WebhookNotificationInput
