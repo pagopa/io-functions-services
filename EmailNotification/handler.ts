@@ -15,10 +15,10 @@ import {
   EmailNotification,
   NotificationModel
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
-import { NotificationEvent } from "@pagopa/io-functions-commons/dist/src/models/notification_event";
 
 import { sendMail } from "@pagopa/io-functions-commons/dist/src/mailer";
 import { withJsonInput } from "../utils/with-json-input";
+import { NotificationCreatedEvent } from "../CreateNotification/handler";
 import { generateDocumentHtml } from "./utils";
 
 export interface INotificationDefaults {
@@ -26,9 +26,7 @@ export interface INotificationDefaults {
   readonly MAIL_FROM: NonEmptyString;
 }
 
-export const EmailNotificationInput = t.interface({
-  notificationEvent: NotificationEvent
-});
+export const EmailNotificationInput = NotificationCreatedEvent;
 
 export type EmailNotificationInput = t.TypeOf<typeof EmailNotificationInput>;
 
@@ -74,14 +72,9 @@ export const getEmailNotificationHandler = (
         });
       }
 
-      const { notificationEvent } = inputOrError.right;
-
       const {
-        message,
-        content,
-        notificationId,
-        senderMetadata
-      } = notificationEvent;
+        notificationEvent: { message, content, notificationId, senderMetadata }
+      } = inputOrError.right;
 
       const logPrefix = `${context.executionContext.functionName}|MESSAGE_ID=${message.id}|NOTIFICATION_ID=${notificationId}`;
 
