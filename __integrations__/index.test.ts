@@ -18,7 +18,8 @@ afterAll(async () => {});
 
 beforeEach(() => jest.clearAllMocks());
 
-export const aFiscalCode = "AAABBB01C02D345D" as FiscalCode;
+export const aLegacyFiscalCode = "AAABBB01C02D345L" as FiscalCode;
+export const anAutoFiscalCode = "AAABBB01C02D345A" as FiscalCode;
 
 export const aMessageBodyMarkdown = "test".repeat(80);
 export const aMessageContent: MessageContent = {
@@ -26,14 +27,65 @@ export const aMessageContent: MessageContent = {
   subject: "test".repeat(10)
 };
 
+// Must correspond to an existing serviceId within "services" colletion
+const aSubscriptionId = "aServiceId";
 const aSubscriptionKey = "aSubscriptionKey";
-const aContent = aMessageContent;
+
+const customHeaders = {
+  "x-user-groups":
+    "ApiUserAdmin,ApiLimitedProfileRead,ApiFullProfileRead,ApiProfileWrite,ApiDevelopmentProfileWrite,ApiServiceRead,ApiServiceList,ApiServiceWrite,ApiPublicServiceRead,ApiPublicServiceList,ApiServiceByRecipientQuery,ApiMessageRead,ApiMessageWrite,ApiMessageWriteDefaultAddress,ApiMessageList,ApiSubscriptionsFeedRead,ApiInfoRead,ApiDebugRead,ApiMessageWriteEUCovidCert",
+  "x-subscription-id": aSubscriptionId,
+  "x-user-email": "unused@example.com",
+  "x-user-id": "unused",
+  "x-user-note": "unused",
+  "x-functions-key": "unused",
+  "x-forwarded-for": "0.0.0.0"
+};
+const customNodeFetch: typeof fetch = async (
+  input: RequestInfo,
+  init?: RequestInit
+) => {
+  console.log("Sending request");
+  console.log(input);
+
+  const res = await ((nodeFetch as unknown) as typeof fetch)(input, {
+    ...init,
+    headers: {
+      ...init.headers,
+      ...customHeaders
+    }
+  });
+
+  console.log("Result: ");
+  console.log(res);
+
+  return res;
+};
+
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+// Wait some time
+beforeAll(async () => {
+  await delay(5000);
+});
 
 describe("fn-services |> ping", () => {
+  it("/info return 200", async () => {
+    const response = await nodeFetch("http://function:7071/api/info");
+    const body = await response.text();
+
+    console.log(body);
+
+    // We expects some configurations to fail
+    expect(response.status).toEqual(500);
+  });
+});
+
+describe("Legacy profile |> Create Message", () => {
   const client = createClient<"SubscriptionKey">({
     basePath: "/api/v1",
     baseUrl,
-    fetchApi: (nodeFetch as unknown) as typeof fetch,
+    fetchApi: customNodeFetch,
     withDefaults: op => params =>
       op({
         ...params,
@@ -41,44 +93,67 @@ describe("fn-services |> ping", () => {
       })
   });
 
-  it("/info return 200", async () => {
-    const response = await nodeFetch("http://function:7071/api/info");
-    const body = await response.text();
+  it("should return 201 when creating a message", async () => {
+    console.log(`Env variable: ${WAIT_MS}`);
 
-    // We expects some configurations to fail
-    expect(response.status).toEqual(500);
-  });
+    await delay(5000);
 
-  it("should return 403 Forbidden if no header has been provided", async () => {
     const body = {
-      message: { fiscal_code: aFiscalCode, content: aContent }
+      message: { fiscal_code: anAutoFiscalCode, content: aMessageContent }
     };
 
     const response = await client.submitMessageforUserWithFiscalCodeInBody(
       body
     );
 
-    if (E.isLeft(response)) console.log(response.left);
-
-    const nodeFetchResponse = await nodeFetch(
-      "http://function:7071/api/v1/messages",
-      {
-        method: "POST",
-        body: JSON.stringify(body),
-        headers: {
-          "Content-Type": "application/json",
-          SubscriptionKey: aSubscriptionKey
-        }
-      }
-    );
-
-    console.log("---> node response");
-    console.log(nodeFetchResponse);
-
-    // We expects some configurations to fail
     expect(E.isRight(response)).toEqual(true);
     if (E.isRight(response)) {
-      expect(response.right.status).toEqual(403);
+      expect(response.right.status).toEqual(201);
+    }
+  });
+
+  it("should return the created message", async () => {
+    const fiscalCode = anAutoFiscalCode;
+    const body = {
+      message: { fiscal_code: fiscalCode, content: aMessageContent }
+    };
+
+    const response = await client.submitMessageforUserWithFiscalCodeInBody(
+      body
+    );
+
+    expect(E.isRight(response)).toEqual(true);
+    if (E.isRight(response)) {
+      expect(response.right.status).toEqual(201);
+      if (response.right.status === 201) {
+        const messageId = response.right.value.id;
+        expect(messageId).not.toBeUndefined();
+
+        // Wait for process to complete
+        await delay(2000);
+
+        const responseGet = await client.getMessage({
+          id: messageId,
+          fiscal_code: fiscalCode
+        });
+
+        expect(E.isRight(responseGet)).toEqual(true);
+        if (E.isRight(responseGet)) {
+          expect(responseGet.right.status).toEqual(200);
+
+          if (responseGet.right.status === 200) {
+            expect(responseGet.right.value).toEqual(
+              expect.objectContaining({
+                message: expect.objectContaining({
+                  id: messageId,
+                  ...body.message
+                }),
+                status: "PROCESSED"
+              })
+            );
+          }
+        }
+      }
     }
   });
 });

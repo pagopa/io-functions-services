@@ -1,9 +1,10 @@
 import { BlobServiceClient } from "@azure/storage-blob";
+import { log } from "./utils/logger";
 
 export const fillAzureStorage = async (
   QueueStorageConnection: string
 ): Promise<void> => {
-  console.log("Creating Queue Storages");
+  log("Creating Queue Storages");
   const blobServiceClient = BlobServiceClient.fromConnectionString(
     QueueStorageConnection
   );
@@ -13,5 +14,5 @@ export const fillAzureStorage = async (
     blobServiceClient.createContainer("push-notifications")
   ]);
 
-  console.log("Queue Storages created");
+  log("Queue Storages created");
 };

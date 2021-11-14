@@ -128,11 +128,7 @@ paths:
         "201":
           description: Message created.
           schema:
-            type: object
-            properties:
-              id:
-                type: string
-                description: The identifier of the created message.
+            $ref: '#/definitions/CreatedMessage'
           headers:
             Location:
               type: string
@@ -738,6 +734,12 @@ definitions:
     x-extensible-enum:
       - PRIMARY_KEY
       - SECONDARY_KEY
+  CreatedMessage:
+    type: object
+    properties:
+      id:
+        type: string
+        description: The identifier of the created message.
 responses: {}
 parameters:
   FiscalCode:

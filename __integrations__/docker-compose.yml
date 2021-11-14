@@ -9,7 +9,7 @@ services:
       context: ../docker/cosmosdb
       dockerfile: ./Dockerfile
     ports:
-      - 3000:3000
+      - ${COSMOSDB_PORT}:3000
 
   storage-account:
     image: azurite
@@ -28,9 +28,9 @@ services:
     build:
       context: ../docker/fixtures
       dockerfile: ./Dockerfile
-    depends_on:
-      - cosmosdb
+    links:
       - storage-account
+      - cosmosdb
 
   function:
     image: fn
@@ -43,11 +43,14 @@ services:
       - "../:/usr/src/app"
     ports:
       - ${FUNCTIONS_SERVICES_PORT}:7071
+      # node inspector
+      - "5861:5861"
+    environment:
+      - languageWorkers__node__arguments="--inspect=0.0.0.0:5861"
     links:
-      - testagent
-    depends_on:
       - cosmosdb
       - storage-account
+    depends_on:
       - fixtures
 
   testagent:
@@ -63,3 +66,5 @@ services:
       - cosmosdb
       - storage-account
       - fixtures
+    links:
+      - function

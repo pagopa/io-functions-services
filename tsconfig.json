@@ -12,5 +12,6 @@
     "**/__tests__",
     "__mocks__/**",
     "__integrations__/**",
+    "docker/**"
   ]
 }
