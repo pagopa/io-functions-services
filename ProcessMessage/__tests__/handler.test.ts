@@ -312,7 +312,6 @@ describe("getprocessMessageHandler", () => {
 
   it.each`
     scenario                                                                                               | failureReason              | profileResult                                                                                                    | preferenceResult                                                 | messageEvent
-    ${"input cannot be decoded"}                                                                           | ${"BAD_DATA"}              | ${"not-called"}                                                                                                  | ${"not-called"}                                                  | ${{}}
     ${"no profile was found"}                                                                              | ${"PROFILE_NOT_FOUND"}     | ${O.none}                                                                                                        | ${"not-called"}                                                  | ${aCreatedMessageEvent}
     ${"inbox is not enabled"}                                                                              | ${"MASTER_INBOX_DISABLED"} | ${O.some({ ...aRetrievedProfile, isInboxEnabled: false })}                                                       | ${"not-called"}                                                  | ${aCreatedMessageEvent}
     ${"message sender is blocked"}                                                                         | ${"SENDER_BLOCKED"}        | ${O.some(withBlacklist(aRetrievedProfile, [aCreatedMessageEvent.message.senderServiceId]))}                      | ${"not-called"}                                                  | ${aCreatedMessageEvent}
@@ -372,6 +371,7 @@ describe("getprocessMessageHandler", () => {
 
   it.each`
     scenario                                                         | profileResult                                            | storageResult                                                | upsertResult                                           | preferenceResult                                        | messageEvent
+    ${"input cannot be decoded"}                                     | ${"not-called"}                                          | ${"not-called"}                                              | ${"not-called"}                                        | ${"not-called"}                                         | ${{}}
     ${"there is an error while fetching profile"}                    | ${TE.left("Profile fetch error")}                        | ${"not-called"}                                              | ${"not-called"}                                        | ${"not-called"}                                         | ${aCreatedMessageEvent}
     ${"message store operation fails"}                               | ${TE.of(O.some(aRetrievedProfile))}                      | ${TE.left(new Error("Error while storing message content"))} | ${"not-called"}                                        | ${"not-called"}                                         | ${aCreatedMessageEvent}
     ${"message upsert fails"}                                        | ${TE.of(O.some(aRetrievedProfile))}                      | ${TE.of(O.some(aBlobResult))}                                | ${TE.left(new Error("Error while upserting message"))} | ${"not-called"}                                         | ${aCreatedMessageEvent}
@@ -384,6 +384,7 @@ describe("getprocessMessageHandler", () => {
       storageResult,
       upsertResult,
       preferenceResult,
+      messageEvent,
       // mock implementation must be set only if we expect the function to be called, otherwise it will interfere with other tests
       //   we use "not-called" to determine such
       skipProfileMock = profileResult === "not-called",
@@ -418,7 +419,7 @@ describe("getprocessMessageHandler", () => {
       const context = createContext();
 
       await expect(
-        processMessageHandler(context, JSON.stringify(aCreatedMessageEvent))
+        processMessageHandler(context, JSON.stringify(messageEvent))
       ).rejects.toThrow();
 
       // check if models are being used only when expected
