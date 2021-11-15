@@ -8,13 +8,22 @@ import { RetrievedProfile } from "@pagopa/io-functions-commons/dist/src/models/p
 import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 import { MessageContent } from "../../generated/definitions/MessageContent";
 
+export type MessageId = t.TypeOf<typeof MessageId> &
+  NewMessageWithoutContent["id"]; // interseption needed to keep both definitions consistent
+export const MessageId = NonEmptyString;
+
+export type CommonMessageData = t.TypeOf<typeof CommonMessageData>;
+export const CommonMessageData = t.interface({
+  content: MessageContent,
+  message: NewMessageWithoutContent,
+  senderMetadata: CreatedMessageEventSenderMetadata
+});
+
 export type CreatedMessageEvent = t.TypeOf<typeof CreatedMessageEvent>;
 export const CreatedMessageEvent = t.intersection(
   [
+    CommonMessageData,
     t.interface({
-      content: MessageContent,
-      message: NewMessageWithoutContent,
-      senderMetadata: CreatedMessageEventSenderMetadata,
       serviceVersion: NonNegativeNumber
     }),
     t.partial({
@@ -25,22 +34,22 @@ export const CreatedMessageEvent = t.intersection(
 );
 
 export type ProcessedMessageEvent = t.TypeOf<typeof ProcessedMessageEvent>;
-export const ProcessedMessageEvent = t.interface({
-  blockedInboxOrChannels: t.readonlyArray(BlockedInboxOrChannel),
-  content: MessageContent,
-  message: NewMessageWithoutContent,
-  profile: RetrievedProfile,
-  senderMetadata: CreatedMessageEventSenderMetadata
-});
+export const ProcessedMessageEvent = t.intersection([
+  CommonMessageData,
+  t.interface({
+    blockedInboxOrChannels: t.readonlyArray(BlockedInboxOrChannel),
+    profile: RetrievedProfile
+  })
+]);
 
 export type NotificationCreatedEvent = t.TypeOf<
   typeof NotificationCreatedEvent
 >;
 export const NotificationCreatedEvent = t.interface({
-  notificationEvent: t.interface({
-    content: MessageContent,
-    message: NewMessageWithoutContent,
-    notificationId: NonEmptyString,
-    senderMetadata: CreatedMessageEventSenderMetadata
-  })
+  notificationEvent: t.intersection([
+    CommonMessageData,
+    t.interface({
+      notificationId: NonEmptyString
+    })
+  ])
 });
