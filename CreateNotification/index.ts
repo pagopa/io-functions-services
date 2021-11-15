@@ -1,14 +1,4 @@
-﻿/*
- * This function is not intended to be invoked directly. Instead it will be
- * triggered by an orchestrator function.
- *
- * Before running this sample, please:
- * - create a Durable orchestration function
- * - create a Durable HTTP starter function
- * - run 'npm install durable-functions' from the wwwroot folder of your
- *   function app in Kudu
- */
-import { AzureFunction } from "@azure/functions";
+﻿import { AzureFunction } from "@azure/functions";
 
 import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
 import { HttpsUrl } from "@pagopa/io-functions-commons/dist/generated/definitions/HttpsUrl";

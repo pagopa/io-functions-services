@@ -81,14 +81,14 @@ const aPaymentData = {
   amount: 1000,
   invalid_after_due_date: false,
   notice_number: "177777777777777777"
-}
+};
 
 const aPaymentDataWithPayee = {
   ...aPaymentData,
   payee: {
     fiscal_code: anOrgFiscalCode
   }
-}
+};
 
 const aCreatedMessageEvent: CreatedMessageEvent = {
   content: aMessageContent,
@@ -99,12 +99,12 @@ const aCreatedMessageEvent: CreatedMessageEvent = {
 const aMessageContentWithPaymentData = {
   ...aMessageContent,
   payment_data: aPaymentData
-}
+};
 
 const aMessageContentWithPaymentDataWithPayee = {
   ...aMessageContent,
   payment_data: aPaymentDataWithPayee
-}
+};
 const aRetrievedProfileWithAValidTimestamp = {
   ...aRetrievedProfile,
   _ts: lastUpdateTimestamp
@@ -155,7 +155,7 @@ describe("getStoreMessageContentActivityHandler", () => {
 
   it.each`
     scenario                                                                                                                       | profileResult                                                                                               | storageResult  | upsertResult         | preferenceResult                                                    | messageEvent            | expectedBIOC                         | optOutEmailSwitchDate           | optInEmailEnabled | overrideProfileResult
-    ${"a retrieved profile mantaining its original isEmailEnabled property"}                                                       | ${aRetrievedProfileWithAValidTimestamp}                                                                     | ${aBlobResult} | ${aRetrievedMessage} | ${O.some(aRetrievedServicePreference)}                              | ${aCreatedMessageEvent} | ${[]}                                | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"O.none"}
+    ${"a retrieved profile maintaining its original isEmailEnabled property"}                                                      | ${aRetrievedProfileWithAValidTimestamp}                                                                     | ${aBlobResult} | ${aRetrievedMessage} | ${O.some(aRetrievedServicePreference)}                              | ${aCreatedMessageEvent} | ${[]}                                | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"O.none"}
     ${"retrieved profile with isEmailEnabled to false"}                                                                            | ${{ ...aRetrievedProfile, isEmailEnabled: false }}                                                          | ${aBlobResult} | ${aRetrievedMessage} | ${O.some(aRetrievedServicePreference)}                              | ${aCreatedMessageEvent} | ${[]}                                | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"O.none"}
     ${"empty blockedInboxOrChannels if message sender service does not exists in user service preference (AUTO SETTINGS)"}         | ${withBlacklist(aRetrievedProfileWithAutoPreferences, [aCreatedMessageEvent.message.senderServiceId])}      | ${aBlobResult} | ${aRetrievedMessage} | ${O.none}                                                           | ${aCreatedMessageEvent} | ${[]}                                | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"O.none"}
     ${"empty blockedInboxOrChannels if message sender service exists and is enabled in user service preference (AUTO SETTINGS)"}   | ${aRetrievedProfileWithAutoPreferences}                                                                     | ${aBlobResult} | ${aRetrievedMessage} | ${O.some(anEnabledServicePreference)}                               | ${aCreatedMessageEvent} | ${[]}                                | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"O.none"}
@@ -230,10 +230,10 @@ describe("getStoreMessageContentActivityHandler", () => {
   );
 
   it.each`
-    scenario                                            | profileResult                           | storageResult  | upsertResult         | preferenceResult                       | messageEvent                                                                   | optOutEmailSwitchDate           | optInEmailEnabled | expectedMessagePaymentData
-    ${"with original payment message with payee"}       | ${aRetrievedProfileWithAValidTimestamp} | ${aBlobResult} | ${aRetrievedMessage} | ${O.some(aRetrievedServicePreference)} | ${{...aCreatedMessageEvent, content: aMessageContentWithPaymentDataWithPayee}} | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${aPaymentDataWithPayee}
-    ${"with overridden payee if no payee is provided"}  | ${aRetrievedProfileWithAValidTimestamp} | ${aBlobResult} | ${aRetrievedMessage} | ${O.some(aRetrievedServicePreference)} | ${{...aCreatedMessageEvent, content: aMessageContentWithPaymentData}}          | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${{...aPaymentData, payee: {fiscal_code: aCreatedMessageEvent.senderMetadata.organizationFiscalCode}}}
-    ${"with a no payment message"}                      | ${aRetrievedProfileWithAValidTimestamp} | ${aBlobResult} | ${aRetrievedMessage} | ${O.none}                              | ${aCreatedMessageEvent}                                                        | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${undefined}
+    scenario                                           | profileResult                           | storageResult  | upsertResult         | preferenceResult                       | messageEvent                                                                     | optOutEmailSwitchDate         | optInEmailEnabled | expectedMessagePaymentData
+    ${"with original payment message with payee"}      | ${aRetrievedProfileWithAValidTimestamp} | ${aBlobResult} | ${aRetrievedMessage} | ${O.some(aRetrievedServicePreference)} | ${{ ...aCreatedMessageEvent, content: aMessageContentWithPaymentDataWithPayee }} | ${aPastOptOutEmailSwitchDate} | ${false}          | ${aPaymentDataWithPayee}
+    ${"with overridden payee if no payee is provided"} | ${aRetrievedProfileWithAValidTimestamp} | ${aBlobResult} | ${aRetrievedMessage} | ${O.some(aRetrievedServicePreference)} | ${{ ...aCreatedMessageEvent, content: aMessageContentWithPaymentData }}          | ${aPastOptOutEmailSwitchDate} | ${false}          | ${{ ...aPaymentData, payee: { fiscal_code: aCreatedMessageEvent.senderMetadata.organizationFiscalCode } }}
+    ${"with a no payment message"}                     | ${aRetrievedProfileWithAValidTimestamp} | ${aBlobResult} | ${aRetrievedMessage} | ${O.none}                              | ${aCreatedMessageEvent}                                                          | ${aPastOptOutEmailSwitchDate} | ${false}          | ${undefined}
   `(
     "should succeed with $scenario",
     async ({

@@ -18,12 +18,11 @@ Puoi anche disattivare l’inoltro dei messaggi via email per tutti i servizi, s
 /**
  * Generates the HTML for the email from the Markdown content and the subject
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
-export async function generateDocumentHtml(
+export const generateDocumentHtml = async (
   subject: MessageSubject,
   markdown: MessageBodyMarkdown,
   senderMetadata: CreatedMessageEventSenderMetadata
-): Promise<string> {
+): Promise<string> => {
   // converts the markdown body to HTML
   const bodyHtml = (await markdownToHtml.process(markdown)).toString();
 
@@ -53,7 +52,7 @@ export async function generateDocumentHtml(
     bodyHtml,
     footerHtml
   );
-}
+};
 
 /**
  * Promise wrapper around Transporter#sendMail
