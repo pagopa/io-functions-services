@@ -30,7 +30,9 @@ import { pipe } from "fp-ts/lib/function";
 
 import { withJsonInput } from "../utils/with-json-input";
 import { withDecodedInput } from "../utils/with-decoded-input";
+import { withExpandedInput, DataFetcher } from "../utils/with-expanded-input";
 import {
+  CommonMessageData,
   NotificationCreatedEvent,
   ProcessedMessageEvent
 } from "../utils/events/message";
@@ -94,203 +96,209 @@ export const getCreateNotificationHandler = (
   lDefaultWebhookUrl: HttpsUrl,
   lSandboxFiscalCode: FiscalCode,
   lEmailNotificationServiceBlackList: ReadonlyArray<ServiceId>,
-  lWebhookNotificationServiceBlackList: ReadonlyArray<ServiceId>
+  lWebhookNotificationServiceBlackList: ReadonlyArray<ServiceId>,
+  retrieveProcessingMessageData: DataFetcher<CommonMessageData>
+  // eslint-disable-next-line max-params
 ) =>
   // eslint-disable-next-line max-lines-per-function
   withJsonInput(
     withDecodedInput(
       CreateNotificationInput,
-      async (
-        context,
-        {
-          message: newMessageWithoutContent,
-          content: newMessageContent,
-          profile,
-          blockedInboxOrChannels,
-          senderMetadata
-        }
-      ) => {
-        const logPrefix = `${context.executionContext.functionName}|MESSAGE_ID=${newMessageWithoutContent.id}`;
-
-        context.log.verbose(`${logPrefix}|STARTING`);
-
-        //
-        // Decide whether to send an email notification
-        //
-
-        // first we check whether the user has blocked emails notifications for the
-        // service that is sending the message
-        // Since we are not handling email service preferences for App version 1.29.0.1
-        // not Legacy profiles will use only profile level email preference.
-        const isEmailBlockedForService =
-          profile.servicePreferencesSettings.mode ===
-            ServicesPreferencesModeEnum.LEGACY &&
-          blockedInboxOrChannels.includes(BlockedInboxOrChannelEnum.EMAIL);
-
-        // If the message is sent to the SANDBOX_FISCAL_CODE we consider it a test message
-        // so we send the email notification to the email associated to the user owner
-        // of the sender service (the one registered in the developer portal).
-        // Otherwise we try to get the email from the user profile.
-        const maybeNotificationEmailAddress: Option<NotificationChannelEmail> =
-          newMessageWithoutContent.fiscalCode === lSandboxFiscalCode
-            ? O.some({
-                addressSource:
-                  NotificationAddressSourceEnum.SERVICE_USER_ADDRESS,
-                toAddress: senderMetadata.serviceUserEmail
-              })
-            : getEmailAddressFromProfile(profile);
-
-        // the sender service allows email channel
-        const isEmailChannelAllowed = !senderMetadata.requireSecureChannels;
-
-        // wether the service is in our blacklist for sending email
-        const isEmailDisabledForService = lEmailNotificationServiceBlackList.includes(
-          newMessageWithoutContent.senderServiceId
-        );
-
-        // whether email notifications are enabled in this user profile - this is
-        // true by default, it's false only for users that have isEmailEnabled = false
-        // in their profile.
-        // Email is enabled if the message is sent to the SANDBOX_FISCAL_CODE
-        const isEmailEnabledInProfile =
-          newMessageWithoutContent.fiscalCode === lSandboxFiscalCode ||
-          profile.isEmailEnabled !== false;
-
-        // Check if the email in the user profile is validated.
-        // we assume it's true when not defined in user's profile.
-        // Email is validated if the message is sent to the SANDBOX_FISCAL_CODE
-        const isEmailValidatedInProfile =
-          newMessageWithoutContent.fiscalCode === lSandboxFiscalCode ||
-          profile.isEmailValidated !== false;
-
-        // finally we decide whether we should send the email notification or not -
-        // we send an email notification when all the following conditions are met:
-        //
-        // * email notifications are enabled for this service (!isInBlackList)
-        // * email notifications are enabled in the user profile (isEmailEnabledInProfile)
-        // * email is validated in the user profile (isEmailValidatedInProfile)
-        // * email notifications are not blocked for the sender service (!isEmailBlockedForService)
-        // * the sender service allows email channel
-        // * a destination email address is configured (maybeNotificationEmailAddress)
-        //
-        const maybeEmailNotificationAddress =
-          !isEmailDisabledForService &&
-          isEmailEnabledInProfile &&
-          isEmailValidatedInProfile &&
-          !isEmailBlockedForService &&
-          isEmailChannelAllowed
-            ? maybeNotificationEmailAddress
-            : O.none;
-
-        context.log.verbose(
-          `${logPrefix}|CHANNEL=EMAIL|PROFILE_ENABLED=${isEmailEnabledInProfile}|SERVICE_BLOCKED=${isEmailBlockedForService}|PROFILE_EMAIL=${O.isSome(
-            maybeEmailNotificationAddress
-          )}|WILL_NOTIFY=${O.isSome(maybeEmailNotificationAddress)}`
-        );
-
-        //
-        //  Decide whether to send a webhook notification
-        //
-
-        // whether the recipient wants us to send notifications to the app backend
-        const isWebhookEnabledInProfile = profile.isWebhookEnabled === true;
-
-        // check if the user has blocked webhook notifications sent from this service
-        const isWebhookBlockedForService =
-          blockedInboxOrChannels.indexOf(BlockedInboxOrChannelEnum.WEBHOOK) >=
-          0;
-
-        // wether the service is in our blacklist for sending push notifications
-        const isWebhookDisabledForService = lWebhookNotificationServiceBlackList.includes(
-          newMessageWithoutContent.senderServiceId
-        );
-
-        // finally we decide whether we should send the webhook notification or not -
-        // we send a webhook notification when all the following conditions are met:
-        //
-        // * webhook notifications are enabled in the user profile (isWebhookEnabledInProfile)
-        // * webhook notifications are not blocked for the sender service (!isWebhookBlockedForService)
-        // * webhook notifications are not blacklisted for the sender service (!isWebhookDisabledForService)
-        //
-        const maybeWebhookNotificationUrl =
-          isWebhookEnabledInProfile &&
-          !isWebhookBlockedForService &&
-          !isWebhookDisabledForService
-            ? O.some({
-                url: lDefaultWebhookUrl
-              })
-            : O.none;
-
-        context.log.verbose(
-          `${logPrefix}|CHANNEL=WEBHOOK|CHANNEL_ENABLED=${isWebhookEnabledInProfile}|SERVICE_BLOCKED=${isWebhookBlockedForService}|WILL_NOTIFY=${O.isSome(
-            maybeWebhookNotificationUrl
-          )}`
-        );
-
-        //
-        // If we can't send any notification there's not point in creating a
-        // Notification object
-        //
-
-        const noChannelsConfigured =
-          O.isNone(maybeEmailNotificationAddress) &&
-          O.isNone(maybeWebhookNotificationUrl);
-
-        if (noChannelsConfigured) {
-          context.log.warn(`${logPrefix}|RESULT=NO_CHANNELS_ENABLED`);
-          // return no notifications
-          return;
-        }
-
-        //
-        // Create a Notification object to track the status of each notification
-        //
-
-        const newNotification: NewNotification = {
-          ...createNewNotification(
-            ulidGenerator,
-            newMessageWithoutContent.fiscalCode,
-            newMessageWithoutContent.id
-          ),
-          channels: {
-            [NotificationChannelEnum.EMAIL]: O.toUndefined(
-              maybeEmailNotificationAddress
-            ),
-            [NotificationChannelEnum.WEBHOOK]: O.toUndefined(
-              maybeWebhookNotificationUrl
-            )
+      withExpandedInput(
+        "messageId",
+        retrieveProcessingMessageData,
+        async (
+          context,
+          {
+            message: newMessageWithoutContent,
+            content: newMessageContent,
+            profile,
+            blockedInboxOrChannels,
+            senderMetadata
           }
-        };
+        ) => {
+          const logPrefix = `${context.executionContext.functionName}|MESSAGE_ID=${newMessageWithoutContent.id}`;
 
-        const notificationEvent = await createNotification(
-          lNotificationModel,
-          senderMetadata,
-          newMessageWithoutContent,
-          newMessageContent,
-          newNotification
-        );
+          context.log.verbose(`${logPrefix}|STARTING`);
 
-        context.log.verbose(`${logPrefix}|RESULT=SUCCESS`);
+          //
+          // Decide whether to send an email notification
+          //
 
-        context.log.verbose(util.inspect(notificationEvent));
+          // first we check whether the user has blocked emails notifications for the
+          // service that is sending the message
+          // Since we are not handling email service preferences for App version 1.29.0.1
+          // not Legacy profiles will use only profile level email preference.
+          const isEmailBlockedForService =
+            profile.servicePreferencesSettings.mode ===
+              ServicesPreferencesModeEnum.LEGACY &&
+            blockedInboxOrChannels.includes(BlockedInboxOrChannelEnum.EMAIL);
 
-        if (O.isSome(maybeEmailNotificationAddress)) {
-          // eslint-disable-next-line functional/immutable-data
-          context.bindings.notificationCreatedEmail = NotificationCreatedEvent.encode(
-            {
-              notificationEvent
-            }
+          // If the message is sent to the SANDBOX_FISCAL_CODE we consider it a test message
+          // so we send the email notification to the email associated to the user owner
+          // of the sender service (the one registered in the developer portal).
+          // Otherwise we try to get the email from the user profile.
+          const maybeNotificationEmailAddress: Option<NotificationChannelEmail> =
+            newMessageWithoutContent.fiscalCode === lSandboxFiscalCode
+              ? O.some({
+                  addressSource:
+                    NotificationAddressSourceEnum.SERVICE_USER_ADDRESS,
+                  toAddress: senderMetadata.serviceUserEmail
+                })
+              : getEmailAddressFromProfile(profile);
+
+          // the sender service allows email channel
+          const isEmailChannelAllowed = !senderMetadata.requireSecureChannels;
+
+          // wether the service is in our blacklist for sending email
+          const isEmailDisabledForService = lEmailNotificationServiceBlackList.includes(
+            newMessageWithoutContent.senderServiceId
           );
-        }
 
-        if (O.isSome(maybeWebhookNotificationUrl)) {
-          // eslint-disable-next-line functional/immutable-data
-          context.bindings.notificationCreatedWebhook = NotificationCreatedEvent.encode(
-            {
-              notificationEvent
-            }
+          // whether email notifications are enabled in this user profile - this is
+          // true by default, it's false only for users that have isEmailEnabled = false
+          // in their profile.
+          // Email is enabled if the message is sent to the SANDBOX_FISCAL_CODE
+          const isEmailEnabledInProfile =
+            newMessageWithoutContent.fiscalCode === lSandboxFiscalCode ||
+            profile.isEmailEnabled !== false;
+
+          // Check if the email in the user profile is validated.
+          // we assume it's true when not defined in user's profile.
+          // Email is validated if the message is sent to the SANDBOX_FISCAL_CODE
+          const isEmailValidatedInProfile =
+            newMessageWithoutContent.fiscalCode === lSandboxFiscalCode ||
+            profile.isEmailValidated !== false;
+
+          // finally we decide whether we should send the email notification or not -
+          // we send an email notification when all the following conditions are met:
+          //
+          // * email notifications are enabled for this service (!isInBlackList)
+          // * email notifications are enabled in the user profile (isEmailEnabledInProfile)
+          // * email is validated in the user profile (isEmailValidatedInProfile)
+          // * email notifications are not blocked for the sender service (!isEmailBlockedForService)
+          // * the sender service allows email channel
+          // * a destination email address is configured (maybeNotificationEmailAddress)
+          //
+          const maybeEmailNotificationAddress =
+            !isEmailDisabledForService &&
+            isEmailEnabledInProfile &&
+            isEmailValidatedInProfile &&
+            !isEmailBlockedForService &&
+            isEmailChannelAllowed
+              ? maybeNotificationEmailAddress
+              : O.none;
+
+          context.log.verbose(
+            `${logPrefix}|CHANNEL=EMAIL|PROFILE_ENABLED=${isEmailEnabledInProfile}|SERVICE_BLOCKED=${isEmailBlockedForService}|PROFILE_EMAIL=${O.isSome(
+              maybeEmailNotificationAddress
+            )}|WILL_NOTIFY=${O.isSome(maybeEmailNotificationAddress)}`
           );
+
+          //
+          //  Decide whether to send a webhook notification
+          //
+
+          // whether the recipient wants us to send notifications to the app backend
+          const isWebhookEnabledInProfile = profile.isWebhookEnabled === true;
+
+          // check if the user has blocked webhook notifications sent from this service
+          const isWebhookBlockedForService =
+            blockedInboxOrChannels.indexOf(BlockedInboxOrChannelEnum.WEBHOOK) >=
+            0;
+
+          // wether the service is in our blacklist for sending push notifications
+          const isWebhookDisabledForService = lWebhookNotificationServiceBlackList.includes(
+            newMessageWithoutContent.senderServiceId
+          );
+
+          // finally we decide whether we should send the webhook notification or not -
+          // we send a webhook notification when all the following conditions are met:
+          //
+          // * webhook notifications are enabled in the user profile (isWebhookEnabledInProfile)
+          // * webhook notifications are not blocked for the sender service (!isWebhookBlockedForService)
+          // * webhook notifications are not blacklisted for the sender service (!isWebhookDisabledForService)
+          //
+          const maybeWebhookNotificationUrl =
+            isWebhookEnabledInProfile &&
+            !isWebhookBlockedForService &&
+            !isWebhookDisabledForService
+              ? O.some({
+                  url: lDefaultWebhookUrl
+                })
+              : O.none;
+
+          context.log.verbose(
+            `${logPrefix}|CHANNEL=WEBHOOK|CHANNEL_ENABLED=${isWebhookEnabledInProfile}|SERVICE_BLOCKED=${isWebhookBlockedForService}|WILL_NOTIFY=${O.isSome(
+              maybeWebhookNotificationUrl
+            )}`
+          );
+
+          //
+          // If we can't send any notification there's not point in creating a
+          // Notification object
+          //
+
+          const noChannelsConfigured =
+            O.isNone(maybeEmailNotificationAddress) &&
+            O.isNone(maybeWebhookNotificationUrl);
+
+          if (noChannelsConfigured) {
+            context.log.warn(`${logPrefix}|RESULT=NO_CHANNELS_ENABLED`);
+            // return no notifications
+            return;
+          }
+
+          //
+          // Create a Notification object to track the status of each notification
+          //
+
+          const newNotification: NewNotification = {
+            ...createNewNotification(
+              ulidGenerator,
+              newMessageWithoutContent.fiscalCode,
+              newMessageWithoutContent.id
+            ),
+            channels: {
+              [NotificationChannelEnum.EMAIL]: O.toUndefined(
+                maybeEmailNotificationAddress
+              ),
+              [NotificationChannelEnum.WEBHOOK]: O.toUndefined(
+                maybeWebhookNotificationUrl
+              )
+            }
+          };
+
+          const notificationEvent = await createNotification(
+            lNotificationModel,
+            senderMetadata,
+            newMessageWithoutContent,
+            newMessageContent,
+            newNotification
+          );
+
+          context.log.verbose(`${logPrefix}|RESULT=SUCCESS`);
+
+          context.log.verbose(util.inspect(notificationEvent));
+
+          if (O.isSome(maybeEmailNotificationAddress)) {
+            // eslint-disable-next-line functional/immutable-data
+            context.bindings.notificationCreatedEmail = NotificationCreatedEvent.encode(
+              {
+                notificationEvent
+              }
+            );
+          }
+
+          if (O.isSome(maybeWebhookNotificationUrl)) {
+            // eslint-disable-next-line functional/immutable-data
+            context.bindings.notificationCreatedWebhook = NotificationCreatedEvent.encode(
+              {
+                notificationEvent
+              }
+            );
+          }
         }
-      }
+      )
     )
   );

@@ -19,9 +19,12 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
 import * as E from "fp-ts/lib/Either";
 import { pipe } from "fp-ts/lib/function";
+import { createBlobService } from "azure-storage";
 import { cosmosdbInstance } from "../utils/cosmosdb";
 
 import { getConfigOrThrow } from "../utils/config";
+import { makeRetrieveExpandedDataFromBlob } from "../utils/with-expanded-input";
+import { CommonMessageData } from "../utils/events/message";
 import { getCreateNotificationHandler } from "./handler";
 
 const config = getConfigOrThrow();
@@ -54,12 +57,23 @@ const defaultWebhookUrl = pipe(
   })
 );
 
+const blobService = createBlobService(
+  config.INTERNAL_STORAGE_CONNECTION_STRING
+);
+
+const retrieveProcessingMessageData = makeRetrieveExpandedDataFromBlob(
+  CommonMessageData,
+  blobService,
+  config.PROCESSING_MESSAGE_CONTAINER_NAME
+);
+
 const functionHandler: AzureFunction = getCreateNotificationHandler(
   notificationModel,
   defaultWebhookUrl,
   sandboxFiscalCode,
   emailNotificationServiceBlackList,
-  webhookNotificationServiceBlackList
+  webhookNotificationServiceBlackList,
+  retrieveProcessingMessageData
 );
 
 export default functionHandler;

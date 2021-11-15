@@ -417,8 +417,7 @@ export const getProcessMessageHandler = ({
         // eslint-disable-next-line functional/immutable-data
         context.bindings.processedMessage = ProcessedMessageEvent.encode({
           blockedInboxOrChannels,
-          content: createdMessageEvent.content,
-          message: createdMessageEvent.message,
+          messageId: createdMessageEvent.message.id,
           profile: {
             ...profile,
             // if profile's timestamp is before email opt out switch limit date we must force isEmailEnabled to false
@@ -428,8 +427,7 @@ export const getProcessMessageHandler = ({
               isBefore(profile._ts, optOutEmailSwitchDate)
                 ? false
                 : profile.isEmailEnabled
-          },
-          senderMetadata: createdMessageEvent.senderMetadata
+          }
         });
       }
     )

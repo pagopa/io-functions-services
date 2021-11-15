@@ -34,13 +34,11 @@ export const CreatedMessageEvent = t.intersection(
 );
 
 export type ProcessedMessageEvent = t.TypeOf<typeof ProcessedMessageEvent>;
-export const ProcessedMessageEvent = t.intersection([
-  CommonMessageData,
-  t.interface({
-    blockedInboxOrChannels: t.readonlyArray(BlockedInboxOrChannel),
-    profile: RetrievedProfile
-  })
-]);
+export const ProcessedMessageEvent = t.interface({
+  blockedInboxOrChannels: t.readonlyArray(BlockedInboxOrChannel),
+  messageId: MessageId,
+  profile: RetrievedProfile
+});
 
 export type NotificationCreatedEvent = t.TypeOf<
   typeof NotificationCreatedEvent

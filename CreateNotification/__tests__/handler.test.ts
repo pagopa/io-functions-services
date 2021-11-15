@@ -1,5 +1,6 @@
 import * as TE from "fp-ts/TaskEither";
 import * as E from "fp-ts/Either";
+import * as O from "fp-ts/Option";
 import { NotificationModel } from "@pagopa/io-functions-commons/dist/src/models/notification";
 
 import { getCreateNotificationHandler } from "../handler";
@@ -53,6 +54,16 @@ const aProfileWithEmailEnabled = {
   isInboxEnabled: true
 };
 
+const mockRetrieveProcessingMessageData = jest.fn().mockImplementation(() =>
+  TE.of(
+    O.some({
+      content: aMessageContent,
+      message: aNewMessageWithoutContent,
+      senderMetadata: aCreatedMessageEventSenderMetadata
+    })
+  )
+);
+
 describe("getCreateNotificationHandler", () => {
   it("should send email notification to user who enabled email", async () => {
     const handler = getCreateNotificationHandler(
@@ -60,7 +71,8 @@ describe("getCreateNotificationHandler", () => {
       aDefaultWebhookUrl,
       aSandboxFiscalCode,
       [],
-      []
+      [],
+      mockRetrieveProcessingMessageData
     );
 
     const context = createContext();
@@ -68,10 +80,8 @@ describe("getCreateNotificationHandler", () => {
       context,
       JSON.stringify({
         blockedInboxOrChannels: [],
-        profile: aProfileWithEmailEnabled,
-        content: aMessageContent,
-        message: aNewMessageWithoutContent,
-        senderMetadata: aCreatedMessageEventSenderMetadata
+        messageId: aNewMessageWithoutContent.id,
+        profile: aProfileWithEmailEnabled
       })
     );
 
@@ -92,7 +102,8 @@ describe("getCreateNotificationHandler", () => {
       aDefaultWebhookUrl,
       aSandboxFiscalCode,
       [],
-      []
+      [],
+      mockRetrieveProcessingMessageData
     );
 
     const context = createContext();
@@ -100,10 +111,8 @@ describe("getCreateNotificationHandler", () => {
       context,
       JSON.stringify({
         blockedInboxOrChannels: [],
-        profile: aProfileWithWebhookEnabled,
-        content: aMessageContent,
-        message: aNewMessageWithoutContent,
-        senderMetadata: aCreatedMessageEventSenderMetadata
+        messageId: aNewMessageWithoutContent.id,
+        profile: aProfileWithWebhookEnabled
       })
     );
 
