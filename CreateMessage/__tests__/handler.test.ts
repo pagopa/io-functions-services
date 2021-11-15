@@ -47,6 +47,7 @@ import {
 import { initAppInsights } from "@pagopa/ts-commons/lib/appinsights";
 import { mockOrchestratorContext } from "../../__mocks__/durable-functions";
 import { ApiNewMessageWithDefaults } from "../types";
+import { StandardServiceCategoryEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/StandardServiceCategory";
 
 //
 // tests
@@ -254,6 +255,7 @@ describe("forkOrchestrator", () => {
                 organizationFiscalCode: service.organizationFiscalCode,
                 organizationName: service.organizationName,
                 requireSecureChannels: service.requireSecureChannels,
+                serviceCategory: StandardServiceCategoryEnum.STANDARD,
                 serviceName: service.serviceName,
                 serviceUserEmail
               },

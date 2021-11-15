@@ -34,6 +34,7 @@ import { CosmosErrors } from "@pagopa/io-functions-commons/dist/src/utils/cosmos
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import { flow, pipe } from "fp-ts/lib/function";
 import { PaymentDataWithRequiredPayee } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentDataWithRequiredPayee";
+import { SpecialServiceCategoryEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/SpecialServiceCategory";
 import { initTelemetryClient } from "../utils/appinsights";
 import { toHash } from "../utils/crypto";
 import { PaymentData } from "../generated/definitions/PaymentData";
@@ -401,6 +402,18 @@ export const getStoreMessageContentActivityHandler = ({
       );
 
       return result;
+    }),
+    TE.chain(_ => {
+      if (
+        createdMessageEvent.senderMetadata.serviceCategory ===
+        SpecialServiceCategoryEnum.SPECIAL
+      ) {
+        // TODO: For Special Service INBOX setting is override with Activation status
+        // Other channels settings come from ServicePreferences
+        // Inbox always disabled untill Activation model integration.
+        return TE.of(_.filter(el => el !== BlockedInboxOrChannelEnum.INBOX));
+      }
+      return TE.of(_);
     }),
     TE.toUnion
   )();
