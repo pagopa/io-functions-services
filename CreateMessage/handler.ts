@@ -310,7 +310,7 @@ export function CreateMessageHandler(
     }
 
     const fiscalCode = maybeFiscalCode.value;
-    const { service, email: serviceUserEmail } = userAttributes;
+    const { service } = userAttributes;
     const { authorizedRecipients, serviceId } = service;
 
     // a new message ID gets generated for each request, even for requests that
@@ -402,17 +402,8 @@ export function CreateMessageHandler(
       TE.chain(newMessageWithoutContent =>
         pipe(
           {
-            content: messagePayload.content,
             defaultAddresses: {}, // deprecated feature
-            message: newMessageWithoutContent,
-            senderMetadata: {
-              departmentName: service.departmentName,
-              organizationFiscalCode: service.organizationFiscalCode,
-              organizationName: service.organizationName,
-              requireSecureChannels: service.requireSecureChannels,
-              serviceName: service.serviceName,
-              serviceUserEmail
-            },
+            messageId: newMessageWithoutContent.id,
             serviceVersion: service.version
           },
           CreatedMessageEvent.decode,

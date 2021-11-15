@@ -1,7 +1,6 @@
 /* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { BlockedInboxOrChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
-import { CreatedMessageEvent } from "@pagopa/io-functions-commons/dist/src/models/created_message_event";
 import { MessageModel } from "@pagopa/io-functions-commons/dist/src/models/message";
 import {
   ProfileModel,
@@ -29,12 +28,18 @@ import {
   manualProfileServicePreferencesSettings
 } from "../../__mocks__/mocks";
 import { getProcessMessageHandler } from "../handler";
-import { OrganizationFiscalCode } from "@pagopa/ts-commons/lib/strings";
+import {
+  NonEmptyString,
+  OrganizationFiscalCode
+} from "@pagopa/ts-commons/lib/strings";
 import { Context } from "@azure/functions";
 import { MessageStatusModel } from "@pagopa/io-functions-commons/dist/src/models/message_status";
 import { pipe } from "fp-ts/lib/function";
 import { readableReport } from "@pagopa/ts-commons/lib/reporters";
-import { ProcessedMessageEvent } from "../../utils/events/message";
+import {
+  ProcessedMessageEvent,
+  CreatedMessageEvent
+} from "../../utils/events/message";
 
 const createContext = (): Context =>
   (({
@@ -98,9 +103,7 @@ const aPaymentDataWithPayee = {
 };
 
 const aCreatedMessageEvent: CreatedMessageEvent = {
-  content: aMessageContent,
-  message: aNewMessageWithoutContent,
-  senderMetadata: aCreatedMessageEventSenderMetadata,
+  messageId: aNewMessageWithoutContent.id,
   serviceVersion: 1 as NonNegativeNumber
 };
 const aMessageContentWithPaymentData = {
@@ -155,26 +158,40 @@ const withBlockedEmail = (profile: RetrievedProfile, services = []) => ({
   )
 });
 
-describe("getprocessMessageHandler", () => {
-  beforeEach(() => {
-    jest.resetAllMocks();
-  });
+const aCommonMessageData = {
+  content: aMessageContent,
+  message: aNewMessageWithoutContent,
+  senderMetadata: aCreatedMessageEventSenderMetadata
+};
+const mockRetrieveProcessingMessageData = jest.fn(() =>
+  TE.of(O.some(aCommonMessageData))
+);
 
+beforeEach(() => {
+  // we usually prefer clearAllMocks, but tests scenarios are somehow entangled
+  //  we should refactor them to have them independent, however for now we keep the workaround
+  jest.resetAllMocks();
+  mockRetrieveProcessingMessageData.mockImplementation(() =>
+    TE.of(O.some(aCommonMessageData))
+  );
+});
+
+describe("getprocessMessageHandler", () => {
   it.each`
-    scenario                                                                                                                       | profileResult                                                                                               | storageResult  | upsertResult         | preferenceResult                                                    | messageEvent            | expectedBIOC                         | optOutEmailSwitchDate           | optInEmailEnabled | overrideProfileResult
-    ${"a retrieved profile mantaining its original isEmailEnabled property"}                                                       | ${aRetrievedProfileWithAValidTimestamp}                                                                     | ${aBlobResult} | ${aRetrievedMessage} | ${O.some(aRetrievedServicePreference)}                              | ${aCreatedMessageEvent} | ${[]}                                | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"O.none"}
-    ${"retrieved profile with isEmailEnabled to false"}                                                                            | ${{ ...aRetrievedProfile, isEmailEnabled: false }}                                                          | ${aBlobResult} | ${aRetrievedMessage} | ${O.some(aRetrievedServicePreference)}                              | ${aCreatedMessageEvent} | ${[]}                                | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"O.none"}
-    ${"empty blockedInboxOrChannels if message sender service does not exists in user service preference (AUTO SETTINGS)"}         | ${withBlacklist(aRetrievedProfileWithAutoPreferences, [aCreatedMessageEvent.message.senderServiceId])}      | ${aBlobResult} | ${aRetrievedMessage} | ${O.none}                                                           | ${aCreatedMessageEvent} | ${[]}                                | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"O.none"}
-    ${"empty blockedInboxOrChannels if message sender service exists and is enabled in user service preference (AUTO SETTINGS)"}   | ${aRetrievedProfileWithAutoPreferences}                                                                     | ${aBlobResult} | ${aRetrievedMessage} | ${O.some(anEnabledServicePreference)}                               | ${aCreatedMessageEvent} | ${[]}                                | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"O.none"}
-    ${"a blocked EMAIL if sender service exists and has EMAIL disabled in user service preference (AUTO SETTINGS)"}                | ${withBlacklist(aRetrievedProfileWithAutoPreferences, [aCreatedMessageEvent.message.senderServiceId])}      | ${aBlobResult} | ${aRetrievedMessage} | ${O.some({ ...anEnabledServicePreference, isEmailEnabled: false })} | ${aCreatedMessageEvent} | ${[BlockedInboxOrChannelEnum.EMAIL]} | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"O.none"}
-    ${"empty blockedInboxOrChannels if message sender service exists and is enabled in user service preference (MANUAL SETTINGS)"} | ${aRetrievedProfileWithManualPreferences}                                                                   | ${aBlobResult} | ${aRetrievedMessage} | ${O.some(anEnabledServicePreference)}                               | ${aCreatedMessageEvent} | ${[]}                                | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"O.none"}
-    ${"blocked EMAIL if message sender service exists and has EMAIL disabled in user service preference (MANUAL SETTINGS)"}        | ${aRetrievedProfileWithAutoPreferences}                                                                     | ${aBlobResult} | ${aRetrievedMessage} | ${O.some({ ...anEnabledServicePreference, isEmailEnabled: false })} | ${aCreatedMessageEvent} | ${[BlockedInboxOrChannelEnum.EMAIL]} | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"O.none"}
-    ${"blocked EMAIL for a service in blockedInboxOrChannels with email disabled (LEGACY SETTINGS)"}                               | ${withBlockedEmail(aRetrievedProfileWithLegacyPreferences, [aCreatedMessageEvent.message.senderServiceId])} | ${aBlobResult} | ${aRetrievedMessage} | ${"not-called"}                                                     | ${aCreatedMessageEvent} | ${[BlockedInboxOrChannelEnum.EMAIL]} | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"O.none"}
-    ${"empty blockedInboxOrChannels if the service is not in user's blockedInboxOrChannels (LEGACY SETTINGS)"}                     | ${withBlacklist(aRetrievedProfileWithLegacyPreferences, ["another-service"])}                               | ${aBlobResult} | ${aRetrievedMessage} | ${"not-called"}                                                     | ${aCreatedMessageEvent} | ${[]}                                | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"O.none"}
-    ${"isEmailEnabled overridden to false if profile's timestamp is before optOutEmailSwitchDate"}                                 | ${aRetrievedProfileWithAValidTimestamp}                                                                     | ${aBlobResult} | ${aRetrievedMessage} | ${"not-called"}                                                     | ${aCreatedMessageEvent} | ${[]}                                | ${aFutureOptOutEmailSwitchDate} | ${true}           | ${{ ...aRetrievedProfileWithAValidTimestamp, isEmailEnabled: false }}
-    ${"isEmailEnabled not overridden if profile's timestamp is after optOutEmailSwitchDate"}                                       | ${aRetrievedProfileWithAValidTimestamp}                                                                     | ${aBlobResult} | ${aRetrievedMessage} | ${"not-called"}                                                     | ${aCreatedMessageEvent} | ${[]}                                | ${aPastOptOutEmailSwitchDate}   | ${true}           | ${"O.none"}
+    scenario                                                                                                                       | profileResult                                                                                            | storageResult  | upsertResult         | preferenceResult                                                    | messageEvent            | expectedBIOC                         | optOutEmailSwitchDate           | optInEmailEnabled | overrideProfileResult
+    ${"a retrieved profile mantaining its original isEmailEnabled property"}                                                       | ${aRetrievedProfileWithAValidTimestamp}                                                                  | ${aBlobResult} | ${aRetrievedMessage} | ${O.some(aRetrievedServicePreference)}                              | ${aCreatedMessageEvent} | ${[]}                                | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"O.none"}
+    ${"retrieved profile with isEmailEnabled to false"}                                                                            | ${{ ...aRetrievedProfile, isEmailEnabled: false }}                                                       | ${aBlobResult} | ${aRetrievedMessage} | ${O.some(aRetrievedServicePreference)}                              | ${aCreatedMessageEvent} | ${[]}                                | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"O.none"}
+    ${"empty blockedInboxOrChannels if message sender service does not exists in user service preference (AUTO SETTINGS)"}         | ${withBlacklist(aRetrievedProfileWithAutoPreferences, [aNewMessageWithoutContent.senderServiceId])}      | ${aBlobResult} | ${aRetrievedMessage} | ${O.none}                                                           | ${aCreatedMessageEvent} | ${[]}                                | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"O.none"}
+    ${"empty blockedInboxOrChannels if message sender service exists and is enabled in user service preference (AUTO SETTINGS)"}   | ${aRetrievedProfileWithAutoPreferences}                                                                  | ${aBlobResult} | ${aRetrievedMessage} | ${O.some(anEnabledServicePreference)}                               | ${aCreatedMessageEvent} | ${[]}                                | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"O.none"}
+    ${"a blocked EMAIL if sender service exists and has EMAIL disabled in user service preference (AUTO SETTINGS)"}                | ${withBlacklist(aRetrievedProfileWithAutoPreferences, [aNewMessageWithoutContent.senderServiceId])}      | ${aBlobResult} | ${aRetrievedMessage} | ${O.some({ ...anEnabledServicePreference, isEmailEnabled: false })} | ${aCreatedMessageEvent} | ${[BlockedInboxOrChannelEnum.EMAIL]} | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"O.none"}
+    ${"empty blockedInboxOrChannels if message sender service exists and is enabled in user service preference (MANUAL SETTINGS)"} | ${aRetrievedProfileWithManualPreferences}                                                                | ${aBlobResult} | ${aRetrievedMessage} | ${O.some(anEnabledServicePreference)}                               | ${aCreatedMessageEvent} | ${[]}                                | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"O.none"}
+    ${"blocked EMAIL if message sender service exists and has EMAIL disabled in user service preference (MANUAL SETTINGS)"}        | ${aRetrievedProfileWithAutoPreferences}                                                                  | ${aBlobResult} | ${aRetrievedMessage} | ${O.some({ ...anEnabledServicePreference, isEmailEnabled: false })} | ${aCreatedMessageEvent} | ${[BlockedInboxOrChannelEnum.EMAIL]} | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"O.none"}
+    ${"blocked EMAIL for a service in blockedInboxOrChannels with email disabled (LEGACY SETTINGS)"}                               | ${withBlockedEmail(aRetrievedProfileWithLegacyPreferences, [aNewMessageWithoutContent.senderServiceId])} | ${aBlobResult} | ${aRetrievedMessage} | ${"not-called"}                                                     | ${aCreatedMessageEvent} | ${[BlockedInboxOrChannelEnum.EMAIL]} | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"O.none"}
+    ${"empty blockedInboxOrChannels if the service is not in user's blockedInboxOrChannels (LEGACY SETTINGS)"}                     | ${withBlacklist(aRetrievedProfileWithLegacyPreferences, ["another-service"])}                            | ${aBlobResult} | ${aRetrievedMessage} | ${"not-called"}                                                     | ${aCreatedMessageEvent} | ${[]}                                | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"O.none"}
+    ${"isEmailEnabled overridden to false if profile's timestamp is before optOutEmailSwitchDate"}                                 | ${aRetrievedProfileWithAValidTimestamp}                                                                  | ${aBlobResult} | ${aRetrievedMessage} | ${"not-called"}                                                     | ${aCreatedMessageEvent} | ${[]}                                | ${aFutureOptOutEmailSwitchDate} | ${true}           | ${{ ...aRetrievedProfileWithAValidTimestamp, isEmailEnabled: false }}
+    ${"isEmailEnabled not overridden if profile's timestamp is after optOutEmailSwitchDate"}                                       | ${aRetrievedProfileWithAValidTimestamp}                                                                  | ${aBlobResult} | ${aRetrievedMessage} | ${"not-called"}                                                     | ${aCreatedMessageEvent} | ${[]}                                | ${aPastOptOutEmailSwitchDate}   | ${true}           | ${"O.none"}
   `(
-    "XXXshould succeed with $scenario",
+    "should succeed with $scenario",
     async ({
       profileResult,
       storageResult,
@@ -211,7 +228,8 @@ describe("getprocessMessageHandler", () => {
         lMessageStatusModel,
         optOutEmailSwitchDate,
         isOptInEmailEnabled: optInEmailEnabled,
-        telemetryClient: mockTelemetryClient
+        telemetryClient: mockTelemetryClient,
+        retrieveProcessingMessageData: mockRetrieveProcessingMessageData
       });
 
       const context = createContext();
@@ -241,10 +259,10 @@ describe("getprocessMessageHandler", () => {
   );
 
   it.each`
-    scenario                                           | profileResult                           | storageResult  | upsertResult         | preferenceResult                       | messageEvent                                                                     | optOutEmailSwitchDate         | optInEmailEnabled | expectedMessagePaymentData
-    ${"with original payment message with payee"}      | ${aRetrievedProfileWithAValidTimestamp} | ${aBlobResult} | ${aRetrievedMessage} | ${O.some(aRetrievedServicePreference)} | ${{ ...aCreatedMessageEvent, content: aMessageContentWithPaymentDataWithPayee }} | ${aPastOptOutEmailSwitchDate} | ${false}          | ${aPaymentDataWithPayee}
-    ${"with overridden payee if no payee is provided"} | ${aRetrievedProfileWithAValidTimestamp} | ${aBlobResult} | ${aRetrievedMessage} | ${O.some(aRetrievedServicePreference)} | ${{ ...aCreatedMessageEvent, content: aMessageContentWithPaymentData }}          | ${aPastOptOutEmailSwitchDate} | ${false}          | ${{ ...aPaymentData, payee: { fiscal_code: aCreatedMessageEvent.senderMetadata.organizationFiscalCode } }}
-    ${"with a no payment message"}                     | ${aRetrievedProfileWithAValidTimestamp} | ${aBlobResult} | ${aRetrievedMessage} | ${O.none}                              | ${aCreatedMessageEvent}                                                          | ${aPastOptOutEmailSwitchDate} | ${false}          | ${undefined}
+    scenario                                           | preferenceResult                       | messageEvent            | messageData                                                                    | optOutEmailSwitchDate         | optInEmailEnabled | expectedMessagePaymentData                                                                                | profileResult                           | storageResult  | upsertResult
+    ${"with original payment message with payee"}      | ${O.some(aRetrievedServicePreference)} | ${aCreatedMessageEvent} | ${{ ...aCommonMessageData, content: aMessageContentWithPaymentDataWithPayee }} | ${aPastOptOutEmailSwitchDate} | ${false}          | ${aPaymentDataWithPayee}                                                                                  | ${aRetrievedProfileWithAValidTimestamp} | ${aBlobResult} | ${aRetrievedMessage}
+    ${"with overridden payee if no payee is provided"} | ${O.some(aRetrievedServicePreference)} | ${aCreatedMessageEvent} | ${{ ...aCommonMessageData, content: aMessageContentWithPaymentData }}          | ${aPastOptOutEmailSwitchDate} | ${false}          | ${{ ...aPaymentData, payee: { fiscal_code: aCreatedMessageEventSenderMetadata.organizationFiscalCode } }} | ${aRetrievedProfileWithAValidTimestamp} | ${aBlobResult} | ${aRetrievedMessage}
+    ${"with a no payment message"}                     | ${O.none}                              | ${aCreatedMessageEvent} | ${aCommonMessageData}                                                          | ${aPastOptOutEmailSwitchDate} | ${false}          | ${undefined}                                                                                              | ${aRetrievedProfileWithAValidTimestamp} | ${aBlobResult} | ${aRetrievedMessage}
   `(
     "should succeed with $scenario",
     async ({
@@ -252,6 +270,7 @@ describe("getprocessMessageHandler", () => {
       storageResult,
       upsertResult,
       preferenceResult,
+      messageData,
       messageEvent,
       optOutEmailSwitchDate,
       optInEmailEnabled,
@@ -274,6 +293,10 @@ describe("getprocessMessageHandler", () => {
           TE.of(preferenceResult)
         );
 
+      mockRetrieveProcessingMessageData.mockImplementationOnce(() =>
+        TE.of(O.some(messageData))
+      );
+
       const processMessageHandler = getProcessMessageHandler({
         lProfileModel,
         lMessageModel,
@@ -282,7 +305,8 @@ describe("getprocessMessageHandler", () => {
         lMessageStatusModel,
         optOutEmailSwitchDate,
         isOptInEmailEnabled: optInEmailEnabled,
-        telemetryClient: mockTelemetryClient
+        telemetryClient: mockTelemetryClient,
+        retrieveProcessingMessageData: mockRetrieveProcessingMessageData
       });
 
       const context = createContext();
@@ -301,9 +325,9 @@ describe("getprocessMessageHandler", () => {
       // success means message has been stored and status has been updated
       expect(storeContentAsBlobMock).toHaveBeenCalledWith(
         {} as any,
-        msgEvt.message.id,
+        msgEvt.messageId,
         {
-          ...msgEvt.content,
+          ...aMessageContent,
           payment_data: expectedMessagePaymentData
         }
       );
@@ -311,16 +335,16 @@ describe("getprocessMessageHandler", () => {
   );
 
   it.each`
-    scenario                                                                                               | failureReason              | profileResult                                                                                                    | preferenceResult                                                 | messageEvent
-    ${"no profile was found"}                                                                              | ${"PROFILE_NOT_FOUND"}     | ${O.none}                                                                                                        | ${"not-called"}                                                  | ${aCreatedMessageEvent}
-    ${"inbox is not enabled"}                                                                              | ${"MASTER_INBOX_DISABLED"} | ${O.some({ ...aRetrievedProfile, isInboxEnabled: false })}                                                       | ${"not-called"}                                                  | ${aCreatedMessageEvent}
-    ${"message sender is blocked"}                                                                         | ${"SENDER_BLOCKED"}        | ${O.some(withBlacklist(aRetrievedProfile, [aCreatedMessageEvent.message.senderServiceId]))}                      | ${"not-called"}                                                  | ${aCreatedMessageEvent}
-    ${"message sender service exists and is not enabled in user service preference (AUTO SETTINGS)"}       | ${"SENDER_BLOCKED"}        | ${O.some(aRetrievedProfileWithAutoPreferences)}                                                                  | ${O.some(aDisabledServicePreference)}                            | ${aCreatedMessageEvent}
-    ${"message sender service exists and has INBOX disabled in user service preference (AUTO SETTINGS)"}   | ${"SENDER_BLOCKED"}        | ${O.some(aRetrievedProfileWithAutoPreferences)}                                                                  | ${O.some({ anEnabledServicePreference, isInboxEnabled: false })} | ${aCreatedMessageEvent}
-    ${"message sender service does not exists in user service preference (MANUAL SETTINGS)"}               | ${"SENDER_BLOCKED"}        | ${O.some(aRetrievedProfileWithManualPreferences)}                                                                | ${O.none}                                                        | ${aCreatedMessageEvent}
-    ${"message sender service exists and is not enabled in user service preference (MANUAL SETTINGS)"}     | ${"SENDER_BLOCKED"}        | ${O.some(aRetrievedProfileWithManualPreferences)}                                                                | ${O.some(aDisabledServicePreference)}                            | ${aCreatedMessageEvent}
-    ${"message sender service exists and has INBOX disabled in user service preference (MANUAL SETTINGS)"} | ${"SENDER_BLOCKED"}        | ${O.some(aRetrievedProfileWithManualPreferences)}                                                                | ${O.some({ anEnabledServicePreference, isInboxEnabled: false })} | ${aCreatedMessageEvent}
-    ${"service in blockedInboxOrChannels with blocked INBOX (LEGACY SETTINGS)"}                            | ${"SENDER_BLOCKED"}        | ${O.some(withBlacklist(aRetrievedProfileWithLegacyPreferences, [aCreatedMessageEvent.message.senderServiceId]))} | ${"not-called"}                                                  | ${aCreatedMessageEvent}
+    scenario                                                                                               | failureReason              | profileResult                                                                                                 | preferenceResult                                                 | messageEvent
+    ${"no profile was found"}                                                                              | ${"PROFILE_NOT_FOUND"}     | ${O.none}                                                                                                     | ${"not-called"}                                                  | ${aCreatedMessageEvent}
+    ${"inbox is not enabled"}                                                                              | ${"MASTER_INBOX_DISABLED"} | ${O.some({ ...aRetrievedProfile, isInboxEnabled: false })}                                                    | ${"not-called"}                                                  | ${aCreatedMessageEvent}
+    ${"message sender is blocked"}                                                                         | ${"SENDER_BLOCKED"}        | ${O.some(withBlacklist(aRetrievedProfile, [aNewMessageWithoutContent.senderServiceId]))}                      | ${"not-called"}                                                  | ${aCreatedMessageEvent}
+    ${"message sender service exists and is not enabled in user service preference (AUTO SETTINGS)"}       | ${"SENDER_BLOCKED"}        | ${O.some(aRetrievedProfileWithAutoPreferences)}                                                               | ${O.some(aDisabledServicePreference)}                            | ${aCreatedMessageEvent}
+    ${"message sender service exists and has INBOX disabled in user service preference (AUTO SETTINGS)"}   | ${"SENDER_BLOCKED"}        | ${O.some(aRetrievedProfileWithAutoPreferences)}                                                               | ${O.some({ anEnabledServicePreference, isInboxEnabled: false })} | ${aCreatedMessageEvent}
+    ${"message sender service does not exists in user service preference (MANUAL SETTINGS)"}               | ${"SENDER_BLOCKED"}        | ${O.some(aRetrievedProfileWithManualPreferences)}                                                             | ${O.none}                                                        | ${aCreatedMessageEvent}
+    ${"message sender service exists and is not enabled in user service preference (MANUAL SETTINGS)"}     | ${"SENDER_BLOCKED"}        | ${O.some(aRetrievedProfileWithManualPreferences)}                                                             | ${O.some(aDisabledServicePreference)}                            | ${aCreatedMessageEvent}
+    ${"message sender service exists and has INBOX disabled in user service preference (MANUAL SETTINGS)"} | ${"SENDER_BLOCKED"}        | ${O.some(aRetrievedProfileWithManualPreferences)}                                                             | ${O.some({ anEnabledServicePreference, isInboxEnabled: false })} | ${aCreatedMessageEvent}
+    ${"service in blockedInboxOrChannels with blocked INBOX (LEGACY SETTINGS)"}                            | ${"SENDER_BLOCKED"}        | ${O.some(withBlacklist(aRetrievedProfileWithLegacyPreferences, [aNewMessageWithoutContent.senderServiceId]))} | ${"not-called"}                                                  | ${aCreatedMessageEvent}
   `(
     "should fail if $scenario",
     async ({
@@ -348,7 +372,8 @@ describe("getprocessMessageHandler", () => {
         lMessageStatusModel,
         optOutEmailSwitchDate: aPastOptOutEmailSwitchDate,
         isOptInEmailEnabled: false,
-        telemetryClient: mockTelemetryClient
+        telemetryClient: mockTelemetryClient,
+        retrieveProcessingMessageData: mockRetrieveProcessingMessageData
       });
 
       const context = createContext();
@@ -413,7 +438,8 @@ describe("getprocessMessageHandler", () => {
         lMessageStatusModel,
         optOutEmailSwitchDate: aPastOptOutEmailSwitchDate,
         isOptInEmailEnabled: false,
-        telemetryClient: mockTelemetryClient
+        telemetryClient: mockTelemetryClient,
+        retrieveProcessingMessageData: mockRetrieveProcessingMessageData
       });
 
       const context = createContext();

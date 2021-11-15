@@ -22,8 +22,8 @@ export const CommonMessageData = t.interface({
 export type CreatedMessageEvent = t.TypeOf<typeof CreatedMessageEvent>;
 export const CreatedMessageEvent = t.intersection(
   [
-    CommonMessageData,
     t.interface({
+      messageId: MessageId,
       serviceVersion: NonNegativeNumber
     }),
     t.partial({

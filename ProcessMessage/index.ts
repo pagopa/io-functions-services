@@ -20,6 +20,8 @@ import {
 import { cosmosdbInstance } from "../utils/cosmosdb";
 import { getConfigOrThrow } from "../utils/config";
 import { initTelemetryClient } from "../utils/appinsights";
+import { CommonMessageData } from "../utils/events/message";
+import { makeRetrieveExpandedDataFromBlob } from "../utils/with-expanded-input";
 import { getProcessMessageHandler } from "./handler";
 
 const config = getConfigOrThrow();
@@ -48,6 +50,12 @@ const telemetryClient = initTelemetryClient(
   config.APPINSIGHTS_INSTRUMENTATIONKEY
 );
 
+const retrieveProcessingMessageData = makeRetrieveExpandedDataFromBlob(
+  CommonMessageData,
+  blobService,
+  config.PROCESSING_MESSAGE_CONTAINER_NAME
+);
+
 const activityFunctionHandler: AzureFunction = getProcessMessageHandler({
   isOptInEmailEnabled: config.FF_OPT_IN_EMAIL_ENABLED,
   lBlobService: blobService,
@@ -56,6 +64,7 @@ const activityFunctionHandler: AzureFunction = getProcessMessageHandler({
   lProfileModel: profileModel,
   lServicePreferencesModel: servicePreferencesModel,
   optOutEmailSwitchDate: config.OPT_OUT_EMAIL_SWITCH_DATE,
+  retrieveProcessingMessageData,
   telemetryClient
 });
 

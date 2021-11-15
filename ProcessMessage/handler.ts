@@ -2,7 +2,6 @@
 
 import { Context } from "@azure/functions";
 import { BlockedInboxOrChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
-import { CreatedMessageEvent } from "@pagopa/io-functions-commons/dist/src/models/created_message_event";
 import { MessageModel } from "@pagopa/io-functions-commons/dist/src/models/message";
 import { ProfileModel } from "@pagopa/io-functions-commons/dist/src/models/profile";
 import { BlobService } from "azure-storage";
@@ -37,7 +36,12 @@ import { toHash } from "../utils/crypto";
 import { PaymentData } from "../generated/definitions/PaymentData";
 import { withJsonInput } from "../utils/with-json-input";
 import { withDecodedInput } from "../utils/with-decoded-input";
-import { ProcessedMessageEvent } from "../utils/events/message";
+import { withExpandedInput, DataFetcher } from "../utils/with-expanded-input";
+import {
+  CommonMessageData,
+  CreatedMessageEvent,
+  ProcessedMessageEvent
+} from "../utils/events/message";
 
 // Interface that marks an unexpected value
 interface IUnexpectedValue {
@@ -191,7 +195,7 @@ const createMessageOrThrow = async (
   context: Context,
   lMessageModel: MessageModel,
   lBlobService: BlobService,
-  createdMessageEvent: CreatedMessageEvent
+  createdMessageEvent: CreatedMessageEvent & CommonMessageData
 ): Promise<void> => {
   const newMessageWithoutContent = createdMessageEvent.message;
   const logPrefix = context.executionContext.functionName;
@@ -260,6 +264,7 @@ export interface IProcessMessageHandlerInput {
   readonly lMessageModel: MessageModel;
   readonly lBlobService: BlobService;
   readonly lServicePreferencesModel: ServicesPreferencesModel;
+  readonly retrieveProcessingMessageData: DataFetcher<CommonMessageData>;
   readonly lMessageStatusModel: MessageStatusModel;
   readonly optOutEmailSwitchDate: UTCISODateFromString;
   readonly isOptInEmailEnabled: boolean;
@@ -277,6 +282,7 @@ export const getProcessMessageHandler = ({
   lBlobService,
   lServicePreferencesModel,
   lMessageStatusModel,
+  retrieveProcessingMessageData,
   optOutEmailSwitchDate,
   isOptInEmailEnabled,
   telemetryClient
@@ -284,151 +290,159 @@ export const getProcessMessageHandler = ({
   withJsonInput(
     withDecodedInput(
       CreatedMessageEvent,
-      async (context, createdMessageEvent) => {
-        const newMessageWithoutContent = createdMessageEvent.message;
+      withExpandedInput(
+        "messageId",
+        retrieveProcessingMessageData,
+        async (context, createdMessageEvent) => {
+          const newMessageWithoutContent = createdMessageEvent.message;
 
-        const logPrefix = `${context.executionContext.functionName}|MESSAGE_ID=${newMessageWithoutContent.id}`;
+          const logPrefix = `${context.executionContext.functionName}|MESSAGE_ID=${newMessageWithoutContent.id}`;
 
-        context.log.verbose(`${logPrefix}|STARTING`);
+          context.log.verbose(`${logPrefix}|STARTING`);
 
-        // fetch user's profile associated to the fiscal code
-        // of the recipient of the message
-        const errorOrMaybeProfile = await lProfileModel.findLastVersionByModelId(
-          [newMessageWithoutContent.fiscalCode]
-        )();
+          // fetch user's profile associated to the fiscal code
+          // of the recipient of the message
+          const errorOrMaybeProfile = await lProfileModel.findLastVersionByModelId(
+            [newMessageWithoutContent.fiscalCode]
+          )();
 
-        if (E.isLeft(errorOrMaybeProfile)) {
-          // The query has failed, we consider this as a transient error.
-          // It's *critical* to trigger a retry here, otherwise no message
-          // content will be saved.
-          context.log.error(
-            `${logPrefix}|ERROR=${JSON.stringify(errorOrMaybeProfile.left)}`
-          );
-          throw Error("Error while fetching profile");
-        }
-
-        const maybeProfile = errorOrMaybeProfile.right;
-
-        if (O.isNone(maybeProfile)) {
-          // the recipient doesn't have any profile yet
-          context.log.warn(`${logPrefix}|RESULT=PROFILE_NOT_FOUND`);
-          await getMessageStatusUpdater(
-            lMessageStatusModel,
-            createdMessageEvent.message.id
-          )(MessageStatusValueEnum.REJECTED)();
-
-          return;
-        }
-
-        const profile = maybeProfile.value;
-
-        //
-        //  Inbox storage
-        //
-
-        // a profile exists and the global inbox flag is enabled
-        const isInboxEnabled = profile.isInboxEnabled === true;
-
-        if (!isInboxEnabled) {
-          // the recipient's inbox is disabled
-          context.log.warn(`${logPrefix}|RESULT=MASTER_INBOX_DISABLED`);
-          await getMessageStatusUpdater(
-            lMessageStatusModel,
-            createdMessageEvent.message.id
-          )(MessageStatusValueEnum.REJECTED)();
-          return;
-        }
-
-        //
-        // check Service Preferences Settings
-        //
-        const blockedInboxOrChannels = await pipe(
-          getServicePreferenceValueOrError(lServicePreferencesModel)({
-            fiscalCode: newMessageWithoutContent.fiscalCode,
-            serviceId: newMessageWithoutContent.senderServiceId,
-            userServicePreferencesMode: profile.servicePreferencesSettings.mode,
-            userServicePreferencesVersion:
-              profile.servicePreferencesSettings.version
-          }),
-          TE.mapLeft(servicePreferenceError => {
-            if (servicePreferenceError.kind !== "INVALID_MODE") {
-              // The query has failed, we consider this as a transient error.
-              context.log.error(`${logPrefix}|${servicePreferenceError.kind}`);
-              throw Error("Error while retrieving user's service preference");
-            }
-
-            // channels the user has blocked for this sender service
-            const result = pipe(
-              O.fromNullable(profile.blockedInboxOrChannels),
-              O.chain(bc =>
-                O.fromNullable(bc[newMessageWithoutContent.senderServiceId])
-              ),
-              O.getOrElse(() => new Array<BlockedInboxOrChannelEnum>())
+          if (E.isLeft(errorOrMaybeProfile)) {
+            // The query has failed, we consider this as a transient error.
+            // It's *critical* to trigger a retry here, otherwise no message
+            // content will be saved.
+            context.log.error(
+              `${logPrefix}|ERROR=${JSON.stringify(errorOrMaybeProfile.left)}`
             );
-
-            context.log.verbose(
-              `${logPrefix}|BLOCKED_CHANNELS=${JSON.stringify(result)}`
-            );
-
-            return result;
-          }),
-          TE.toUnion
-        )();
-
-        // check whether the user has blocked inbox storage for messages from this sender
-        const isMessageStorageBlockedForService =
-          blockedInboxOrChannels.indexOf(BlockedInboxOrChannelEnum.INBOX) >= 0;
-
-        telemetryClient.trackEvent({
-          name: "api.messages.create.blockedstoremessage",
-          properties: {
-            fiscalCode: toHash(profile.fiscalCode),
-            isBlocked: String(isMessageStorageBlockedForService),
-            messageId: createdMessageEvent.message.id,
-            mode: profile.servicePreferencesSettings.mode,
-            senderId: createdMessageEvent.message.senderServiceId
-          },
-          tagOverrides: { samplingEnabled: "false" }
-        });
-
-        if (isMessageStorageBlockedForService) {
-          context.log.warn(`${logPrefix}|RESULT=SENDER_BLOCKED`);
-          await getMessageStatusUpdater(
-            lMessageStatusModel,
-            createdMessageEvent.message.id
-          )(MessageStatusValueEnum.REJECTED)();
-          return;
-        }
-
-        await createMessageOrThrow(
-          context,
-          lMessageModel,
-          lBlobService,
-          createdMessageEvent
-        );
-
-        context.log.verbose(`${logPrefix}|RESULT=SUCCESS`);
-
-        await getMessageStatusUpdater(
-          lMessageStatusModel,
-          createdMessageEvent.message.id
-        )(MessageStatusValueEnum.PROCESSED)();
-
-        // eslint-disable-next-line functional/immutable-data
-        context.bindings.processedMessage = ProcessedMessageEvent.encode({
-          blockedInboxOrChannels,
-          messageId: createdMessageEvent.message.id,
-          profile: {
-            ...profile,
-            // if profile's timestamp is before email opt out switch limit date we must force isEmailEnabled to false
-            isEmailEnabled:
-              isOptInEmailEnabled &&
-              // eslint-disable-next-line no-underscore-dangle
-              isBefore(profile._ts, optOutEmailSwitchDate)
-                ? false
-                : profile.isEmailEnabled
+            throw Error("Error while fetching profile");
           }
-        });
-      }
+
+          const maybeProfile = errorOrMaybeProfile.right;
+
+          if (O.isNone(maybeProfile)) {
+            // the recipient doesn't have any profile yet
+            context.log.warn(`${logPrefix}|RESULT=PROFILE_NOT_FOUND`);
+            await getMessageStatusUpdater(
+              lMessageStatusModel,
+              createdMessageEvent.message.id
+            )(MessageStatusValueEnum.REJECTED)();
+
+            return;
+          }
+
+          const profile = maybeProfile.value;
+
+          //
+          //  Inbox storage
+          //
+
+          // a profile exists and the global inbox flag is enabled
+          const isInboxEnabled = profile.isInboxEnabled === true;
+
+          if (!isInboxEnabled) {
+            // the recipient's inbox is disabled
+            context.log.warn(`${logPrefix}|RESULT=MASTER_INBOX_DISABLED`);
+            await getMessageStatusUpdater(
+              lMessageStatusModel,
+              createdMessageEvent.message.id
+            )(MessageStatusValueEnum.REJECTED)();
+            return;
+          }
+
+          //
+          // check Service Preferences Settings
+          //
+          const blockedInboxOrChannels = await pipe(
+            getServicePreferenceValueOrError(lServicePreferencesModel)({
+              fiscalCode: newMessageWithoutContent.fiscalCode,
+              serviceId: newMessageWithoutContent.senderServiceId,
+              userServicePreferencesMode:
+                profile.servicePreferencesSettings.mode,
+              userServicePreferencesVersion:
+                profile.servicePreferencesSettings.version
+            }),
+            TE.mapLeft(servicePreferenceError => {
+              if (servicePreferenceError.kind !== "INVALID_MODE") {
+                // The query has failed, we consider this as a transient error.
+                context.log.error(
+                  `${logPrefix}|${servicePreferenceError.kind}`
+                );
+                throw Error("Error while retrieving user's service preference");
+              }
+
+              // channels the user has blocked for this sender service
+              const result = pipe(
+                O.fromNullable(profile.blockedInboxOrChannels),
+                O.chain(bc =>
+                  O.fromNullable(bc[newMessageWithoutContent.senderServiceId])
+                ),
+                O.getOrElse(() => new Array<BlockedInboxOrChannelEnum>())
+              );
+
+              context.log.verbose(
+                `${logPrefix}|BLOCKED_CHANNELS=${JSON.stringify(result)}`
+              );
+
+              return result;
+            }),
+            TE.toUnion
+          )();
+
+          // check whether the user has blocked inbox storage for messages from this sender
+          const isMessageStorageBlockedForService =
+            blockedInboxOrChannels.indexOf(BlockedInboxOrChannelEnum.INBOX) >=
+            0;
+
+          telemetryClient.trackEvent({
+            name: "api.messages.create.blockedstoremessage",
+            properties: {
+              fiscalCode: toHash(profile.fiscalCode),
+              isBlocked: String(isMessageStorageBlockedForService),
+              messageId: createdMessageEvent.message.id,
+              mode: profile.servicePreferencesSettings.mode,
+              senderId: createdMessageEvent.message.senderServiceId
+            },
+            tagOverrides: { samplingEnabled: "false" }
+          });
+
+          if (isMessageStorageBlockedForService) {
+            context.log.warn(`${logPrefix}|RESULT=SENDER_BLOCKED`);
+            await getMessageStatusUpdater(
+              lMessageStatusModel,
+              createdMessageEvent.message.id
+            )(MessageStatusValueEnum.REJECTED)();
+            return;
+          }
+
+          await createMessageOrThrow(
+            context,
+            lMessageModel,
+            lBlobService,
+            createdMessageEvent
+          );
+
+          context.log.verbose(`${logPrefix}|RESULT=SUCCESS`);
+
+          await getMessageStatusUpdater(
+            lMessageStatusModel,
+            createdMessageEvent.message.id
+          )(MessageStatusValueEnum.PROCESSED)();
+
+          // eslint-disable-next-line functional/immutable-data
+          context.bindings.processedMessage = ProcessedMessageEvent.encode({
+            blockedInboxOrChannels,
+            messageId: createdMessageEvent.message.id,
+            profile: {
+              ...profile,
+              // if profile's timestamp is before email opt out switch limit date we must force isEmailEnabled to false
+              isEmailEnabled:
+                isOptInEmailEnabled &&
+                // eslint-disable-next-line no-underscore-dangle
+                isBefore(profile._ts, optOutEmailSwitchDate)
+                  ? false
+                  : profile.isEmailEnabled
+            }
+          });
+        }
+      )
     )
   );
