@@ -16,15 +16,10 @@ import { CreatedMessageEventSenderMetadata } from "@pagopa/io-functions-commons/
 import { Notification } from "@pagopa/io-functions-commons/dist/src/models/notification";
 import { isTransientError } from "@pagopa/io-functions-commons/dist/src/utils/errors";
 
-import { NotificationEvent } from "@pagopa/io-functions-commons/dist/src/models/notification_event";
-
-import { readableReport } from "@pagopa/ts-commons/lib/reporters";
-
 import { getWebhookNotificationHandler, sendToWebhook } from "../handler";
 
 import { HttpsUrl } from "@pagopa/io-functions-commons/dist/generated/definitions/HttpsUrl";
 import { MessageBodyMarkdown } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageBodyMarkdown";
-import { MessageContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageContent";
 import { MessageSubject } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageSubject";
 import { NotificationChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/NotificationChannel";
 import { TimeToLiveSeconds } from "@pagopa/io-functions-commons/dist/generated/definitions/TimeToLiveSeconds";
@@ -38,15 +33,9 @@ import {
 } from "@pagopa/ts-commons/lib/fetch";
 import { Millisecond } from "@pagopa/ts-commons/lib/units";
 
-import { pipe } from "fp-ts/lib/function";
 import * as E from "fp-ts/lib/Either";
 import * as TE from "fp-ts/lib/TaskEither";
 import * as O from "fp-ts/lib/Option";
-
-afterEach(() => {
-  jest.restoreAllMocks();
-  jest.resetAllMocks();
-});
 
 const mockAppinsights = {
   trackDependency: jest.fn(),
@@ -91,34 +80,8 @@ const aSenderMetadata: CreatedMessageEventSenderMetadata = {
 };
 
 const aNotificationEvent = {
-  content: {
-    markdown: aMessageBodyMarkdown,
-    subject: aMessageBodySubject
-  },
-  message: aMessage,
-  notificationId: aNotificationId,
-  senderMetadata: aSenderMetadata
-};
-
-const getMockNotificationEvent = (
-  messageContent: MessageContent = {
-    markdown: aMessageBodyMarkdown,
-    subject: aMessageBodySubject
-  }
-) => {
-  return pipe(
-    {
-      ...aNotificationEvent,
-      content: messageContent,
-      message: aNotificationEvent.message
-    },
-    NotificationEvent.decode,
-    E.getOrElseW(errs => {
-      throw new Error(
-        "Cannot deserialize NotificationEvent: " + readableReport(errs)
-      );
-    })
-  );
+  messageId: aMessage.id,
+  notificationId: aNotificationId
 };
 
 const aNotification: Notification = {
@@ -151,6 +114,23 @@ const mockContext = {
   log: nullLog,
   executionContext: { functionName: "funcname" }
 } as any;
+
+const aCommonMessageData = {
+  content: {
+    markdown: aMessageBodyMarkdown,
+    subject: aMessageBodySubject
+  },
+  message: aMessage,
+  senderMetadata: aSenderMetadata
+};
+
+const mockRetrieveProcessingMessageData = jest
+  .fn()
+  .mockImplementation(() => TE.of(O.some(aCommonMessageData)));
+
+beforeEach(() => {
+  jest.clearAllMocks();
+});
 
 describe("sendToWebhook", () => {
   it("should succeded with right parameters", async () => {
@@ -265,6 +245,9 @@ describe("sendToWebhook", () => {
 });
 
 describe("handler", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
   it("should return a transient error when there's an error while retrieving the notification", async () => {
     const notificationModelMock = {
       find: jest.fn(() => TE.left("error"))
@@ -274,13 +257,9 @@ describe("handler", () => {
       getWebhookNotificationHandler(
         notificationModelMock as any,
         {} as any,
+        mockRetrieveProcessingMessageData,
         false
-      )(
-        mockContext,
-        JSON.stringify({
-          notificationEvent: getMockNotificationEvent()
-        })
-      )
+      )(mockContext, JSON.stringify(aNotificationEvent))
     ).rejects.toThrow();
   });
 
@@ -293,13 +272,9 @@ describe("handler", () => {
       getWebhookNotificationHandler(
         notificationModelMock as any,
         {} as any,
+        mockRetrieveProcessingMessageData,
         false
-      )(
-        mockContext,
-        JSON.stringify({
-          notificationEvent: getMockNotificationEvent()
-        })
-      )
+      )(mockContext, JSON.stringify(aNotificationEvent))
     ).rejects.toThrow();
   });
 
@@ -312,13 +287,9 @@ describe("handler", () => {
       getWebhookNotificationHandler(
         notificationModelMock as any,
         {} as any,
+        mockRetrieveProcessingMessageData,
         false
-      )(
-        mockContext,
-        JSON.stringify({
-          notificationEvent: getMockNotificationEvent()
-        })
-      )
+      )(mockContext, JSON.stringify(aNotificationEvent))
     ).resolves.toEqual({ kind: "FAILURE", reason: "DECODE_ERROR" });
   });
 
@@ -332,16 +303,16 @@ describe("handler", () => {
       .fn()
       .mockReturnValue(Promise.resolve(E.right({ status: 200 })));
 
+    mockRetrieveProcessingMessageData.mockImplementationOnce(() =>
+      TE.of(O.some({ ...aCommonMessageData, content: aMessageContent }))
+    );
+
     const result = await getWebhookNotificationHandler(
       notificationModelMock as any,
       notifyCallApiMock as any,
+      mockRetrieveProcessingMessageData,
       false
-    )(
-      mockContext,
-      JSON.stringify({
-        notificationEvent: getMockNotificationEvent(aMessageContent)
-      })
-    );
+    )(mockContext, JSON.stringify(aNotificationEvent));
 
     expect(result).toEqual({
       kind: "SUCCESS",
@@ -366,16 +337,16 @@ describe("handler", () => {
       update: jest.fn(() => TE.of(O.some(aNotification)))
     };
 
+    mockRetrieveProcessingMessageData.mockImplementationOnce(() =>
+      TE.of(O.some({ ...aCommonMessageData, content: aLongMessageContent }))
+    );
+
     const result = await getWebhookNotificationHandler(
       notificationModelMock as any,
       notifyCallApiMock,
+      mockRetrieveProcessingMessageData,
       false
-    )(
-      mockContext,
-      JSON.stringify({
-        notificationEvent: getMockNotificationEvent(aLongMessageContent)
-      })
-    );
+    )(mockContext, JSON.stringify(aNotificationEvent));
 
     expect(result).toEqual({
       kind: "SUCCESS",
@@ -388,6 +359,10 @@ describe("handler", () => {
       .fn()
       .mockReturnValue(Promise.resolve(E.right({ status: 401 })));
 
+    mockRetrieveProcessingMessageData.mockImplementationOnce(() =>
+      TE.of(O.some({ ...aCommonMessageData, content: aMessageContent }))
+    );
+
     const notificationModelMock = {
       find: jest.fn(() => TE.of(O.some(aNotification))),
       update: jest.fn(() => TE.of(O.some(aNotification)))
@@ -397,13 +372,9 @@ describe("handler", () => {
       getWebhookNotificationHandler(
         notificationModelMock as any,
         notifyCallApiMock,
+        mockRetrieveProcessingMessageData,
         false
-      )(
-        mockContext,
-        JSON.stringify({
-          notificationEvent: getMockNotificationEvent(aMessageContent)
-        })
-      )
+      )(mockContext, JSON.stringify(aNotificationEvent))
     ).resolves.toEqual({ kind: "FAILURE", reason: "SEND_TO_WEBHOOK_FAILED" });
 
     expect(notificationModelMock.update).not.toHaveBeenCalled();
@@ -414,24 +385,24 @@ describe("handler", () => {
       find: jest.fn(() => E.right(O.some({})))
     };
 
-    const notificationEvent = getMockNotificationEvent();
+    mockRetrieveProcessingMessageData.mockImplementationOnce(() =>
+      TE.of(
+        O.some({
+          ...aCommonMessageData,
+          message: {
+            ...aCommonMessageData.message,
+            createdAt: new Date("2012-12-12")
+          }
+        })
+      )
+    );
 
     const ret = await getWebhookNotificationHandler(
       notificationModelMock as any,
       {} as any,
+      mockRetrieveProcessingMessageData,
       false
-    )(
-      mockContext,
-      JSON.stringify({
-        notificationEvent: {
-          ...notificationEvent,
-          message: {
-            ...notificationEvent.message,
-            createdAt: new Date("2012-12-12")
-          }
-        }
-      })
-    );
+    )(mockContext, JSON.stringify(aNotificationEvent));
 
     expect(ret).toEqual({ kind: "SUCCESS", result: "EXPIRED" });
   });
