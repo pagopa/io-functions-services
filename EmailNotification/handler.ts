@@ -18,7 +18,7 @@ import {
 
 import { sendMail } from "@pagopa/io-functions-commons/dist/src/mailer";
 import { withJsonInput } from "../utils/with-json-input";
-import { NotificationCreatedEvent } from "../CreateNotification/handler";
+import { NotificationCreatedEvent } from "../utils/events/message";
 import { generateDocumentHtml } from "./utils";
 
 export interface INotificationDefaults {

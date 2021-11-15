@@ -2,10 +2,7 @@ import * as TE from "fp-ts/TaskEither";
 import * as E from "fp-ts/Either";
 import { NotificationModel } from "@pagopa/io-functions-commons/dist/src/models/notification";
 
-import {
-  getCreateNotificationHandler,
-  NotificationCreatedEvent
-} from "../handler";
+import { getCreateNotificationHandler } from "../handler";
 import { HttpsUrl } from "@pagopa/io-functions-commons/dist/generated/definitions/HttpsUrl";
 import { pipe } from "fp-ts/lib/function";
 import { readableReport } from "@pagopa/ts-commons/lib/reporters";
@@ -17,6 +14,7 @@ import {
   aCreatedMessageEventSenderMetadata,
   aRetrievedProfile
 } from "../../__mocks__/mocks";
+import { NotificationCreatedEvent } from "../../utils/events/message";
 
 const mockNotificationCreate = jest
   .fn()

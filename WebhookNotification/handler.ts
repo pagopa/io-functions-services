@@ -44,7 +44,7 @@ import { flow, pipe } from "fp-ts/lib/function";
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import { Notification } from "../generated/notifications/Notification";
 import { withJsonInput } from "../utils/with-json-input";
-import { NotificationCreatedEvent } from "../CreateNotification/handler";
+import { NotificationCreatedEvent } from "../utils/events/message";
 import { WebhookNotifyT } from "./client";
 
 export const WebhookNotificationInput = NotificationCreatedEvent;

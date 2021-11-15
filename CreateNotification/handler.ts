@@ -29,8 +29,12 @@ import { ulidGenerator } from "@pagopa/io-functions-commons/dist/src/utils/strin
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { ServicesPreferencesModeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServicesPreferencesMode";
 import { pipe } from "fp-ts/lib/function";
-import { ProcessedMessageEvent } from "../ProcessMessage/handler";
+
 import { withJsonInput } from "../utils/with-json-input";
+import {
+  NotificationCreatedEvent,
+  ProcessedMessageEvent
+} from "../utils/events/message";
 
 /**
  * Attempt to resolve an email address from
@@ -81,13 +85,6 @@ async function createNotification(
 
 export type CreateNotificationInput = t.TypeOf<typeof CreateNotificationInput>;
 export const CreateNotificationInput = ProcessedMessageEvent;
-
-export type NotificationCreatedEvent = t.TypeOf<
-  typeof NotificationCreatedEvent
->;
-export const NotificationCreatedEvent = t.interface({
-  notificationEvent: NotificationEvent
-});
 
 /**
  * Returns a function for handling createNotification

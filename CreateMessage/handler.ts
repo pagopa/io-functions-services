@@ -15,7 +15,6 @@ import * as t from "io-ts";
 
 import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
 import { EUCovidCert } from "@pagopa/io-functions-commons/dist/generated/definitions/EUCovidCert";
-import { CreatedMessageEvent } from "@pagopa/io-functions-commons/dist/src/models/created_message_event";
 import {
   Message,
   MessageModel,
@@ -85,6 +84,7 @@ import { Either } from "fp-ts/lib/Either";
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import { PaymentDataWithRequiredPayee } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentDataWithRequiredPayee";
 import { NewMessage as ApiNewMessage } from "@pagopa/io-functions-commons/dist/generated/definitions/NewMessage";
+import { CreatedMessageEvent } from "../utils/events/message";
 import { ApiNewMessageWithContentOf, ApiNewMessageWithDefaults } from "./types";
 
 /**

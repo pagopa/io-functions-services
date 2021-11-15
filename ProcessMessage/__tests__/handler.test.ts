@@ -28,12 +28,13 @@ import {
   legacyProfileServicePreferencesSettings,
   manualProfileServicePreferencesSettings
 } from "../../__mocks__/mocks";
-import { getProcessMessageHandler, ProcessedMessageEvent } from "../handler";
+import { getProcessMessageHandler } from "../handler";
 import { OrganizationFiscalCode } from "@pagopa/ts-commons/lib/strings";
 import { Context } from "@azure/functions";
 import { MessageStatusModel } from "@pagopa/io-functions-commons/dist/src/models/message_status";
 import { pipe } from "fp-ts/lib/function";
 import { readableReport } from "@pagopa/ts-commons/lib/reporters";
+import { ProcessedMessageEvent } from "../../utils/events/message";
 
 const createContext = (): Context =>
   (({

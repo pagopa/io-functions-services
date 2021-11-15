@@ -1,20 +1,10 @@
 /* eslint-disable max-lines-per-function */
-import * as t from "io-ts";
 
 import { Context } from "@azure/functions";
-import {
-  BlockedInboxOrChannel,
-  BlockedInboxOrChannelEnum
-} from "@pagopa/io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
+import { BlockedInboxOrChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
 import { CreatedMessageEvent } from "@pagopa/io-functions-commons/dist/src/models/created_message_event";
-import {
-  MessageModel,
-  NewMessageWithoutContent
-} from "@pagopa/io-functions-commons/dist/src/models/message";
-import {
-  ProfileModel,
-  RetrievedProfile
-} from "@pagopa/io-functions-commons/dist/src/models/profile";
+import { MessageModel } from "@pagopa/io-functions-commons/dist/src/models/message";
+import { ProfileModel } from "@pagopa/io-functions-commons/dist/src/models/profile";
 import { BlobService } from "azure-storage";
 import * as E from "fp-ts/lib/Either";
 import * as O from "fp-ts/lib/Option";
@@ -43,22 +33,11 @@ import {
   MessageStatusModel
 } from "@pagopa/io-functions-commons/dist/src/models/message_status";
 import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
-import { CreatedMessageEventSenderMetadata } from "@pagopa/io-functions-commons/dist/src/models/created_message_sender_metadata";
-import { MessageContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageContent";
 import { initTelemetryClient } from "../utils/appinsights";
 import { toHash } from "../utils/crypto";
 import { PaymentData } from "../generated/definitions/PaymentData";
 import { withJsonInput } from "../utils/with-json-input";
-
-export const ProcessedMessageEvent = t.interface({
-  blockedInboxOrChannels: t.readonlyArray(BlockedInboxOrChannel),
-  content: MessageContent,
-  message: NewMessageWithoutContent,
-  profile: RetrievedProfile,
-  senderMetadata: CreatedMessageEventSenderMetadata
-});
-
-export type ProcessedMessageEvent = t.TypeOf<typeof ProcessedMessageEvent>;
+import { ProcessedMessageEvent } from "../utils/events/message";
 
 // Interface that marks an unexpected value
 interface IUnexpectedValue {
