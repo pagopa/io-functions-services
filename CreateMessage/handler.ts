@@ -84,8 +84,12 @@ import { Either } from "fp-ts/lib/Either";
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import { PaymentDataWithRequiredPayee } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentDataWithRequiredPayee";
 import { NewMessage as ApiNewMessage } from "@pagopa/io-functions-commons/dist/generated/definitions/NewMessage";
-import { CreatedMessageEvent } from "../utils/events/message";
+import {
+  CommonMessageData,
+  CreatedMessageEvent
+} from "../utils/events/message";
 import { ApiNewMessageWithContentOf, ApiNewMessageWithDefaults } from "./types";
+import { makeUpsertBlobFromObject } from "./utils";
 
 /**
  * A request middleware that validates the Message payload.
@@ -270,11 +274,12 @@ const redirectToNewMessage = (
 /**
  * Returns a type safe CreateMessage handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions,max-params
 export function CreateMessageHandler(
   telemetryClient: ReturnType<typeof initAppInsights>,
   messageModel: MessageModel,
   generateObjectId: ObjectIdGenerator,
+  saveProcessingMessage: ReturnType<typeof makeUpsertBlobFromObject>,
   disableIncompleteServices: boolean,
   incompleteServiceWhitelist: ReadonlyArray<ServiceId>
 ): ICreateMessageHandler {
@@ -310,7 +315,7 @@ export function CreateMessageHandler(
     }
 
     const fiscalCode = maybeFiscalCode.value;
-    const { service } = userAttributes;
+    const { service, email: serviceUserEmail } = userAttributes;
     const { authorizedRecipients, serviceId } = service;
 
     // a new message ID gets generated for each request, even for requests that
@@ -398,6 +403,33 @@ export function CreateMessageHandler(
           serviceId
         )
       ),
+      // store CommonMessageData into a support storage
+      TE.chainFirstW(newMessageWithoutContent =>
+        pipe(
+          saveProcessingMessage(
+            newMessageWithoutContent.id,
+            CommonMessageData.encode({
+              content: messagePayload.content,
+              message: newMessageWithoutContent,
+              senderMetadata: {
+                departmentName: service.departmentName,
+                organizationFiscalCode: service.organizationFiscalCode,
+                organizationName: service.organizationName,
+                requireSecureChannels: service.requireSecureChannels,
+                serviceName: service.serviceName,
+                serviceUserEmail
+              }
+            })
+          ),
+          TE.mapLeft(err => {
+            context.log.error(
+              `CreateMessageHandler|Error storing processing message to blob|${err.message}`
+            );
+            return ResponseErrorInternal("Unable to store processing message");
+          })
+        )
+      ),
+
       // processing the message asynchrnously
       TE.chain(newMessageWithoutContent =>
         pipe(
@@ -438,11 +470,12 @@ export function CreateMessageHandler(
 /**
  * Wraps a CreateMessage handler inside an Express request handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions,max-params
 export function CreateMessage(
   telemetryClient: ReturnType<typeof initAppInsights>,
   serviceModel: ServiceModel,
   messageModel: MessageModel,
+  saveProcessingMessage: ReturnType<typeof makeUpsertBlobFromObject>,
   disableIncompleteServices: boolean,
   incompleteServiceWhitelist: ReadonlyArray<ServiceId>
 ): express.RequestHandler {
@@ -450,6 +483,7 @@ export function CreateMessage(
     telemetryClient,
     messageModel,
     ulidGenerator,
+    saveProcessingMessage,
     disableIncompleteServices,
     incompleteServiceWhitelist
   );

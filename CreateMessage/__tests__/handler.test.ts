@@ -12,6 +12,8 @@ import { none, some } from "fp-ts/lib/Option";
 
 import { pipe } from "fp-ts/lib/function";
 import * as E from "fp-ts/lib/Either";
+import * as TE from "fp-ts/lib/TaskEither";
+import * as O from "fp-ts/lib/Option";
 
 import {
   canDefaultAddresses,
@@ -21,7 +23,6 @@ import {
   CreateMessageHandler
 } from "../handler";
 
-import { taskEither } from "fp-ts/lib/TaskEither";
 import {
   alphaStringArb,
   fiscalCodeArb,
@@ -177,7 +178,7 @@ describe("createMessageDocument", () => {
         serviceIdArb,
         async (messageId, senderUserId, fiscalCode, ttl, senderServiceId) => {
           const mockMessageModel = ({
-            create: jest.fn(() => taskEither.of({}))
+            create: jest.fn(() => TE.of({}))
           } as unknown) as MessageModel;
           const responseTask = createMessageDocument(
             messageId,
@@ -216,6 +217,7 @@ describe("CreateMessageHandler", () => {
           undefined as any,
           undefined as any,
           undefined as any,
+          undefined as any,
           true,
           []
         );
@@ -238,6 +240,7 @@ describe("CreateMessageHandler", () => {
 
   it("should return a validation error if fiscalcode is not specified in path nor payload", async () => {
     const createMessageHandler = CreateMessageHandler(
+      undefined as any,
       undefined as any,
       undefined as any,
       undefined as any,
@@ -279,10 +282,15 @@ describe("CreateMessageHandler", () => {
     const mockTelemetryClient = ({
       trackEvent: jest.fn()
     } as unknown) as ReturnType<typeof initAppInsights>;
+
+    const mockSaveBlob = jest.fn((_: string, __: any) =>
+      TE.of(O.some({} as any))
+    );
     const createMessageHandler = CreateMessageHandler(
       mockTelemetryClient,
       undefined as any,
       mockGenerateObjId,
+      mockSaveBlob,
       true,
       []
     );
