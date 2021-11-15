@@ -120,15 +120,21 @@ const defaultNotificationParams = {
 };
 
 const input: EmailNotificationInput = {
-  notificationEvent: {
-    content: aMessageContent,
-    message: aMessage,
-    notificationId: aNotificationId,
-    senderMetadata: aSenderMetadata
-  }
+  messageId: aMessage.id,
+  notificationId: aNotificationId
 };
 
 const lMailerTransporterMock = ({} as unknown) as mail.MailerTransporter;
+
+const mockRetrieveProcessingMessageData = jest.fn().mockImplementation(() =>
+  TE.of(
+    O.some({
+      content: aMessageContent,
+      message: aMessage,
+      senderMetadata: aSenderMetadata
+    })
+  )
+);
 
 describe("getEmailNotificationActivityHandler", () => {
   it("should respond with 'SUCCESS' if the mail is sent", async () => {
@@ -137,6 +143,7 @@ describe("getEmailNotificationActivityHandler", () => {
     const GetEmailNotificationActivityHandler = getEmailNotificationHandler(
       lMailerTransporterMock,
       notificationModelMock,
+      mockRetrieveProcessingMessageData,
       defaultNotificationParams
     );
 
@@ -158,6 +165,7 @@ describe("getEmailNotificationActivityHandler", () => {
     const GetEmailNotificationActivityHandler = getEmailNotificationHandler(
       lMailerTransporterMock,
       notificationModelMock,
+      mockRetrieveProcessingMessageData,
       defaultNotificationParams
     );
 

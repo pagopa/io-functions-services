@@ -111,6 +111,7 @@ export const getCreateNotificationHandler = (
           context,
           {
             message: newMessageWithoutContent,
+            messageId,
             content: newMessageContent,
             profile,
             blockedInboxOrChannels,
@@ -269,7 +270,7 @@ export const getCreateNotificationHandler = (
             }
           };
 
-          const notificationEvent = await createNotification(
+          const createdNotification = await createNotification(
             lNotificationModel,
             senderMetadata,
             newMessageWithoutContent,
@@ -279,23 +280,19 @@ export const getCreateNotificationHandler = (
 
           context.log.verbose(`${logPrefix}|RESULT=SUCCESS`);
 
-          context.log.verbose(util.inspect(notificationEvent));
+          context.log.verbose(util.inspect(createdNotification));
 
           if (O.isSome(maybeEmailNotificationAddress)) {
             // eslint-disable-next-line functional/immutable-data
             context.bindings.notificationCreatedEmail = NotificationCreatedEvent.encode(
-              {
-                notificationEvent
-              }
+              { messageId, notificationId: createdNotification.notificationId }
             );
           }
 
           if (O.isSome(maybeWebhookNotificationUrl)) {
             // eslint-disable-next-line functional/immutable-data
             context.bindings.notificationCreatedWebhook = NotificationCreatedEvent.encode(
-              {
-                notificationEvent
-              }
+              { messageId, notificationId: createdNotification.notificationId }
             );
           }
         }

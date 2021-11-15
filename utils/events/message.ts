@@ -44,10 +44,6 @@ export type NotificationCreatedEvent = t.TypeOf<
   typeof NotificationCreatedEvent
 >;
 export const NotificationCreatedEvent = t.interface({
-  notificationEvent: t.intersection([
-    CommonMessageData,
-    t.interface({
-      notificationId: NonEmptyString
-    })
-  ])
+  messageId: MessageId,
+  notificationId: NonEmptyString
 });
