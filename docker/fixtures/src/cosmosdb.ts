@@ -4,6 +4,7 @@ import * as TE from "fp-ts/TaskEither";
 import * as RA from "fp-ts/ReadonlyArray";
 import { flow, pipe } from "fp-ts/lib/function";
 import * as ServiceCollection from "@pagopa/io-functions-commons/dist/src/models/service";
+import * as ServicePreferenceCollection from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 import * as ProfileCollection from "@pagopa/io-functions-commons/dist/src/models/profile";
 import * as MessageCollection from "@pagopa/io-functions-commons/dist/src/models/message";
 import * as MessageStatusCollection from "@pagopa/io-functions-commons/dist/src/models/message_status";
@@ -11,7 +12,11 @@ import * as NotificationCollection from "@pagopa/io-functions-commons/dist/src/m
 import * as NotificationStatusCollection from "@pagopa/io-functions-commons/dist/src/models/notification_status";
 import { createContainer, createDatabase } from "./utils/cosmos_utils";
 import { log } from "./utils/logger";
-import { aValidProfileList, aValidServiceList } from "./data/data";
+import {
+  aValidProfileList,
+  aValidServiceList,
+  aValidServicePreferenceList
+} from "./data/data";
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 const createServiceData = (db: Database) => {
@@ -98,6 +103,46 @@ const createProfileData = (db: Database) => {
   );
 };
 
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+const createServicePreferencesData = (db: Database) => {
+  log("adding Service Preferences Data");
+
+  return pipe(
+    createContainer(
+      db,
+      ServicePreferenceCollection.SERVICE_PREFERENCES_COLLECTION_NAME,
+      ServicePreferenceCollection.SERVICE_PREFERENCES_MODEL_PK_FIELD
+    ),
+    TE.map(
+      c =>
+        new ServicePreferenceCollection.ServicesPreferencesModel(
+          c,
+          ServicePreferenceCollection.SERVICE_PREFERENCES_COLLECTION_NAME
+        )
+    ),
+    TE.bindTo("model"),
+    TE.bind("preferencesCreated", ({ model }) =>
+      pipe(
+        aValidServicePreferenceList.map(sp =>
+          model.create({
+            kind: "INewServicePreference" as const,
+            id: ServicePreferenceCollection.makeServicesPreferencesDocumentId(
+              sp.fiscalCode,
+              sp.serviceId,
+              sp.settingsVersion
+            ),
+            ...sp
+          })
+        ),
+        RA.sequence(TE.ApplicativePar)
+      )
+    ),
+    TE.map(_ =>
+      log(`${_.preferencesCreated.length} ServicePreferences data created`)
+    )
+  );
+};
+
 /**
  * Fill DB
  */
@@ -115,12 +160,13 @@ export const fillCosmosDb = async (
     }),
     TE.of,
     TE.chain(documentClient => createDatabase(documentClient, cosmosDbName)),
-    TE.chainFirst(
+    TE.chain(
       flow(
         db => [
           createServiceData(db),
           createMessageData(db),
-          createProfileData(db)
+          createProfileData(db),
+          createServicePreferencesData(db)
         ],
         RA.sequence(TE.ApplicativePar)
       )

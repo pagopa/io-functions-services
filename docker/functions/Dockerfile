@@ -17,6 +17,5 @@ RUN apt-get install -y azure-functions-core-tools-3 && \
 ENV AzureWebJobsScriptRoot=/usr/src/app \
     AzureFunctionsJobHost__Logging__Console__IsEnabled=true
 
-RUN func extensions install
 
-CMD ["func", "start", "--javascript"]
+CMD ["yarn", "start"]

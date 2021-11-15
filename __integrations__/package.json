@@ -7,7 +7,7 @@
   "author": "",
   "scripts": {
     "prestart": "npm-run-all generate-env",
-    "start": "docker-compose --env-file environments/env.base up",
+    "start": "docker-compose --env-file environments/env.base up -d",
     "stop": "docker-compose --env-file environments/env.base down && docker image prune -a -f && docker volume prune -f",
     "pretest": "npm-run-all generate:client:*",
     "test": "jest --verbose --runInBand",

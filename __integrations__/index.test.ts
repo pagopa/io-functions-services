@@ -7,7 +7,14 @@ import { createClient } from "./generated/fn-services/client";
 import { FiscalCode } from "./generated/fn-services/FiscalCode";
 import { MessageContent } from "./generated/fn-services/MessageContent";
 
-import { WAIT_MS } from "./env";
+import { WAIT_MS, SHOW_LOGS } from "./env";
+import {
+  MessageResponseWithContent,
+  StatusEnum
+} from "./generated/fn-services/MessageResponseWithContent";
+import { CreatedMessage } from "./generated/fn-services/CreatedMessage";
+import { ProblemJson } from "./generated/fn-services/ProblemJson";
+import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 
 jest.setTimeout(WAIT_MS * 5);
 
@@ -18,8 +25,18 @@ afterAll(async () => {});
 
 beforeEach(() => jest.clearAllMocks());
 
-export const aLegacyFiscalCode = "AAABBB01C02D345L" as FiscalCode;
+// ----------------
+
+export const aLegacyInboxEnabledFiscalCode = "AAABBB01C02D345L" as FiscalCode;
+export const aLegacyInboxDisabledFiscalCode = "AAABBB01C02D345I" as FiscalCode;
 export const anAutoFiscalCode = "AAABBB01C02D345A" as FiscalCode;
+export const aManualFiscalCode = "AAABBB01C02D345M" as FiscalCode;
+
+export const anEnabledServiceId = "anEnabledServiceId" as NonEmptyString;
+export const aDisabledServiceId = "aDisabledServiceId" as NonEmptyString;
+const aNonExistingServiceId = "aNonExistingServiceId" as NonEmptyString;
+
+// ----------------
 
 export const aMessageBodyMarkdown = "test".repeat(80);
 export const aMessageContent: MessageContent = {
@@ -28,41 +45,58 @@ export const aMessageContent: MessageContent = {
 };
 
 // Must correspond to an existing serviceId within "services" colletion
-const aSubscriptionId = "aServiceId";
 const aSubscriptionKey = "aSubscriptionKey";
 
 const customHeaders = {
   "x-user-groups":
     "ApiUserAdmin,ApiLimitedProfileRead,ApiFullProfileRead,ApiProfileWrite,ApiDevelopmentProfileWrite,ApiServiceRead,ApiServiceList,ApiServiceWrite,ApiPublicServiceRead,ApiPublicServiceList,ApiServiceByRecipientQuery,ApiMessageRead,ApiMessageWrite,ApiMessageWriteDefaultAddress,ApiMessageList,ApiSubscriptionsFeedRead,ApiInfoRead,ApiDebugRead,ApiMessageWriteEUCovidCert",
-  "x-subscription-id": aSubscriptionId,
+  "x-subscription-id": anEnabledServiceId,
   "x-user-email": "unused@example.com",
   "x-user-id": "unused",
   "x-user-note": "unused",
   "x-functions-key": "unused",
-  "x-forwarded-for": "0.0.0.0"
+  "x-forwarded-for": "0.0.0.0",
+  "Ocp-Apim-Subscription-Key": aSubscriptionKey
 };
-const customNodeFetch: typeof fetch = async (
-  input: RequestInfo,
-  init?: RequestInit
-) => {
-  console.log("Sending request");
-  console.log(input);
 
-  const res = await ((nodeFetch as unknown) as typeof fetch)(input, {
-    ...init,
-    headers: {
-      ...init.headers,
-      ...customHeaders
+const mockGetCustomHeaders = jest.fn(() => customHeaders);
+
+const mockNodeFetch = jest.fn(
+  async (input: RequestInfo, init?: RequestInit) => {
+    if (SHOW_LOGS) {
+      console.log("Sending request");
+      console.log(input);
     }
-  });
 
-  console.log("Result: ");
-  console.log(res);
+    const res = await ((nodeFetch as unknown) as typeof fetch)(input, {
+      ...init,
+      headers: {
+        ...(init?.headers ?? {}),
+        ...mockGetCustomHeaders()
+      }
+    });
 
-  return res;
-};
+    if (SHOW_LOGS) {
+      console.log("Result: ");
+      console.log(res);
+    }
+
+    return res;
+  }
+);
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+const client = createClient<"SubscriptionKey">({
+  basePath: "/api/v1",
+  baseUrl,
+  fetchApi: mockNodeFetch,
+  withDefaults: op => params =>
+    op({
+      ...params,
+      SubscriptionKey: aSubscriptionKey
+    })
+});
 
 // Wait some time
 beforeAll(async () => {
@@ -81,22 +115,12 @@ describe("fn-services |> ping", () => {
   });
 });
 
-describe("Legacy profile |> Create Message", () => {
-  const client = createClient<"SubscriptionKey">({
-    basePath: "/api/v1",
-    baseUrl,
-    fetchApi: customNodeFetch,
-    withDefaults: op => params =>
-      op({
-        ...params,
-        SubscriptionKey: aSubscriptionKey
-      })
-  });
-
-  it("should return 201 when creating a message", async () => {
-    console.log(`Env variable: ${WAIT_MS}`);
-
-    await delay(5000);
+describe("Create Message |> Middleware errors", () => {
+  it("should return 403 when creating a message from a non existing Service", async () => {
+    mockGetCustomHeaders.mockImplementationOnce(() => ({
+      ...customHeaders,
+      "x-subscription-id": aNonExistingServiceId
+    }));
 
     const body = {
       message: { fiscal_code: anAutoFiscalCode, content: aMessageContent }
@@ -108,14 +132,16 @@ describe("Legacy profile |> Create Message", () => {
 
     expect(E.isRight(response)).toEqual(true);
     if (E.isRight(response)) {
-      expect(response.right.status).toEqual(201);
+      expect(response.right.status).toEqual(403);
     }
   });
 
-  it("should return the created message", async () => {
-    const fiscalCode = anAutoFiscalCode;
+  it("should return 201 when no middleware fails", async () => {
     const body = {
-      message: { fiscal_code: fiscalCode, content: aMessageContent }
+      message: {
+        fiscal_code: aLegacyInboxEnabledFiscalCode,
+        content: aMessageContent
+      }
     };
 
     const response = await client.submitMessageforUserWithFiscalCodeInBody(
@@ -125,35 +151,241 @@ describe("Legacy profile |> Create Message", () => {
     expect(E.isRight(response)).toEqual(true);
     if (E.isRight(response)) {
       expect(response.right.status).toEqual(201);
-      if (response.right.status === 201) {
-        const messageId = response.right.value.id;
-        expect(messageId).not.toBeUndefined();
-
-        // Wait for process to complete
-        await delay(2000);
-
-        const responseGet = await client.getMessage({
-          id: messageId,
-          fiscal_code: fiscalCode
-        });
-
-        expect(E.isRight(responseGet)).toEqual(true);
-        if (E.isRight(responseGet)) {
-          expect(responseGet.right.status).toEqual(200);
-
-          if (responseGet.right.status === 200) {
-            expect(responseGet.right.value).toEqual(
-              expect.objectContaining({
-                message: expect.objectContaining({
-                  id: messageId,
-                  ...body.message
-                }),
-                status: "PROCESSED"
-              })
-            );
-          }
-        }
-      }
     }
   });
 });
+
+describe("Create Message |> Legacy profile", () => {
+  const fiscalCode = aLegacyInboxEnabledFiscalCode;
+
+  it("should return the message in PROCESSED status when service is allowed to send", async () => {
+    const body = {
+      message: { fiscal_code: fiscalCode, content: aMessageContent }
+    };
+
+    const result = await postCreateMessage(body);
+
+    expect(result.status).toEqual(201);
+
+    const messageId = ((await result.json()) as CreatedMessage).id;
+    expect(messageId).not.toBeUndefined();
+
+    // Wait the process to complete
+    await delay(1000);
+
+    const resultGet = await getSentMessage(fiscalCode, messageId);
+
+    expect(resultGet.status).toEqual(200);
+    const detail = (await resultGet.json()) as MessageResponseWithContent;
+
+    expect(detail).toEqual(
+      expect.objectContaining({
+        message: expect.objectContaining({
+          id: messageId,
+          ...body.message
+        }),
+        status: StatusEnum.PROCESSED
+      })
+    );
+  });
+
+  it("should return 403 Not Allowed when service is NOT allowed to send", async () => {
+    mockGetCustomHeaders
+      .mockImplementationOnce(() => ({
+        ...customHeaders,
+        "x-subscription-id": aDisabledServiceId
+      }))
+      .mockImplementationOnce(() => ({
+        ...customHeaders,
+        "x-subscription-id": aDisabledServiceId
+      }));
+
+    const body = {
+      message: { fiscal_code: fiscalCode, content: aMessageContent }
+    };
+
+    const result = await postCreateMessage(body);
+
+    expect(result.status).toEqual(201);
+
+    const messageId = ((await result.json()) as CreatedMessage).id;
+    expect(messageId).not.toBeUndefined();
+
+    // Wait the process to complete
+    await delay(1000);
+
+    const resultGet = await getSentMessage(fiscalCode, messageId);
+    const detail = await resultGet.json();
+
+    expect(resultGet.status).toEqual(403);
+    expect(detail).toEqual({
+      detail:
+        "You do not have enough permission to complete the operation you requested",
+      status: 403,
+      title: "You are not allowed here"
+    });
+  });
+});
+
+describe("Create Message |> Auto profile", () => {
+  const fiscalCode = anAutoFiscalCode;
+
+  it("should return the message in PROCESSED status when service is allowed to send", async () => {
+    const body = {
+      message: { fiscal_code: fiscalCode, content: aMessageContent }
+    };
+
+    const result = await postCreateMessage(body);
+
+    expect(result.status).toEqual(201);
+
+    const messageId = ((await result.json()) as CreatedMessage).id;
+    expect(messageId).not.toBeUndefined();
+
+    // Wait the process to complete
+    await delay(1000);
+
+    const resultGet = await getSentMessage(fiscalCode, messageId);
+
+    expect(resultGet.status).toEqual(200);
+    const detail = (await resultGet.json()) as MessageResponseWithContent;
+
+    expect(detail).toEqual(
+      expect.objectContaining({
+        message: expect.objectContaining({
+          id: messageId,
+          ...body.message
+        }),
+        status: StatusEnum.PROCESSED
+      })
+    );
+  });
+
+  it("should return 403 Not Allowed when service is NOT allowed to send", async () => {
+    mockGetCustomHeaders
+      .mockImplementationOnce(() => ({
+        ...customHeaders,
+        "x-subscription-id": aDisabledServiceId
+      }))
+      .mockImplementationOnce(() => ({
+        ...customHeaders,
+        "x-subscription-id": aDisabledServiceId
+      }));
+
+    const body = {
+      message: { fiscal_code: fiscalCode, content: aMessageContent }
+    };
+
+    const result = await postCreateMessage(body);
+
+    expect(result.status).toEqual(201);
+
+    const messageId = ((await result.json()) as CreatedMessage).id;
+    expect(messageId).not.toBeUndefined();
+
+    // Wait the process to complete
+    await delay(1000);
+
+    const resultGet = await getSentMessage(fiscalCode, messageId);
+    const detail = await resultGet.json();
+
+    expect(resultGet.status).toEqual(403);
+    expect(detail).toEqual({
+      detail:
+        "You do not have enough permission to complete the operation you requested",
+      status: 403,
+      title: "You are not allowed here"
+    });
+  });
+});
+
+describe("Create Message |> Manual profile", () => {
+  const fiscalCode = aManualFiscalCode;
+
+  it("should return the message in PROCESSED status when service is allowed to send", async () => {
+    const body = {
+      message: { fiscal_code: fiscalCode, content: aMessageContent }
+    };
+
+    const result = await postCreateMessage(body);
+
+    expect(result.status).toEqual(201);
+
+    const messageId = ((await result.json()) as CreatedMessage).id;
+    expect(messageId).not.toBeUndefined();
+
+    // Wait the process to complete
+    await delay(1000);
+
+    const resultGet = await getSentMessage(fiscalCode, messageId);
+
+    expect(resultGet.status).toEqual(200);
+    const detail = (await resultGet.json()) as MessageResponseWithContent;
+
+    expect(detail).toEqual(
+      expect.objectContaining({
+        message: expect.objectContaining({
+          id: messageId,
+          ...body.message
+        }),
+        status: StatusEnum.PROCESSED
+      })
+    );
+  });
+
+  it("should return 403 Forbidden when service is NOT allowed to send", async () => {
+    mockGetCustomHeaders
+      .mockImplementationOnce(() => ({
+        ...customHeaders,
+        "x-subscription-id": aDisabledServiceId
+      }))
+      .mockImplementationOnce(() => ({
+        ...customHeaders,
+        "x-subscription-id": aDisabledServiceId
+      }));
+
+    const body = {
+      message: { fiscal_code: fiscalCode, content: aMessageContent }
+    };
+
+    const result = await postCreateMessage(body);
+
+    expect(result.status).toEqual(201);
+
+    const messageId = ((await result.json()) as CreatedMessage).id;
+    expect(messageId).not.toBeUndefined();
+
+    // Wait the process to complete
+    await delay(1000);
+
+    const resultGet = await getSentMessage(fiscalCode, messageId);
+
+    expect(resultGet.status).toEqual(403);
+    const detail = (await resultGet.json()) as ProblemJson;
+    expect(detail).toEqual({
+      detail:
+        "You do not have enough permission to complete the operation you requested",
+      status: 403,
+      title: "You are not allowed here"
+    });
+  });
+});
+
+// -----------
+// Utils
+// -----------
+
+const postCreateMessage = async body => {
+  return await mockNodeFetch(`${baseUrl}/api/v1/messages`, {
+    method: "POST",
+    headers: {
+      ...mockGetCustomHeaders(),
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body.message)
+  });
+};
+
+function getSentMessage(fiscalCode, messageId: string) {
+  return mockNodeFetch(`${baseUrl}/api/v1/messages/${fiscalCode}/${messageId}`);
+}
