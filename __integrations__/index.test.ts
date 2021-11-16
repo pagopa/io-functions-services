@@ -186,7 +186,7 @@ describe("Create Message |> Legacy profile", () => {
     expect(messageId).not.toBeUndefined();
 
     // Wait the process to complete
-    await delay(1000);
+    await delay(WAIT_MS);
 
     const resultGet = await getSentMessage(fiscalCode, messageId);
 
@@ -227,7 +227,7 @@ describe("Create Message |> Legacy profile", () => {
     expect(messageId).not.toBeUndefined();
 
     // Wait the process to complete
-    await delay(1000);
+    await delay(WAIT_MS);
 
     const resultGet = await getSentMessage(fiscalCode, messageId);
     const detail = await resultGet.json();
@@ -258,7 +258,7 @@ describe("Create Message |> Auto profile", () => {
     expect(messageId).not.toBeUndefined();
 
     // Wait the process to complete
-    await delay(1000);
+    await delay(WAIT_MS);
 
     const resultGet = await getSentMessage(fiscalCode, messageId);
 
@@ -299,7 +299,7 @@ describe("Create Message |> Auto profile", () => {
     expect(messageId).not.toBeUndefined();
 
     // Wait the process to complete
-    await delay(1000);
+    await delay(WAIT_MS);
 
     const resultGet = await getSentMessage(fiscalCode, messageId);
     const detail = await resultGet.json();
@@ -330,7 +330,7 @@ describe("Create Message |> Manual profile", () => {
     expect(messageId).not.toBeUndefined();
 
     // Wait the process to complete
-    await delay(1000);
+    await delay(WAIT_MS);
 
     const resultGet = await getSentMessage(fiscalCode, messageId);
 
@@ -371,7 +371,7 @@ describe("Create Message |> Manual profile", () => {
     expect(messageId).not.toBeUndefined();
 
     // Wait the process to complete
-    await delay(1000);
+    await delay(WAIT_MS);
 
     const resultGet = await getSentMessage(fiscalCode, messageId);
 
