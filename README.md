@@ -71,6 +71,7 @@ To start itegration tests:
 
 ```bash
 cd __integrations__
+cp environments/env.base environments/.env
 yarn start 
 docker exec integrations___testagent_1 yarn test
 ```
