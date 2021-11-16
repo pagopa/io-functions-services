@@ -18,4 +18,4 @@ ENV AzureWebJobsScriptRoot=/usr/src/app \
     AzureFunctionsJobHost__Logging__Console__IsEnabled=true
 
 
-CMD ["yarn", "start"]
+CMD ["func", "start", "--javascript"]

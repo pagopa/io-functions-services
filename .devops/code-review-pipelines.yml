@@ -105,6 +105,7 @@ stages:
         - template: templates/node-job-setup/template.yaml@pagopaCommons
         - script: |
             yarn build
+            func extensions install
           displayName: 'Build'
         - script: |
             cd __integrations__

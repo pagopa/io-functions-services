@@ -15,6 +15,7 @@ import {
 import { CreatedMessage } from "./generated/fn-services/CreatedMessage";
 import { ProblemJson } from "./generated/fn-services/ProblemJson";
 import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
+import { exit } from "process";
 
 jest.setTimeout(WAIT_MS * 5);
 
@@ -100,7 +101,21 @@ const client = createClient<"SubscriptionKey">({
 
 // Wait some time
 beforeAll(async () => {
-  await delay(5000);
+  let i = 0;
+  while (i < 100) {
+    console.log("Waiting the function to setup..");
+    await delay(1000);
+    try {
+      const response = await nodeFetch("http://function:7071/api/info");
+      break;
+    } catch (e) {
+      i++;
+    }
+  }
+  if (i >= 10) {
+    console.log("Function unable to setup in time");
+    exit(1);
+  }
 });
 
 describe("fn-services |> ping", () => {
