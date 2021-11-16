@@ -11,7 +11,7 @@ import { getBlobAsObject } from "@pagopa/io-functions-commons/dist/src/utils/azu
  * A type definign a generic function to fetch data
  */
 export type DataFetcher<E> = (
-  containerName: string
+  blobName: string
 ) => TE.TaskEither<Error, O.Option<E>>;
 
 /**
@@ -26,10 +26,10 @@ export type DataFetcher<E> = (
 export const makeRetrieveExpandedDataFromBlob = <A, O, I>(
   type: t.Type<A, O, I>,
   blobService: Parameters<typeof getBlobAsObject>[1],
-  blobName: Parameters<typeof getBlobAsObject>[3],
+  containerName: string,
   options: Parameters<typeof getBlobAsObject>[4] = {}
 ): DataFetcher<A> => (
-  containerName: string
+  blobName: Parameters<typeof getBlobAsObject>[3]
 ): TE.TaskEither<Error, O.Option<A>> =>
   pipe(
     TE.tryCatch(
