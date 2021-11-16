@@ -1,6 +1,14 @@
 version: "3.2"
 
 services:
+
+  functions-node-14:
+    image: functions-node-14
+    build:
+      context: ..
+      dockerfile: ./docker/functions-node-14/Dockerfile
+    command: /bin/true
+
   cosmosdb:
     image: cosmosdb
     env_file:
@@ -37,8 +45,8 @@ services:
     env_file:
       - ./environments/generated/env.io-functions-services
     build:
-      context: ../docker/functions
-      dockerfile: ./Dockerfile
+      context: ..
+      dockerfile: ./docker/functions/Dockerfile
     volumes:
       - "../:/usr/src/app"
     ports:
@@ -51,6 +59,7 @@ services:
       - cosmosdb
       - storage-account
     depends_on:
+      - functions-node-14
       - fixtures
 
   testagent:

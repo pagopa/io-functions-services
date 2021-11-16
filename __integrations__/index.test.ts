@@ -104,11 +104,11 @@ beforeAll(async () => {
   let i = 0;
   while (i < 100) {
     console.log("Waiting the function to setup..");
-    await delay(1000);
     try {
       const response = await nodeFetch("http://function:7071/api/info");
       break;
     } catch (e) {
+      await delay(WAIT_MS);
       i++;
     }
   }

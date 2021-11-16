@@ -27,8 +27,8 @@ Install the [Azure Functions Core Tools](https://github.com/Azure/azure-function
 
 Install the dependencies:
 
-```
-$ yarn install
+```bash
+yarn install
 ```
 
 Create a file `local.settings.json` in your cloned repo, with the
@@ -59,8 +59,25 @@ following contents:
 
 ### Starting the functions runtime
 
-```
-$ yarn start
+```bash
+yarn start
 ```
 
 The server should reload automatically when the code changes.
+
+## Run Integration Tests locally
+
+To start itegration tests:
+
+```bash
+cd __integrations__
+yarn start 
+docker exec integrations___testagent_1 yarn test
+```
+
+To stop docker containers:
+
+```bash
+cd __integrations__
+yarn stop
+```
