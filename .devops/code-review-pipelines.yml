@@ -82,7 +82,7 @@ stages:
 
 
   # B) Run unit tests if there is a push or pull request on any branch.
-  - stage: Test
+  - stage: Tests
     dependsOn: []
     jobs:
       - job: unit_tests
@@ -96,3 +96,23 @@ stages:
         - script: |
             yarn test:coverage
           displayName: 'Unit tests exec'
+
+  - stage: Integration_Tests
+    dependsOn: []
+    jobs:
+      - job: integration_tests   
+        steps:
+        - template: templates/node-job-setup/template.yaml@pagopaCommons
+        - script: |
+            cd __integrations__
+            cp environments/env.base environments/.env
+            yarn install --frozen-lockfile
+            yarn start
+          displayName: 'Start test resources'
+        - script: |
+            cd __integrations__
+            yarn install --frozen-lockfile
+            sleep 30s
+            docker exec integrations___testagent_1 yarn test
+            #           ^^^ FIXME: reference container using a less arbitrary name
+          displayName: 'Execute tests'

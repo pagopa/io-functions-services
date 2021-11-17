@@ -1,0 +1,39 @@
+{
+  "name": "@pagopa/io-functions-services-integrations",
+  "version": "1.0.0",
+  "description": "Integration test suite for integration testing",
+  "license": "MIT",
+  "keywords": [],
+  "author": "",
+  "scripts": {
+    "prestart": "npm-run-all generate-env",
+    "start": "docker-compose --env-file environments/.env up -d",
+    "stop": "docker-compose --env-file environments/.env down",
+    "stop:all": "docker-compose --env-file environments/.env down && docker image prune -a -f && docker volume prune -f",
+    "pretest": "npm-run-all generate:models:*",
+    "test": "jest --verbose --runInBand",
+    "generate:models:services": "rimraf generated/fn-services && gen-api-models --api-spec ../openapi/index.yaml --no-strict --out-dir generated/fn-services --request-types --response-decoders",
+    "generate:env:cosmosdb": "dotenv -e environments/.env envsub environments/env.cosmosdb environments/generated/env.cosmosdb",
+    "generate:env:io-fixtures": "dotenv -e environments/.env envsub environments/env.io-fixtures environments/generated/env.io-fixtures",
+    "generate:env:io-functions-services": "dotenv -e environments/.env envsub environments/env.io-functions-services environments/generated/env.io-functions-services",
+    "generate:env:integration-tests": "dotenv -e environments/.env envsub environments/env.integration-tests environments/generated/env.integration-tests",
+    "clean": "shx rm -rf environments/generated && shx mkdir environments/generated",
+    "generate-env": "npm-run-all clean generate:env:*"
+  },
+  "dependencies": {
+    "@azure/storage-queue": "^12.7.0",
+    "@types/jest": "^27.0.2",
+    "@types/node": "^13.11.0",
+    "jest": "^27.3.1",
+    "node-fetch": "^2.6.1",
+    "ts-jest": "^27.0.7"
+  },
+  "devDependencies": {
+    "@pagopa/openapi-codegen-ts": "^10.0.5",
+    "dotenv-cli": "^4.1.0",
+    "envsub": "^4.0.7",
+    "npm-run-all": "^4.1.5",
+    "shx": "^0.3.3",
+    "typescript": "^4.4.4"
+  }
+}

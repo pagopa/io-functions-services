@@ -1,0 +1,79 @@
+version: "3.2"
+
+services:
+
+  functions-node-14:
+    image: functions-node-14
+    build:
+      context: ..
+      dockerfile: ./docker/functions-node-14/Dockerfile
+    command: /bin/true
+
+  cosmosdb:
+    image: cosmosdb
+    env_file:
+      - ./environments/generated/env.cosmosdb
+    build:
+      context: ../docker/cosmosdb
+      dockerfile: ./Dockerfile
+    ports:
+      - ${COSMOSDB_PORT}:3000
+
+  storage-account:
+    image: azurite
+    build:
+      context: ../docker/azurite
+      dockerfile: ./Dockerfile
+    ports:
+      - 10000:10000
+      - 10001:10001
+      - 10002:10002
+
+  fixtures:
+    image: fixtures
+    env_file:
+      - ./environments/generated/env.io-fixtures
+    build:
+      context: ../docker/fixtures
+      dockerfile: ./Dockerfile
+    links:
+      - storage-account
+      - cosmosdb
+
+  function:
+    image: fn
+    env_file:
+      - ./environments/generated/env.io-functions-services
+    build:
+      context: ..
+      dockerfile: ./docker/functions/Dockerfile
+    volumes:
+      - "../:/usr/src/app"
+    ports:
+      - ${FUNCTIONS_SERVICES_PORT}:7071
+      # node inspector
+      - "5861:5861"
+    environment:
+      - languageWorkers__node__arguments="--inspect=0.0.0.0:5861"
+    links:
+      - cosmosdb
+      - storage-account
+    depends_on:
+      - functions-node-14
+      - fixtures
+
+  testagent:
+    image: node:16-alpine
+    working_dir: /usr/src/app
+    command: tail -f /dev/null # to keep it   up&running
+    env_file:
+      - environments/generated/env.integration-tests
+    volumes:
+      - "./:/usr/src/app"
+      - "../openapi:/usr/src/openapi"
+    depends_on:
+      - cosmosdb
+      - storage-account
+      - fixtures
+    links:
+      - function
