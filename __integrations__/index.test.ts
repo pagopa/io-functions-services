@@ -138,6 +138,8 @@ describe("Create Message", () => {
   it.each`
     profileType         | fiscalCode                       | serviceId
     ${"LEGACY Profile"} | ${aLegacyInboxEnabledFiscalCode} | ${anEnabledServiceId}
+    ${"AUTO Profile"}   | ${anAutoFiscalCode}              | ${anEnabledServiceId}
+    ${"MANUAL Profile"} | ${aManualFiscalCode}             | ${anEnabledServiceId}
   `(
     "$profileType |> should return the message in PROCESSED status when service is allowed to send",
     async ({ fiscalCode, serviceId }) => {
