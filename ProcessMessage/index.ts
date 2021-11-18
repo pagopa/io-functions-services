@@ -35,7 +35,13 @@ const messageModel = new MessageModel(
   config.MESSAGE_CONTAINER_NAME
 );
 
-const blobService = createBlobService(config.QueueStorageConnection);
+const blobServiceForMessageContent = createBlobService(
+  config.MESSAGE_CONTENT_STORAGE_CONNECTION_STRING
+);
+
+const blobServiceForTemporaryProcessingMessage = createBlobService(
+  config.INTERNAL_STORAGE_CONNECTION_STRING
+);
 
 const servicePreferencesModel = new ServicesPreferencesModel(
   cosmosdbInstance.container(SERVICE_PREFERENCES_COLLECTION_NAME),
@@ -52,13 +58,13 @@ const telemetryClient = initTelemetryClient(
 
 const retrieveProcessingMessageData = makeRetrieveExpandedDataFromBlob(
   CommonMessageData,
-  blobService,
+  blobServiceForTemporaryProcessingMessage,
   config.PROCESSING_MESSAGE_CONTAINER_NAME
 );
 
 const activityFunctionHandler: AzureFunction = getProcessMessageHandler({
   isOptInEmailEnabled: config.FF_OPT_IN_EMAIL_ENABLED,
-  lBlobService: blobService,
+  lBlobService: blobServiceForMessageContent,
   lMessageModel: messageModel,
   lMessageStatusModel: messageStatusModel,
   lProfileModel: profileModel,

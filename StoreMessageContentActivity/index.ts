@@ -29,7 +29,9 @@ const messageModel = new MessageModel(
   config.MESSAGE_CONTAINER_NAME
 );
 
-const blobService = createBlobService(config.QueueStorageConnection);
+const blobService = createBlobService(
+  config.MESSAGE_CONTENT_STORAGE_CONNECTION_STRING
+);
 
 const servicePreferencesModel = new ServicesPreferencesModel(
   cosmosdbInstance.container(SERVICE_PREFERENCES_COLLECTION_NAME),

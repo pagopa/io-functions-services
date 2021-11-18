@@ -51,7 +51,18 @@ export function Info(): express.RequestHandler {
   const handler = InfoHandler(
     healthcheck.checkApplicationHealth(IConfig, [
       c => healthcheck.checkAzureCosmosDbHealth(c.COSMOSDB_URI, c.COSMOSDB_KEY),
-      c => healthcheck.checkAzureStorageHealth(c.QueueStorageConnection),
+      c =>
+        healthcheck.checkAzureStorageHealth(
+          c.MESSAGE_CONTENT_STORAGE_CONNECTION_STRING
+        ),
+      c =>
+        healthcheck.checkAzureStorageHealth(
+          c.SUBSCRIPTION_FEED_STORAGE_CONNECTION_STRING
+        ),
+      c =>
+        healthcheck.checkAzureStorageHealth(
+          c.INTERNAL_STORAGE_CONNECTION_STRING
+        ),
       c => healthcheck.checkUrlHealth(c.WEBHOOK_CHANNEL_URL)
     ])
   );
