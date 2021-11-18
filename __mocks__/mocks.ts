@@ -185,6 +185,7 @@ export const aCreatedMessageEventSenderMetadata: CreatedMessageEventSenderMetada
   organizationFiscalCode: "01234567890" as OrganizationFiscalCode,
   organizationName: "An Organization Name" as NonEmptyString,
   requireSecureChannels: false,
+  serviceCategory: StandardServiceCategoryEnum.STANDARD,
   serviceName: "A_SERVICE_NAME" as NonEmptyString,
   serviceUserEmail: "aaa@mail.com" as EmailString
 };

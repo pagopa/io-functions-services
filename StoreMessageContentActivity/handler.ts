@@ -20,6 +20,7 @@ import {
   ServicePreference,
   ServicesPreferencesModel
 } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
+import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
 import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 import { NonNegativeInteger } from "@pagopa/ts-commons/lib/numbers";
 import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
@@ -35,6 +36,7 @@ import { TaskEither } from "fp-ts/lib/TaskEither";
 import { flow, pipe } from "fp-ts/lib/function";
 import { PaymentDataWithRequiredPayee } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentDataWithRequiredPayee";
 import { SpecialServiceCategoryEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/SpecialServiceCategory";
+import { ActivationStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ActivationStatus";
 import { initTelemetryClient } from "../utils/appinsights";
 import { toHash } from "../utils/crypto";
 import { PaymentData } from "../generated/definitions/PaymentData";
@@ -290,6 +292,7 @@ export interface IStoreMessageContentActivityHandlerInput {
   readonly lMessageModel: MessageModel;
   readonly lBlobService: BlobService;
   readonly lServicePreferencesModel: ServicesPreferencesModel;
+  readonly lActivation: ActivationModel;
   readonly optOutEmailSwitchDate: UTCISODateFromString;
   readonly isOptInEmailEnabled: boolean;
   readonly telemetryClient: ReturnType<typeof initTelemetryClient>;
@@ -298,15 +301,18 @@ export interface IStoreMessageContentActivityHandlerInput {
 /**
  * Returns a function for handling storeMessageContentActivity
  */
+// eslint-disable-next-line max-lines-per-function
 export const getStoreMessageContentActivityHandler = ({
   lProfileModel,
   lMessageModel,
   lBlobService,
   lServicePreferencesModel,
+  lActivation,
   optOutEmailSwitchDate,
   isOptInEmailEnabled,
   telemetryClient
-}: IStoreMessageContentActivityHandlerInput) => async (
+}: // eslint-disable-next-line max-lines-per-function
+IStoreMessageContentActivityHandlerInput) => async (
   context: Context,
   input: unknown
 ): Promise<StoreMessageContentActivityResult> => {
@@ -408,10 +414,36 @@ export const getStoreMessageContentActivityHandler = ({
         createdMessageEvent.senderMetadata.serviceCategory ===
         SpecialServiceCategoryEnum.SPECIAL
       ) {
-        // TODO: For Special Service INBOX setting is override with Activation status
-        // Other channels settings come from ServicePreferences
-        // Inbox always disabled untill Activation model integration.
-        return TE.of(_.filter(el => el !== BlockedInboxOrChannelEnum.INBOX));
+        return pipe(
+          lActivation.findLastVersionByModelId([
+            createdMessageEvent.message.senderServiceId,
+            profile.fiscalCode
+          ]),
+          TE.mapLeft(activationError => {
+            // The query has failed, we consider this as a transient error.
+            context.log.error(`${logPrefix}|${activationError.kind}`);
+            throw Error("Error while retrieving user's service preference");
+          }),
+          TE.map(maybeActivation =>
+            pipe(
+              maybeActivation,
+              O.map(
+                activation => activation.status === ActivationStatusEnum.ACTIVE
+              ),
+              O.getOrElse(() => false)
+            )
+          ),
+          TE.chainW(
+            TE.fromPredicate(
+              hasActiveActivation => hasActiveActivation,
+              () =>
+                _.includes(BlockedInboxOrChannelEnum.INBOX)
+                  ? _
+                  : [..._, BlockedInboxOrChannelEnum.INBOX]
+            )
+          ),
+          TE.map(() => _.filter(el => el !== BlockedInboxOrChannelEnum.INBOX))
+        );
       }
       return TE.of(_);
     }),

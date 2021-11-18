@@ -13,6 +13,10 @@ import {
   ServicesPreferencesModel,
   SERVICE_PREFERENCES_COLLECTION_NAME
 } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
+import {
+  ActivationModel,
+  ACTIVATION_COLLECTION_NAME
+} from "@pagopa/io-functions-commons/dist/src/models/activation";
 import { cosmosdbInstance } from "../utils/cosmosdb";
 import { getConfigOrThrow } from "../utils/config";
 import { initTelemetryClient } from "../utils/appinsights";
@@ -36,6 +40,10 @@ const servicePreferencesModel = new ServicesPreferencesModel(
   SERVICE_PREFERENCES_COLLECTION_NAME
 );
 
+const activationModel = new ActivationModel(
+  cosmosdbInstance.container(ACTIVATION_COLLECTION_NAME)
+);
+
 const telemetryClient = initTelemetryClient(
   config.APPINSIGHTS_INSTRUMENTATIONKEY
 );
@@ -43,6 +51,7 @@ const telemetryClient = initTelemetryClient(
 const activityFunctionHandler: AzureFunction = getStoreMessageContentActivityHandler(
   {
     isOptInEmailEnabled: config.FF_OPT_IN_EMAIL_ENABLED,
+    lActivation: activationModel,
     lBlobService: blobService,
     lMessageModel: messageModel,
     lProfileModel: profileModel,
