@@ -17,6 +17,7 @@ import { NumberFromString } from "@pagopa/ts-commons/lib/numbers";
 import { pipe } from "fp-ts/lib/function";
 import { CommaSeparatedListOf } from "./comma-separated-list";
 
+// used for internal job dispatch, temporary files, etc...
 const InternalStorageAccount = t.interface({
   INTERNAL_STORAGE_CONNECTION_STRING: NonEmptyString,
   // queues for handling message processing jobs
@@ -26,6 +27,18 @@ const InternalStorageAccount = t.interface({
   NOTIFICATION_CREATED_WEBHOOK_QUEUE_NAME: NonEmptyString,
   // a blob container to keep temporary message processing data
   PROCESSING_MESSAGE_CONTAINER_NAME: NonEmptyString
+});
+
+// used to read and write message content on blob storage
+const MessageContentStorageAccount = t.interface({
+  MESSAGE_CONTAINER_NAME: NonEmptyString,
+  MESSAGE_CONTENT_STORAGE_CONNECTION_STRING: NonEmptyString
+});
+
+// used to read and write subscription feed entries on table storage
+const SubscriptionFeedStorageAccount = t.interface({
+  SUBSCRIPTIONS_FEED_TABLE: NonEmptyString,
+  SUBSCRIPTION_FEED_STORAGE_CONNECTION_STRING: NonEmptyString
 });
 
 // global app configuration
@@ -47,13 +60,9 @@ export const IConfig = t.intersection([
     IO_FUNCTIONS_ADMIN_API_TOKEN: NonEmptyString,
     IO_FUNCTIONS_ADMIN_BASE_URL: NonEmptyString,
 
-    MESSAGE_CONTAINER_NAME: NonEmptyString,
     OPT_OUT_EMAIL_SWITCH_DATE: DateFromTimestamp,
 
-    QueueStorageConnection: NonEmptyString,
-
     SANDBOX_FISCAL_CODE: NonEmptyString,
-    SUBSCRIPTIONS_FEED_TABLE: NonEmptyString,
 
     WEBHOOK_CHANNEL_URL: NonEmptyString,
 
@@ -65,6 +74,8 @@ export const IConfig = t.intersection([
 
     isProduction: t.boolean
   }),
+  MessageContentStorageAccount,
+  SubscriptionFeedStorageAccount,
   InternalStorageAccount,
   MailerConfig
 ]);

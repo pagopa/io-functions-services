@@ -29,7 +29,9 @@ const serviceModel = new ServiceModel(
   cosmosdbInstance.container(SERVICE_COLLECTION_NAME)
 );
 
-const tableService = createTableService(config.QueueStorageConnection);
+const tableService = createTableService(
+  config.SUBSCRIPTION_FEED_STORAGE_CONNECTION_STRING
+);
 
 app.get(
   "/api/v1/subscriptions-feed/:date",

@@ -63,7 +63,9 @@ const notificationStatusModel = new NotificationStatusModel(
   cosmosdbInstance.container(NOTIFICATION_STATUS_COLLECTION_NAME)
 );
 
-const blobService = createBlobService(config.QueueStorageConnection);
+const blobService = createBlobService(
+  config.MESSAGE_CONTENT_STORAGE_CONNECTION_STRING
+);
 
 app.get(
   "/api/v1/messages/:fiscalcode/:id",
