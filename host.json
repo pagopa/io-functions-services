@@ -24,7 +24,7 @@
       "localRpcEndpointEnabled": false
     },
     "storageProvider": {
-      "connectionStringName": "INTERNAL_STORAGE_CONNECTION_STRING",
+      "connectionStringName": "AzureWebJobsStorage",
       "partitionCount": 4
     },
     "tracing": {
