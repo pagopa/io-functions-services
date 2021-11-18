@@ -17,11 +17,13 @@ import { setAppContext } from "@pagopa/io-functions-commons/dist/src/utils/middl
 import createAzureFunctionHandler from "@pagopa/express-azure-functions/dist/src/createAzureFunctionsHandler";
 
 import { withAppInsightsContext } from "@pagopa/io-functions-commons/dist/src/utils/application_insights";
+import { createBlobService } from "azure-storage";
 import { cosmosdbInstance } from "../utils/cosmosdb";
 import { initTelemetryClient } from "../utils/appinsights";
 
 import { getConfigOrThrow } from "../utils/config";
 import { CreateMessage } from "./handler";
+import { makeUpsertBlobFromObject } from "./utils";
 
 const config = getConfigOrThrow();
 
@@ -41,6 +43,10 @@ const serviceModel = new ServiceModel(
   cosmosdbInstance.container(SERVICE_COLLECTION_NAME)
 );
 
+const blobService = createBlobService(
+  config.INTERNAL_STORAGE_CONNECTION_STRING
+);
+
 const telemetryClient = initTelemetryClient(
   config.APPINSIGHTS_INSTRUMENTATIONKEY
 );
@@ -51,6 +57,10 @@ app.post(
     telemetryClient,
     serviceModel,
     messageModel,
+    makeUpsertBlobFromObject(
+      blobService,
+      config.PROCESSING_MESSAGE_CONTAINER_NAME
+    ),
     config.FF_DISABLE_INCOMPLETE_SERVICES,
     config.FF_INCOMPLETE_SERVICE_WHITELIST
   )

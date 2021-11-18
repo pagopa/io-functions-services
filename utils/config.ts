@@ -17,6 +17,17 @@ import { NumberFromString } from "@pagopa/ts-commons/lib/numbers";
 import { pipe } from "fp-ts/lib/function";
 import { CommaSeparatedListOf } from "./comma-separated-list";
 
+const InternalStorageAccount = t.interface({
+  INTERNAL_STORAGE_CONNECTION_STRING: NonEmptyString,
+  // queues for handling message processing jobs
+  MESSAGE_CREATED_QUEUE_NAME: NonEmptyString,
+  MESSAGE_PROCESSED_QUEUE_NAME: NonEmptyString,
+  NOTIFICATION_CREATED_EMAIL_QUEUE_NAME: NonEmptyString,
+  NOTIFICATION_CREATED_WEBHOOK_QUEUE_NAME: NonEmptyString,
+  // a blob container to keep temporary message processing data
+  PROCESSING_MESSAGE_CONTAINER_NAME: NonEmptyString
+});
+
 // global app configuration
 export type IConfig = t.TypeOf<typeof IConfig>;
 export const IConfig = t.intersection([
@@ -30,6 +41,7 @@ export const IConfig = t.intersection([
     DEFAULT_SUBSCRIPTION_PRODUCT_NAME: NonEmptyString,
 
     EMAIL_NOTIFICATION_SERVICE_BLACKLIST: CommaSeparatedListOf(ServiceId),
+
     WEBHOOK_NOTIFICATION_SERVICE_BLACKLIST: CommaSeparatedListOf(ServiceId),
     // eslint-disable-next-line sort-keys
     IO_FUNCTIONS_ADMIN_API_TOKEN: NonEmptyString,
@@ -53,6 +65,7 @@ export const IConfig = t.intersection([
 
     isProduction: t.boolean
   }),
+  InternalStorageAccount,
   MailerConfig
 ]);
 

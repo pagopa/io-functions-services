@@ -1,0 +1,12 @@
+{
+  "bindings": [
+    {
+      "queueName": "%NOTIFICATION_CREATED_EMAIL_QUEUE_NAME%",
+      "connection": "INTERNAL_STORAGE_CONNECTION_STRING",
+      "name": "norificationCreatedEmail",
+      "type": "queueTrigger",
+      "direction": "in"
+    }
+  ],
+  "scriptFile": "../dist/EmailNotification/index.js"
+}

@@ -27,6 +27,7 @@ export const anAutoFiscalCode = "AAABBB01C02D345A" as FiscalCode;
 export const aManualFiscalCode = "AAABBB01C02D345M" as FiscalCode;
 
 export const anEnabledServiceId = "anEnabledServiceId" as NonEmptyString;
+export const anEnabledServiceWithEmailId = "anEnabledServiceWithEmailId" as NonEmptyString;
 export const aDisabledServiceId = "aDisabledServiceId" as NonEmptyString;
 
 // ---------------------------------
@@ -47,6 +48,31 @@ const anEnabledService: ValidService = {
   organizationFiscalCode: "01234567890" as OrganizationFiscalCode,
   organizationName: "Organization" as NonEmptyString,
   requireSecureChannels: true,
+  serviceName: "Service" as NonEmptyString,
+  serviceMetadata: {
+    description: "Service Description" as NonEmptyString,
+    privacyUrl: "https://example.com/privacy.html" as NonEmptyString,
+    supportUrl: "https://example.com/support.html" as NonEmptyString,
+    scope: ServiceScopeEnum.NATIONAL,
+    category: StandardServiceCategoryEnum.STANDARD,
+    customSpecialFlow: undefined
+  }
+};
+
+const anEnabledServiceWithEmail: ValidService = {
+  serviceId: anEnabledServiceWithEmailId,
+  authorizedRecipients: new Set([
+    aLegacyInboxEnabledFiscalCode,
+    anAutoFiscalCode
+  ]),
+  authorizedCIDRs: new Set((["0.0.0.0"] as unknown) as ReadonlyArray<CIDR>),
+  departmentName: "department" as NonEmptyString,
+  isVisible: true,
+  maxAllowedPaymentAmount: (0 as unknown) as number &
+    WithinRangeInteger<0, 9999999999>,
+  organizationFiscalCode: "01234567890" as OrganizationFiscalCode,
+  organizationName: "Organization" as NonEmptyString,
+  requireSecureChannels: false,
   serviceName: "Service" as NonEmptyString,
   serviceMetadata: {
     description: "Service Description" as NonEmptyString,
@@ -173,7 +199,11 @@ const aManualServicePreferencesEnable: ServicePreference = {
 // Exported data
 // ---------------------------------
 
-export const aValidServiceList = [anEnabledService, aDisabledService];
+export const aValidServiceList = [
+  anEnabledService,
+  anEnabledServiceWithEmail,
+  aDisabledService
+];
 export const aValidProfileList = [
   legacyProfileInboxEnabled,
   legacyProfileInboxDisabled,

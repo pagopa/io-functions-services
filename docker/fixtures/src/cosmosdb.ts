@@ -32,10 +32,12 @@ const createServiceData = (db: Database) => {
     TE.chain(model =>
       pipe(
         aValidServiceList.map(aValidService =>
-          model.create({
-            kind: "INewService" as const,
-            ...aValidService
-          })
+          pipe(
+            model.create({
+              kind: "INewService" as const,
+              ...aValidService
+            })
+          )
         ),
         RA.sequence(TE.ApplicativePar)
       )
@@ -174,7 +176,6 @@ export const fillCosmosDb = async (
     TE.mapLeft(_ => {
       log("Error");
       log(_);
-      throw _;
     })
   )();
 };

@@ -1,31 +1,75 @@
+import { CosmosClient } from "@azure/cosmos";
+
 import nodeFetch from "node-fetch";
 
-import { FiscalCode } from "./generated/fn-services/FiscalCode";
-import { MessageContent } from "./generated/fn-services/MessageContent";
+import * as TE from "fp-ts/TaskEither";
+import * as O from "fp-ts/Option";
 
-import { WAIT_MS, SHOW_LOGS } from "./env";
+import {
+  WAIT_MS,
+  SHOW_LOGS,
+  COSMOSDB_URI,
+  COSMOSDB_KEY,
+  COSMOSDB_NAME,
+  QueueStorageConnection
+} from "./env";
+
 import {
   MessageResponseWithContent,
   StatusEnum
 } from "./generated/fn-services/MessageResponseWithContent";
 import { CreatedMessage } from "./generated/fn-services/CreatedMessage";
-import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
+import { FiscalCode, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 import { exit } from "process";
+
+import {
+  MessageStatus,
+  MessageStatusModel,
+  MESSAGE_STATUS_COLLECTION_NAME
+} from "@pagopa/io-functions-commons/dist/src/models/message_status";
+import {
+  MessageModel,
+  MESSAGE_COLLECTION_NAME
+} from "@pagopa/io-functions-commons/dist/src/models/message";
+import { MessageContent } from "./generated/fn-services/MessageContent";
+import { pipe } from "fp-ts/lib/function";
+import { sequenceS } from "fp-ts/lib/Apply";
+import { createBlobService } from "azure-storage";
 
 const MAX_ATTEMPT = 50;
 jest.setTimeout(WAIT_MS * MAX_ATTEMPT);
 
 const baseUrl = "http://function:7071";
 
+console.log("ENV: ", COSMOSDB_URI, WAIT_MS, SHOW_LOGS);
+
+const blobService = createBlobService(QueueStorageConnection);
+
+const cosmosDB = new CosmosClient({
+  endpoint: COSMOSDB_URI,
+  key: COSMOSDB_KEY
+}).database(COSMOSDB_NAME);
+
+const messageContainer = cosmosDB.container(MESSAGE_COLLECTION_NAME);
+const messageModel = new MessageModel(
+  messageContainer,
+  MESSAGE_COLLECTION_NAME as NonEmptyString
+);
+const messageStatusContainer = cosmosDB.container(
+  MESSAGE_STATUS_COLLECTION_NAME
+);
+const messageStatusModel = new MessageStatusModel(messageStatusContainer);
+
 // ----------------
 
-export const aLegacyInboxEnabledFiscalCode = "AAABBB01C02D345L" as FiscalCode;
-export const aLegacyInboxDisabledFiscalCode = "AAABBB01C02D345I" as FiscalCode;
-export const anAutoFiscalCode = "AAABBB01C02D345A" as FiscalCode;
-export const aManualFiscalCode = "AAABBB01C02D345M" as FiscalCode;
+const aLegacyInboxEnabledFiscalCode = "AAABBB01C02D345L" as FiscalCode;
+const aLegacyInboxDisabledFiscalCode = "AAABBB01C02D345I" as FiscalCode;
+const anAutoFiscalCode = "AAABBB01C02D345A" as FiscalCode;
+const aManualFiscalCode = "AAABBB01C02D345M" as FiscalCode;
 
-export const anEnabledServiceId = "anEnabledServiceId" as NonEmptyString;
-export const aDisabledServiceId = "aDisabledServiceId" as NonEmptyString;
+const anEnabledServiceId = "anEnabledServiceId" as NonEmptyString;
+const anEnabledServiceWithEmailId = "anEnabledServiceWithEmailId" as NonEmptyString;
+const aDisabledServiceId = "aDisabledServiceId" as NonEmptyString;
 const aNonExistingServiceId = "aNonExistingServiceId" as NonEmptyString;
 
 // ----------------
@@ -202,15 +246,46 @@ describe("Create Message", () => {
       // Wait the process to complete
       await delay(WAIT_MS);
 
-      const resultGet = await getSentMessage(nodeFetch)(fiscalCode, messageId);
-      const detail = await resultGet.json();
+      await pipe(
+        {
+          message: messageModel.find([messageId as NonEmptyString, fiscalCode]),
+          status: messageStatusModel.findLastVersionByModelId([
+            messageId as NonEmptyString
+          ])
+        },
+        sequenceS(TE.ApplicativePar),
+        TE.bindW("content", _ =>
+          pipe(
+            messageModel.getContentFromBlob(
+              blobService,
+              messageId as NonEmptyString
+            ),
+            TE.orElseW(_ => TE.of(O.none))
+          )
+        ),
+        TE.mapLeft(_ => fail(`Error retrieving message data from Cosmos.`)),
+        TE.map(({ message, status, content }) => {
+          console.log("MESSAGE", message);
 
-      expect(resultGet.status).toEqual(500);
-      expect(detail).toEqual({
-        detail: "Error: Cannot get stored message content from blob",
-        status: 500,
-        title: "Internal server error"
-      });
+          expect(O.isSome(message)).toBeTruthy();
+          expect(O.isSome(status)).toBeTruthy();
+          expect(O.isSome(content)).toBeFalsy();
+
+          if (O.isSome(status))
+            expect(status.value.status).toEqual(StatusEnum.REJECTED);
+        })
+      )();
+
+      // TODO: Fix when getMessage will return the message status
+      // const resultGet = await getSentMessage(nodeFetch)(fiscalCode, messageId);
+      // const detail = await resultGet.json();
+
+      // expect(resultGet.status).toEqual(500);
+      // expect(detail).toEqual({
+      //   detail: "Error: Cannot get stored message content from blob",
+      //   status: 500,
+      //   title: "Internal server error"
+      // });
     }
   );
 });

@@ -12,30 +12,26 @@ import { none, some } from "fp-ts/lib/Option";
 
 import { pipe } from "fp-ts/lib/function";
 import * as E from "fp-ts/lib/Either";
+import * as TE from "fp-ts/lib/TaskEither";
+import * as O from "fp-ts/lib/Option";
 
 import {
   canDefaultAddresses,
   canPaymentAmount,
   canWriteMessage,
   createMessageDocument,
-  CreateMessageHandler,
-  forkOrchestrator
+  CreateMessageHandler
 } from "../handler";
 
-import { taskEither } from "fp-ts/lib/TaskEither";
 import {
   alphaStringArb,
-  emailStringArb,
   fiscalCodeArb,
   fiscalCodeArrayArb,
   fiscalCodeSetArb,
   maxAmountArb,
   messageTimeToLiveArb,
-  newMessageArb,
   newMessageWithDefaultEmailArb,
-  newMessageWithoutContentArb,
-  newMessageWithPaymentDataArb,
-  versionedServiceArb
+  newMessageWithPaymentDataArb
 } from "../../utils/__tests__/arbitraries";
 import { EmailString, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 import { IAzureUserAttributes } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
@@ -182,7 +178,7 @@ describe("createMessageDocument", () => {
         serviceIdArb,
         async (messageId, senderUserId, fiscalCode, ttl, senderServiceId) => {
           const mockMessageModel = ({
-            create: jest.fn(() => taskEither.of({}))
+            create: jest.fn(() => TE.of({}))
           } as unknown) as MessageModel;
           const responseTask = createMessageDocument(
             messageId,
@@ -213,67 +209,12 @@ describe("createMessageDocument", () => {
   });
 });
 
-describe("forkOrchestrator", () => {
-  it("should fork a durable orchestrator", async () => {
-    await fc.assert(
-      fc.asyncProperty(
-        newMessageArb,
-        newMessageWithoutContentArb,
-        versionedServiceArb,
-        emailStringArb,
-        async (
-          newMessage,
-          newMessageWithoutContent,
-          service,
-          serviceUserEmail
-        ) => {
-          const mockDfClient = {
-            startNew: jest.fn(() => Promise.resolve("orchestratorId"))
-          };
-          const getDfClient = jest.fn(() => mockDfClient);
-          const response = await forkOrchestrator(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            getDfClient as any,
-            newMessage.content,
-            service,
-            newMessageWithoutContent,
-            serviceUserEmail
-          )();
-          expect(E.isRight(response)).toBeTruthy();
-          expect(getDfClient).toHaveBeenCalledTimes(1);
-          expect(mockDfClient.startNew).toHaveBeenCalledTimes(1);
-          expect(mockDfClient.startNew).toHaveBeenCalledWith(
-            "CreatedMessageOrchestrator",
-            undefined,
-            expect.objectContaining({
-              content: newMessage.content,
-              defaultAddresses: {}, // deprecated feature
-              message: newMessageWithoutContent,
-              senderMetadata: {
-                departmentName: service.departmentName,
-                organizationFiscalCode: service.organizationFiscalCode,
-                organizationName: service.organizationName,
-                requireSecureChannels: service.requireSecureChannels,
-                serviceName: service.serviceName,
-                serviceUserEmail
-              },
-              serviceVersion: service.version
-            })
-          );
-          expect(pipe(response, E.getOrElse(undefined))).toEqual(
-            "orchestratorId"
-          );
-        }
-      )
-    );
-  });
-});
-
 describe("CreateMessageHandler", () => {
   it("should return a validation error if fiscalcode is specified both in path and payload", async () => {
     await fc.assert(
       fc.asyncProperty(fiscalCodeArb, async fiscalCode => {
         const createMessageHandler = CreateMessageHandler(
+          undefined as any,
           undefined as any,
           undefined as any,
           undefined as any,
@@ -299,6 +240,7 @@ describe("CreateMessageHandler", () => {
 
   it("should return a validation error if fiscalcode is not specified in path nor payload", async () => {
     const createMessageHandler = CreateMessageHandler(
+      undefined as any,
       undefined as any,
       undefined as any,
       undefined as any,
@@ -340,10 +282,15 @@ describe("CreateMessageHandler", () => {
     const mockTelemetryClient = ({
       trackEvent: jest.fn()
     } as unknown) as ReturnType<typeof initAppInsights>;
+
+    const mockSaveBlob = jest.fn((_: string, __: any) =>
+      TE.of(O.some({} as any))
+    );
     const createMessageHandler = CreateMessageHandler(
       mockTelemetryClient,
       undefined as any,
       mockGenerateObjId,
+      mockSaveBlob,
       true,
       []
     );

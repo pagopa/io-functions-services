@@ -16,6 +16,13 @@
       "direction": "out"
     },
     {
+      "queueName": "%MESSAGE_CREATED_QUEUE_NAME%",
+      "connection": "INTERNAL_STORAGE_CONNECTION_STRING",
+      "name": "createdMessage",
+      "type": "queue",
+      "direction": "out"
+    },
+    {
       "name": "starter",
       "type": "orchestrationClient",
       "direction": "in"
