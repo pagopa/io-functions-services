@@ -186,6 +186,67 @@ const getServicePreferenceValueOrError = (
     )
   );
 
+type ActivationForSpecialServices = (params: {
+  readonly createdMessageEvent: CommonMessageData;
+  readonly fiscalCode: FiscalCode;
+  readonly context: Context;
+  readonly logPrefix: string;
+  readonly blockedInboxOrChannel: ReadonlyArray<BlockedInboxOrChannelEnum>;
+}) => TaskEither<
+  ReadonlyArray<BlockedInboxOrChannelEnum>,
+  ReadonlyArray<BlockedInboxOrChannelEnum>
+>;
+
+/**
+ * Override the INBOX value of BlockedInboxOrChannel with the Activation value
+ * related to a Special Service and a User.
+ *
+ * @param lActivation
+ * @returns
+ */
+const getActivationForSpecialServices = (
+  lActivation: ActivationModel
+): ActivationForSpecialServices => ({
+  createdMessageEvent,
+  fiscalCode,
+  context,
+  logPrefix,
+  blockedInboxOrChannel
+}): TaskEither<
+  ReadonlyArray<BlockedInboxOrChannelEnum>,
+  ReadonlyArray<BlockedInboxOrChannelEnum>
+> =>
+  pipe(
+    lActivation.findLastVersionByModelId([
+      createdMessageEvent.message.senderServiceId,
+      fiscalCode
+    ]),
+    TE.mapLeft(activationError => {
+      // The query has failed, we consider this as a transient error.
+      context.log.error(`${logPrefix}|${activationError.kind}`);
+      throw Error("Error while retrieving user's service Activation");
+    }),
+    TE.map(maybeActivation =>
+      pipe(
+        maybeActivation,
+        O.map(activation => activation.status === ActivationStatusEnum.ACTIVE),
+        O.getOrElse(() => false)
+      )
+    ),
+    TE.chainW(
+      TE.fromPredicate(
+        hasActiveActivation => hasActiveActivation,
+        () =>
+          blockedInboxOrChannel.includes(BlockedInboxOrChannelEnum.INBOX)
+            ? blockedInboxOrChannel
+            : [...blockedInboxOrChannel, BlockedInboxOrChannelEnum.INBOX]
+      )
+    ),
+    TE.map(() =>
+      blockedInboxOrChannel.filter(el => el !== BlockedInboxOrChannelEnum.INBOX)
+    )
+  );
+
 /**
  * Creates the message and makes it visible or throw an error
  *
@@ -389,48 +450,20 @@ export const getProcessMessageHandler = ({
 
               return result;
             }),
-            TE.chain(_ => {
+            TE.chain(blockedInboxOrChannel => {
               if (
                 createdMessageEvent.senderMetadata.serviceCategory ===
                 SpecialServiceCategoryEnum.SPECIAL
               ) {
-                return pipe(
-                  lActivation.findLastVersionByModelId([
-                    createdMessageEvent.message.senderServiceId,
-                    profile.fiscalCode
-                  ]),
-                  TE.mapLeft(activationError => {
-                    // The query has failed, we consider this as a transient error.
-                    context.log.error(`${logPrefix}|${activationError.kind}`);
-                    throw Error(
-                      "Error while retrieving user's service preference"
-                    );
-                  }),
-                  TE.map(maybeActivation =>
-                    pipe(
-                      maybeActivation,
-                      O.map(
-                        activation =>
-                          activation.status === ActivationStatusEnum.ACTIVE
-                      ),
-                      O.getOrElse(() => false)
-                    )
-                  ),
-                  TE.chainW(
-                    TE.fromPredicate(
-                      hasActiveActivation => hasActiveActivation,
-                      () =>
-                        _.includes(BlockedInboxOrChannelEnum.INBOX)
-                          ? _
-                          : [..._, BlockedInboxOrChannelEnum.INBOX]
-                    )
-                  ),
-                  TE.map(() =>
-                    _.filter(el => el !== BlockedInboxOrChannelEnum.INBOX)
-                  )
-                );
+                return getActivationForSpecialServices(lActivation)({
+                  blockedInboxOrChannel,
+                  context,
+                  createdMessageEvent,
+                  fiscalCode: newMessageWithoutContent.fiscalCode,
+                  logPrefix
+                });
               }
-              return TE.of(_);
+              return TE.of(blockedInboxOrChannel);
             }),
             TE.toUnion
           )();
