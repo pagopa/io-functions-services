@@ -18,7 +18,7 @@
   },
   "extensions": {
     "storageProvider": {
-      "connectionStringName": "AzureWebJobsStorage",
+      "connectionStringName": "INTERNAL_STORAGE_CONNECTION_STRING",
       "partitionCount": 4
     },
     "tracing": {
