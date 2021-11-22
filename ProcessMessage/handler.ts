@@ -198,10 +198,16 @@ type ActivationForSpecialServices = (params: {
 >;
 
 /**
- * Returns a new blockedInboxOrChannel value for a SPECIAL service related to a User.
- * When a service has category SPECIAL the INBOX value depends from the activation status
- * for the couple user/service.
- * A missing Activation is equal to an INACTIVE one.
+ * Returns the updated value of `blockedInboxOrChannel` for a Service which is marked as `SPECIAL`.
+ *
+ * In case the service category field value equals `SPECIAL`, we update the value of the `INBOX` field
+ * in the list of user's blocked inboxes (one for each blocked service) according to the service activation status.
+ *
+ * We try to retrieve the activation status related to the tuple (user, service) from the database.
+ * In case the activation status is missing, its value is assumed to be `INACTIVE`.
+ * In case the activation status is found to be `ACTIVE` then we remove the INBOX entry
+ * from the list of blocked inboxes.
+ *
  *
  * @param lActivation
  * @returns
