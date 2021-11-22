@@ -3,8 +3,6 @@
   "logging": {
     "logLevel": {
       "default": "Information",
-      "DurableTask.AzureStorage": "Warning",
-      "DurableTask.Core": "Warning",
       "Function.GetLimitedProfile": "Warning",
       "Function.GetLimitedProfileByPOST": "Warning",
       "Function.GetMessage": "Warning"
@@ -19,12 +17,8 @@
     }
   },
   "extensions": {
-    "durableTask": {
-      "hubName": "%SLOT_TASK_HUBNAME%",
-      "localRpcEndpointEnabled": false
-    },
     "storageProvider": {
-      "connectionStringName": "AzureWebJobsStorage",
+      "connectionStringName": "INTERNAL_STORAGE_CONNECTION_STRING",
       "partitionCount": 4
     },
     "tracing": {
