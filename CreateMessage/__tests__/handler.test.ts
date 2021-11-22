@@ -41,8 +41,16 @@ import {
   anotherFiscalCode
 } from "../../__mocks__/mocks";
 import { initAppInsights } from "@pagopa/ts-commons/lib/appinsights";
-import { mockOrchestratorContext } from "../../__mocks__/durable-functions";
 import { ApiNewMessageWithDefaults } from "../types";
+import { Context } from "@azure/functions";
+
+const createContext = (): Context =>
+  (({
+    bindings: {},
+    executionContext: { functionName: "funcname" },
+    // eslint-disable no-console
+    log: { ...console, verbose: console.log }
+  } as unknown) as Context);
 
 //
 // tests
@@ -296,7 +304,7 @@ describe("CreateMessageHandler", () => {
     );
 
     const response = await createMessageHandler(
-      mockOrchestratorContext,
+      createContext(),
       mockAzureApiAuthorization,
       undefined as any,
       mockAzureUserAttributes,
