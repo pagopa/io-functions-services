@@ -1,6 +1,6 @@
 FROM functions-node-14
 
-COPY ../../ /usr/src/app
+COPY . /usr/src/app
 
 RUN func extensions install
 
