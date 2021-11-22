@@ -28,6 +28,7 @@ import { Subscription } from "../../generated/api-admin/Subscription";
 import { UserInfo } from "../../generated/api-admin/UserInfo";
 import { ServicePayload } from "../../generated/definitions/ServicePayload";
 import { UpdateServiceHandler } from "../handler";
+import { StandardServiceCategoryEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/StandardServiceCategory";
 
 const mockContext = {
   // eslint-disable no-console
@@ -49,6 +50,8 @@ const aServiceId = "s123" as NonEmptyString;
 const aTokenName = "TOKEN_NAME" as NonEmptyString;
 const someServicesMetadata: ServiceMetadata = {
   scope: ServiceScopeEnum.NATIONAL,
+  category: StandardServiceCategoryEnum.STANDARD,
+  customSpecialFlow: undefined,
   tokenName: aTokenName
 };
 

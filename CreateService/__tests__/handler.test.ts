@@ -28,6 +28,7 @@ import { ServicePayload } from "../../generated/definitions/ServicePayload";
 import { CreateServiceHandler } from "../handler";
 
 import * as E from "fp-ts/lib/Either";
+import { StandardServiceCategoryEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/StandardServiceCategory";
 
 const mockContext = {
   // eslint-disable no-console
@@ -46,6 +47,8 @@ const aTokenName = "TOKEN_NAME" as NonEmptyString;
 
 const someServicesMetadata: ServiceMetadata = {
   scope: ServiceScopeEnum.NATIONAL,
+  category: StandardServiceCategoryEnum.STANDARD,
+  customSpecialFlow: undefined,
   tokenName: aTokenName
 };
 

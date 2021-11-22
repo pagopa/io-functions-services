@@ -52,6 +52,10 @@ import { withApiRequestWrapper } from "../utils/api";
 import { getLogger, ILogger } from "../utils/logging";
 import { ErrorResponses, IResponseErrorUnauthorized } from "../utils/responses";
 import { serviceOwnerCheckTask } from "../utils/subscription";
+import { StandardServiceCategoryEnum } from "../generated/api-admin/StandardServiceCategory";
+import { SpecialServiceMetadata } from "../generated/api-admin/SpecialServiceMetadata";
+import { SpecialServiceCategoryEnum } from "../generated/api-admin/SpecialServiceCategory";
+import { StandardServiceMetadata } from "../generated/api-admin/StandardServiceMetadata";
 
 type ResponseTypes =
   | IResponseSuccessJson<ServiceWithSubscriptionKeys>
@@ -137,10 +141,23 @@ const updateServiceTask = (
           ...retrievedService,
           ...servicePayload,
           service_id: serviceId,
-          service_metadata: {
-            ...servicePayload.service_metadata,
-            token_name: adb2cTokenName
-          }
+          // Only Admins can change service category and custom_special_flow name
+          service_metadata: SpecialServiceMetadata.is(
+            retrievedService.service_metadata
+          )
+            ? ({
+                ...servicePayload.service_metadata,
+                category: SpecialServiceCategoryEnum.SPECIAL,
+                custom_special_flow:
+                  retrievedService.service_metadata.custom_special_flow,
+                token_name: adb2cTokenName
+              } as SpecialServiceMetadata)
+            : ({
+                ...servicePayload.service_metadata,
+                category: StandardServiceCategoryEnum.STANDARD,
+                custom_special_flow: undefined,
+                token_name: adb2cTokenName
+              } as StandardServiceMetadata)
         },
         service_id: serviceId
       }),

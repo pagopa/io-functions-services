@@ -31,6 +31,8 @@ import {
   MessageStatusModel
 } from "@pagopa/io-functions-commons/dist/src/models/message_status";
 import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
+import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
+import { ActivationStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ActivationStatus";
 import { initTelemetryClient } from "../utils/appinsights";
 import { toHash } from "../utils/crypto";
 import { PaymentData } from "../generated/definitions/PaymentData";
@@ -42,6 +44,7 @@ import {
   CreatedMessageEvent,
   ProcessedMessageEvent
 } from "../utils/events/message";
+import { SpecialServiceCategoryEnum } from "../generated/api-admin/SpecialServiceCategory";
 
 // Interface that marks an unexpected value
 interface IUnexpectedValue {
@@ -260,6 +263,7 @@ const createMessageOrThrow = async (
 };
 
 export interface IProcessMessageHandlerInput {
+  readonly lActivation: ActivationModel;
   readonly lProfileModel: ProfileModel;
   readonly lMessageModel: MessageModel;
   readonly lBlobService: BlobService;
@@ -277,6 +281,7 @@ type Handler = (c: Context, i: unknown) => Promise<void>;
  * Returns a function for handling ProcessMessage
  */
 export const getProcessMessageHandler = ({
+  lActivation,
   lProfileModel,
   lMessageModel,
   lBlobService,
@@ -383,6 +388,49 @@ export const getProcessMessageHandler = ({
               );
 
               return result;
+            }),
+            TE.chain(_ => {
+              if (
+                createdMessageEvent.senderMetadata.serviceCategory ===
+                SpecialServiceCategoryEnum.SPECIAL
+              ) {
+                return pipe(
+                  lActivation.findLastVersionByModelId([
+                    createdMessageEvent.message.senderServiceId,
+                    profile.fiscalCode
+                  ]),
+                  TE.mapLeft(activationError => {
+                    // The query has failed, we consider this as a transient error.
+                    context.log.error(`${logPrefix}|${activationError.kind}`);
+                    throw Error(
+                      "Error while retrieving user's service preference"
+                    );
+                  }),
+                  TE.map(maybeActivation =>
+                    pipe(
+                      maybeActivation,
+                      O.map(
+                        activation =>
+                          activation.status === ActivationStatusEnum.ACTIVE
+                      ),
+                      O.getOrElse(() => false)
+                    )
+                  ),
+                  TE.chainW(
+                    TE.fromPredicate(
+                      hasActiveActivation => hasActiveActivation,
+                      () =>
+                        _.includes(BlockedInboxOrChannelEnum.INBOX)
+                          ? _
+                          : [..._, BlockedInboxOrChannelEnum.INBOX]
+                    )
+                  ),
+                  TE.map(() =>
+                    _.filter(el => el !== BlockedInboxOrChannelEnum.INBOX)
+                  )
+                );
+              }
+              return TE.of(_);
             }),
             TE.toUnion
           )();
