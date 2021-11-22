@@ -7,7 +7,7 @@
   "author": "",
   "scripts": {
     "prestart": "npm-run-all generate-env",
-    "start": "docker-compose --env-file environments/.env up -d",
+    "start": "docker-compose --env-file environments/.env up",
     "stop": "docker-compose --env-file environments/.env down",
     "stop:all": "docker-compose --env-file environments/.env down && docker image prune -a -f && docker volume prune -f",
     "pretest": "npm-run-all generate:models:*",
