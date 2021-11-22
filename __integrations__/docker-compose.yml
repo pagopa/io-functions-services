@@ -68,6 +68,7 @@ services:
     links:
       - cosmosdb
       - storage-account
+      - durable-functions-storage-account
     depends_on:
       - functions-node-14
       - fixtures
