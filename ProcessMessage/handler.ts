@@ -201,7 +201,7 @@ type ActivationForSpecialServices = (params: {
  * Returns a new blockedInboxOrChannel value for a SPECIAL service related to a User.
  * When a service has category SPECIAL the INBOX value depends from the activation status
  * for the couple user/service.
- * A missing Activation es equal an INACTIVE one.
+ * A missing Activation is equal to an INACTIVE one.
  *
  * @param lActivation
  * @returns
