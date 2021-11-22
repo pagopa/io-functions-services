@@ -198,8 +198,10 @@ type ActivationForSpecialServices = (params: {
 >;
 
 /**
- * Override the INBOX value of BlockedInboxOrChannel with the Activation value
- * related to a Special Service and a User.
+ * Returns a new blockedInboxOrChannel value for a SPECIAL service related to a User.
+ * When a service has category SPECIAL the INBOX value depends from the activation status
+ * for the couple user/service.
+ * A missing Activation es equal an INACTIVE one.
  *
  * @param lActivation
  * @returns
@@ -455,8 +457,9 @@ export const getProcessMessageHandler = ({
                 createdMessageEvent.senderMetadata.serviceCategory ===
                 SpecialServiceCategoryEnum.SPECIAL
               ) {
-                // If the service is SPECIAL we need to retrieve the Activation information of that service
-                // and override the INBOX value inside the original blockInboxOrChannel
+                // If the service has category equals to SPECIAL, the INBOX value in blockedInboxOrChannel depends from the Activation
+                // value. If the SPECIAL service is ACTIVE (exists an activation for couple user/service with ACTIVE status)
+                // we remove INBOX from blockedInboxOrChannel, otherwise we add the INBOX value.
                 return getActivationForSpecialServices(lActivation)({
                   blockedInboxOrChannel,
                   context,
@@ -465,7 +468,8 @@ export const getProcessMessageHandler = ({
                   logPrefix
                 });
               }
-              // If the service is STANDARD we use the original value for blockedInboxOrChannel
+              // If the service is STANDARD we use the original value of blockedInboxOrChannel
+              // calculated from services preferences and user profile.
               return TE.of(blockedInboxOrChannel);
             }),
             TE.toUnion
