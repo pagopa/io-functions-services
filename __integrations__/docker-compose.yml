@@ -28,6 +28,16 @@ services:
       - 10000:10000
       - 10001:10001
       - 10002:10002
+  
+  durable-functions-storage-account:
+    image: mcr.microsoft.com/azure-storage/azurite
+    container_name: durable-functions-storage-account
+    hostname: azurite-df
+    command: "azurite --loose --blobPort 10003 --queuePort 10004 --tablePort 10005"
+    ports:
+      - 10003:10003
+      - 10004:10004
+      - 10005:10005
 
   fixtures:
     image: fixtures
