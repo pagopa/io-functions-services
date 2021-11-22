@@ -31,9 +31,7 @@ services:
   
   durable-functions-storage-account:
     image: mcr.microsoft.com/azure-storage/azurite
-    container_name: durable-functions-storage-account
-    hostname: azurite-df
-    command: "azurite --loose --blobPort 10003 --queuePort 10004 --tablePort 10005"
+    command: "azurite --loose --blobHost 0.0.0.0 --blobPort 10003 --queueHost 0.0.0.0 --queuePort 10004 --tableHost 0.0.0.0 --tablePort 10005"
     ports:
       - 10003:10003
       - 10004:10004
@@ -61,10 +59,6 @@ services:
       - "../:/usr/src/app"
     ports:
       - ${FUNCTIONS_SERVICES_PORT}:7071
-      # node inspector
-      - "5861:5861"
-    environment:
-      - languageWorkers__node__arguments="--inspect=0.0.0.0:5861"
     links:
       - cosmosdb
       - storage-account
