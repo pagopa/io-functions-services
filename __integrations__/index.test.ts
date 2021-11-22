@@ -265,8 +265,6 @@ describe("Create Message", () => {
         ),
         TE.mapLeft(_ => fail(`Error retrieving message data from Cosmos.`)),
         TE.map(({ message, status, content }) => {
-          console.log("MESSAGE", message);
-
           expect(O.isSome(message)).toBeTruthy();
           expect(O.isSome(status)).toBeTruthy();
           expect(O.isSome(content)).toBeFalsy();
