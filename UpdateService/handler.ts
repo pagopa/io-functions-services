@@ -55,7 +55,6 @@ import { serviceOwnerCheckTask } from "../utils/subscription";
 import { StandardServiceCategoryEnum } from "../generated/api-admin/StandardServiceCategory";
 import { SpecialServiceMetadata } from "../generated/api-admin/SpecialServiceMetadata";
 import { SpecialServiceCategoryEnum } from "../generated/api-admin/SpecialServiceCategory";
-import { StandardServiceMetadata } from "../generated/api-admin/StandardServiceMetadata";
 
 type ResponseTypes =
   | IResponseSuccessJson<ServiceWithSubscriptionKeys>
@@ -145,19 +144,18 @@ const updateServiceTask = (
           service_metadata: SpecialServiceMetadata.is(
             retrievedService.service_metadata
           )
-            ? ({
+            ? {
                 ...servicePayload.service_metadata,
                 category: SpecialServiceCategoryEnum.SPECIAL,
                 custom_special_flow:
                   retrievedService.service_metadata.custom_special_flow,
                 token_name: adb2cTokenName
-              } as SpecialServiceMetadata)
-            : ({
+              }
+            : {
                 ...servicePayload.service_metadata,
                 category: StandardServiceCategoryEnum.STANDARD,
-                custom_special_flow: undefined,
                 token_name: adb2cTokenName
-              } as StandardServiceMetadata)
+              }
         },
         service_id: serviceId
       }),
