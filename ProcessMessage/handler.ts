@@ -186,8 +186,8 @@ const getServicePreferenceValueOrError = (
     )
   );
 
-type ActivationForSpecialServices = (params: {
-  readonly createdMessageEvent: CommonMessageData;
+type BlockedInboxesForSpecialService = (params: {
+  readonly senderServiceId: NonEmptyString;
   readonly fiscalCode: FiscalCode;
   readonly context: Context;
   readonly logPrefix: string;
@@ -208,14 +208,18 @@ type ActivationForSpecialServices = (params: {
  * In case the activation status is found to be `ACTIVE` then we remove the INBOX entry
  * from the list of blocked inboxes.
  *
+ * Both Left and Right are valid BlockedInboxOrChannelEnum values.
+ * The right side contains the blocked inboxes when exists an `ACTIVE` Activation.
+ * The left side contains the blocked inboxes when the Activation is missing or has status NOT `ACTIVE`
+ *
  *
  * @param lActivation
  * @returns
  */
-const getActivationForSpecialServices = (
+const getBlockedInboxesForSpecialService = (
   lActivation: ActivationModel
-): ActivationForSpecialServices => ({
-  createdMessageEvent,
+): BlockedInboxesForSpecialService => ({
+  senderServiceId,
   fiscalCode,
   context,
   logPrefix,
@@ -225,10 +229,7 @@ const getActivationForSpecialServices = (
   ReadonlyArray<BlockedInboxOrChannelEnum>
 > =>
   pipe(
-    lActivation.findLastVersionByModelId([
-      createdMessageEvent.message.senderServiceId,
-      fiscalCode
-    ]),
+    lActivation.findLastVersionByModelId([senderServiceId, fiscalCode]),
     TE.mapLeft(activationError => {
       // The query has failed, we consider this as a transient error.
       context.log.error(`${logPrefix}|${activationError.kind}`);
@@ -463,12 +464,12 @@ export const getProcessMessageHandler = ({
                 createdMessageEvent.senderMetadata.serviceCategory ===
                 SpecialServiceCategoryEnum.SPECIAL
               ) {
-                return getActivationForSpecialServices(lActivation)({
+                return getBlockedInboxesForSpecialService(lActivation)({
                   blockedInboxOrChannel,
                   context,
-                  createdMessageEvent,
                   fiscalCode: newMessageWithoutContent.fiscalCode,
-                  logPrefix
+                  logPrefix,
+                  senderServiceId: createdMessageEvent.message.senderServiceId
                 });
               }
               // If the service is STANDARD we use the original value of blockedInboxOrChannel
