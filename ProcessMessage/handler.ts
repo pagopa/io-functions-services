@@ -463,9 +463,6 @@ export const getProcessMessageHandler = ({
                 createdMessageEvent.senderMetadata.serviceCategory ===
                 SpecialServiceCategoryEnum.SPECIAL
               ) {
-                // If the service has category equals to SPECIAL, the INBOX value in blockedInboxOrChannel depends from the Activation
-                // value. If the SPECIAL service is ACTIVE (exists an activation for couple user/service with ACTIVE status)
-                // we remove INBOX from blockedInboxOrChannel, otherwise we add the INBOX value.
                 return getActivationForSpecialServices(lActivation)({
                   blockedInboxOrChannel,
                   context,
