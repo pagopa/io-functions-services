@@ -455,6 +455,8 @@ export const getProcessMessageHandler = ({
                 createdMessageEvent.senderMetadata.serviceCategory ===
                 SpecialServiceCategoryEnum.SPECIAL
               ) {
+                // If the service is SPECIAL we need to retrieve the Activation information of that service
+                // and override the INBOX value inside the original blockInboxOrChannel
                 return getActivationForSpecialServices(lActivation)({
                   blockedInboxOrChannel,
                   context,
@@ -463,6 +465,7 @@ export const getProcessMessageHandler = ({
                   logPrefix
                 });
               }
+              // If the service is STANDARD we use the original value for blockedInboxOrChannel
               return TE.of(blockedInboxOrChannel);
             }),
             TE.toUnion
