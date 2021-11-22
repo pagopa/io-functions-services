@@ -29,14 +29,6 @@ services:
       - 10001:10001
       - 10002:10002
   
-  durable-functions-storage-account:
-    image: mcr.microsoft.com/azure-storage/azurite
-    command: "azurite --loose --blobHost 0.0.0.0 --blobPort 10003 --queueHost 0.0.0.0 --queuePort 10004 --tableHost 0.0.0.0 --tablePort 10005"
-    ports:
-      - 10003:10003
-      - 10004:10004
-      - 10005:10005
-
   fixtures:
     image: fixtures
     env_file:
@@ -55,14 +47,11 @@ services:
     build:
       context: ..
       dockerfile: ./docker/functions/Dockerfile
-    volumes:
-      - "../:/usr/src/app"
     ports:
       - ${FUNCTIONS_SERVICES_PORT}:7071
     links:
       - cosmosdb
       - storage-account
-      - durable-functions-storage-account
     depends_on:
       - functions-node-14
       - fixtures
