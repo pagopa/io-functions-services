@@ -1,5 +1,7 @@
 ﻿import { AzureFunction } from "@azure/functions";
 
+import * as HtmlToText from "html-to-text";
+
 import {
   NOTIFICATION_COLLECTION_NAME,
   NotificationModel
@@ -23,8 +25,12 @@ const notificationModel = new NotificationModel(
 // options used when converting an HTML message to pure text
 // see https://www.npmjs.com/package/html-to-text#options
 //
-const HTML_TO_TEXT_OPTIONS: HtmlToTextOptions = {
+const HTML_TO_TEXT_OPTIONS: HtmlToText.HtmlToTextOptions = {
   ignoreImage: true, // ignore all document images
+  limits: {
+    maxChildNodes: 200,
+    maxDepth: 2000
+  },
   tables: true
 };
 

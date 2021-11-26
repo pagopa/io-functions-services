@@ -27,7 +27,7 @@ import { DataFetcher, withExpandedInput } from "../utils/with-expanded-input";
 import { generateDocumentHtml } from "./utils";
 
 export interface INotificationDefaults {
-  readonly HTML_TO_TEXT_OPTIONS: HtmlToTextOptions;
+  readonly HTML_TO_TEXT_OPTIONS: HtmlToText.HtmlToTextOptions;
   readonly MAIL_FROM: NonEmptyString;
 }
 
@@ -133,7 +133,7 @@ export const getEmailNotificationHandler = (
           );
 
           // converts the HTML to pure text to generate the text version of the message
-          const bodyText = HtmlToText.fromString(
+          const bodyText = HtmlToText.htmlToText(
             documentHtml,
             notificationDefaultParams.HTML_TO_TEXT_OPTIONS
           );

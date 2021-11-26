@@ -13,8 +13,8 @@ import {
   getEmailNotificationHandler
 } from "../handler";
 
-import { pipe } from "fp-ts/lib/function";
-import * as E from "fp-ts/lib/Either";
+import * as HtmlToText from "html-to-text";
+
 import * as TE from "fp-ts/lib/TaskEither";
 import * as O from "fp-ts/lib/Option";
 
@@ -108,11 +108,14 @@ const aSenderMetadata: CreatedMessageEventSenderMetadata = {
   serviceUserEmail: "email@example.com" as EmailAddress
 };
 
-const HTML_TO_TEXT_OPTIONS: HtmlToTextOptions = {
+const HTML_TO_TEXT_OPTIONS: HtmlToText.HtmlToTextOptions = {
   ignoreImage: true, // ignore all document images
+  limits: {
+    maxChildNodes: 2000,
+    maxDepth: 200
+  },
   tables: true
 };
-
 const MAIL_FROM = "IO - l’app dei servizi pubblici <no-reply@io.italia.it>" as NonEmptyString;
 const defaultNotificationParams = {
   HTML_TO_TEXT_OPTIONS,
@@ -136,10 +139,11 @@ const mockRetrieveProcessingMessageData = jest.fn().mockImplementation(() =>
   )
 );
 
+const mockSendMail = jest.spyOn(mail, "sendMail");
+mockSendMail.mockReturnValue(TE.of("SUCCESS"));
+
 describe("getEmailNotificationActivityHandler", () => {
   it("should respond with 'SUCCESS' if the mail is sent", async () => {
-    jest.spyOn(mail, "sendMail").mockReturnValueOnce(TE.of("SUCCESS"));
-
     const GetEmailNotificationActivityHandler = getEmailNotificationHandler(
       lMailerTransporterMock,
       notificationModelMock,
@@ -158,9 +162,7 @@ describe("getEmailNotificationActivityHandler", () => {
   it("should respond with 'ERROR' if the mail is not sent", async () => {
     const errorMessage: string = "Test Error";
 
-    jest
-      .spyOn(mail, "sendMail")
-      .mockReturnValueOnce(TE.left(new Error(errorMessage)));
+    mockSendMail.mockReturnValueOnce(TE.left(new Error(errorMessage)));
 
     const GetEmailNotificationActivityHandler = getEmailNotificationHandler(
       lMailerTransporterMock,
@@ -177,5 +179,56 @@ describe("getEmailNotificationActivityHandler", () => {
     } catch (e) {
       expect(e.message).toBe("Error while sending email: " + errorMessage);
     }
+  });
+});
+
+describe("html generation", () => {
+  it("should generate html from markdown", async () => {
+    const GetEmailNotificationActivityHandler = getEmailNotificationHandler(
+      lMailerTransporterMock,
+      notificationModelMock,
+      mockRetrieveProcessingMessageData,
+      defaultNotificationParams
+    );
+
+    const result = await GetEmailNotificationActivityHandler(
+      mockContext,
+      JSON.stringify(input)
+    );
+
+    expect(result.kind).toBe("SUCCESS");
+    expect(mockSendMail.mock.calls[0][1].text).toMatchSnapshot();
+  });
+
+  it("should cut generated html if limits are exceeded", async () => {
+    const invalidText = Array.from(
+      { length: 300 },
+      (_, i) => `${"  ".repeat(i)}* Test`
+    ).join("\n");
+
+    mockRetrieveProcessingMessageData.mockImplementationOnce(() =>
+      TE.of(
+        O.some({
+          content: { ...aMessageContent, markdown: invalidText },
+          message: aMessage,
+          senderMetadata: aSenderMetadata
+        })
+      )
+    );
+
+    const GetEmailNotificationActivityHandler = getEmailNotificationHandler(
+      lMailerTransporterMock,
+      notificationModelMock,
+      mockRetrieveProcessingMessageData,
+      defaultNotificationParams
+    );
+
+    const result = await GetEmailNotificationActivityHandler(
+      mockContext,
+      JSON.stringify(input)
+    );
+
+    expect(result.kind).toBe("SUCCESS");
+    expect(mockSendMail.mock.calls[0][1].text).toMatchSnapshot();
   });
 });
