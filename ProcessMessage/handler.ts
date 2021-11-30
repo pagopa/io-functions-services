@@ -33,6 +33,7 @@ import {
 import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
 import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
 import { ActivationStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ActivationStatus";
+import * as T from "fp-ts/lib/Task";
 import { initTelemetryClient } from "../utils/appinsights";
 import { toHash } from "../utils/crypto";
 import { PaymentData } from "../generated/definitions/PaymentData";
@@ -192,10 +193,7 @@ type BlockedInboxesForSpecialService = (params: {
   readonly context: Context;
   readonly logPrefix: string;
   readonly blockedInboxOrChannel: ReadonlyArray<BlockedInboxOrChannelEnum>;
-}) => TaskEither<
-  ReadonlyArray<BlockedInboxOrChannelEnum>,
-  ReadonlyArray<BlockedInboxOrChannelEnum>
->;
+}) => T.Task<ReadonlyArray<BlockedInboxOrChannelEnum>>;
 
 /**
  * Returns the updated value of `blockedInboxOrChannel` for a Service which is marked as `SPECIAL`.
@@ -208,11 +206,6 @@ type BlockedInboxesForSpecialService = (params: {
  * In case the activation status is found to be `ACTIVE` then we remove the INBOX entry
  * from the list of blocked inboxes.
  *
- * Both Left and Right are valid BlockedInboxOrChannelEnum values.
- * The right side contains the blocked inboxes when exists an `ACTIVE` Activation.
- * The left side contains the blocked inboxes when the Activation is missing or has status NOT `ACTIVE`
- *
- *
  * @param lActivation
  * @returns
  */
@@ -224,10 +217,7 @@ const getBlockedInboxesForSpecialService = (
   context,
   logPrefix,
   blockedInboxOrChannel
-}): TaskEither<
-  ReadonlyArray<BlockedInboxOrChannelEnum>,
-  ReadonlyArray<BlockedInboxOrChannelEnum>
-> =>
+}): T.Task<ReadonlyArray<BlockedInboxOrChannelEnum>> =>
   pipe(
     lActivation.findLastVersionByModelId([senderServiceId, fiscalCode]),
     TE.mapLeft(activationError => {
@@ -253,7 +243,11 @@ const getBlockedInboxesForSpecialService = (
     ),
     TE.map(() =>
       blockedInboxOrChannel.filter(el => el !== BlockedInboxOrChannelEnum.INBOX)
-    )
+    ),
+    // Both Left and Right are valid BlockedInboxOrChannelEnum values.
+    // The right side contains the blocked inboxes when exists an `ACTIVE` Activation.
+    // The left side contains the blocked inboxes when the Activation is missing or has status NOT `ACTIVE`
+    TE.toUnion
   );
 
 /**
@@ -459,7 +453,8 @@ export const getProcessMessageHandler = ({
 
               return result;
             }),
-            TE.chain(blockedInboxOrChannel => {
+            TE.toUnion,
+            T.chain(blockedInboxOrChannel => {
               if (
                 createdMessageEvent.senderMetadata.serviceCategory ===
                 SpecialServiceCategoryEnum.SPECIAL
@@ -474,9 +469,8 @@ export const getProcessMessageHandler = ({
               }
               // If the service is STANDARD we use the original value of blockedInboxOrChannel
               // calculated from services preferences and user profile.
-              return TE.of(blockedInboxOrChannel);
-            }),
-            TE.toUnion
+              return T.of(blockedInboxOrChannel);
+            })
           )();
 
           // check whether the user has blocked inbox storage for messages from this sender
