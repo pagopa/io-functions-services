@@ -141,6 +141,7 @@ const updateServiceTask = (
           ...servicePayload,
           service_id: serviceId,
           // Only Admins can change service category and custom_special_flow name
+          // calling directly the `io-functions-admin` functions.
           service_metadata: SpecialServiceMetadata.is(
             retrievedService.service_metadata
           )
