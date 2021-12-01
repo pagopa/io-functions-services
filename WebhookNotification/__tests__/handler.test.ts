@@ -36,6 +36,7 @@ import { Millisecond } from "@pagopa/ts-commons/lib/units";
 import * as E from "fp-ts/lib/Either";
 import * as TE from "fp-ts/lib/TaskEither";
 import * as O from "fp-ts/lib/Option";
+import { StandardServiceCategoryEnum } from "../../generated/api-admin/StandardServiceCategory";
 
 const mockAppinsights = {
   trackDependency: jest.fn(),
@@ -75,6 +76,7 @@ const aSenderMetadata: CreatedMessageEventSenderMetadata = {
   organizationFiscalCode: anOrganizationFiscalCode,
   organizationName: "org" as NonEmptyString,
   requireSecureChannels: false,
+  serviceCategory: StandardServiceCategoryEnum.STANDARD,
   serviceName: "service" as NonEmptyString,
   serviceUserEmail: "email@exmaple.com" as EmailString
 };

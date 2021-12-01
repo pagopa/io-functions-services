@@ -31,6 +31,9 @@ import {
   MessageStatusModel
 } from "@pagopa/io-functions-commons/dist/src/models/message_status";
 import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
+import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
+import { ActivationStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ActivationStatus";
+import * as T from "fp-ts/lib/Task";
 import { initTelemetryClient } from "../utils/appinsights";
 import { toHash } from "../utils/crypto";
 import { PaymentData } from "../generated/definitions/PaymentData";
@@ -42,6 +45,7 @@ import {
   CreatedMessageEvent,
   ProcessedMessageEvent
 } from "../utils/events/message";
+import { SpecialServiceCategoryEnum } from "../generated/api-admin/SpecialServiceCategory";
 
 // Interface that marks an unexpected value
 interface IUnexpectedValue {
@@ -183,6 +187,69 @@ const getServicePreferenceValueOrError = (
     )
   );
 
+type BlockedInboxesForSpecialService = (params: {
+  readonly senderServiceId: NonEmptyString;
+  readonly fiscalCode: FiscalCode;
+  readonly context: Context;
+  readonly logPrefix: string;
+  readonly blockedInboxOrChannel: ReadonlyArray<BlockedInboxOrChannelEnum>;
+}) => T.Task<ReadonlyArray<BlockedInboxOrChannelEnum>>;
+
+/**
+ * Returns the updated value of `blockedInboxOrChannel` for a Service which is marked as `SPECIAL`.
+ *
+ * In case the service category field value equals `SPECIAL`, we update the value of the `INBOX` field
+ * in the list of user's blocked inboxes (one for each blocked service) according to the service activation status.
+ *
+ * We try to retrieve the activation status related to the tuple (user, service) from the database.
+ * In case the activation status is missing, its value is assumed to be `INACTIVE`.
+ * In case the activation status is found to be `ACTIVE` then we remove the INBOX entry
+ * from the list of blocked inboxes.
+ *
+ * @param lActivation
+ * @returns
+ */
+const getBlockedInboxesForSpecialService = (
+  lActivation: ActivationModel
+): BlockedInboxesForSpecialService => ({
+  senderServiceId,
+  fiscalCode,
+  context,
+  logPrefix,
+  blockedInboxOrChannel
+}): T.Task<ReadonlyArray<BlockedInboxOrChannelEnum>> =>
+  pipe(
+    lActivation.findLastVersionByModelId([senderServiceId, fiscalCode]),
+    TE.mapLeft(activationError => {
+      // The query has failed, we consider this as a transient error.
+      context.log.error(`${logPrefix}|${activationError.kind}`);
+      throw Error("Error while retrieving user's service Activation");
+    }),
+    TE.map(maybeActivation =>
+      pipe(
+        maybeActivation,
+        O.map(activation => activation.status === ActivationStatusEnum.ACTIVE),
+        O.getOrElse(() => false)
+      )
+    ),
+    TE.chainW(
+      TE.fromPredicate(
+        hasActiveActivation => hasActiveActivation,
+        () =>
+          blockedInboxOrChannel.includes(BlockedInboxOrChannelEnum.INBOX)
+            ? blockedInboxOrChannel
+            : [...blockedInboxOrChannel, BlockedInboxOrChannelEnum.INBOX]
+      )
+    ),
+    TE.map(() =>
+      blockedInboxOrChannel.filter(el => el !== BlockedInboxOrChannelEnum.INBOX)
+    ),
+    // Both Left and Right are valid BlockedInboxOrChannelEnum values.
+    // The right side contains the blocked inboxes when exists an `ACTIVE` Activation.
+    // The left side contains the blocked inboxes when the Activation is missing or has status NOT `ACTIVE`
+    TE.toUnion
+  );
+
 /**
  * Creates the message and makes it visible or throw an error
  *
@@ -260,6 +327,7 @@ const createMessageOrThrow = async (
 };
 
 export interface IProcessMessageHandlerInput {
+  readonly lActivation: ActivationModel;
   readonly lProfileModel: ProfileModel;
   readonly lMessageModel: MessageModel;
   readonly lBlobService: BlobService;
@@ -277,6 +345,7 @@ type Handler = (c: Context, i: unknown) => Promise<void>;
  * Returns a function for handling ProcessMessage
  */
 export const getProcessMessageHandler = ({
+  lActivation,
   lProfileModel,
   lMessageModel,
   lBlobService,
@@ -384,7 +453,24 @@ export const getProcessMessageHandler = ({
 
               return result;
             }),
-            TE.toUnion
+            TE.toUnion,
+            T.chain(blockedInboxOrChannel => {
+              if (
+                createdMessageEvent.senderMetadata.serviceCategory ===
+                SpecialServiceCategoryEnum.SPECIAL
+              ) {
+                return getBlockedInboxesForSpecialService(lActivation)({
+                  blockedInboxOrChannel,
+                  context,
+                  fiscalCode: newMessageWithoutContent.fiscalCode,
+                  logPrefix,
+                  senderServiceId: createdMessageEvent.message.senderServiceId
+                });
+              }
+              // If the service is STANDARD we use the original value of blockedInboxOrChannel
+              // calculated from services preferences and user profile.
+              return T.of(blockedInboxOrChannel);
+            })
           )();
 
           // check whether the user has blocked inbox storage for messages from this sender

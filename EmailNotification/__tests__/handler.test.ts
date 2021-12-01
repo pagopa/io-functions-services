@@ -33,6 +33,7 @@ import {
   NotificationModel,
   RetrievedNotification
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
+import { StandardServiceCategoryEnum } from "../../generated/api-admin/StandardServiceCategory";
 
 beforeEach(() => jest.clearAllMocks());
 
@@ -104,6 +105,7 @@ const aSenderMetadata: CreatedMessageEventSenderMetadata = {
   organizationFiscalCode: anOrganizationFiscalCode,
   organizationName: "AgID" as NonEmptyString,
   requireSecureChannels: false,
+  serviceCategory: StandardServiceCategoryEnum.STANDARD,
   serviceName: "Test" as NonEmptyString,
   serviceUserEmail: "email@example.com" as EmailAddress
 };

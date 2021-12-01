@@ -17,6 +17,10 @@ import {
   MESSAGE_STATUS_COLLECTION_NAME,
   MessageStatusModel
 } from "@pagopa/io-functions-commons/dist/src/models/message_status";
+import {
+  ActivationModel,
+  ACTIVATION_COLLECTION_NAME
+} from "@pagopa/io-functions-commons/dist/src/models/activation";
 import { cosmosdbInstance } from "../utils/cosmosdb";
 import { getConfigOrThrow } from "../utils/config";
 import { initTelemetryClient } from "../utils/appinsights";
@@ -52,6 +56,10 @@ const messageStatusModel = new MessageStatusModel(
   cosmosdbInstance.container(MESSAGE_STATUS_COLLECTION_NAME)
 );
 
+const activationModel = new ActivationModel(
+  cosmosdbInstance.container(ACTIVATION_COLLECTION_NAME)
+);
+
 const telemetryClient = initTelemetryClient(
   config.APPINSIGHTS_INSTRUMENTATIONKEY
 );
@@ -64,6 +72,7 @@ const retrieveProcessingMessageData = makeRetrieveExpandedDataFromBlob(
 
 const activityFunctionHandler: AzureFunction = getProcessMessageHandler({
   isOptInEmailEnabled: config.FF_OPT_IN_EMAIL_ENABLED,
+  lActivation: activationModel,
   lBlobService: blobServiceForMessageContent,
   lMessageModel: messageModel,
   lMessageStatusModel: messageStatusModel,

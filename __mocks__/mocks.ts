@@ -24,7 +24,6 @@ import {
   OrganizationFiscalCode
 } from "@pagopa/ts-commons/lib/strings";
 
-
 import { MessageBodyMarkdown } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageBodyMarkdown";
 import { MessageSubject } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageSubject";
 
@@ -35,6 +34,7 @@ import {
   RetrievedMessageWithoutContent
 } from "@pagopa/io-functions-commons/dist/src/models/message";
 import { CreatedMessageEventSenderMetadata } from "@pagopa/io-functions-commons/dist/src/models/created_message_sender_metadata";
+import { StandardServiceCategoryEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/StandardServiceCategory";
 
 import { MessageContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageContent";
 import { CIDR } from "@pagopa/io-functions-commons/dist/generated/definitions/CIDR";
@@ -66,7 +66,9 @@ export const aValidService: ValidService = {
     description: "Service Description" as NonEmptyString,
     privacyUrl: "https://example.com/privacy.html" as NonEmptyString,
     supportUrl: "https://example.com/support.html" as NonEmptyString,
-    scope: ServiceScopeEnum.NATIONAL
+    scope: ServiceScopeEnum.NATIONAL,
+    category: StandardServiceCategoryEnum.STANDARD,
+    customSpecialFlow: undefined
   }
 };
 
@@ -88,7 +90,9 @@ export const anIncompleteService: Service & {
   serviceName: "Service" as NonEmptyString,
   serviceMetadata: {
     description: "Service Description" as NonEmptyString,
-    scope: ServiceScopeEnum.NATIONAL
+    scope: ServiceScopeEnum.NATIONAL,
+    category: StandardServiceCategoryEnum.STANDARD,
+    customSpecialFlow: undefined
   },
   version: 1 as NonNegativeInteger
 };
@@ -181,6 +185,7 @@ export const aCreatedMessageEventSenderMetadata: CreatedMessageEventSenderMetada
   organizationFiscalCode: "01234567890" as OrganizationFiscalCode,
   organizationName: "An Organization Name" as NonEmptyString,
   requireSecureChannels: false,
+  serviceCategory: StandardServiceCategoryEnum.STANDARD,
   serviceName: "A_SERVICE_NAME" as NonEmptyString,
   serviceUserEmail: "aaa@mail.com" as EmailString
 };
@@ -200,8 +205,7 @@ export const anEnabledServicePreference: ServicePreference = {
   isWebhookEnabled: true,
   serviceId: "01234567890" as NonEmptyString,
   settingsVersion: 0 as NonNegativeInteger
-}
-
+};
 
 export const aDisabledServicePreference: ServicePreference = {
   fiscalCode: aFiscalCode,
@@ -210,4 +214,4 @@ export const aDisabledServicePreference: ServicePreference = {
   isWebhookEnabled: false,
   serviceId: "01234567890" as NonEmptyString,
   settingsVersion: 0 as NonNegativeInteger
-}
+};

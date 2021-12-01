@@ -416,6 +416,7 @@ export function CreateMessageHandler(
                 organizationFiscalCode: service.organizationFiscalCode,
                 organizationName: service.organizationName,
                 requireSecureChannels: service.requireSecureChannels,
+                serviceCategory: service.serviceMetadata.category,
                 serviceName: service.serviceName,
                 serviceUserEmail
               }

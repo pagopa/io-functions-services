@@ -756,7 +756,7 @@ definitions:
           created_at:
             $ref: '#/definitions/Timestamp'
           content:
-            $ref: '#/definitions/MessageContent'
+            $ref: '#/definitions/NewMessageContent'
           sender_service_id:
             $ref: '#/definitions/ServiceId'
         required:
@@ -1010,7 +1010,10 @@ definitions:
               - false
             description: It indicates that service is hidden
           service_metadata:
-            $ref: '#/definitions/ServiceMetadata'
+            description: >-
+              That service can't handle some ServiceMetadata fields (es.
+              category)
+            $ref: '#/definitions/CommonServiceMetadata'
   VisibleServicePayload:
     description: >-
       A payload used to create/update a service that appears in the service
@@ -1025,10 +1028,20 @@ definitions:
               - true
             description: It indicates that service appears in the service list
           service_metadata:
-            $ref: '#/definitions/ServiceMetadata'
+            description: >-
+              That service can't handle some ServiceMetadata fields (es.
+              category)
+            $ref: '#/definitions/CommonServiceMetadata'
         required:
           - is_visible
           - service_metadata
+  ExtendedServicePayload:
+    allOf:
+      - $ref: '#/definitions/ServicePayload'
+      - type: object
+        properties:
+          service_metadata:
+            $ref: '#/definitions/ServiceMetadata'
   CommonServicePayload:
     description: Common properties for a ServicePayload
     type: object
@@ -1065,7 +1078,7 @@ definitions:
   Service:
     description: A service tied to user's subscription.
     allOf:
-      - $ref: '#/definitions/ServicePayload'
+      - $ref: '#/definitions/ExtendedServicePayload'
       - type: object
         properties:
           id:
@@ -1091,6 +1104,37 @@ definitions:
           - service_id
           - authorized_recipients
   ServiceMetadata:
+    x-one-of: true
+    allOf:
+      - $ref: '#/definitions/StandardServiceMetadata'
+      - $ref: '#/definitions/SpecialServiceMetadata'
+      - $ref: '#/definitions/CommonServiceMetadata'
+  StandardServiceMetadata:
+    allOf:
+      - $ref: '#/definitions/CommonServiceMetadata'
+      - type: object
+        properties:
+          category:
+            type: string
+            x-extensible-enum:
+              - STANDARD
+        required:
+          - category
+  SpecialServiceMetadata:
+    allOf:
+      - $ref: '#/definitions/CommonServiceMetadata'
+      - type: object
+        properties:
+          category:
+            type: string
+            x-extensible-enum:
+              - SPECIAL
+          custom_special_flow:
+            type: string
+            minLength: 1
+        required:
+          - category
+  CommonServiceMetadata:
     type: object
     description: A set of metadata properties related to this service.
     properties:
