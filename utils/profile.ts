@@ -39,7 +39,7 @@ import {
 } from "@pagopa/ts-commons/lib/responses";
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import { pipe } from "fp-ts/lib/function";
-import { GetLimitedProfileByPOSTPayload } from "../generated/definitions/GetLimitedProfileByPOSTPayload";
+import { FiscalCodePayload } from "../generated/definitions/FiscalCodePayload";
 import { canWriteMessage } from "../CreateMessage/handler";
 import { initTelemetryClient } from "./appinsights";
 import { toHash } from "./crypto";
@@ -140,17 +140,15 @@ export function retrievedProfileToLimitedProfile(
 /**
  * A middleware that extracts a GetLimitedProfileByPOSTPayload from a request.
  */
-export const GetLimitedProfileByPOSTPayloadMiddleware: IRequestMiddleware<
+export const FiscalCodePayloadMiddleware: IRequestMiddleware<
   "IResponseErrorValidation",
-  GetLimitedProfileByPOSTPayload
+  FiscalCodePayload
 > = request =>
   Promise.resolve(
     pipe(
       request.body,
-      GetLimitedProfileByPOSTPayload.decode,
-      E.mapLeft(
-        ResponseErrorFromValidationErrors(GetLimitedProfileByPOSTPayload)
-      )
+      FiscalCodePayload.decode,
+      E.mapLeft(ResponseErrorFromValidationErrors(FiscalCodePayload))
     )
   );
 
