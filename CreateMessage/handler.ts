@@ -84,6 +84,7 @@ import { Either } from "fp-ts/lib/Either";
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import { PaymentDataWithRequiredPayee } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentDataWithRequiredPayee";
 import { NewMessage as ApiNewMessage } from "@pagopa/io-functions-commons/dist/generated/definitions/NewMessage";
+import { StandardServiceCategoryEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/StandardServiceCategory";
 import {
   CommonMessageData,
   CreatedMessageEvent
@@ -416,7 +417,10 @@ export function CreateMessageHandler(
                 organizationFiscalCode: service.organizationFiscalCode,
                 organizationName: service.organizationName,
                 requireSecureChannels: service.requireSecureChannels,
-                serviceCategory: service.serviceMetadata.category,
+                serviceCategory: pipe(
+                  O.fromNullable(service.serviceMetadata?.category),
+                  O.getOrElse(() => StandardServiceCategoryEnum.STANDARD)
+                ),
                 serviceName: service.serviceName,
                 serviceUserEmail
               }
