@@ -949,6 +949,8 @@ definitions:
             $ref: '#/definitions/PaymentData'
           prescription_data:
             $ref: '#/definitions/PrescriptionData'
+          legal_data:
+            $ref: '#/definitions/LegalData'
           eu_covid_cert:
             $ref: '#/definitions/EUCovidCert'
           due_date:
@@ -1259,6 +1261,25 @@ definitions:
             $ref: '#/definitions/Payee'
         required:
           - payee
+  LegalData:
+    type: object
+    properties:
+      sender_mail_from:
+        type: string
+        minLength: 1
+      has_attachment:
+        type: boolean
+        default: false
+      message_unique_id:
+        type: string
+        minLength: 1
+      original_message_url:
+        type: string
+        minLength: 1
+    required:
+      - sender_mail_from
+      - has_attachment
+      - message_unique_id
   SubscriptionKeys:
     type: object
     properties:
