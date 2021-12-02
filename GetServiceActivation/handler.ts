@@ -57,9 +57,9 @@ export type IGetActivationResponses =
   | IGetActivationFailureResponses;
 
 /**
- * Type of a GetLimitedProfileByPOST handler.
+ * Type of a IGetActivationByPOST handler.
  *
- * GetLimitedProfileByPOST expects a FiscalCode as input (in the body) and returns a LimitedProfile or a NotFound error.
+ * GetServiceActivation expects a FiscalCode as input (in the body) and returns an Activation or a NotFound error.
  */
 type IGetActivationByPOSTHandler = (
   apiAuthorization: IAzureApiAuthorization,
@@ -69,7 +69,7 @@ type IGetActivationByPOSTHandler = (
 ) => Promise<IGetActivationResponses>;
 
 /**
- * Returns a type safe GetLimitedProfileByPOST handler.
+ * Returns a type safe GetActivationByPOST handler.
  */
 // eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function GetServiceActivationHandler(
@@ -114,7 +114,7 @@ export function GetServiceActivationHandler(
 /**
  * Wraps a GetServiceActivation handler inside an Express request handler.
  */
-// eslint-disable-next-line max-params,prefer-arrow/prefer-arrow-functions
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function GetServiceActivation(
   serviceModel: ServiceModel,
   activationModel: ActivationModel,
