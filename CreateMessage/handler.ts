@@ -418,8 +418,7 @@ export function CreateMessageHandler(
                 organizationName: service.organizationName,
                 requireSecureChannels: service.requireSecureChannels,
                 serviceCategory: pipe(
-                  O.fromNullable(service.serviceMetadata),
-                  O.map(_ => _.category),
+                  O.fromNullable(service.serviceMetadata?.category),
                   O.getOrElse(() => StandardServiceCategoryEnum.STANDARD)
                 ),
                 serviceName: service.serviceName,
