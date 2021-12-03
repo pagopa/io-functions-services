@@ -672,6 +672,40 @@ paths:
           in: body
           schema:
             $ref: "#/definitions/FiscalCodePayload"
+    put:
+      operationId: upsertServiceActivation
+      summary: Upsert a Service Activation for a User
+      description: |-
+        Create or update an Activation for a couple Service/User
+      responses:
+        "200":
+          description: Found.
+          schema:
+            $ref: "#/definitions/Activation"
+          examples:
+            application/json:
+              serviceId: AAAAAAAAAAAAAAA
+              fiscalCode: AAAAAA00B00C000D
+              status: ACTIVE
+        "401":
+          description: Unauthorized
+        '403':
+          description: Forbidden.
+        "404":
+          description: No user activation found for the provided fiscal code.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+        "429":
+          description: Too many requests
+        "500":
+          description: The service cannot be created.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+      parameters:
+        - name: payload
+          in: body
+          schema:
+            $ref: "#/definitions/Activation"
 definitions:
   ActivationStatus:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ActivationStatus"
