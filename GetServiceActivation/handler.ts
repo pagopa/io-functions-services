@@ -42,8 +42,10 @@ import * as TE from "fp-ts/lib/TaskEither";
 import * as O from "fp-ts/lib/Option";
 import { SpecialServiceCategoryEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/SpecialServiceCategory";
 import { toApiServiceActivation } from "@pagopa/io-functions-commons/dist/src/utils/activations";
+import { Context } from "@azure/functions";
+import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
+import { errorsToReadableMessages } from "@pagopa/ts-commons/lib/reporters";
 import { FiscalCodePayloadMiddleware } from "../utils/profile";
-import { initTelemetryClient } from "../utils/appinsights";
 import { FiscalCodePayload } from "../generated/definitions/FiscalCodePayload";
 import { Activation } from "../generated/definitions/Activation";
 
@@ -62,6 +64,7 @@ export type IGetActivationResponses =
  * GetServiceActivation expects a FiscalCode as input (in the body) and returns an Activation or a NotFound error.
  */
 type IGetActivationByPOSTHandler = (
+  context: Context,
   apiAuthorization: IAzureApiAuthorization,
   clientIp: ClientIp,
   userAttributes: IAzureUserAttributes,
@@ -73,12 +76,12 @@ type IGetActivationByPOSTHandler = (
  */
 // eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function GetServiceActivationHandler(
-  activationModel: ActivationModel,
-  _1: ReturnType<typeof initTelemetryClient>
+  activationModel: ActivationModel
 ): IGetActivationByPOSTHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  return async (_auth, __, userAttributes, { fiscal_code }) =>
-    pipe(
+  return async (context, _auth, __, userAttributes, { fiscal_code }) => {
+    const logPrefix = `${context.executionContext.functionName}|SERVICE_ID=${userAttributes.service.serviceId}`;
+    return pipe(
       O.fromNullable(userAttributes.service.serviceMetadata),
       O.filter(
         serviceMetadata =>
@@ -91,9 +94,21 @@ export function GetServiceActivationHandler(
             userAttributes.service.serviceId,
             fiscal_code
           ]),
-          TE.mapLeft(error =>
-            ResponseErrorQuery("Error reading service Activation", error)
-          )
+          TE.mapLeft(error => {
+            context.log.error(
+              `${logPrefix}|ERROR|ERROR_DETAILS=${
+                error.kind === "COSMOS_EMPTY_RESPONSE"
+                  ? error.kind
+                  : error.kind === "COSMOS_DECODING_ERROR"
+                  ? errorsToReadableMessages(error.error).join("/")
+                  : JSON.stringify(error.error)
+              }`
+            );
+            return ResponseErrorQuery(
+              "Error reading service Activation",
+              error
+            );
+          })
         )
       ),
       TE.chainW(
@@ -109,6 +124,7 @@ export function GetServiceActivationHandler(
       TE.map(_ => ResponseSuccessJson(toApiServiceActivation(_))),
       TE.toUnion
     )();
+  };
 }
 
 /**
@@ -117,12 +133,12 @@ export function GetServiceActivationHandler(
 // eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function GetServiceActivation(
   serviceModel: ServiceModel,
-  activationModel: ActivationModel,
-  telemetryClient: ReturnType<typeof initTelemetryClient>
+  activationModel: ActivationModel
 ): express.RequestHandler {
-  const handler = GetServiceActivationHandler(activationModel, telemetryClient);
+  const handler = GetServiceActivationHandler(activationModel);
 
   const middlewaresWrap = withRequestMiddlewares(
+    ContextMiddleware(),
     AzureApiAuthMiddleware(new Set([UserGroup.ApiMessageWrite])),
     ClientIpMiddleware,
     AzureUserAttributesMiddleware(serviceModel),
@@ -131,7 +147,7 @@ export function GetServiceActivation(
 
   return wrapRequestHandler(
     middlewaresWrap(
-      checkSourceIpForHandler(handler, (_, c, u, __) => ipTuple(c, u))
+      checkSourceIpForHandler(handler, (_, __, c, u, ___) => ipTuple(c, u))
     )
   );
 }

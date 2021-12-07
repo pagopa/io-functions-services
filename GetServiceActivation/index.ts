@@ -12,8 +12,6 @@ import {
   ActivationModel,
   ACTIVATION_COLLECTION_NAME
 } from "@pagopa/io-functions-commons/dist/src/models/activation";
-import { initTelemetryClient } from "../utils/appinsights";
-import { getConfigOrThrow } from "../utils/config";
 import { cosmosdbInstance } from "../utils/cosmosdb";
 
 import { GetServiceActivation } from "./handler";
@@ -26,11 +24,6 @@ const activationModel = new ActivationModel(
   cosmosdbInstance.container(ACTIVATION_COLLECTION_NAME)
 );
 
-const config = getConfigOrThrow();
-const telemetryClient = initTelemetryClient(
-  config.APPINSIGHTS_INSTRUMENTATIONKEY
-);
-
 // Setup Express
 const app = express();
 secureExpressApp(app);
@@ -40,7 +33,7 @@ app.use(cors());
 
 app.post(
   "/api/v1/activations",
-  GetServiceActivation(serviceModel, activationModel, telemetryClient)
+  GetServiceActivation(serviceModel, activationModel)
 );
 
 const azureFunctionHandler = createAzureFunctionHandler(app);
