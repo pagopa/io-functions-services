@@ -59,6 +59,7 @@ export const aCosmosResourceMetadata: Omit<CosmosResource, "id"> = {
 };
 
 export const aServiceId: ServiceId = "01234567890" as NonEmptyString;
+export const anotherServiceId: ServiceId = "01234567899" as NonEmptyString;
 
 export const aValidService: ValidService = {
   serviceId: aServiceId,
