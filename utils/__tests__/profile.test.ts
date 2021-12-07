@@ -146,7 +146,7 @@ const withBlacklist = (profile: RetrievedProfile, services = []) => ({
   )
 });
 describe("getLimitedProfileTask", () => {
-  const mockExpresseResponse = MockResponse();
+  const mockExpressResponse = MockResponse();
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -181,11 +181,11 @@ describe("getLimitedProfileTask", () => {
         mockServicePreferenceModel,
         mockTelemetryClient
       )();
-      result.apply(mockExpresseResponse);
+      result.apply(mockExpressResponse);
 
       expect(result.kind).toBe("IResponseSuccessJson");
 
-      expect(mockExpresseResponse.json).toHaveBeenCalledWith(
+      expect(mockExpressResponse.json).toHaveBeenCalledWith(
         expect.objectContaining({ sender_allowed: expected })
       );
     }
