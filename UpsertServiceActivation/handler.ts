@@ -45,7 +45,9 @@ import * as O from "fp-ts/lib/Option";
 import { SpecialServiceCategoryEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/SpecialServiceCategory";
 import { toApiServiceActivation } from "@pagopa/io-functions-commons/dist/src/utils/activations";
 import { RequiredBodyPayloadMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_body_payload";
-import { initTelemetryClient } from "../utils/appinsights";
+import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
+import { Context } from "@azure/functions";
+import { errorsToReadableMessages } from "@pagopa/ts-commons/lib/reporters";
 import { Activation } from "../generated/definitions/Activation";
 
 export type IUpertActivationFailureResponses =
@@ -63,6 +65,7 @@ export type IUpsertActivationResponses =
  * GetServiceActivation expects a FiscalCode as input (in the body) and returns an Activation or a NotFound error.
  */
 type IUpsertActivationByPOSTHandler = (
+  context: Context,
   apiAuthorization: IAzureApiAuthorization,
   clientIp: ClientIp,
   userAttributes: IAzureUserAttributes,
@@ -83,29 +86,44 @@ const toModelServiceActivation = (
  */
 // eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function UpsertServiceActivationHandler(
-  activationModel: ActivationModel,
-  _1: ReturnType<typeof initTelemetryClient>
+  activationModel: ActivationModel
 ): IUpsertActivationByPOSTHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  return async (_auth, __, userAttributes, newActivation) =>
-    pipe(
+  return async (context, _auth, __, userAttributes, newActivation) => {
+    const logPrefix = `${context.executionContext.functionName}|SERVICE_ID=${userAttributes.service.serviceId}`;
+    return pipe(
       O.fromNullable(userAttributes.service.serviceMetadata),
       O.filter(
         serviceMetadata =>
-          serviceMetadata.category === SpecialServiceCategoryEnum.SPECIAL
+          serviceMetadata.category === SpecialServiceCategoryEnum.SPECIAL &&
+          // The autorized services can upsert only its owns Activations
+          userAttributes.service.serviceId === newActivation.service_id
       ),
       TE.fromOption(() => ResponseErrorForbiddenNotAuthorized),
       TE.chainW(_ =>
         pipe(
           activationModel.upsert(toModelServiceActivation(newActivation)),
-          TE.mapLeft(error =>
-            ResponseErrorQuery("Error reading service Activation", error)
-          )
+          TE.mapLeft(error => {
+            context.log.error(
+              `${logPrefix}|ERROR|ERROR_DETAILS=${
+                error.kind === "COSMOS_EMPTY_RESPONSE"
+                  ? error.kind
+                  : error.kind === "COSMOS_DECODING_ERROR"
+                  ? errorsToReadableMessages(error.error).join("/")
+                  : JSON.stringify(error.error)
+              }`
+            );
+            return ResponseErrorQuery(
+              "Error reading service Activation",
+              error
+            );
+          })
         )
       ),
       TE.map(_ => ResponseSuccessJson(toApiServiceActivation(_))),
       TE.toUnion
     )();
+  };
 }
 
 /**
@@ -114,15 +132,12 @@ export function UpsertServiceActivationHandler(
 // eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function UpsertServiceActivation(
   serviceModel: ServiceModel,
-  activationModel: ActivationModel,
-  telemetryClient: ReturnType<typeof initTelemetryClient>
+  activationModel: ActivationModel
 ): express.RequestHandler {
-  const handler = UpsertServiceActivationHandler(
-    activationModel,
-    telemetryClient
-  );
+  const handler = UpsertServiceActivationHandler(activationModel);
 
   const middlewaresWrap = withRequestMiddlewares(
+    ContextMiddleware(),
     AzureApiAuthMiddleware(new Set([UserGroup.ApiMessageWrite])),
     ClientIpMiddleware,
     AzureUserAttributesMiddleware(serviceModel),
@@ -131,7 +146,7 @@ export function UpsertServiceActivation(
 
   return wrapRequestHandler(
     middlewaresWrap(
-      checkSourceIpForHandler(handler, (_, c, u, __) => ipTuple(c, u))
+      checkSourceIpForHandler(handler, (_, __, c, u, ___) => ipTuple(c, u))
     )
   );
 }
