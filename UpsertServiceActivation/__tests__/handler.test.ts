@@ -5,7 +5,6 @@ import { Service } from "@pagopa/io-functions-commons/dist/src/models/service";
 import { NonNegativeInteger } from "@pagopa/ts-commons/lib/numbers";
 import { UpsertServiceActivationHandler } from "../handler";
 import * as TE from "fp-ts/lib/TaskEither";
-import * as O from "fp-ts/lib/Option";
 import { Context } from "@azure/functions";
 import { toCosmosErrorResponse } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
 import {
@@ -13,7 +12,6 @@ import {
   anActivation,
   anAzureApiAuthorization,
   anAzureUserAttributes,
-  anotherServiceId,
   aServiceId,
   aValidService
 } from "../../__mocks__/mocks";
@@ -52,11 +50,10 @@ describe("UpsertServiceActivationHandler", () => {
     jest.clearAllMocks();
   });
   it.each`
-    scenario                                                                          | userAttributes                                                                                | activationUpsertResult                                        | responseKind                              | responsePayload
-    ${"unauthorized if the service isn't SPECIAL"}                                    | ${anAzureUserAttributes}                                                                      | ${"not-called"}                                               | ${"IResponseErrorForbiddenNotAuthorized"} | ${"skip-check"}
-    ${"the activation if present on database"}                                        | ${{ ...anAzureUserAttributes, service: aSpecialService }}                                     | ${TE.of(anActivation)}                                        | ${"IResponseSuccessJson"}                 | ${toApiServiceActivation(anActivation)}
-    ${"unauthorized if authorized serviceId is different from Activation service_id"} | ${{ ...anAzureUserAttributes, service: { ...aSpecialService, serviceId: anotherServiceId } }} | ${"not-called"}                                               | ${"IResponseErrorForbiddenNotAuthorized"} | ${"skip-check"}
-    ${"query error response if reading activation fails"}                             | ${{ ...anAzureUserAttributes, service: aSpecialService }}                                     | ${TE.left(toCosmosErrorResponse(new Error("reading error")))} | ${"IResponseErrorQuery"}                  | ${"skip-check"}
+    scenario                                              | userAttributes                                            | activationUpsertResult                                        | responseKind                              | responsePayload
+    ${"unauthorized if the service isn't SPECIAL"}        | ${anAzureUserAttributes}                                  | ${"not-called"}                                               | ${"IResponseErrorForbiddenNotAuthorized"} | ${"skip-check"}
+    ${"the activation if present on database"}            | ${{ ...anAzureUserAttributes, service: aSpecialService }} | ${TE.of(anActivation)}                                        | ${"IResponseSuccessJson"}                 | ${toApiServiceActivation(anActivation)}
+    ${"query error response if reading activation fails"} | ${{ ...anAzureUserAttributes, service: aSpecialService }} | ${TE.left(toCosmosErrorResponse(new Error("reading error")))} | ${"IResponseErrorQuery"}                  | ${"skip-check"}
   `(
     "should returns $scenario",
     async ({

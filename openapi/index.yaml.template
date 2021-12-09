@@ -705,12 +705,14 @@ paths:
         - name: payload
           in: body
           schema:
-            $ref: "#/definitions/Activation"
+            $ref: "#/definitions/ActivationPayload"
 definitions:
   ActivationStatus:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ActivationStatus"
   Activation:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/Activation"
+  ActivationPayload:
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ActivationPayload"
   FiscalCodePayload:
     type: object
     properties:

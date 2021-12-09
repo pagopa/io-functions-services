@@ -49,6 +49,8 @@ import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/m
 import { Context } from "@azure/functions";
 import { errorsToReadableMessages } from "@pagopa/ts-commons/lib/reporters";
 import { Activation } from "../generated/definitions/Activation";
+import { ActivationPayload } from "../generated/definitions/ActivationPayload";
+import { ServiceId } from "../generated/definitions/ServiceId";
 
 export type IUpertActivationFailureResponses =
   | IResponseErrorNotFound
@@ -73,11 +75,12 @@ type IUpsertActivationByPOSTHandler = (
 ) => Promise<IUpsertActivationResponses>;
 
 const toModelServiceActivation = (
-  apiActivation: Activation
+  apiActivation: ActivationPayload,
+  serviceId: ServiceId
 ): NewActivation => ({
   fiscalCode: apiActivation.fiscal_code,
   kind: "INewActivation",
-  serviceId: apiActivation.service_id,
+  serviceId,
   status: apiActivation.status
 });
 
@@ -95,14 +98,17 @@ export function UpsertServiceActivationHandler(
       O.fromNullable(userAttributes.service.serviceMetadata),
       O.filter(
         serviceMetadata =>
-          serviceMetadata.category === SpecialServiceCategoryEnum.SPECIAL &&
-          // The autorized services can upsert only its owns Activations
-          userAttributes.service.serviceId === newActivation.service_id
+          serviceMetadata.category === SpecialServiceCategoryEnum.SPECIAL
       ),
       TE.fromOption(() => ResponseErrorForbiddenNotAuthorized),
       TE.chainW(_ =>
         pipe(
-          activationModel.upsert(toModelServiceActivation(newActivation)),
+          activationModel.upsert(
+            toModelServiceActivation(
+              newActivation,
+              userAttributes.service.serviceId
+            )
+          ),
           TE.mapLeft(error => {
             context.log.error(
               `${logPrefix}|ERROR|ERROR_DETAILS=${
@@ -141,7 +147,7 @@ export function UpsertServiceActivation(
     AzureApiAuthMiddleware(new Set([UserGroup.ApiMessageWrite])),
     ClientIpMiddleware,
     AzureUserAttributesMiddleware(serviceModel),
-    RequiredBodyPayloadMiddleware(Activation)
+    RequiredBodyPayloadMiddleware(ActivationPayload)
   );
 
   return wrapRequestHandler(

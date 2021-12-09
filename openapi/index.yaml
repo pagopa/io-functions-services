@@ -766,7 +766,7 @@ paths:
         - name: payload
           in: body
           schema:
-            $ref: '#/definitions/Activation'
+            $ref: '#/definitions/ActivationPayload'
 definitions:
   ActivationStatus:
     type: string
@@ -791,6 +791,16 @@ definitions:
       - fiscal_code
       - status
       - version
+  ActivationPayload:
+    type: object
+    properties:
+      fiscal_code:
+        $ref: '#/definitions/FiscalCode'
+      status:
+        $ref: '#/definitions/ActivationStatus'
+    required:
+      - fiscal_code
+      - status
   FiscalCodePayload:
     type: object
     properties:
