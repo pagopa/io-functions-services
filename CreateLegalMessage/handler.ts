@@ -1,5 +1,5 @@
 /*
- * Implements the API handlers for the Message resource.
+ * Implements the API handlers for the Legal Message resource.
  */
 
 import * as express from "express";
@@ -143,7 +143,7 @@ export const ImpersonateService = (
   const handler = ImpersonateServiceHandler(adminClient, lmMapper);
   const middlewaresWrap = withRequestMiddlewares(
     ContextMiddleware(),
-    AzureApiAuthMiddleware(new Set([UserGroup.ApiMessageWriteWithLegal])), //FIXME create new permission for PEC-SERVER only
+    AzureApiAuthMiddleware(new Set([UserGroup.ApiMessageWriteWithLegal])), // FIXME create new permission for PEC-SERVER only
     RawRequestMiddleware(),
     RequiredParamMiddleware("legalmail", EmailString)
   );
