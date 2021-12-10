@@ -27,11 +27,11 @@ export const LegalMessageMapError = t.union(
   "LegalMessageMapError"
 );
 
-interface ILegalMessageMap {
+export interface ILegalMessageMap {
   readonly serviceId: string;
 }
 
-interface ILegalMessageMapModel {
+export interface ILegalMessageMapModel {
   readonly findLastVersionByModelId: (
     email: string
   ) => TE.TaskEither<LegalMessageMapError, O.Option<ILegalMessageMap>>;
