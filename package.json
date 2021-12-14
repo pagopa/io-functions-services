@@ -20,7 +20,7 @@
     "generate": "npm-run-all generate:*",
     "generate:definitions": "rimraf ./generated/definitions && shx mkdir -p ./generated/definitions && gen-api-models --api-spec ./openapi/index.yaml --no-strict --out-dir ./generated/definitions",
     "generate:api-notifications": "rimraf ./generated/notifications && shx mkdir -p ./generated/notifications && gen-api-models --api-spec https://raw.githubusercontent.com/pagopa/io-backend/master/api_notifications.yaml --out-dir ./generated/notifications --response-decoders --request-types",
-    "generate:api-admin": "rimraf generated/api-admin && shx mkdir -p generated/api-admin && gen-api-models --api-spec https://raw.githubusercontent.com/pagopa/io-functions-admin/master/openapi/index.yaml --no-strict --out-dir generated/api-admin --request-types --response-decoders --client",
+    "generate:api-admin": "rimraf generated/api-admin && shx mkdir -p generated/api-admin && gen-api-models --api-spec https://raw.githubusercontent.com/pagopa/io-functions-admin/IC-131--add-get-group-from-serviceid/openapi/index.yaml --no-strict --out-dir generated/api-admin --request-types --response-decoders --client",
     "openapi:bundle": "bundle-api-spec -i openapi/index.yaml.template -o openapi/index.yaml -V $npm_package_version",
     "openapi:validate": "oval validate -p openapi/index.yaml",
     "dist:modules": "modclean -r -n default:safe && yarn install --production",

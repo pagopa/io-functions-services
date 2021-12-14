@@ -3,7 +3,6 @@
  */
 
 import * as express from "express";
-import * as winston from "winston";
 
 import { pipe } from "fp-ts/lib/function";
 import * as TE from "fp-ts/TaskEither";
@@ -15,26 +14,37 @@ import {
   AzureApiAuthMiddleware,
   UserGroup
 } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
+import { IRequestMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
 import {
-  IRequestMiddleware,
-  RequestHandler
-} from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
-import {
-  IResponseSuccessJson,
+  IResponseErrorNotFound,
+  IResponseErrorTooManyRequests,
   ResponseErrorInternal,
-  ResponseErrorNotFound,
-  ResponseSuccessJson
+  ResponseErrorNotFound
 } from "@pagopa/ts-commons/lib/responses";
 import { RequiredParamMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_param";
 import { Context } from "@azure/functions";
 import { IAzureApiAuthorization } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
 import { EmailString } from "@pagopa/ts-commons/lib/strings";
+import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
+import { MessageModel } from "@pagopa/io-functions-commons/dist/src/models/message";
+import { initAppInsights } from "@pagopa/ts-commons/lib/appinsights";
+import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
+import { ulidGenerator } from "@pagopa/io-functions-commons/dist/src/utils/strings";
 import { ImpersonatedService } from "../generated/api-admin/ImpersonatedService";
-import { ErrorResponses } from "../utils/responses";
+import { ErrorResponses, IResponseErrorUnauthorized } from "../utils/responses";
 import { withApiRequestWrapper } from "../utils/api";
 import { APIClient } from "../clients/admin";
 import { ILogger, getLogger } from "../utils/logging";
-import { ILegalMessageMapModel, notFoundError } from "../utils/legal-message";
+import { ILegalMessageMapModel } from "../utils/legal-message";
+import {
+  CreateMessageHandler,
+  CreateMessageHandlerResponse
+} from "../CreateMessage/handler";
+import {
+  commonCreateMessageMiddlewares,
+  mapMiddlewareResponse
+} from "../utils/message_middlewares";
+import { makeUpsertBlobFromObject } from "../CreateMessage/utils";
 
 const logPrefix = "CreateLegalMessageHandler";
 
@@ -57,7 +67,12 @@ type ICreateServiceHandler = (
   auth: IAzureApiAuthorization,
   rawRequest: express.Request,
   legalmail: EmailString
-) => Promise<ErrorResponses | IResponseSuccessJson<ImpersonatedService>>;
+) => Promise<
+  | IResponseErrorNotFound
+  | IResponseErrorUnauthorized
+  | IResponseErrorTooManyRequests
+  | CreateMessageHandlerResponse
+>;
 
 /**
  * Handles requests for imporsonate service by a input serviceId.
@@ -65,28 +80,25 @@ type ICreateServiceHandler = (
 // eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function ImpersonateServiceHandler(
   adminClient: APIClient,
-  lmMapper: ILegalMessageMapModel
+  lmMapper: ILegalMessageMapModel,
+  serviceModel: ServiceModel,
+  createMessageHandler: ReturnType<typeof CreateMessageHandler>
 ): ICreateServiceHandler {
   return (
     context,
     _auth,
     rawRequest,
     legalmail
-  ): ReturnType<ICreateServiceHandler> => {
-    const bbb = pipe(
+  ): ReturnType<ICreateServiceHandler> =>
+    pipe(
       legalmail,
       lmMapper.findLastVersionByModelId,
-      TE.chain(
+      TE.chainW(
         TE.fromOption(() =>
-          notFoundError("Can not found a service with the input legal mail")
+          ResponseErrorNotFound("Not Found", "Service Not Found")
         )
       ),
       TE.map(lmMap => lmMap.serviceId),
-      TE.mapLeft(e =>
-        e.kind === "NotFoundError"
-          ? ResponseErrorNotFound("Not Found", e.message)
-          : ResponseErrorInternal(e.message)
-      ),
       TE.chainW(serviceId =>
         getImpersonatedService(
           getLogger(context, logPrefix, "ImpersonateService"),
@@ -95,19 +107,34 @@ export function ImpersonateServiceHandler(
         )
       ),
       TE.map(impersonatedService => {
+        const replaceHeaders = {
+          "x-subscription-id": impersonatedService.service_id,
+          "x-user-email": "dummy@email.it", // FIXME
+          "x-user-groups": impersonatedService.user_groups
+        };
         // eslint-disable-next-line functional/immutable-data
-        rawRequest.headers["x-user-groups"] =
-          impersonatedService.user_groups || "";
-        // FIXME: const HEADER_USER_EMAIL = "x-user-email";
-        //        const HEADER_USER_SUBSCRIPTION_KEY = "x-subscription-id";
-        return impersonatedService;
+        rawRequest.headers = {
+          ...rawRequest.headers,
+          ...replaceHeaders
+        };
       }),
-      TE.map(ResponseSuccessJson),
+      TE.chainW(() =>
+        pipe(
+          TE.tryCatch(
+            () =>
+              withRequestMiddlewares(
+                ...commonCreateMessageMiddlewares(serviceModel)
+              )(createMessageHandler)(rawRequest),
+            _ =>
+              ResponseErrorInternal("Error while calling sendMessage handler")
+          ),
+          // We must remap IResponse<T> where T is a union type of all possible middlewares failures
+          // in order to return handler's strict ResponseTypes
+          TE.map(mapMiddlewareResponse)
+        )
+      ),
       TE.toUnion
-    );
-
-    return bbb();
-  };
+    )();
 }
 
 export const RawRequestMiddleware = (): IRequestMiddleware<
@@ -116,36 +143,42 @@ export const RawRequestMiddleware = (): IRequestMiddleware<
 > => (request): Promise<E.Either<never, express.Request>> =>
   TE.right(request)();
 
-export const wrapRequestHandlerWithoutResponseApply = <R>(
-  handler: RequestHandler<R>
-): express.RequestHandler => (request, response, _): Promise<void> =>
-  handler(request).then(
-    r => {
-      winston.log(
-        "debug",
-        `wrapRequestHandler|SUCCESS|${request.url}|${r.kind}`
-      );
-    },
-    e => {
-      winston.log("debug", `wrapRequestHandler|ERROR|${request.url}|${e}`);
-      ResponseErrorInternal(e).apply(response);
-    }
-  );
-
 /**
  * Wraps a ImpersonateService handler inside an Express request handler.
  */
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export const ImpersonateService = (
   adminClient: APIClient,
-  lmMapper: ILegalMessageMapModel
+  lmMapper: ILegalMessageMapModel,
+  telemetryClient: ReturnType<typeof initAppInsights>,
+  serviceModel: ServiceModel,
+  messageModel: MessageModel,
+  saveProcessingMessage: ReturnType<typeof makeUpsertBlobFromObject>,
+  disableIncompleteServices: boolean,
+  incompleteServiceWhitelist: ReadonlyArray<ServiceId>
+  // eslint-disable-next-line max-params
 ) => {
-  const handler = ImpersonateServiceHandler(adminClient, lmMapper);
+  const createMessageHandler = CreateMessageHandler(
+    telemetryClient,
+    messageModel,
+    ulidGenerator,
+    saveProcessingMessage,
+    disableIncompleteServices,
+    incompleteServiceWhitelist
+  );
+  const handler = ImpersonateServiceHandler(
+    adminClient,
+    lmMapper,
+    serviceModel,
+    createMessageHandler
+  );
   const middlewaresWrap = withRequestMiddlewares(
-    ContextMiddleware(),
-    AzureApiAuthMiddleware(new Set([UserGroup.ApiMessageWriteWithLegal])), // FIXME create new permission for PEC-SERVER only
-    RawRequestMiddleware(),
-    RequiredParamMiddleware("legalmail", EmailString)
+    ...([
+      ContextMiddleware(),
+      AzureApiAuthMiddleware(new Set([UserGroup.ApiMessageWriteWithLegal])), // FIXME create new permission for PEC-SERVER only
+      RawRequestMiddleware(),
+      RequiredParamMiddleware("legalmail", EmailString)
+    ] as const)
   );
 
   return middlewaresWrap(handler);

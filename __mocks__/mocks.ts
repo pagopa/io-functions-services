@@ -215,3 +215,11 @@ export const aDisabledServicePreference: ServicePreference = {
   serviceId: "01234567890" as NonEmptyString,
   settingsVersion: 0 as NonNegativeInteger
 };
+
+export const aMessagePayload = {
+  content: {
+    subject: "A new message subject",
+    markdown: "A message body markdown".repeat(40)
+  },
+  time_to_live: 3600
+};

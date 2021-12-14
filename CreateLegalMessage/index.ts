@@ -18,14 +18,11 @@ import createAzureFunctionHandler from "@pagopa/express-azure-functions/dist/src
 
 import { withAppInsightsContext } from "@pagopa/io-functions-commons/dist/src/utils/application_insights";
 import { createBlobService } from "azure-storage";
-import { RequestHandler } from "@pagopa/ts-commons/lib/request_middleware";
-import { ResponseErrorInternal } from "@pagopa/ts-commons/lib/responses";
 import { cosmosdbInstance } from "../utils/cosmosdb";
 import { initTelemetryClient } from "../utils/appinsights";
 
 import { getConfigOrThrow } from "../utils/config";
 import { DummyLegalMessageMapModel } from "../utils/legal-message";
-import { CreateMessage } from "../CreateMessage/handler";
 import { apiClient as adminClient } from "../clients/admin";
 import { makeUpsertBlobFromObject } from "../CreateMessage/utils";
 import { ImpersonateService } from "./handler";
@@ -58,31 +55,20 @@ const telemetryClient = initTelemetryClient(
 
 const legalMapperClient = DummyLegalMessageMapModel;
 
-const handlerCombinerSeq = <R>(
-  h1: RequestHandler<R>,
-  h2: express.RequestHandler
-): express.RequestHandler => (req, res, next): ReturnType<express.Handler> => {
-  h1(req).then(
-    _r => h2(req, res, next),
-    e => ResponseErrorInternal(e).apply(res)
-  );
-};
-
 app.post(
   "/api/v1/legal-messages/:legalmail",
-  handlerCombinerSeq(
-    ImpersonateService(adminClient, legalMapperClient),
-    CreateMessage(
-      telemetryClient,
-      serviceModel,
-      messageModel,
-      makeUpsertBlobFromObject(
-        blobService,
-        config.PROCESSING_MESSAGE_CONTAINER_NAME
-      ),
-      config.FF_DISABLE_INCOMPLETE_SERVICES,
-      config.FF_INCOMPLETE_SERVICE_WHITELIST
-    )
+  ImpersonateService(
+    adminClient,
+    legalMapperClient,
+    telemetryClient,
+    serviceModel,
+    messageModel,
+    makeUpsertBlobFromObject(
+      blobService,
+      config.PROCESSING_MESSAGE_CONTAINER_NAME
+    ),
+    config.FF_DISABLE_INCOMPLETE_SERVICES,
+    config.FF_INCOMPLETE_SERVICE_WHITELIST
   )
 );
 
