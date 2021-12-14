@@ -62,7 +62,7 @@ const getImpersonatedService = (
     200
   );
 
-type ICreateServiceHandler = (
+type ICreateLegalMessageHandler = (
   context: Context,
   auth: IAzureApiAuthorization,
   rawRequest: express.Request,
@@ -78,18 +78,18 @@ type ICreateServiceHandler = (
  * Handles requests for imporsonate service by a input serviceId.
  */
 // eslint-disable-next-line prefer-arrow/prefer-arrow-functions
-export function ImpersonateServiceHandler(
+export function CreateLegalMessageHandler(
   adminClient: APIClient,
   lmMapper: ILegalMessageMapModel,
   serviceModel: ServiceModel,
   createMessageHandler: ReturnType<typeof CreateMessageHandler>
-): ICreateServiceHandler {
+): ICreateLegalMessageHandler {
   return (
     context,
     _auth,
     rawRequest,
     legalmail
-  ): ReturnType<ICreateServiceHandler> =>
+  ): ReturnType<ICreateLegalMessageHandler> =>
     pipe(
       legalmail,
       lmMapper.findLastVersionByModelId,
@@ -99,7 +99,7 @@ export function ImpersonateServiceHandler(
         )
       ),
       TE.map(lmMap => lmMap.serviceId),
-      TE.chainW(serviceId =>
+      TE.chain(serviceId =>
         getImpersonatedService(
           getLogger(context, logPrefix, "ImpersonateService"),
           adminClient,
@@ -118,7 +118,7 @@ export function ImpersonateServiceHandler(
           ...replaceHeaders
         };
       }),
-      TE.chainW(() =>
+      TE.chain(() =>
         pipe(
           TE.tryCatch(
             () =>
@@ -144,10 +144,10 @@ export const RawRequestMiddleware = (): IRequestMiddleware<
   TE.right(request)();
 
 /**
- * Wraps a ImpersonateService handler inside an Express request handler.
+ * Wraps a CreateLegalMessage handler inside an Express request handler.
  */
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export const ImpersonateService = (
+export const CreateLegalMessage = (
   adminClient: APIClient,
   lmMapper: ILegalMessageMapModel,
   telemetryClient: ReturnType<typeof initAppInsights>,
@@ -166,7 +166,7 @@ export const ImpersonateService = (
     disableIncompleteServices,
     incompleteServiceWhitelist
   );
-  const handler = ImpersonateServiceHandler(
+  const handler = CreateLegalMessageHandler(
     adminClient,
     lmMapper,
     serviceModel,

@@ -25,7 +25,7 @@ import { getConfigOrThrow } from "../utils/config";
 import { DummyLegalMessageMapModel } from "../utils/legal-message";
 import { apiClient as adminClient } from "../clients/admin";
 import { makeUpsertBlobFromObject } from "../CreateMessage/utils";
-import { ImpersonateService } from "./handler";
+import { CreateLegalMessage } from "./handler";
 
 const config = getConfigOrThrow();
 
@@ -57,7 +57,7 @@ const legalMapperClient = DummyLegalMessageMapModel;
 
 app.post(
   "/api/v1/legal-messages/:legalmail",
-  ImpersonateService(
+  CreateLegalMessage(
     adminClient,
     legalMapperClient,
     telemetryClient,

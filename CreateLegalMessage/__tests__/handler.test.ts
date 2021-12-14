@@ -3,7 +3,7 @@ import * as E from "fp-ts/lib/Either";
 import * as TE from "fp-ts/lib/TaskEither";
 import * as O from "fp-ts/lib/Option";
 import { Context } from "@azure/functions";
-import { ImpersonateServiceHandler } from "../handler";
+import { CreateLegalMessageHandler } from "../handler";
 import { getLogger, ILogger } from "../../utils/logging";
 import { ILegalMessageMapModel } from "../../utils/legal-message";
 import { ServiceId } from "../../generated/api-admin/ServiceId";
@@ -27,10 +27,7 @@ import {
 import { MaxAllowedPaymentAmount } from "@pagopa/io-functions-commons/dist/generated/definitions/MaxAllowedPaymentAmount";
 import mockReq from "../../__mocks__/request";
 import { aMessagePayload } from "../../__mocks__/mocks";
-import {
-  CosmosErrors,
-  toCosmosErrorResponse
-} from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
+import { toCosmosErrorResponse } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
 import { withoutUndefinedValues } from "@pagopa/ts-commons/lib/types";
 
 const VALID_SERVICE_ID = "valid-sid" as ServiceId;
@@ -158,7 +155,7 @@ describe("CreateServiceHandler", () => {
     });
     reqMock.body = aMessagePayload;
 
-    const handler = ImpersonateServiceHandler(
+    const handler = CreateLegalMessageHandler(
       adminClientMock,
       legalMessageMapModelMock,
       serviceModel,
@@ -185,7 +182,7 @@ describe("CreateServiceHandler", () => {
       TE.left(ResponseErrorInternal("Error"))
     );
 
-    const handler = ImpersonateServiceHandler(
+    const handler = CreateLegalMessageHandler(
       adminClientMock,
       legalMessageMapModelMock,
       serviceModel,
@@ -212,7 +209,7 @@ describe("CreateServiceHandler", () => {
       TE.left(ResponseErrorNotFound("Not Found", "Not Found"))
     );
 
-    const handler = ImpersonateServiceHandler(
+    const handler = CreateLegalMessageHandler(
       adminClientMock,
       legalMessageMapModelMock,
       serviceModel,
@@ -237,7 +234,7 @@ describe("CreateServiceHandler", () => {
     const reqMock = mockReq();
     findLastVersionByModelIdMock.mockImplementationOnce(() => TE.of(O.none));
 
-    const handler = ImpersonateServiceHandler(
+    const handler = CreateLegalMessageHandler(
       adminClientMock,
       legalMessageMapModelMock,
       serviceModel,
@@ -272,7 +269,7 @@ describe("CreateServiceHandler", () => {
       impersonateServiceMock.mockImplementationOnce(() =>
         TE.right(impersonateReturnValue)()
       );
-      const handler = ImpersonateServiceHandler(
+      const handler = CreateLegalMessageHandler(
         adminClientMock,
         legalMessageMapModelMock,
         serviceModel,
@@ -326,7 +323,7 @@ describe("CreateServiceHandler", () => {
         findServiceLastVersionByModelIdMockImpl
       );
 
-      const handler = ImpersonateServiceHandler(
+      const handler = CreateLegalMessageHandler(
         adminClientMock,
         legalMessageMapModelMock,
         serviceModel,
