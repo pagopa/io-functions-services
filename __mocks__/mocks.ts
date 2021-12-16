@@ -218,8 +218,24 @@ export const aDisabledServicePreference: ServicePreference = {
 
 export const aMessagePayload = {
   content: {
-    subject: "A new message subject",
-    markdown: "A message body markdown".repeat(40)
+    subject: "A new message subject" as MessageSubject,
+    markdown: "A message body markdown".repeat(40) as MessageBodyMarkdown
+  },
+  time_to_live: 3600
+};
+
+export const aMessageContentWithLegalData: MessageContent = {
+  ...aMessagePayload.content,
+  legal_data: {
+    has_attachment: false,
+    message_unique_id: "A_MESSAGE_UNIQUE_ID" as NonEmptyString,
+    sender_mail_from: "demo@pec.it" as NonEmptyString
+  }
+};
+
+export const aMessagePayloadWithLegalData = {
+  content: {
+    ...aMessageContentWithLegalData
   },
   time_to_live: 3600
 };

@@ -25,13 +25,11 @@ describe("legal-message", () => {
     const sid = await pipe(NOT_EXISTING_PEC, LM.mapPecWithService(mvlMapper))();
 
     expect(E.isLeft(sid)).toBeTruthy();
-    expect(sid).toEqual(
-      expect.objectContaining({
-        left: {
-          kind: "NotFoundError",
-          message: "No service found for input email"
-        }
-      })
-    );
+    expect(sid).toMatchObject({
+      left: {
+        kind: "IResponseErrorNotFound",
+        detail: "Not Found: No service found for input email"
+      }
+    });
   });
 });

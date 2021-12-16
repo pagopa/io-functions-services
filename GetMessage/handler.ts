@@ -52,6 +52,7 @@ import { BlobService } from "azure-storage";
 
 import { MessageModel } from "@pagopa/io-functions-commons/dist/src/models/message";
 
+import * as TE from "fp-ts/lib/TaskEither";
 import * as E from "fp-ts/lib/Either";
 import * as O from "fp-ts/lib/Option";
 
@@ -70,6 +71,9 @@ import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/genera
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { readableReport } from "@pagopa/ts-commons/lib/reporters";
 import { pipe } from "fp-ts/lib/function";
+import * as t from "io-ts";
+import { MessageContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageContent";
+import { LegalData } from "../generated/definitions/LegalData";
 
 /**
  * Type of a GetMessage handler.
@@ -96,6 +100,9 @@ type IGetMessageHandler = (
   | IResponseErrorInternal
 >;
 
+const LegalMessagePattern = t.interface({ legal_data: LegalData });
+type LegalMessagePattern = t.TypeOf<typeof LegalMessagePattern>;
+
 /**
  * Handles requests for getting a single message for a recipient.
  */
@@ -108,7 +115,7 @@ export function GetMessageHandler(
   blobService: BlobService
 ): IGetMessageHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, max-params
-  return async (context, _, __, userAttributes, fiscalCode, messageId) => {
+  return async (context, auth, __, userAttributes, fiscalCode, messageId) => {
     const errorOrMessageId = NonEmptyString.decode(messageId);
 
     if (E.isLeft(errorOrMessageId)) {
@@ -141,9 +148,12 @@ export function GetMessageHandler(
 
     const retrievedMessage = maybeDocument.value;
 
+    const isUserAllowedForLegalMessages =
+      [...auth.groups].indexOf(UserGroup.ApiLegalMessageRead) >= 0;
     // the service is allowed to see the message when he is the sender of the message
     const isUserAllowed =
-      retrievedMessage.senderServiceId === userAttributes.service.serviceId;
+      retrievedMessage.senderServiceId === userAttributes.service.serviceId ||
+      isUserAllowedForLegalMessages;
 
     if (!isUserAllowed) {
       // the user is not allowed to see the message
@@ -151,18 +161,48 @@ export function GetMessageHandler(
     }
 
     // fetch the content of the message from the blob storage
-    const errorOrMaybeContent = await messageModel.getContentFromBlob(
-      blobService,
-      retrievedMessage.id
+    const errorOrMaybeContent = await pipe(
+      messageModel.getContentFromBlob(blobService, retrievedMessage.id),
+      TE.mapLeft(error => {
+        context.log.error(`GetMessageHandler|${JSON.stringify(error)}`);
+        return ResponseErrorInternal(`${error.name}: ${error.message}`);
+      }),
+      TE.chainW(
+        O.fold(
+          () =>
+            isUserAllowedForLegalMessages
+              ? TE.left(
+                  ResponseErrorNotFound(
+                    "Not Found",
+                    "Message Content not found"
+                  )
+                )
+              : TE.of(O.none),
+          messageContent =>
+            pipe(
+              messageContent,
+              LegalMessagePattern.decode,
+              TE.fromEither,
+              TE.map(() => O.some(messageContent)),
+              TE.orElse(_ =>
+                !isUserAllowedForLegalMessages
+                  ? TE.of(O.some(messageContent))
+                  : TE.left<
+                      | IResponseErrorForbiddenNotAuthorized
+                      | IResponseErrorNotFound,
+                      O.Option<MessageContent>
+                    >(ResponseErrorForbiddenNotAuthorized)
+              )
+            )
+        )
+      )
     )();
 
     if (E.isLeft(errorOrMaybeContent)) {
       context.log.error(
         `GetMessageHandler|${JSON.stringify(errorOrMaybeContent.left)}`
       );
-      return ResponseErrorInternal(
-        `${errorOrMaybeContent.left.name}: ${errorOrMaybeContent.left.message}`
-      );
+      return errorOrMaybeContent.left;
     }
 
     const content = O.toUndefined(errorOrMaybeContent.right);
@@ -237,7 +277,9 @@ export function GetMessage(
   );
   const middlewaresWrap = withRequestMiddlewares(
     ContextMiddleware(),
-    AzureApiAuthMiddleware(new Set([UserGroup.ApiMessageRead])),
+    AzureApiAuthMiddleware(
+      new Set([UserGroup.ApiMessageRead, UserGroup.ApiLegalMessageRead])
+    ),
     ClientIpMiddleware,
     AzureUserAttributesMiddleware(serviceModel),
     FiscalCodeMiddleware,

@@ -68,7 +68,7 @@ const blobService = createBlobService(
 );
 
 app.get(
-  "/api/v1/messages/:fiscalcode/:id",
+  "/api/v1/messages/:fiscalcode/:id/:senderEmail?",
   GetMessage(
     serviceModel,
     messageModel,
