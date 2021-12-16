@@ -146,6 +146,41 @@ beforeAll(async () => {
 
 beforeEach(() => jest.clearAllMocks());
 
+describe("Create Legal Message |> Middleware errors", () => {
+  it("should return 403 when creating a legal message from a non existing Service", async () => {
+    const nodeFetch = getNodeFetch({
+      "x-subscription-id": aNonExistingServiceId
+    });
+
+    const body = {
+      message: {
+        fiscal_code: aLegacyInboxEnabledFiscalCode,
+        content: aMessageContent
+      }
+    };
+
+    const response = await postCreateLegalMessage(nodeFetch)(
+      "pec@demo.it",
+      body
+    );
+
+    expect(response.status).toEqual(403);
+  });
+
+  it("should return 400 if wrong mail param is passed", async () => {
+    const body = {
+      message: {
+        fiscal_code: aLegacyInboxEnabledFiscalCode,
+        content: aMessageContent
+      }
+    };
+
+    const response = await postCreateLegalMessage(getNodeFetch())("aaa", body);
+
+    expect(response.status).toEqual(400);
+  });
+});
+
 describe("Create Message |> Middleware errors", () => {
   it("should return 403 when creating a message from a non existing Service", async () => {
     const nodeFetch = getNodeFetch({
@@ -294,6 +329,19 @@ describe("Create Message", () => {
 
 const postCreateMessage = (nodeFetch: typeof fetch) => async body => {
   return await nodeFetch(`${baseUrl}/api/v1/messages`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body.message)
+  });
+};
+
+const postCreateLegalMessage = (nodeFetch: typeof fetch) => async (
+  mailParam,
+  body
+) => {
+  return await nodeFetch(`${baseUrl}/api/v1/legal-messages/${mailParam}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
