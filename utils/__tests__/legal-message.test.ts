@@ -4,7 +4,7 @@ import * as E from "fp-ts/Either";
 
 describe("legal-message", () => {
   const VALID_PEC = "test@legal.it";
-  const VALID_SERVICE_ID = "dummy-service";
+  const VALID_SERVICE_ID = "aValidServiceId";
 
   const NOT_EXISTING_PEC = "no-test@legal.it";
 
