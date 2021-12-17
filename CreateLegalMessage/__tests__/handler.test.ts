@@ -140,7 +140,7 @@ const createMessageHandlerMock = jest.fn((_, __, ___, ____, _____, ______) =>
   Promise.resolve(ResponseSuccessJson({ completed: true }))
 ) as any;
 
-describe("CreateServiceHandler", () => {
+describe("CreateLegalMessageHandler", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -164,8 +164,10 @@ describe("CreateServiceHandler", () => {
     await handler(
       contextMock,
       undefined as any, // user auth not used
+      undefined as any,
       reqMock,
-      VALID_LEGAL_MAIL
+      VALID_LEGAL_MAIL,
+      undefined as any
     );
 
     expect(adminClientMock.getImpersonatedService).toHaveBeenCalledTimes(1);
@@ -191,8 +193,10 @@ describe("CreateServiceHandler", () => {
     const result = await handler(
       contextMock,
       undefined as any, // user auth not used
+      undefined as any,
       reqMock,
-      VALID_LEGAL_MAIL
+      VALID_LEGAL_MAIL,
+      undefined as any
     );
 
     expect(adminClientMock.getImpersonatedService).not.toHaveBeenCalled();
@@ -218,8 +222,10 @@ describe("CreateServiceHandler", () => {
     const result = await handler(
       contextMock,
       undefined as any, // user auth not used
+      undefined as any,
       reqMock,
-      VALID_LEGAL_MAIL
+      VALID_LEGAL_MAIL,
+      undefined as any
     );
 
     expect(adminClientMock.getImpersonatedService).not.toHaveBeenCalled();
@@ -243,8 +249,10 @@ describe("CreateServiceHandler", () => {
     const result = await handler(
       contextMock,
       undefined as any, // user auth not used
+      undefined as any,
       reqMock,
-      VALID_LEGAL_MAIL
+      VALID_LEGAL_MAIL,
+      undefined as any
     );
 
     expect(adminClientMock.getImpersonatedService).not.toHaveBeenCalled();
@@ -278,8 +286,10 @@ describe("CreateServiceHandler", () => {
       const result = await handler(
         contextMock,
         undefined as any, // user auth not used
+        undefined as any,
         reqMock,
-        VALID_LEGAL_MAIL
+        VALID_LEGAL_MAIL,
+        undefined as any
       );
 
       expect(adminClientMock.getImpersonatedService).toHaveBeenCalledTimes(1);
@@ -332,8 +342,10 @@ describe("CreateServiceHandler", () => {
       const result = await handler(
         contextMock,
         undefined as any, // user auth not used
+        undefined as any,
         reqMock,
-        VALID_LEGAL_MAIL
+        VALID_LEGAL_MAIL,
+        undefined as any
       );
 
       expect(adminClientMock.getImpersonatedService).toHaveBeenCalledTimes(1);

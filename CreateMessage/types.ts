@@ -1,6 +1,7 @@
 import * as t from "io-ts";
 import { TimeToLiveSeconds } from "@pagopa/io-functions-commons/dist/generated/definitions/TimeToLiveSeconds";
 import { NewMessage as ApiNewMessage } from "@pagopa/io-functions-commons/dist/generated/definitions/NewMessage";
+import { LegalData } from "../generated/definitions/LegalData";
 
 export type ApiNewMessageWithDefaults = t.TypeOf<
   typeof ApiNewMessageWithDefaults
@@ -30,3 +31,11 @@ export const ApiNewMessageWithContentOf = <
       content: contentPattern
     })
   ]);
+
+export const ApiNewMessageWithDefaultsLegalData = t.intersection([
+  ApiNewMessageWithDefaults,
+  ApiNewMessageWithContentOf(t.interface({ legal_data: LegalData }))
+]);
+export type ApiNewMessageWithDefaultsLegalData = t.TypeOf<
+  typeof ApiNewMessageWithDefaultsLegalData
+>;

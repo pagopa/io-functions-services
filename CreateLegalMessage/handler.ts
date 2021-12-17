@@ -8,7 +8,10 @@ import { pipe } from "fp-ts/lib/function";
 import * as TE from "fp-ts/TaskEither";
 import * as E from "fp-ts/Either";
 
-import { withRequestMiddlewares } from "@pagopa/ts-commons/lib/request_middleware";
+import {
+  withRequestMiddlewares,
+  wrapRequestHandler
+} from "@pagopa/ts-commons/lib/request_middleware";
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import {
   AzureApiAuthMiddleware,
@@ -18,6 +21,7 @@ import { IRequestMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/
 import {
   IResponseErrorNotFound,
   IResponseErrorTooManyRequests,
+  ResponseErrorFromValidationErrors,
   ResponseErrorInternal,
   ResponseErrorNotFound
 } from "@pagopa/ts-commons/lib/responses";
@@ -30,11 +34,13 @@ import { MessageModel } from "@pagopa/io-functions-commons/dist/src/models/messa
 import { initAppInsights } from "@pagopa/ts-commons/lib/appinsights";
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { ulidGenerator } from "@pagopa/io-functions-commons/dist/src/utils/strings";
-import { ImpersonatedService } from "../generated/api-admin/ImpersonatedService";
-import { ErrorResponses, IResponseErrorUnauthorized } from "../utils/responses";
-import { withApiRequestWrapper } from "../utils/api";
+import {
+  AzureUserAttributesMiddleware,
+  IAzureUserAttributes
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
+import { IResponseErrorUnauthorized } from "../utils/responses";
 import { APIClient } from "../clients/admin";
-import { ILogger, getLogger } from "../utils/logging";
+import { getLogger } from "../utils/logging";
 import { ILegalMessageMapModel } from "../utils/legal-message";
 import {
   CreateMessageHandler,
@@ -45,34 +51,37 @@ import {
   mapMiddlewareResponse
 } from "../utils/message_middlewares";
 import { makeUpsertBlobFromObject } from "../CreateMessage/utils";
+import { ApiNewMessageWithDefaultsLegalData } from "../CreateMessage/types";
+import { getImpersonatedService } from "./impersonate";
 
 const logPrefix = "CreateLegalMessageHandler";
-
-const getImpersonatedService = (
-  logger: ILogger,
-  adminClient: APIClient,
-  serviceId: string
-): TE.TaskEither<ErrorResponses, ImpersonatedService> =>
-  withApiRequestWrapper(
-    logger,
-    () =>
-      adminClient.getImpersonatedService({
-        serviceId
-      }),
-    200
-  );
 
 type ICreateLegalMessageHandler = (
   context: Context,
   auth: IAzureApiAuthorization,
+  attrs: IAzureUserAttributes,
   rawRequest: express.Request,
-  legalmail: EmailString
+  legalmail: EmailString,
+  messagePayload: ApiNewMessageWithDefaultsLegalData
 ) => Promise<
   | IResponseErrorNotFound
   | IResponseErrorUnauthorized
   | IResponseErrorTooManyRequests
   | CreateMessageHandlerResponse
 >;
+
+export const LegalMessagePayloadMiddleware: IRequestMiddleware<
+  "IResponseErrorValidation",
+  ApiNewMessageWithDefaultsLegalData
+> = request =>
+  pipe(
+    request.body,
+    ApiNewMessageWithDefaultsLegalData.decode,
+    TE.fromEither,
+    TE.mapLeft(
+      ResponseErrorFromValidationErrors(ApiNewMessageWithDefaultsLegalData)
+    )
+  )();
 
 /**
  * Handles requests for imporsonate service by a input serviceId.
@@ -87,8 +96,11 @@ export function CreateLegalMessageHandler(
   return (
     context,
     _auth,
+    _attrs,
     rawRequest,
-    legalmail
+    legalmail,
+    _payload
+    // eslint-disable-next-line max-params
   ): ReturnType<ICreateLegalMessageHandler> =>
     pipe(
       legalmail,
@@ -176,10 +188,12 @@ export const CreateLegalMessage = (
     ...([
       ContextMiddleware(),
       AzureApiAuthMiddleware(new Set([UserGroup.ApiMessageWriteWithLegal])), // FIXME create new permission for PEC-SERVER only
+      AzureUserAttributesMiddleware(serviceModel),
       RawRequestMiddleware(),
-      RequiredParamMiddleware("legalmail", EmailString)
+      RequiredParamMiddleware("legalmail", EmailString),
+      LegalMessagePayloadMiddleware
     ] as const)
   );
 
-  return middlewaresWrap(handler);
+  return wrapRequestHandler(middlewaresWrap(handler));
 };

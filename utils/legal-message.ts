@@ -7,6 +7,7 @@ import {
   IResponseErrorNotFound,
   ResponseErrorNotFound
 } from "@pagopa/ts-commons/lib/responses";
+import { FIXED_PEC_MAP } from "./mvl-service-mapper";
 
 export type LegalMessageMapError =
   | IResponseErrorInternal
@@ -20,10 +21,6 @@ export interface ILegalMessageMapModel {
     email: string
   ) => TE.TaskEither<LegalMessageMapError, O.Option<ILegalMessageMap>>;
 }
-
-const FIXED_PEC_MAP: Record<string, ILegalMessageMap> = {
-  "test@legal.it": { serviceId: "dummy-service" }
-};
 
 /**
  * @category: model
