@@ -187,7 +187,7 @@ export const CreateLegalMessage = (
   const middlewaresWrap = withRequestMiddlewares(
     ...([
       ContextMiddleware(),
-      AzureApiAuthMiddleware(new Set([UserGroup.ApiMessageWriteWithLegal])), // FIXME create new permission for PEC-SERVER only
+      AzureApiAuthMiddleware(new Set([UserGroup.ApiMessageWriteWithLegalData])), // FIXME create new permission for PEC-SERVER only
       AzureUserAttributesMiddleware(serviceModel),
       RawRequestMiddleware(),
       RequiredParamMiddleware("legalmail", EmailString),

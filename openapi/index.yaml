@@ -968,6 +968,8 @@ definitions:
             $ref: '#/definitions/PrescriptionData'
           eu_covid_cert:
             $ref: '#/definitions/EUCovidCert'
+          legal_data:
+            $ref: '#/definitions/LegalData'
   NewMessage:
     type: object
     properties:
