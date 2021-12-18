@@ -39,7 +39,8 @@ const VALID_IMPERSONATED_SERVICE: ImpersonatedService = {
   user_groups: [
     UserGroup.ApiMessageWrite,
     UserGroup.ApiLimitedMessageWrite
-  ].join(",")
+  ].join(","),
+  user_email: VALID_LEGAL_MAIL
 };
 
 const anInvalidMessagePayload = withoutUndefinedValues({
@@ -52,12 +53,14 @@ const anInvalidMessagePayload = withoutUndefinedValues({
 
 const anImpersonatedServiceWithWrongUserGroups: ImpersonatedService = {
   service_id: VALID_SERVICE_ID,
-  user_groups: UserGroup.ApiMessageRead
+  user_groups: UserGroup.ApiMessageRead,
+  user_email: VALID_LEGAL_MAIL
 };
 
 const anImpersonatedServiceWithoutUserGroups: ImpersonatedService = {
   service_id: VALID_SERVICE_ID,
-  user_groups: ""
+  user_groups: "",
+  user_email: VALID_LEGAL_MAIL
 };
 
 const anImpersonatedServiceWithoutSubscriptionId: ImpersonatedService = {
@@ -65,7 +68,8 @@ const anImpersonatedServiceWithoutSubscriptionId: ImpersonatedService = {
   user_groups: [
     UserGroup.ApiMessageWrite,
     UserGroup.ApiLimitedMessageWrite
-  ].join(",")
+  ].join(","),
+  user_email: VALID_LEGAL_MAIL
 };
 const impersonateServiceMock = jest.fn().mockImplementation(() =>
   TE.right({
@@ -166,6 +170,7 @@ describe("CreateLegalMessageHandler", () => {
       undefined as any, // user auth not used
       undefined as any,
       reqMock,
+      undefined as any,
       VALID_LEGAL_MAIL,
       undefined as any
     );
@@ -195,6 +200,7 @@ describe("CreateLegalMessageHandler", () => {
       undefined as any, // user auth not used
       undefined as any,
       reqMock,
+      undefined as any,
       VALID_LEGAL_MAIL,
       undefined as any
     );
@@ -224,6 +230,7 @@ describe("CreateLegalMessageHandler", () => {
       undefined as any, // user auth not used
       undefined as any,
       reqMock,
+      undefined as any,
       VALID_LEGAL_MAIL,
       undefined as any
     );
@@ -251,6 +258,7 @@ describe("CreateLegalMessageHandler", () => {
       undefined as any, // user auth not used
       undefined as any,
       reqMock,
+      undefined as any,
       VALID_LEGAL_MAIL,
       undefined as any
     );
@@ -288,6 +296,7 @@ describe("CreateLegalMessageHandler", () => {
         undefined as any, // user auth not used
         undefined as any,
         reqMock,
+        undefined as any,
         VALID_LEGAL_MAIL,
         undefined as any
       );
@@ -344,6 +353,7 @@ describe("CreateLegalMessageHandler", () => {
         undefined as any, // user auth not used
         undefined as any,
         reqMock,
+        undefined as any,
         VALID_LEGAL_MAIL,
         undefined as any
       );

@@ -17,6 +17,12 @@ import {
   AzureApiAuthMiddleware,
   UserGroup
 } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
+
+import {
+  checkSourceIpForHandler,
+  clientIPAndCidrTuple as ipTuple
+} from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
+
 import { IRequestMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
 import {
   IResponseErrorNotFound,
@@ -38,6 +44,10 @@ import {
   AzureUserAttributesMiddleware,
   IAzureUserAttributes
 } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
+import {
+  ClientIp,
+  ClientIpMiddleware
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
 import { IResponseErrorUnauthorized } from "../utils/responses";
 import { APIClient } from "../clients/admin";
 import { getLogger } from "../utils/logging";
@@ -59,6 +69,7 @@ const logPrefix = "CreateLegalMessageHandler";
 type ICreateLegalMessageHandler = (
   context: Context,
   auth: IAzureApiAuthorization,
+  clientIp: ClientIp,
   attrs: IAzureUserAttributes,
   rawRequest: express.Request,
   legalmail: EmailString,
@@ -97,6 +108,7 @@ export function CreateLegalMessageHandler(
     context,
     _auth,
     _attrs,
+    _ip,
     rawRequest,
     legalmail,
     _payload
@@ -185,15 +197,21 @@ export const CreateLegalMessage = (
     createMessageHandler
   );
   const middlewaresWrap = withRequestMiddlewares(
-    ...([
-      ContextMiddleware(),
-      AzureApiAuthMiddleware(new Set([UserGroup.ApiMessageWriteWithLegalData])), // FIXME create new permission for PEC-SERVER only
-      AzureUserAttributesMiddleware(serviceModel),
-      RawRequestMiddleware(),
-      RequiredParamMiddleware("legalmail", EmailString),
-      LegalMessagePayloadMiddleware
-    ] as const)
+    ContextMiddleware(),
+    AzureApiAuthMiddleware(new Set([UserGroup.ApiMessageWriteWithLegalData])), // FIXME create new permission for PEC-SERVER only
+    ClientIpMiddleware,
+    AzureUserAttributesMiddleware(serviceModel),
+    RawRequestMiddleware(),
+    RequiredParamMiddleware("legalmail", EmailString),
+    LegalMessagePayloadMiddleware
   );
 
-  return wrapRequestHandler(middlewaresWrap(handler));
+  return wrapRequestHandler(
+    middlewaresWrap(
+      // eslint-disable-next-line max-params
+      checkSourceIpForHandler(handler, (_, __, c, u, ___, ____, _____) =>
+        ipTuple(c, u)
+      )
+    )
+  );
 };
