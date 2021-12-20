@@ -26,22 +26,12 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/models/service";
 import {
   AzureAllowBodyPayloadMiddleware,
-  AzureApiAuthMiddleware,
   IAzureApiAuthorization,
   UserGroup
 } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
+import { IAzureUserAttributes } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
+import { ClientIp } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
 import {
-  AzureUserAttributesMiddleware,
-  IAzureUserAttributes
-} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
-import {
-  ClientIp,
-  ClientIpMiddleware
-} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
-import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
-import { OptionalFiscalCodeMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/fiscalcode";
-import {
-  IRequestMiddleware,
   withRequestMiddlewares,
   wrapRequestHandler
 } from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
@@ -61,6 +51,8 @@ import {
 import { initAppInsights } from "@pagopa/ts-commons/lib/appinsights";
 import { readableReport } from "@pagopa/ts-commons/lib/reporters";
 import {
+  IResponseErrorForbiddenAnonymousUser,
+  IResponseErrorForbiddenNoAuthorizationGroups,
   IResponseErrorForbiddenNotAuthorized,
   IResponseErrorForbiddenNotAuthorizedForDefaultAddresses,
   IResponseErrorForbiddenNotAuthorizedForProduction,
@@ -71,7 +63,6 @@ import {
   ResponseErrorForbiddenNotAuthorizedForDefaultAddresses,
   ResponseErrorForbiddenNotAuthorizedForProduction,
   ResponseErrorForbiddenNotAuthorizedForRecipient,
-  ResponseErrorFromValidationErrors,
   ResponseErrorInternal,
   ResponseErrorValidation,
   ResponseSuccessRedirectToResource
@@ -89,22 +80,10 @@ import {
   CommonMessageData,
   CreatedMessageEvent
 } from "../utils/events/message";
+import { commonCreateMessageMiddlewares } from "../utils/message_middlewares";
+import { LegalData } from "../generated/definitions/LegalData";
 import { ApiNewMessageWithContentOf, ApiNewMessageWithDefaults } from "./types";
 import { makeUpsertBlobFromObject } from "./utils";
-
-/**
- * A request middleware that validates the Message payload.
- */
-export const MessagePayloadMiddleware: IRequestMiddleware<
-  "IResponseErrorValidation",
-  ApiNewMessageWithDefaults
-> = request =>
-  pipe(
-    request.body,
-    ApiNewMessageWithDefaults.decode,
-    TE.fromEither,
-    TE.mapLeft(ResponseErrorFromValidationErrors(ApiNewMessageWithDefaults))
-  )();
 
 /**
  * Type of a CreateMessage handler.
@@ -127,13 +106,15 @@ type ICreateMessageHandler = (
   | IResponseErrorInternal
   | IResponseErrorQuery
   | IResponseErrorValidation
+  | IResponseErrorForbiddenNoAuthorizationGroups
+  | IResponseErrorForbiddenAnonymousUser
   | IResponseErrorForbiddenNotAuthorized
   | IResponseErrorForbiddenNotAuthorizedForRecipient
   | IResponseErrorForbiddenNotAuthorizedForProduction
   | IResponseErrorForbiddenNotAuthorizedForDefaultAddresses
 >;
 
-type CreateMessageHandlerResponse = PromiseType<
+export type CreateMessageHandlerResponse = PromiseType<
   ReturnType<ICreateMessageHandler>
 >;
 
@@ -475,7 +456,7 @@ export function CreateMessageHandler(
 /**
  * Wraps a CreateMessage handler inside an Express request handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions,max-params
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, max-params
 export function CreateMessage(
   telemetryClient: ReturnType<typeof initAppInsights>,
   serviceModel: ServiceModel,
@@ -493,33 +474,30 @@ export function CreateMessage(
     incompleteServiceWhitelist
   );
   const middlewaresWrap = withRequestMiddlewares(
-    // extract Azure Functions bindings
-    ContextMiddleware(),
-    // allow only users in the ApiMessageWrite and ApiMessageWriteLimited groups
-    AzureApiAuthMiddleware(
-      new Set([UserGroup.ApiMessageWrite, UserGroup.ApiLimitedMessageWrite])
-    ),
-    // extracts the client IP from the request
-    ClientIpMiddleware,
-    // extracts custom user attributes from the request
-    AzureUserAttributesMiddleware(serviceModel),
-    // extracts the create message payload from the request body
-    MessagePayloadMiddleware,
-    // extracts the optional fiscal code from the request params
-    OptionalFiscalCodeMiddleware,
-    // Ensures only users in ApiMessageWriteEUCovidCert group can send messages with EUCovidCert payload
-    AzureAllowBodyPayloadMiddleware(
-      ApiNewMessageWithContentOf(t.interface({ eu_covid_cert: EUCovidCert })),
-      new Set([UserGroup.ApiMessageWriteEUCovidCert])
-    ),
-    // Ensures only users in ApiMessageWriteWithPayee group can send payment messages with payee payload
-    AzureAllowBodyPayloadMiddleware(
-      ApiNewMessageWithContentOf(
-        t.interface({ payment_data: PaymentDataWithRequiredPayee })
+    ...([
+      // Common CreateMessage Middlewares
+      ...commonCreateMessageMiddlewares(serviceModel),
+      AzureAllowBodyPayloadMiddleware(
+        ApiNewMessageWithContentOf(t.interface({ eu_covid_cert: EUCovidCert })),
+        new Set([UserGroup.ApiMessageWriteEUCovidCert])
       ),
-      new Set([UserGroup.ApiMessageWriteWithPayee])
-    )
+      // Ensures only users in ApiMessageWriteWithPayee group can send payment messages with payee payload
+      AzureAllowBodyPayloadMiddleware(
+        ApiNewMessageWithContentOf(
+          t.interface({ payment_data: PaymentDataWithRequiredPayee })
+        ),
+        new Set([UserGroup.ApiMessageWriteWithPayee])
+      ),
+      // Ensures only users in ApiMessageWriteWithLegalDataWithoutImpersonification group can send legal messages
+      AzureAllowBodyPayloadMiddleware(
+        ApiNewMessageWithContentOf(t.interface({ legal_data: LegalData })),
+        new Set([
+          UserGroup.ApiMessageWriteWithLegalDataWithoutImpersonification
+        ])
+      )
+    ] as const)
   );
+
   return wrapRequestHandler(
     middlewaresWrap(
       // eslint-disable-next-line max-params

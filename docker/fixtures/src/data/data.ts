@@ -29,6 +29,8 @@ export const aManualFiscalCode = "AAABBB01C02D345M" as FiscalCode;
 export const anEnabledServiceId = "anEnabledServiceId" as NonEmptyString;
 export const anEnabledServiceWithEmailId = "anEnabledServiceWithEmailId" as NonEmptyString;
 export const aDisabledServiceId = "aDisabledServiceId" as NonEmptyString;
+export const aValidServiceId = "aValidServiceId" as NonEmptyString;
+export const aValidServiceWithoutWriteMessageGroupsId = "aValidServiceWithoutWriteMessageGroupsId" as NonEmptyString;
 
 // ---------------------------------
 // Services
@@ -57,6 +59,16 @@ const anEnabledService: ValidService = {
     category: StandardServiceCategoryEnum.STANDARD,
     customSpecialFlow: undefined
   }
+};
+
+const aValidService: ValidService = {
+  ...anEnabledService,
+  serviceId: aValidServiceId
+};
+
+const aValidServiceWithoutWriteMessageGroups: ValidService = {
+  ...anEnabledService,
+  serviceId: aValidServiceWithoutWriteMessageGroupsId
 };
 
 const anEnabledServiceWithEmail: ValidService = {
@@ -201,6 +213,8 @@ const aManualServicePreferencesEnable: ServicePreference = {
 
 export const aValidServiceList = [
   anEnabledService,
+  aValidService,
+  aValidServiceWithoutWriteMessageGroups,
   anEnabledServiceWithEmail,
   aDisabledService
 ];

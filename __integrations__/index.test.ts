@@ -23,7 +23,6 @@ import { FiscalCode, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 import { exit } from "process";
 
 import {
-  MessageStatus,
   MessageStatusModel,
   MESSAGE_STATUS_COLLECTION_NAME
 } from "@pagopa/io-functions-commons/dist/src/models/message_status";
@@ -35,6 +34,7 @@ import { MessageContent } from "./generated/fn-services/MessageContent";
 import { pipe } from "fp-ts/lib/function";
 import { sequenceS } from "fp-ts/lib/Apply";
 import { createBlobService } from "azure-storage";
+import { EmailString } from "@pagopa/ts-commons/lib/strings";
 
 const MAX_ATTEMPT = 50;
 jest.setTimeout(WAIT_MS * MAX_ATTEMPT);
@@ -71,6 +71,12 @@ const anEnabledServiceId = "anEnabledServiceId" as NonEmptyString;
 const anEnabledServiceWithEmailId = "anEnabledServiceWithEmailId" as NonEmptyString;
 const aDisabledServiceId = "aDisabledServiceId" as NonEmptyString;
 const aNonExistingServiceId = "aNonExistingServiceId" as NonEmptyString;
+const aValidServiceId = "aValidServiceId" as NonEmptyString;
+const aValidServiceWithoutWriteMessageGroupsEmail = "validServiceWithoutWriteMessageGroups@legal.it" as EmailString;
+const aValidSenderEmail = "test@legal.it" as EmailString;
+const aNotExistingSenderEmail = "notExistingEmail@legal.it" as EmailString;
+const aNotExistingSenderServiceEmail = "notExistingService@legal.it" as EmailString;
+const aRaiseErrorSenderServiceEmail = "aRaiseImpersonateError@legal.it" as EmailString;
 
 // ----------------
 
@@ -80,12 +86,21 @@ export const aMessageContent: MessageContent = {
   subject: "test".repeat(10)
 };
 
+const aValidLegalMessageContent = {
+  ...aMessageContent,
+  legal_data: {
+    has_attachment: false,
+    message_unique_id: "A_MESSAGE_UNIQUE_ID" as NonEmptyString,
+    sender_mail_from: "demo@pec.it" as NonEmptyString
+  }
+};
+
 // Must correspond to an existing serviceId within "services" colletion
 const aSubscriptionKey = "aSubscriptionKey";
 
 const customHeaders = {
   "x-user-groups":
-    "ApiUserAdmin,ApiLimitedProfileRead,ApiFullProfileRead,ApiProfileWrite,ApiDevelopmentProfileWrite,ApiServiceRead,ApiServiceList,ApiServiceWrite,ApiPublicServiceRead,ApiPublicServiceList,ApiServiceByRecipientQuery,ApiMessageRead,ApiMessageWrite,ApiMessageWriteDefaultAddress,ApiMessageList,ApiSubscriptionsFeedRead,ApiInfoRead,ApiDebugRead,ApiMessageWriteEUCovidCert",
+    "ApiUserAdmin,ApiLimitedProfileRead,ApiFullProfileRead,ApiProfileWrite,ApiDevelopmentProfileWrite,ApiServiceRead,ApiServiceList,ApiServiceWrite,ApiPublicServiceRead,ApiPublicServiceList,ApiServiceByRecipientQuery,ApiMessageRead,ApiMessageWrite,ApiMessageWriteDefaultAddress,ApiMessageList,ApiSubscriptionsFeedRead,ApiInfoRead,ApiDebugRead,ApiMessageWriteEUCovidCert,ApiMessageWriteWithLegalData",
   "x-subscription-id": anEnabledServiceId,
   "x-user-email": "unused@example.com",
   "x-user-id": "unused",
@@ -164,6 +179,23 @@ describe("Create Message |> Middleware errors", () => {
     expect(response.status).toEqual(403);
   });
 
+  it("should return 403 when creating a legal message directly without right permission", async () => {
+    const nodeFetch = getNodeFetch({
+      "x-user-groups": "ApiMessageWrite"
+    });
+
+    const body = {
+      message: {
+        fiscal_code: anAutoFiscalCode,
+        content: aValidLegalMessageContent
+      }
+    };
+
+    const response = await postCreateMessage(nodeFetch)(body);
+
+    expect(response.status).toEqual(403);
+  });
+
   it("should return 201 when no middleware fails", async () => {
     const body = {
       message: {
@@ -173,7 +205,6 @@ describe("Create Message |> Middleware errors", () => {
     };
 
     const response = await postCreateMessage(getNodeFetch())(body);
-
     expect(response.status).toEqual(201);
   });
 });
@@ -288,12 +319,121 @@ describe("Create Message", () => {
   );
 });
 
+describe("Create Legal Message |> Middleware errors", () => {
+  it("should return 403 when creating a legal message from a non existing Service", async () => {
+    const nodeFetch = getNodeFetch({
+      "x-subscription-id": aNonExistingServiceId
+    });
+
+    const body = {
+      message: {
+        fiscal_code: aLegacyInboxEnabledFiscalCode,
+        content: aMessageContent
+      }
+    };
+
+    const response = await postCreateLegalMessage(nodeFetch)(
+      "pec@demo.it",
+      body
+    );
+
+    expect(response.status).toEqual(403);
+  });
+
+  it("should return 400 if wrong mail param is passed", async () => {
+    const body = {
+      message: {
+        fiscal_code: aLegacyInboxEnabledFiscalCode,
+        content: aMessageContent
+      }
+    };
+
+    const response = await postCreateLegalMessage(getNodeFetch())("aaa", body);
+
+    expect(response.status).toEqual(400);
+  });
+
+  it("should return 400 given a payload without legal data", async () => {
+    const body = {
+      message: {
+        fiscal_code: aLegacyInboxEnabledFiscalCode,
+        content: aMessageContent
+      }
+    };
+
+    const response = await postCreateLegalMessage(getNodeFetch())(
+      "pec@demo.it",
+      body
+    );
+
+    expect(response.status).toEqual(400);
+  });
+
+  it("should return 201 when no middleware fails", async () => {
+    const nodeFetch = getNodeFetch({
+      "x-subscription-id": aValidServiceId
+    });
+
+    const body = {
+      message: {
+        fiscal_code: anAutoFiscalCode,
+        content: aValidLegalMessageContent
+      }
+    };
+
+    const response = await postCreateLegalMessage(nodeFetch)(
+      aValidSenderEmail,
+      body
+    );
+
+    expect(response.status).toEqual(201);
+  });
+});
+
+describe("Create Legal Message", () => {
+  it.each`
+    senderEmail                                    | errorCondition                                                   | errorCode
+    ${aNotExistingSenderEmail}                     | ${"sender email does not exists"}                                | ${404}
+    ${aNotExistingSenderServiceEmail}              | ${"sender email related service does not exists"}                | ${404}
+    ${aRaiseErrorSenderServiceEmail}               | ${"impersonated Service' s retrieve fails"}                      | ${500}
+    ${aValidServiceWithoutWriteMessageGroupsEmail} | ${"impersonated Service does not have message write permission"} | ${403}
+  `(
+    "should return $errorCode if $errorCondition",
+    async ({ senderEmail, errorCode }) => {
+      const body = {
+        message: {
+          fiscal_code: anAutoFiscalCode,
+          content: aValidLegalMessageContent
+        }
+      };
+
+      const nodeFetch = getNodeFetch({ "x-subscription-id": aValidServiceId });
+
+      const result = await postCreateLegalMessage(nodeFetch)(senderEmail, body);
+
+      expect(result.status).toEqual(errorCode);
+    }
+  );
+});
 // -----------
 // Utils
 // -----------
 
 const postCreateMessage = (nodeFetch: typeof fetch) => async body => {
   return await nodeFetch(`${baseUrl}/api/v1/messages`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body.message)
+  });
+};
+
+const postCreateLegalMessage = (nodeFetch: typeof fetch) => async (
+  mailParam,
+  body
+) => {
+  return await nodeFetch(`${baseUrl}/api/v1/legal-messages/${mailParam}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"

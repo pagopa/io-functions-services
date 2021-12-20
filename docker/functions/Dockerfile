@@ -1,6 +1,7 @@
 FROM functions-node-14
 
 COPY . /usr/src/app
+COPY ./__integrations__/__mocks__/ /usr/src/app
 
 RUN func extensions install
 
