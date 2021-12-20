@@ -81,6 +81,7 @@ import {
   CreatedMessageEvent
 } from "../utils/events/message";
 import { commonCreateMessageMiddlewares } from "../utils/message_middlewares";
+import { LegalData } from "../generated/definitions/LegalData";
 import { ApiNewMessageWithContentOf, ApiNewMessageWithDefaults } from "./types";
 import { makeUpsertBlobFromObject } from "./utils";
 
@@ -486,6 +487,13 @@ export function CreateMessage(
           t.interface({ payment_data: PaymentDataWithRequiredPayee })
         ),
         new Set([UserGroup.ApiMessageWriteWithPayee])
+      ),
+      // Ensures only users in ApiMessageWriteWithLegalDataWithoutImpersonification group can send legal messages
+      AzureAllowBodyPayloadMiddleware(
+        ApiNewMessageWithContentOf(t.interface({ legal_data: LegalData })),
+        new Set([
+          UserGroup.ApiMessageWriteWithLegalDataWithoutImpersonification
+        ])
       )
     ] as const)
   );
