@@ -169,8 +169,8 @@ describe("CreateLegalMessageHandler", () => {
       contextMock,
       undefined as any, // user auth not used
       undefined as any,
-      reqMock,
       undefined as any,
+      reqMock,
       VALID_LEGAL_MAIL,
       undefined as any
     );
@@ -199,8 +199,8 @@ describe("CreateLegalMessageHandler", () => {
       contextMock,
       undefined as any, // user auth not used
       undefined as any,
-      reqMock,
       undefined as any,
+      reqMock,
       VALID_LEGAL_MAIL,
       undefined as any
     );
@@ -229,8 +229,8 @@ describe("CreateLegalMessageHandler", () => {
       contextMock,
       undefined as any, // user auth not used
       undefined as any,
-      reqMock,
       undefined as any,
+      reqMock,
       VALID_LEGAL_MAIL,
       undefined as any
     );
@@ -257,8 +257,8 @@ describe("CreateLegalMessageHandler", () => {
       contextMock,
       undefined as any, // user auth not used
       undefined as any,
-      reqMock,
       undefined as any,
+      reqMock,
       VALID_LEGAL_MAIL,
       undefined as any
     );
@@ -295,8 +295,8 @@ describe("CreateLegalMessageHandler", () => {
         contextMock,
         undefined as any, // user auth not used
         undefined as any,
-        reqMock,
         undefined as any,
+        reqMock,
         VALID_LEGAL_MAIL,
         undefined as any
       );
@@ -352,8 +352,8 @@ describe("CreateLegalMessageHandler", () => {
         contextMock,
         undefined as any, // user auth not used
         undefined as any,
-        reqMock,
         undefined as any,
+        reqMock,
         VALID_LEGAL_MAIL,
         undefined as any
       );
