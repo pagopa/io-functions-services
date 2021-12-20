@@ -180,6 +180,23 @@ describe("Create Message |> Middleware errors", () => {
     expect(response.status).toEqual(403);
   });
 
+  it("should return 403 when creating a legal message directly without right permission", async () => {
+    const nodeFetch = getNodeFetch({
+      "x-user-groups": "ApiMessageWrite"
+    });
+
+    const body = {
+      message: {
+        fiscal_code: anAutoFiscalCode,
+        content: aValidLegalMessageContent
+      }
+    };
+
+    const response = await postCreateMessage(nodeFetch)(body);
+
+    expect(response.status).toEqual(403);
+  });
+
   it("should return 201 when no middleware fails", async () => {
     const body = {
       message: {
