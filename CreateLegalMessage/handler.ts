@@ -133,7 +133,7 @@ export function CreateLegalMessageHandler(
       TE.map(impersonatedService => {
         const replaceHeaders = {
           "x-subscription-id": impersonatedService.service_id,
-          "x-user-email": "dummy@email.it", // FIXME
+          "x-user-email": impersonatedService.user_email,
           "x-user-groups": impersonatedService.user_groups
         };
         // eslint-disable-next-line functional/immutable-data

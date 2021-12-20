@@ -807,13 +807,13 @@ definitions:
 responses: {}
 parameters:
   LegalMail:
-    name: legalMail
+    name: legalmail
     in: path
     type: string
     required: true
     description: The legal mail related to a legal message' s sender.
     format: EmailString
-    x-example: SPNDNL80R13C555X
+    x-example: demo@pec.it
     x-import: italia-ts-commons/lib/strings
   FiscalCode:
     name: fiscal_code

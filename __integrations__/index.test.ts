@@ -23,7 +23,6 @@ import { FiscalCode, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 import { exit } from "process";
 
 import {
-  MessageStatus,
   MessageStatusModel,
   MESSAGE_STATUS_COLLECTION_NAME
 } from "@pagopa/io-functions-commons/dist/src/models/message_status";
