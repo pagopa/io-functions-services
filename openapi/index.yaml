@@ -97,6 +97,71 @@ schemes:
 security:
   - SubscriptionKey: []
 paths:
+  /legal-messages/{legalMail}:
+    post:
+      operationId: submitLegalMessageforUserWithFiscalCodeInBodyOnBehalfOfService
+      summary: Submit a Legal Message passing the user fiscal_code in the request body
+      description: >-
+        Submits a legal message to a user on behalf of a service identitfied by
+        legalMail
+
+        On error, the reason is returned in the response payload.
+      parameters:
+        - $ref: '#/parameters/LegalMail'
+        - name: message
+          in: body
+          schema:
+            $ref: '#/definitions/NewMessage'
+          x-examples:
+            application/json:
+              time_to_live: 3600
+              content:
+                subject: ipsum labore deserunt fugiat
+                markdown: >-
+                  Nullam dapibus metus sed elementum efficitur. Curabitur
+                  facilisis sagittis risus nec sodales.
+
+                  Vestibulum in eros sapien. Donec ac odio sit amet dui semper
+                  ornare eget nec odio. Pellentesque habitant
+
+                  morbi tristique senectus et netus et malesuada fames ac turpis
+                  egestas. Praesent nibh ex, mattis sit amet
+
+                  felis id, sodales euismod velit. Lorem ipsum dolor sit amet,
+                  consectetur adipiscing elit.
+      responses:
+        '201':
+          description: Message created.
+          schema:
+            $ref: '#/definitions/CreatedMessage'
+          headers:
+            Location:
+              type: string
+              description: >-
+                Location (URL) of created message resource.
+
+                A GET request to this URL returns the message status and
+                details.
+          examples:
+            application/json:
+              id: 01BX9NSMKVXXS5PSP2FATZMYYY
+        '400':
+          description: Invalid payload.
+          schema:
+            $ref: '#/definitions/ProblemJson'
+          examples: {}
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden.
+        '404':
+          description: Not Found.
+        '429':
+          description: Too many requests
+        '500':
+          description: The message cannot be delivered.
+          schema:
+            $ref: '#/definitions/ProblemJson'
   /messages:
     post:
       operationId: submitMessageforUserWithFiscalCodeInBody
@@ -1334,6 +1399,15 @@ definitions:
         description: The identifier of the created message.
 responses: {}
 parameters:
+  LegalMail:
+    name: legalMail
+    in: path
+    type: string
+    required: true
+    description: The legal mail related to a legal message' s sender.
+    format: EmailString
+    x-example: SPNDNL80R13C555X
+    x-import: italia-ts-commons/lib/strings
   FiscalCode:
     name: fiscal_code
     in: path
