@@ -97,7 +97,7 @@ schemes:
 security:
   - SubscriptionKey: []
 paths:
-  /legal-messages/{legalMail}:
+  /legal-messages/{legalmail}:
     post:
       operationId: submitLegalMessageforUserWithFiscalCodeInBodyOnBehalfOfService
       summary: Submit a Legal Message passing the user fiscal_code in the request body
