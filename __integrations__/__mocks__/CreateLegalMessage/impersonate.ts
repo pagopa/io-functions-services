@@ -15,12 +15,14 @@ export const getImpersonatedService = (
     case "aValidServiceId":
       return TE.of({
         service_id: "aValidServiceId",
-        user_groups: "ApiMessageWrite"
+        user_groups: "ApiMessageWrite",
+        user_email: "test@legal.it"
       });
     case "aValidServiceWithoutWriteMessageGroupsId":
       return TE.of({
         service_id: "aValidServiceWithoutWriteMessageGroupsId",
-        user_groups: "ApiMessageRead"
+        user_groups: "ApiMessageRead",
+        user_email: "demo@legal.it"
       });
     case "aNotExistingServiceId":
       return TE.left(
