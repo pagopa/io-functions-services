@@ -32,7 +32,6 @@ import {
   IResponseErrorInternal,
   IResponseErrorNotFound,
   IResponseSuccessJson,
-  ResponseErrorForbiddenNotAuthorized,
   ResponseSuccessJson
 } from "@pagopa/ts-commons/lib/responses";
 import {
@@ -41,8 +40,6 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/utils/response";
 import { pipe } from "fp-ts/lib/function";
 import * as TE from "fp-ts/lib/TaskEither";
-import * as O from "fp-ts/lib/Option";
-import { SpecialServiceCategoryEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/SpecialServiceCategory";
 import { toApiServiceActivation } from "@pagopa/io-functions-commons/dist/src/utils/activations";
 import { RequiredBodyPayloadMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_body_payload";
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
@@ -51,6 +48,7 @@ import { errorsToReadableMessages } from "@pagopa/ts-commons/lib/reporters";
 import { Activation } from "../generated/definitions/Activation";
 import { ActivationPayload } from "../generated/definitions/ActivationPayload";
 import { ServiceId } from "../generated/definitions/ServiceId";
+import { authorizedForSpecialServicesTask } from "../utils/services";
 
 export type IUpertActivationFailureResponses =
   | IResponseErrorNotFound
@@ -95,12 +93,7 @@ export function UpsertServiceActivationHandler(
   return async (context, _auth, __, userAttributes, newActivation) => {
     const logPrefix = `${context.executionContext.functionName}|SERVICE_ID=${userAttributes.service.serviceId}`;
     return pipe(
-      O.fromNullable(userAttributes.service.serviceMetadata),
-      O.filter(
-        serviceMetadata =>
-          serviceMetadata.category === SpecialServiceCategoryEnum.SPECIAL
-      ),
-      TE.fromOption(() => ResponseErrorForbiddenNotAuthorized),
+      authorizedForSpecialServicesTask(userAttributes.service),
       TE.chainW(_ =>
         pipe(
           activationModel.upsert(
@@ -120,7 +113,7 @@ export function UpsertServiceActivationHandler(
               }`
             );
             return ResponseErrorQuery(
-              "Error reading service Activation",
+              "Error upserting service Activation",
               error
             );
           })

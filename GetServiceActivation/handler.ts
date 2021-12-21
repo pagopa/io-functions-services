@@ -29,7 +29,6 @@ import {
   IResponseErrorInternal,
   IResponseErrorNotFound,
   IResponseSuccessJson,
-  ResponseErrorForbiddenNotAuthorized,
   ResponseErrorNotFound,
   ResponseSuccessJson
 } from "@pagopa/ts-commons/lib/responses";
@@ -37,10 +36,8 @@ import {
   IResponseErrorQuery,
   ResponseErrorQuery
 } from "@pagopa/io-functions-commons/dist/src/utils/response";
-import { flow, pipe } from "fp-ts/lib/function";
+import { pipe } from "fp-ts/lib/function";
 import * as TE from "fp-ts/lib/TaskEither";
-import * as O from "fp-ts/lib/Option";
-import { SpecialServiceCategoryEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/SpecialServiceCategory";
 import { toApiServiceActivation } from "@pagopa/io-functions-commons/dist/src/utils/activations";
 import { Context } from "@azure/functions";
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
@@ -48,6 +45,7 @@ import { errorsToReadableMessages } from "@pagopa/ts-commons/lib/reporters";
 import { FiscalCodePayloadMiddleware } from "../utils/profile";
 import { FiscalCodePayload } from "../generated/definitions/FiscalCodePayload";
 import { Activation } from "../generated/definitions/Activation";
+import { authorizedForSpecialServicesTask } from "../utils/services";
 
 export type IGetActivationFailureResponses =
   | IResponseErrorNotFound
@@ -82,12 +80,7 @@ export function GetServiceActivationHandler(
   return async (context, _auth, __, userAttributes, { fiscal_code }) => {
     const logPrefix = `${context.executionContext.functionName}|SERVICE_ID=${userAttributes.service.serviceId}`;
     return pipe(
-      O.fromNullable(userAttributes.service.serviceMetadata),
-      O.filter(
-        serviceMetadata =>
-          serviceMetadata.category === SpecialServiceCategoryEnum.SPECIAL
-      ),
-      TE.fromOption(() => ResponseErrorForbiddenNotAuthorized),
+      authorizedForSpecialServicesTask(userAttributes.service),
       TE.chainW(_ =>
         pipe(
           activationModel.findLastVersionByModelId([
@@ -108,15 +101,13 @@ export function GetServiceActivationHandler(
               "Error reading service Activation",
               error
             );
-          })
-        )
-      ),
-      TE.chainW(
-        flow(
-          TE.fromOption(() =>
-            ResponseErrorNotFound(
-              "Not Found",
-              "Activation not found for the user"
+          }),
+          TE.chainW(
+            TE.fromOption(() =>
+              ResponseErrorNotFound(
+                "Not Found",
+                "Activation not found for the user"
+              )
             )
           )
         )
