@@ -424,15 +424,16 @@ paths:
         **unsubscribed from** your service **on the provided date** (UTC).
 
 
-        By querying this feed on each day, you will be able to retrieve the
+        By querying this feed everyday, you will be able to retrieve the
 
-        "delta" of users that subscribed and unsubscribed fom your service.
+        "delta" of users that subscribed and unsubscribed from your service.
 
         You will have to keep a list of users somewhere in your infrastructure
 
-        that you will update each day by adding the subscribed users and
+        that you will keep updated at all times by adding the subscribed users
+        and
 
-        removing the unsunbscribed users.
+        removing the unsubscribed users.
 
 
         You will then be able to query this local list to know which users you
@@ -449,11 +450,21 @@ paths:
         In pseudo code `CF_HASH = LOWERCASE(HEX(SHA256(UPPERCASE(CF))))`.
 
 
-        Note that this is an optimization for those services that need to send
-        very high
+        Access to this feed is subject to case-by-case authorization, and it is
 
-        volumes of messages per day, to avoid having to make two API calls for
-        each message.
+        primarily intended for large-scale services, such as those pertaining
+
+        to organizations that have an extensive user base (including
+        geographically),
+
+        and/or need to send very high volumes of messages per day.
+
+
+        This feed serves the purpose of minimizing data processing activities
+
+        while preserving optimization of API calls and data accuracy.
+
+        Organizations allowed are required to query this feed everyday.
       responses:
         '200':
           description: Found.
