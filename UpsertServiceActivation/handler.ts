@@ -44,11 +44,12 @@ import { toApiServiceActivation } from "@pagopa/io-functions-commons/dist/src/ut
 import { RequiredBodyPayloadMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_body_payload";
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { Context } from "@azure/functions";
-import { errorsToReadableMessages } from "@pagopa/ts-commons/lib/reporters";
+import { flow } from "fp-ts/lib/function";
 import { Activation } from "../generated/definitions/Activation";
 import { ActivationPayload } from "../generated/definitions/ActivationPayload";
 import { ServiceId } from "../generated/definitions/ServiceId";
 import { authorizedForSpecialServicesTask } from "../utils/services";
+import { getLogger } from "../utils/logging";
 
 export type IUpertActivationFailureResponses =
   | IResponseErrorNotFound
@@ -92,6 +93,11 @@ export function UpsertServiceActivationHandler(
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   return async (context, _auth, __, userAttributes, newActivation) => {
     const logPrefix = `${context.executionContext.functionName}|SERVICE_ID=${userAttributes.service.serviceId}`;
+    const logger = getLogger(
+      context,
+      logPrefix,
+      "UpsertServiceActivationHandler"
+    );
     return pipe(
       authorizedForSpecialServicesTask(userAttributes.service),
       TE.chainW(_ =>
@@ -103,15 +109,7 @@ export function UpsertServiceActivationHandler(
             )
           ),
           TE.mapLeft(error => {
-            context.log.error(
-              `${logPrefix}|ERROR|ERROR_DETAILS=${
-                error.kind === "COSMOS_EMPTY_RESPONSE"
-                  ? error.kind
-                  : error.kind === "COSMOS_DECODING_ERROR"
-                  ? errorsToReadableMessages(error.error).join("/")
-                  : JSON.stringify(error.error)
-              }`
-            );
+            logger.logCosmosErrors(error);
             return ResponseErrorQuery(
               "Error upserting service Activation",
               error
@@ -119,7 +117,7 @@ export function UpsertServiceActivationHandler(
           })
         )
       ),
-      TE.map(_ => ResponseSuccessJson(toApiServiceActivation(_))),
+      TE.map(flow(toApiServiceActivation, ResponseSuccessJson)),
       TE.toUnion
     )();
   };

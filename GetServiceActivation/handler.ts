@@ -36,16 +36,16 @@ import {
   IResponseErrorQuery,
   ResponseErrorQuery
 } from "@pagopa/io-functions-commons/dist/src/utils/response";
-import { pipe } from "fp-ts/lib/function";
+import { flow, pipe } from "fp-ts/lib/function";
 import * as TE from "fp-ts/lib/TaskEither";
 import { toApiServiceActivation } from "@pagopa/io-functions-commons/dist/src/utils/activations";
 import { Context } from "@azure/functions";
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
-import { errorsToReadableMessages } from "@pagopa/ts-commons/lib/reporters";
 import { FiscalCodePayloadMiddleware } from "../utils/profile";
 import { FiscalCodePayload } from "../generated/definitions/FiscalCodePayload";
 import { Activation } from "../generated/definitions/Activation";
 import { authorizedForSpecialServicesTask } from "../utils/services";
+import { getLogger } from "../utils/logging";
 
 export type IGetActivationFailureResponses =
   | IResponseErrorNotFound
@@ -79,6 +79,7 @@ export function GetServiceActivationHandler(
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   return async (context, _auth, __, userAttributes, { fiscal_code }) => {
     const logPrefix = `${context.executionContext.functionName}|SERVICE_ID=${userAttributes.service.serviceId}`;
+    const logger = getLogger(context, logPrefix, "GetServiceActivationHandler");
     return pipe(
       authorizedForSpecialServicesTask(userAttributes.service),
       TE.chainW(_ =>
@@ -88,15 +89,7 @@ export function GetServiceActivationHandler(
             fiscal_code
           ]),
           TE.mapLeft(error => {
-            context.log.error(
-              `${logPrefix}|ERROR|ERROR_DETAILS=${
-                error.kind === "COSMOS_EMPTY_RESPONSE"
-                  ? error.kind
-                  : error.kind === "COSMOS_DECODING_ERROR"
-                  ? errorsToReadableMessages(error.error).join("/")
-                  : JSON.stringify(error.error)
-              }`
-            );
+            logger.logCosmosErrors(error);
             return ResponseErrorQuery(
               "Error reading service Activation",
               error
@@ -112,7 +105,7 @@ export function GetServiceActivationHandler(
           )
         )
       ),
-      TE.map(_ => ResponseSuccessJson(toApiServiceActivation(_))),
+      TE.map(flow(toApiServiceActivation, ResponseSuccessJson)),
       TE.toUnion
     )();
   };
