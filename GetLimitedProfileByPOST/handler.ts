@@ -26,9 +26,9 @@ import {
 
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { ServicesPreferencesModel } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
-import { GetLimitedProfileByPOSTPayload } from "../generated/definitions/GetLimitedProfileByPOSTPayload";
+import { FiscalCodePayload } from "../generated/definitions/FiscalCodePayload";
 import {
-  GetLimitedProfileByPOSTPayloadMiddleware,
+  FiscalCodePayloadMiddleware,
   IGetLimitedProfileResponses,
   getLimitedProfileTask
 } from "../utils/profile";
@@ -43,7 +43,7 @@ type IGetLimitedProfileByPOSTHandler = (
   apiAuthorization: IAzureApiAuthorization,
   clientIp: ClientIp,
   userAttributes: IAzureUserAttributes,
-  payload: GetLimitedProfileByPOSTPayload
+  payload: FiscalCodePayload
 ) => Promise<IGetLimitedProfileResponses>;
 
 /**
@@ -95,7 +95,7 @@ export function GetLimitedProfileByPOST(
     AzureApiAuthMiddleware(new Set([UserGroup.ApiLimitedProfileRead])),
     ClientIpMiddleware,
     AzureUserAttributesMiddleware(serviceModel),
-    GetLimitedProfileByPOSTPayloadMiddleware
+    FiscalCodePayloadMiddleware
   );
 
   return wrapRequestHandler(

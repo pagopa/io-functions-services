@@ -38,6 +38,14 @@ import { StandardServiceCategoryEnum } from "@pagopa/io-functions-commons/dist/g
 
 import { MessageContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageContent";
 import { CIDR } from "@pagopa/io-functions-commons/dist/generated/definitions/CIDR";
+import {
+  Activation,
+  ACTIVATION_MODEL_PK_FIELD,
+  ACTIVATION_REFERENCE_ID_FIELD,
+  RetrievedActivation
+} from "@pagopa/io-functions-commons/dist/src/models/activation";
+import { ActivationStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ActivationStatus";
+import { generateComposedVersionedModelId } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model_composed_versioned";
 
 export const aFiscalCode = "AAABBB01C02D345D" as FiscalCode;
 export const anotherFiscalCode = "AAABBB01C02D345W" as FiscalCode;
@@ -50,8 +58,11 @@ export const aCosmosResourceMetadata: Omit<CosmosResource, "id"> = {
   _ts: 1
 };
 
+export const aServiceId: ServiceId = "01234567890" as NonEmptyString;
+export const anotherServiceId: ServiceId = "01234567899" as NonEmptyString;
+
 export const aValidService: ValidService = {
-  serviceId: "01234567890" as NonEmptyString,
+  serviceId: aServiceId,
   authorizedRecipients: new Set([aFiscalCode, anotherFiscalCode]),
   authorizedCIDRs: new Set((["0.0.0.0"] as unknown) as CIDR[]),
   departmentName: "department" as NonEmptyString,
@@ -71,8 +82,6 @@ export const aValidService: ValidService = {
     customSpecialFlow: undefined
   }
 };
-
-export const aServiceId: ServiceId = "01234567890" as NonEmptyString;
 
 export const anIncompleteService: Service & {
   readonly version: NonNegativeInteger;
@@ -238,4 +247,18 @@ export const aMessagePayloadWithLegalData = {
     ...aMessageContentWithLegalData
   },
   time_to_live: 3600
+};
+
+export const anActivation: RetrievedActivation = {
+  ...aCosmosResourceMetadata,
+  id: generateComposedVersionedModelId<
+    Activation,
+    typeof ACTIVATION_REFERENCE_ID_FIELD,
+    typeof ACTIVATION_MODEL_PK_FIELD
+  >(aServiceId, aFiscalCode, 1 as NonNegativeInteger),
+  fiscalCode: aFiscalCode,
+  serviceId: aServiceId,
+  status: ActivationStatusEnum.ACTIVE,
+  version: 1 as NonNegativeInteger,
+  kind: "IRetrievedActivation"
 };
