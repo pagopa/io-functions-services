@@ -513,6 +513,18 @@ export const getProcessMessageHandler = ({
             createdMessageEvent.message.id
           )(MessageStatusValueEnum.PROCESSED)();
 
+          telemetryClient.trackEvent({
+            name: "api.messages.processed",
+            properties: {
+              fiscalCode: toHash(profile.fiscalCode),
+              messageId: createdMessageEvent.message.id,
+              mode: profile.servicePreferencesSettings.mode,
+              senderId: createdMessageEvent.message.senderServiceId,
+              timeFromCreated: Date.now() - newMessageWithoutContent.createdAt.getTime()
+            },
+            tagOverrides: { samplingEnabled: "false" }
+          });
+
           // eslint-disable-next-line functional/immutable-data
           context.bindings.processedMessage = ProcessedMessageEvent.encode({
             blockedInboxOrChannels,
