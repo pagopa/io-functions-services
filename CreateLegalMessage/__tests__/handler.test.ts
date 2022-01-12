@@ -26,9 +26,13 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/models/service";
 import { MaxAllowedPaymentAmount } from "@pagopa/io-functions-commons/dist/generated/definitions/MaxAllowedPaymentAmount";
 import mockReq from "../../__mocks__/request";
-import { aMessagePayload } from "../../__mocks__/mocks";
+import {
+  aMessagePayload,
+  aMessagePayloadWithLegalData
+} from "../../__mocks__/mocks";
 import { toCosmosErrorResponse } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
 import { withoutUndefinedValues } from "@pagopa/ts-commons/lib/types";
+import { IAzureUserAttributes } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
 
 const VALID_SERVICE_ID = "valid-sid" as ServiceId;
 const VALID_LEGAL_MAIL = "valid@pec.it" as EmailString;
@@ -144,10 +148,50 @@ const createMessageHandlerMock = jest.fn((_, __, ___, ____, _____, ______) =>
   Promise.resolve(ResponseSuccessJson({ completed: true }))
 ) as any;
 
+const dummyPecServerUserAttribute = {
+  email: "dummy@pecserver.it",
+  service: {
+    serviceId: "dummyId"
+  }
+} as IAzureUserAttributes;
+
 describe("CreateLegalMessageHandler", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
+
+  it("should enrich the request body legal data with pec-server service id ", async () => {
+    const PECSERVER_USER_GROUPS = "pec-group1";
+    const reqMock = mockReq();
+    reqMock.setContext(contextMock);
+    reqMock.setHeaders({
+      "x-user-groups": PECSERVER_USER_GROUPS,
+      "x-client-ip": anIpString,
+      "x-user-id": "unused"
+    });
+    reqMock.body = aMessagePayloadWithLegalData;
+
+    const handler = CreateLegalMessageHandler(
+      adminClientMock,
+      legalMessageMapModelMock,
+      serviceModel,
+      createMessageHandlerMock
+    );
+    await handler(
+      contextMock,
+      undefined as any, // user auth not used
+      undefined as any,
+      dummyPecServerUserAttribute,
+      reqMock,
+      VALID_LEGAL_MAIL,
+      undefined as any
+    );
+
+    expect(reqMock.body.content.legal_data.pec_server_service_id).toEqual(
+      dummyPecServerUserAttribute.service.serviceId
+    );
+  });
+
   it("should impersonate the service and override the request contains the x-user-groups of the impersonated service  ", async () => {
     const PECSERVER_USER_GROUPS = "pec-group1";
     const reqMock = mockReq();
@@ -169,7 +213,7 @@ describe("CreateLegalMessageHandler", () => {
       contextMock,
       undefined as any, // user auth not used
       undefined as any,
-      undefined as any,
+      dummyPecServerUserAttribute,
       reqMock,
       VALID_LEGAL_MAIL,
       undefined as any
@@ -199,7 +243,7 @@ describe("CreateLegalMessageHandler", () => {
       contextMock,
       undefined as any, // user auth not used
       undefined as any,
-      undefined as any,
+      dummyPecServerUserAttribute,
       reqMock,
       VALID_LEGAL_MAIL,
       undefined as any
@@ -229,7 +273,7 @@ describe("CreateLegalMessageHandler", () => {
       contextMock,
       undefined as any, // user auth not used
       undefined as any,
-      undefined as any,
+      dummyPecServerUserAttribute,
       reqMock,
       VALID_LEGAL_MAIL,
       undefined as any
@@ -257,7 +301,7 @@ describe("CreateLegalMessageHandler", () => {
       contextMock,
       undefined as any, // user auth not used
       undefined as any,
-      undefined as any,
+      dummyPecServerUserAttribute,
       reqMock,
       VALID_LEGAL_MAIL,
       undefined as any
@@ -295,7 +339,7 @@ describe("CreateLegalMessageHandler", () => {
         contextMock,
         undefined as any, // user auth not used
         undefined as any,
-        undefined as any,
+        dummyPecServerUserAttribute,
         reqMock,
         VALID_LEGAL_MAIL,
         undefined as any
@@ -352,7 +396,7 @@ describe("CreateLegalMessageHandler", () => {
         contextMock,
         undefined as any, // user auth not used
         undefined as any,
-        undefined as any,
+        dummyPecServerUserAttribute,
         reqMock,
         VALID_LEGAL_MAIL,
         undefined as any

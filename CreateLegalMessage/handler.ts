@@ -108,7 +108,7 @@ export function CreateLegalMessageHandler(
     context,
     _auth,
     _attrs,
-    _ip,
+    ip,
     rawRequest,
     legalmail,
     _payload
@@ -140,6 +140,20 @@ export function CreateLegalMessageHandler(
         rawRequest.headers = {
           ...rawRequest.headers,
           ...replaceHeaders
+        };
+      }),
+      // decorate message legal_data with the pec-server service_id
+      TE.map(() => {
+        // eslint-disable-next-line functional/immutable-data
+        rawRequest.body = {
+          ...rawRequest.body,
+          content: {
+            ...rawRequest.body?.content,
+            legal_data: {
+              ...rawRequest.body?.content?.legal_data,
+              pec_server_service_id: ip.service.serviceId
+            }
+          }
         };
       }),
       TE.chain(() =>
