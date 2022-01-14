@@ -72,6 +72,8 @@ export const IConfig = t.intersection([
     FF_INCOMPLETE_SERVICE_WHITELIST: CommaSeparatedListOf(ServiceId),
     FF_OPT_IN_EMAIL_ENABLED: t.boolean,
 
+    PENDING_ACTIVATION_GRACE_PERIOD_SECONDS: t.number,
+
     isProduction: t.boolean
   }),
   MessageContentStorageAccount,
@@ -83,6 +85,9 @@ export const IConfig = t.intersection([
 // Default value is expressed as a Unix timestamp so it can be safely compared with Cosmos timestamp
 // This means that Date representation is in the past compared to the effectively switch Date we want to set
 const DEFAULT_OPT_OUT_EMAIL_SWITCH_DATE = 1625781600;
+
+// Default Special Service PENDING grace period is 1 day
+export const DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS = 24 * 60 * 60;
 
 export const envConfig = {
   ...process.env,
@@ -113,6 +118,17 @@ export const envConfig = {
       )
     ),
     E.toUnion
+  ),
+  PENDING_ACTIVATION_GRACE_PERIOD_SECONDS: pipe(
+    E.fromNullable(DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS)(
+      process.env.PENDING_ACTIVATION_GRACE_PERIOD_SECONDS
+    ),
+    E.chain(_ =>
+      pipe(
+        NumberFromString.decode(_),
+        E.mapLeft(() => DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS)
+      )
+    )
   ),
   isProduction: process.env.NODE_ENV === "production"
 };
