@@ -128,7 +128,8 @@ export const envConfig = {
         NumberFromString.decode(_),
         E.mapLeft(() => DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS)
       )
-    )
+    ),
+    E.toUnion
   ),
   isProduction: process.env.NODE_ENV === "production"
 };
