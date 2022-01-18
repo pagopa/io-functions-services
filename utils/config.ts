@@ -14,7 +14,7 @@ import { readableReport } from "@pagopa/ts-commons/lib/reporters";
 import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 import { DateFromTimestamp } from "@pagopa/ts-commons/lib/dates";
 import { NumberFromString } from "@pagopa/ts-commons/lib/numbers";
-import { pipe } from "fp-ts/lib/function";
+import { flow, pipe } from "fp-ts/lib/function";
 import { CommaSeparatedListOf } from "./comma-separated-list";
 
 // used for internal job dispatch, temporary files, etc...
@@ -111,9 +111,9 @@ export const envConfig = {
     E.fromNullable(DEFAULT_OPT_OUT_EMAIL_SWITCH_DATE)(
       process.env.OPT_OUT_EMAIL_SWITCH_DATE
     ),
-    E.chain(_ =>
-      pipe(
-        NumberFromString.decode(_),
+    E.chain(
+      flow(
+        NumberFromString.decode,
         E.mapLeft(() => DEFAULT_OPT_OUT_EMAIL_SWITCH_DATE)
       )
     ),
@@ -123,9 +123,9 @@ export const envConfig = {
     E.fromNullable(DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS)(
       process.env.PENDING_ACTIVATION_GRACE_PERIOD_SECONDS
     ),
-    E.chain(_ =>
-      pipe(
-        NumberFromString.decode(_),
+    E.chain(
+      flow(
+        NumberFromString.decode,
         E.mapLeft(() => DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS)
       )
     ),

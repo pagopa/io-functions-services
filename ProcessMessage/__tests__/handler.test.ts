@@ -225,9 +225,6 @@ beforeEach(() => {
   // we usually prefer clearAllMocks, but tests scenarios are somehow entangled
   //  we should refactor them to have them independent, however for now we keep the workaround
   jest.resetAllMocks();
-  mockRetrieveProcessingMessageData.mockImplementation(() =>
-    TE.of(O.some(aCommonMessageData))
-  );
   clock = lolex.install({ now: ExecutionDateContext });
 });
 
