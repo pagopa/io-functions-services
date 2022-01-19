@@ -299,7 +299,10 @@ describe("getprocessMessageHandler", () => {
         lServicePreferencesModel,
         lMessageStatusModel,
         optOutEmailSwitchDate,
-        pendingActivationGracePeriod: DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS as Second,
+        pendingActivationGracePeriod: Object.assign(
+          DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS,
+          { kind: "Second" as const }
+        ),
         isOptInEmailEnabled: optInEmailEnabled,
         telemetryClient: mockTelemetryClient,
         retrieveProcessingMessageData: mockRetrieveProcessingMessageData
@@ -387,7 +390,10 @@ describe("getprocessMessageHandler", () => {
         lServicePreferencesModel,
         lMessageStatusModel,
         optOutEmailSwitchDate,
-        pendingActivationGracePeriod: 100 as Second,
+        pendingActivationGracePeriod: Object.assign(
+          DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS,
+          { kind: "Second" as const }
+        ),
         isOptInEmailEnabled: optInEmailEnabled,
         telemetryClient: mockTelemetryClient,
         retrieveProcessingMessageData: mockRetrieveProcessingMessageData
@@ -472,7 +478,10 @@ describe("getprocessMessageHandler", () => {
         lServicePreferencesModel,
         lMessageStatusModel,
         optOutEmailSwitchDate: aPastOptOutEmailSwitchDate,
-        pendingActivationGracePeriod: DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS as Second,
+        pendingActivationGracePeriod: Object.assign(
+          DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS,
+          { kind: "Second" as const }
+        ),
         isOptInEmailEnabled: false,
         telemetryClient: mockTelemetryClient,
         retrieveProcessingMessageData: mockRetrieveProcessingMessageData
@@ -554,7 +563,10 @@ describe("getprocessMessageHandler", () => {
         lServicePreferencesModel,
         lMessageStatusModel,
         optOutEmailSwitchDate: aPastOptOutEmailSwitchDate,
-        pendingActivationGracePeriod: 100 as Second,
+        pendingActivationGracePeriod: Object.assign(
+          DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS,
+          { kind: "Second" as const }
+        ),
         isOptInEmailEnabled: false,
         telemetryClient: mockTelemetryClient,
         retrieveProcessingMessageData: mockRetrieveProcessingMessageData
