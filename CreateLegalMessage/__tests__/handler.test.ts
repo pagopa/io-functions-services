@@ -184,7 +184,7 @@ describe("CreateLegalMessageHandler", () => {
       dummyPecServerUserAttribute,
       reqMock,
       VALID_LEGAL_MAIL,
-      undefined as any
+      reqMock.body
     );
 
     expect(reqMock.body.content.legal_data.pec_server_service_id).toEqual(
@@ -216,7 +216,7 @@ describe("CreateLegalMessageHandler", () => {
       dummyPecServerUserAttribute,
       reqMock,
       VALID_LEGAL_MAIL,
-      undefined as any
+      reqMock.body
     );
 
     expect(adminClientMock.getImpersonatedService).toHaveBeenCalledTimes(1);
@@ -246,7 +246,7 @@ describe("CreateLegalMessageHandler", () => {
       dummyPecServerUserAttribute,
       reqMock,
       VALID_LEGAL_MAIL,
-      undefined as any
+      reqMock.body
     );
 
     expect(adminClientMock.getImpersonatedService).not.toHaveBeenCalled();
@@ -276,7 +276,7 @@ describe("CreateLegalMessageHandler", () => {
       dummyPecServerUserAttribute,
       reqMock,
       VALID_LEGAL_MAIL,
-      undefined as any
+      reqMock.body
     );
 
     expect(adminClientMock.getImpersonatedService).not.toHaveBeenCalled();
@@ -342,7 +342,7 @@ describe("CreateLegalMessageHandler", () => {
         dummyPecServerUserAttribute,
         reqMock,
         VALID_LEGAL_MAIL,
-        undefined as any
+        reqMock.body
       );
 
       expect(adminClientMock.getImpersonatedService).toHaveBeenCalledTimes(1);
@@ -399,7 +399,7 @@ describe("CreateLegalMessageHandler", () => {
         dummyPecServerUserAttribute,
         reqMock,
         VALID_LEGAL_MAIL,
-        undefined as any
+        reqMock.body
       );
 
       expect(adminClientMock.getImpersonatedService).toHaveBeenCalledTimes(1);

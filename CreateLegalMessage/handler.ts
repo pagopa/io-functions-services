@@ -107,11 +107,11 @@ export function CreateLegalMessageHandler(
   return (
     context,
     _auth,
-    _attrs,
-    ip,
+    _ip,
+    attrs,
     rawRequest,
     legalmail,
-    _payload
+    payload
     // eslint-disable-next-line max-params
   ): ReturnType<ICreateLegalMessageHandler> =>
     pipe(
@@ -144,16 +144,20 @@ export function CreateLegalMessageHandler(
       }),
       // decorate message legal_data with the pec-server service_id
       TE.map(() => {
+        const decoratedPayload = {
+          ...payload,
+          content: {
+            ...payload.content,
+            legal_data: {
+              ...payload.content.legal_data,
+              pec_server_service_id: attrs.service.serviceId
+            }
+          }
+        };
         // eslint-disable-next-line functional/immutable-data
         rawRequest.body = {
           ...rawRequest.body,
-          content: {
-            ...rawRequest.body?.content,
-            legal_data: {
-              ...rawRequest.body?.content?.legal_data,
-              pec_server_service_id: ip.service.serviceId
-            }
-          }
+          ...decoratedPayload
         };
       }),
       TE.chain(() =>
