@@ -74,7 +74,7 @@
     "io-ts-types": "^0.5.16",
     "monocle-ts": "^2.3.11",
     "newtype-ts": "^0.3.4",
-    "node-fetch": "^2.6.1",
+    "node-fetch": "^2.6.7",
     "nodemailer": "^6.4.16",
     "nodemailer-sendgrid": "^1.0.3"
   },
