@@ -299,10 +299,7 @@ describe("getprocessMessageHandler", () => {
         lServicePreferencesModel,
         lMessageStatusModel,
         optOutEmailSwitchDate,
-        pendingActivationGracePeriod: Object.assign(
-          DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS,
-          { kind: "Second" as const }
-        ),
+        pendingActivationGracePeriod: DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS as Second,
         isOptInEmailEnabled: optInEmailEnabled,
         telemetryClient: mockTelemetryClient,
         retrieveProcessingMessageData: mockRetrieveProcessingMessageData
@@ -390,10 +387,7 @@ describe("getprocessMessageHandler", () => {
         lServicePreferencesModel,
         lMessageStatusModel,
         optOutEmailSwitchDate,
-        pendingActivationGracePeriod: Object.assign(
-          DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS,
-          { kind: "Second" as const }
-        ),
+        pendingActivationGracePeriod: DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS as Second,
         isOptInEmailEnabled: optInEmailEnabled,
         telemetryClient: mockTelemetryClient,
         retrieveProcessingMessageData: mockRetrieveProcessingMessageData
@@ -478,10 +472,7 @@ describe("getprocessMessageHandler", () => {
         lServicePreferencesModel,
         lMessageStatusModel,
         optOutEmailSwitchDate: aPastOptOutEmailSwitchDate,
-        pendingActivationGracePeriod: Object.assign(
-          DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS,
-          { kind: "Second" as const }
-        ),
+        pendingActivationGracePeriod: DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS as Second,
         isOptInEmailEnabled: false,
         telemetryClient: mockTelemetryClient,
         retrieveProcessingMessageData: mockRetrieveProcessingMessageData
@@ -563,10 +554,7 @@ describe("getprocessMessageHandler", () => {
         lServicePreferencesModel,
         lMessageStatusModel,
         optOutEmailSwitchDate: aPastOptOutEmailSwitchDate,
-        pendingActivationGracePeriod: Object.assign(
-          DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS,
-          { kind: "Second" as const }
-        ),
+        pendingActivationGracePeriod: DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS as Second,
         isOptInEmailEnabled: false,
         telemetryClient: mockTelemetryClient,
         retrieveProcessingMessageData: mockRetrieveProcessingMessageData

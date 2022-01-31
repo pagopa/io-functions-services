@@ -21,6 +21,7 @@ import {
   ActivationModel,
   ACTIVATION_COLLECTION_NAME
 } from "@pagopa/io-functions-commons/dist/src/models/activation";
+import { Second } from "@pagopa/ts-commons/lib/units";
 import { cosmosdbInstance } from "../utils/cosmosdb";
 import { getConfigOrThrow } from "../utils/config";
 import { initTelemetryClient } from "../utils/appinsights";
@@ -79,11 +80,7 @@ const activityFunctionHandler: AzureFunction = getProcessMessageHandler({
   lProfileModel: profileModel,
   lServicePreferencesModel: servicePreferencesModel,
   optOutEmailSwitchDate: config.OPT_OUT_EMAIL_SWITCH_DATE,
-  // eslint-disable-next-line functional/immutable-data
-  pendingActivationGracePeriod: Object.assign(
-    config.PENDING_ACTIVATION_GRACE_PERIOD_SECONDS,
-    { kind: "Second" as const }
-  ),
+  pendingActivationGracePeriod: config.PENDING_ACTIVATION_GRACE_PERIOD_SECONDS as Second,
   retrieveProcessingMessageData,
   telemetryClient
 });
