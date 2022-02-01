@@ -536,7 +536,8 @@ export const getProcessMessageHandler = ({
               messageId: createdMessageEvent.message.id,
               mode: profile.servicePreferencesSettings.mode,
               senderId: createdMessageEvent.message.senderServiceId,
-              timeFromCreated: Date.now() - newMessageWithoutContent.createdAt.getTime()
+              timeFromCreated:
+                Date.now() - newMessageWithoutContent.createdAt.getTime()
             },
             tagOverrides: { samplingEnabled: "false" }
           });

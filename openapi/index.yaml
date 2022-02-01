@@ -1456,8 +1456,6 @@ definitions:
       original_message_url:
         type: string
         minLength: 1
-      pec_server_service_id:
-        $ref: '#/definitions/ServiceId'
     required:
       - sender_mail_from
       - has_attachment
