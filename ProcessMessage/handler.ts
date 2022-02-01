@@ -20,7 +20,7 @@ import {
   ServicesPreferencesModeEnum
 } from "@pagopa/io-functions-commons/dist/generated/definitions/ServicesPreferencesMode";
 import * as TE from "fp-ts/lib/TaskEither";
-import { isBefore } from "date-fns";
+import { isBefore, subSeconds } from "date-fns";
 import { UTCISODateFromString } from "@pagopa/ts-commons/lib/dates";
 import { CosmosErrors } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
 import { TaskEither } from "fp-ts/lib/TaskEither";
@@ -34,6 +34,7 @@ import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/genera
 import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
 import { ActivationStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ActivationStatus";
 import * as T from "fp-ts/lib/Task";
+import { Second } from "@pagopa/ts-commons/lib/units";
 import { initTelemetryClient } from "../utils/appinsights";
 import { toHash } from "../utils/crypto";
 import { PaymentData } from "../generated/definitions/PaymentData";
@@ -210,7 +211,8 @@ type BlockedInboxesForSpecialService = (params: {
  * @returns
  */
 const getBlockedInboxesForSpecialService = (
-  lActivation: ActivationModel
+  lActivation: ActivationModel,
+  pendingActivationGracePeriod: Second
 ): BlockedInboxesForSpecialService => ({
   senderServiceId,
   fiscalCode,
@@ -228,7 +230,16 @@ const getBlockedInboxesForSpecialService = (
     TE.map(maybeActivation =>
       pipe(
         maybeActivation,
-        O.map(activation => activation.status === ActivationStatusEnum.ACTIVE),
+        O.map(
+          activation =>
+            activation.status === ActivationStatusEnum.ACTIVE ||
+            (activation.status === ActivationStatusEnum.PENDING &&
+              isBefore(
+                subSeconds(new Date(), pendingActivationGracePeriod),
+                // eslint-disable-next-line no-underscore-dangle
+                activation._ts
+              ))
+        ),
         O.getOrElse(() => false)
       )
     ),
@@ -337,6 +348,7 @@ export interface IProcessMessageHandlerInput {
   readonly optOutEmailSwitchDate: UTCISODateFromString;
   readonly isOptInEmailEnabled: boolean;
   readonly telemetryClient: ReturnType<typeof initTelemetryClient>;
+  readonly pendingActivationGracePeriod: Second;
 }
 
 type Handler = (c: Context, i: unknown) => Promise<void>;
@@ -354,7 +366,8 @@ export const getProcessMessageHandler = ({
   retrieveProcessingMessageData,
   optOutEmailSwitchDate,
   isOptInEmailEnabled,
-  telemetryClient
+  telemetryClient,
+  pendingActivationGracePeriod
 }: IProcessMessageHandlerInput): Handler =>
   withJsonInput(
     withDecodedInput(
@@ -459,7 +472,10 @@ export const getProcessMessageHandler = ({
                 createdMessageEvent.senderMetadata.serviceCategory ===
                 SpecialServiceCategoryEnum.SPECIAL
               ) {
-                return getBlockedInboxesForSpecialService(lActivation)({
+                return getBlockedInboxesForSpecialService(
+                  lActivation,
+                  pendingActivationGracePeriod
+                )({
                   blockedInboxOrChannel,
                   context,
                   fiscalCode: newMessageWithoutContent.fiscalCode,
@@ -520,7 +536,8 @@ export const getProcessMessageHandler = ({
               messageId: createdMessageEvent.message.id,
               mode: profile.servicePreferencesSettings.mode,
               senderId: createdMessageEvent.message.senderServiceId,
-              timeFromCreated: Date.now() - newMessageWithoutContent.createdAt.getTime()
+              timeFromCreated:
+                Date.now() - newMessageWithoutContent.createdAt.getTime()
             },
             tagOverrides: { samplingEnabled: "false" }
           });
