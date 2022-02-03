@@ -1,5 +1,6 @@
 import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
 import {
+  AzureAllowBodyPayloadMiddleware,
   AzureApiAuthMiddleware,
   UserGroup
 } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
@@ -23,7 +24,13 @@ import { IResponseErrorQuery } from "@pagopa/io-functions-commons/dist/src/utils
 import { IRequestMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
 import { pipe } from "fp-ts/lib/function";
 import * as TE from "fp-ts/lib/TaskEither";
-import { ApiNewMessageWithDefaults } from "../CreateMessage/types";
+import * as t from "io-ts";
+import { EUCovidCert } from "@pagopa/io-functions-commons/dist/generated/definitions/EUCovidCert";
+import { PaymentDataWithRequiredPayee } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentDataWithRequiredPayee";
+import {
+  ApiNewMessageWithContentOf,
+  ApiNewMessageWithDefaults
+} from "../CreateMessage/types";
 
 /**
  * A request middleware that validates the Message payload.
@@ -62,7 +69,18 @@ export const commonCreateMessageMiddlewares = (serviceModel: ServiceModel) =>
     // extracts the create message payload from the request body
     MessagePayloadMiddleware,
     // extracts the optional fiscal code from the request params
-    OptionalFiscalCodeMiddleware
+    OptionalFiscalCodeMiddleware,
+    AzureAllowBodyPayloadMiddleware(
+      ApiNewMessageWithContentOf(t.interface({ eu_covid_cert: EUCovidCert })),
+      new Set([UserGroup.ApiMessageWriteEUCovidCert])
+    ),
+    // Ensures only users in ApiMessageWriteWithPayee group can send payment messages with payee payload
+    AzureAllowBodyPayloadMiddleware(
+      ApiNewMessageWithContentOf(
+        t.interface({ payment_data: PaymentDataWithRequiredPayee })
+      ),
+      new Set([UserGroup.ApiMessageWriteWithPayee])
+    )
   ] as const;
 
 /**
