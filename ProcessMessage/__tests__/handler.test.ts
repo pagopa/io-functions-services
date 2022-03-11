@@ -95,7 +95,8 @@ const lServicePreferencesModel = ({
 } as unknown) as ServicesPreferencesModel;
 
 const lMessageStatusModel = ({
-  upsert: (...args) => TE.of({} /* anything */)
+  upsert: (...args) => TE.of({} /* anything */),
+  findLastVersionByModelId: (...args) => TE.right(O.none)
 } as unknown) as MessageStatusModel;
 
 const activationFindLastVersionMock = jest.fn();
