@@ -26,7 +26,10 @@ type InfoHandler = () => Promise<
 
 type HealthChecker = (
   config: unknown
-) => healthcheck.HealthCheck<healthcheck.ProblemSource, true>;
+) => healthcheck.HealthCheck<
+  "AzureStorage" | "Config" | "AzureCosmosDB" | "Url",
+  true
+>;
 
 // eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function InfoHandler(healthCheck: HealthChecker): InfoHandler {

@@ -191,7 +191,9 @@ describe("GetMessageHandler", () => {
   const aMessageStatus: MessageStatus = {
     messageId: aMessageId,
     status: MessageStatusValueEnum.ACCEPTED,
-    updatedAt: new Date()
+    updatedAt: new Date(),
+    isRead: false,
+    isArchived: false
   };
 
   function getNotificationStatusModelMock(
