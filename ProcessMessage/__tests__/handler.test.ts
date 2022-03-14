@@ -58,7 +58,6 @@ import { subSeconds } from "date-fns";
 import { DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS } from "../../utils/config";
 import * as MS from "@pagopa/io-functions-commons/dist/src/models/message_status";
 import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
-import { CosmosErrors } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
 
 const createContext = (): Context =>
   (({
