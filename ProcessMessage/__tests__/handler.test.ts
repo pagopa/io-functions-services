@@ -34,11 +34,11 @@ import {
 } from "../../__mocks__/mocks";
 import { getProcessMessageHandler } from "../handler";
 import {
+  FiscalCode,
   NonEmptyString,
   OrganizationFiscalCode
 } from "@pagopa/ts-commons/lib/strings";
 import { Context } from "@azure/functions";
-import { MessageStatusModel } from "@pagopa/io-functions-commons/dist/src/models/message_status";
 import { pipe } from "fp-ts/lib/function";
 import { readableReport } from "@pagopa/ts-commons/lib/reporters";
 import {
@@ -56,6 +56,9 @@ import { Second } from "@pagopa/ts-commons/lib/units";
 import * as lolex from "lolex";
 import { subSeconds } from "date-fns";
 import { DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS } from "../../utils/config";
+import * as MS from "@pagopa/io-functions-commons/dist/src/models/message_status";
+import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
+import { CosmosErrors } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
 
 const createContext = (): Context =>
   (({
@@ -97,7 +100,8 @@ const lServicePreferencesModel = ({
 const lMessageStatusModel = ({
   upsert: (...args) => TE.of({} /* anything */),
   findLastVersionByModelId: (...args) => TE.right(O.none)
-} as unknown) as MessageStatusModel;
+} as unknown) as MS.MessageStatusModel;
+const getMessageStatusUpdaterMock = jest.spyOn(MS, "getMessageStatusUpdater");
 
 const activationFindLastVersionMock = jest.fn();
 const lActivation = ({
@@ -227,6 +231,29 @@ beforeEach(() => {
   //  we should refactor them to have them independent, however for now we keep the workaround
   jest.resetAllMocks();
   clock = lolex.install({ now: ExecutionDateContext });
+  // Mock getMessageStatusUpdater
+  getMessageStatusUpdaterMock.mockImplementation(
+    (
+      _messageStatusModel: MS.MessageStatusModel,
+      messageId: NonEmptyString,
+      fiscalCode: FiscalCode
+    ) => (status: MessageStatusValueEnum) =>
+      TE.right({
+        _etag: "a",
+        _rid: "a",
+        _self: "self",
+        _ts: 0,
+        kind: "IRetrievedMessageStatus",
+        id: messageId,
+        version: 0 as NonNegativeInteger,
+        messageId,
+        status,
+        updatedAt: new Date(),
+        isRead: false,
+        isArchived: false,
+        fiscalCode
+      })
+  );
 });
 
 afterEach(() => {
@@ -309,6 +336,12 @@ describe("getprocessMessageHandler", () => {
       const context = createContext();
 
       await processMessageHandler(context, JSON.stringify(messageEvent));
+
+      expect(getMessageStatusUpdaterMock).toHaveBeenCalledWith(
+        lMessageStatusModel,
+        messageEvent.messageId,
+        profileResult.fiscalCode
+      );
 
       pipe(
         context.bindings.processedMessage,
@@ -397,6 +430,12 @@ describe("getprocessMessageHandler", () => {
       const context = createContext();
 
       await processMessageHandler(context, JSON.stringify(messageEvent));
+
+      expect(getMessageStatusUpdaterMock).toHaveBeenCalledWith(
+        lMessageStatusModel,
+        messageEvent.messageId,
+        profileResult.fiscalCode
+      );
 
       pipe(
         context.bindings.processedMessage,
