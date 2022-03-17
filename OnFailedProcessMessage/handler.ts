@@ -6,14 +6,10 @@ import {
   MessageStatusModel
 } from "@pagopa/io-functions-commons/dist/src/models/message_status";
 import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
-import {
-  MessageModel,
-  RetrievedMessageWithoutContent
-} from "@pagopa/io-functions-commons/dist/src/models/message";
+import { MessageModel } from "@pagopa/io-functions-commons/dist/src/models/message";
 import { constant, pipe } from "fp-ts/lib/function";
 import * as E from "fp-ts/Either";
 import * as TE from "fp-ts/TaskEither";
-import * as T from "fp-ts/Task";
 import {
   CosmosDecodingError,
   CosmosErrorResponse
@@ -54,23 +50,18 @@ export const getOnFailedProcessMessageHandler = ({
         flattenAsyncIterable,
         asyncIterableToArray,
         constant,
-        T.map(messages =>
-          messages.length === 1
-            ? pipe(messages[0], E.mapLeft(CosmosDecodingError))
-            : E.left(
-                CosmosErrorResponse({
-                  code: 404,
-                  message: "Missing message",
-                  name: "Not Found"
-                })
-              )
+        TE.fromTask,
+        TE.filterOrElse(
+          messages => messages.length === 1,
+          () =>
+            CosmosErrorResponse({
+              code: 404,
+              message: "Missing message",
+              name: "Not Found"
+            })
         ),
-        TE.chainEitherKW(x =>
-          pipe(
-            x,
-            RetrievedMessageWithoutContent.decode,
-            E.mapLeft(CosmosDecodingError)
-          )
+        TE.chainEitherKW(messages =>
+          pipe(messages[0], E.mapLeft(CosmosDecodingError))
         ),
         // create the message status for the failed message
         TE.chain(message =>
@@ -81,11 +72,7 @@ export const getOnFailedProcessMessageHandler = ({
           )(MessageStatusValueEnum.FAILED)
         ),
         // throw error to trigger retry
-        TE.mapLeft(e => {
-          throw e;
-        }),
-        // track failed message on app insights
-        TE.map(()=> {
+        TE.map(() => {
           telemetryClient.trackEvent({
             name: "api.messages.create.failedprocessing",
             properties: {
@@ -94,7 +81,9 @@ export const getOnFailedProcessMessageHandler = ({
             tagOverrides: { samplingEnabled: "false" }
           });
         }),
-        TE.toUnion
+        TE.getOrElse(e => {
+          throw e;
+        })
       )()
     )
   );
