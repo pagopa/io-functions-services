@@ -85,7 +85,7 @@ export const getOnFailedProcessMessageHandler = ({
           throw e;
         }),
         // track failed message on app insights
-        TE.map(__ => {
+        TE.map(()=> {
           telemetryClient.trackEvent({
             name: "api.messages.create.failedprocessing",
             properties: {
