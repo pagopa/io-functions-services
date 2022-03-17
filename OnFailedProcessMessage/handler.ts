@@ -71,7 +71,6 @@ export const getOnFailedProcessMessageHandler = ({
             message.fiscalCode
           )(MessageStatusValueEnum.FAILED)
         ),
-        // throw error to trigger retry
         TE.map(() => {
           telemetryClient.trackEvent({
             name: "api.messages.create.failedprocessing",
@@ -81,6 +80,7 @@ export const getOnFailedProcessMessageHandler = ({
             tagOverrides: { samplingEnabled: "false" }
           });
         }),
+        // throw error to trigger retry
         TE.getOrElse(e => {
           throw e;
         })
