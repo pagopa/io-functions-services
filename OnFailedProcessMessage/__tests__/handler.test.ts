@@ -20,7 +20,8 @@ import { Context } from "@azure/functions";
 import { CreatedMessageEvent } from "../../utils/events/message";
 import {
   aNewMessageWithoutContent,
-  aRetrievedMessage
+  aRetrievedMessage,
+  aRetrievedMessageStatus
 } from "../../__mocks__/mocks";
 import { pipe } from "fp-ts/lib/function";
 import { readableReport } from "@pagopa/ts-commons/lib/reporters";
@@ -62,18 +63,10 @@ beforeEach(() => {
       fiscalCode: FiscalCode
     ) => (status: MessageStatusValueEnum) =>
       TE.right({
-        _etag: "a",
-        _rid: "a",
-        _self: "self",
-        _ts: 0,
-        kind: "IRetrievedMessageStatus",
+        ...aRetrievedMessageStatus,
         id: messageId,
-        version: 0 as NonNegativeInteger,
         messageId,
         status,
-        updatedAt: new Date(),
-        isRead: false,
-        isArchived: false,
         fiscalCode
       })
   );
@@ -99,13 +92,13 @@ beforeEach(() => {
   });
 });
 
-describe("getprocessMessageHandler", () => {
+describe("getOnFailedProcessMessageHandler", () => {
   it("GIVEN a created message event with an existing messageId WHEN the failed handler is called THEN the message status is created with input messageId and retreived fiscalCode", async () => {
-    void (await getOnFailedProcessMessageHandler({
+    await getOnFailedProcessMessageHandler({
       lMessageStatusModel,
       lMessageModel,
       telemetryClient: mockTelemetryClient
-    })(contextMock, aCreatedMessageEvent));
+    })(contextMock, aCreatedMessageEvent);
 
     expect(getMessageStatusUpdaterMock).toBeCalledWith(
       lMessageStatusModel,

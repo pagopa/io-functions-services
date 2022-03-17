@@ -46,6 +46,8 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/models/activation";
 import { ActivationStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ActivationStatus";
 import { generateComposedVersionedModelId } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model_composed_versioned";
+import { RetrievedMessageStatus } from "@pagopa/io-functions-commons/dist/src/models/message_status";
+import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
 
 export const aFiscalCode = "AAABBB01C02D345D" as FiscalCode;
 export const anotherFiscalCode = "AAABBB01C02D345W" as FiscalCode;
@@ -261,4 +263,21 @@ export const anActivation: RetrievedActivation = {
   status: ActivationStatusEnum.ACTIVE,
   version: 1 as NonNegativeInteger,
   kind: "IRetrievedActivation"
+};
+
+export const aMessageId = "A_MESSAGE_ID" as NonEmptyString;
+export const aRetrievedMessageStatus: RetrievedMessageStatus = {
+  _etag: "a",
+  _rid: "a",
+  _self: "self",
+  _ts: 0,
+  kind: "IRetrievedMessageStatus",
+  id: aMessageId,
+  version: 0 as NonNegativeInteger,
+  messageId: aMessageId,
+  status: MessageStatusValueEnum.PROCESSED,
+  updatedAt: new Date(),
+  isRead: false,
+  isArchived: false,
+  fiscalCode: aFiscalCode
 };
