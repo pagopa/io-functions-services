@@ -103,6 +103,13 @@ describe("getOnFailedProcessMessageHandler", () => {
         ])
       })
     );
+
+    expect(mockTelemetryClient.trackEvent).toBeCalledWith(
+      expect.objectContaining({
+        name: "api.messages.create.failedprocessing",
+        properties: expect.objectContaining({ messageId: "A_MESSAGE_ID" })
+      })
+    );
   });
 
   it("GIVEN a created message event with an not existing messageId WHEN the failed handler is called THEN a cosmos exception is thrown", async () => {
