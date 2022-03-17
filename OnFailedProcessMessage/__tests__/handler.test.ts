@@ -1,21 +1,13 @@
-import { ProfileModel } from "@pagopa/io-functions-commons/dist/src/models/profile";
 import * as TE from "fp-ts/lib/TaskEither";
 import * as E from "fp-ts/lib/Either";
 import * as O from "fp-ts/lib/Option";
 import * as MS from "@pagopa/io-functions-commons/dist/src/models/message_status";
 import { initTelemetryClient } from "../../utils/appinsights";
 import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
-import {
-  NonNegativeInteger,
-  NonNegativeNumber
-} from "@pagopa/ts-commons/lib/numbers";
+import { NonNegativeNumber } from "@pagopa/ts-commons/lib/numbers";
 import { FiscalCode, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 import { getOnFailedProcessMessageHandler } from "../handler";
-import {
-  MessageModel,
-  RetrievedMessageWithContent,
-  RetrievedMessageWithoutContent
-} from "@pagopa/io-functions-commons/dist/src/models/message";
+import { MessageModel } from "@pagopa/io-functions-commons/dist/src/models/message";
 import { Context } from "@azure/functions";
 import { CreatedMessageEvent } from "../../utils/events/message";
 import {
@@ -23,8 +15,6 @@ import {
   aRetrievedMessage,
   aRetrievedMessageStatus
 } from "../../__mocks__/mocks";
-import { pipe } from "fp-ts/lib/function";
-import { readableReport } from "@pagopa/ts-commons/lib/reporters";
 
 const contextMock = ({
   bindings: {},
