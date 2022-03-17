@@ -49,7 +49,7 @@ export const getOnFailedProcessMessageHandler = ({
         // Query for message with input messageId in order to retrieve the fiscalCode
         lMessageModel.getQueryIterator({
           parameters: [{ name: "@messageId", value: messageId }],
-          query: `SELECT * FROM m WHERE m.id = @messageId`
+          query: `SELECT TOP 1 * FROM m WHERE m.id = @messageId`
         }),
         flattenAsyncIterable,
         asyncIterableToArray,
