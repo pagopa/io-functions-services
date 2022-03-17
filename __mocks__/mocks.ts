@@ -267,7 +267,7 @@ export const anActivation: RetrievedActivation = {
 
 export const aMessageId = "A_MESSAGE_ID" as NonEmptyString;
 export const aRetrievedMessageStatus: RetrievedMessageStatus = {
-  ...aCosmosResourceMetadata
+  ...aCosmosResourceMetadata,
   kind: "IRetrievedMessageStatus",
   id: aMessageId,
   version: 0 as NonNegativeInteger,
