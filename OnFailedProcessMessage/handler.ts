@@ -42,7 +42,7 @@ export const getOnFailedProcessMessageHandler = ({
   withJsonInput(
     withDecodedInput(CreatedMessageEvent, async (_, { messageId }) =>
       pipe(
-        // Query for message with input messageId in order to retrieve the fiscalCode
+        // query for message with input messageId in order to retrieve the fiscalCode
         lMessageModel.getQueryIterator({
           parameters: [{ name: "@messageId", value: messageId }],
           query: `SELECT TOP 1 * FROM m WHERE m.id = @messageId`
