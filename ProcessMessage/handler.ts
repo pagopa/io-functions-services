@@ -405,7 +405,8 @@ export const getProcessMessageHandler = ({
             context.log.warn(`${logPrefix}|RESULT=PROFILE_NOT_FOUND`);
             await getMessageStatusUpdater(
               lMessageStatusModel,
-              createdMessageEvent.message.id
+              createdMessageEvent.message.id,
+              newMessageWithoutContent.fiscalCode
             )(MessageStatusValueEnum.REJECTED)();
 
             return;
@@ -425,7 +426,8 @@ export const getProcessMessageHandler = ({
             context.log.warn(`${logPrefix}|RESULT=MASTER_INBOX_DISABLED`);
             await getMessageStatusUpdater(
               lMessageStatusModel,
-              createdMessageEvent.message.id
+              createdMessageEvent.message.id,
+              newMessageWithoutContent.fiscalCode
             )(MessageStatusValueEnum.REJECTED)();
             return;
           }
@@ -510,7 +512,8 @@ export const getProcessMessageHandler = ({
             context.log.warn(`${logPrefix}|RESULT=SENDER_BLOCKED`);
             await getMessageStatusUpdater(
               lMessageStatusModel,
-              createdMessageEvent.message.id
+              createdMessageEvent.message.id,
+              profile.fiscalCode
             )(MessageStatusValueEnum.REJECTED)();
             return;
           }
@@ -526,7 +529,8 @@ export const getProcessMessageHandler = ({
 
           await getMessageStatusUpdater(
             lMessageStatusModel,
-            createdMessageEvent.message.id
+            createdMessageEvent.message.id,
+            profile.fiscalCode
           )(MessageStatusValueEnum.PROCESSED)();
 
           telemetryClient.trackEvent({
