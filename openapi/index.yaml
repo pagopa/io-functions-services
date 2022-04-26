@@ -937,12 +937,15 @@ definitions:
             $ref: '#/definitions/NewMessageContent'
           sender_service_id:
             $ref: '#/definitions/ServiceId'
+          feature_type:
+            $ref: '#/definitions/FeatureType'
         required:
           - id
           - fiscal_code
           - created_at
           - content
           - sender_service_id
+          - feature_type
       notification:
         type: object
         properties:
@@ -1167,8 +1170,17 @@ definitions:
             example: foobar@example.com
       fiscal_code:
         $ref: '#/definitions/FiscalCode'
+      feature_type:
+        $ref: '#/definitions/FeatureType'
     required:
       - content
+  FeatureType:
+    type: string
+    default: STANDARD
+    x-extensible-enum:
+      - STANDARD
+      - ADVANCED
+    example: STANDARD
   CIDR:
     type: string
     description: Describes a single IP or a range of IPs.

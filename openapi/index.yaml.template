@@ -795,6 +795,8 @@ definitions:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/NewMessageContent"
   NewMessage:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/NewMessage"
+  FeatureType:
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/FeatureType"
   CIDR:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/CIDR"
   ServicePayload:
