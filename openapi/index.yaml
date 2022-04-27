@@ -115,6 +115,7 @@ paths:
           x-examples:
             application/json:
               time_to_live: 3600
+              feature_type: STANDARD
               content:
                 subject: ipsum labore deserunt fugiat
                 markdown: >-
@@ -181,6 +182,7 @@ paths:
           x-examples:
             application/json:
               time_to_live: 3600
+              feature_type: STANDARD
               content:
                 subject: ipsum labore deserunt fugiat
                 markdown: >-
@@ -246,6 +248,7 @@ paths:
           x-examples:
             application/json:
               time_to_live: 3600
+              feature_type: STANDARD
               content:
                 subject: ipsum labore deserunt fugiat
                 markdown: >-
