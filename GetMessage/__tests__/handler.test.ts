@@ -51,6 +51,7 @@ import {
   aMessageContentWithLegalData,
   aMessagePayload
 } from "../../__mocks__/mocks";
+import { FeatureTypeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/FeatureType";
 
 describe("GetMessageHandler", () => {
   jest.useFakeTimers();
@@ -145,9 +146,11 @@ describe("GetMessageHandler", () => {
 
   const aPublicExtendedMessage: CreatedMessageWithoutContent = {
     created_at: new Date(),
+    feature_type: FeatureTypeEnum.STANDARD,
     fiscal_code: aNewMessageWithoutContent.fiscalCode,
     id: "A_MESSAGE_ID",
-    sender_service_id: aNewMessageWithoutContent.senderServiceId
+    sender_service_id: aNewMessageWithoutContent.senderServiceId,
+    time_to_live: 3600 as TimeToLiveSeconds
   };
 
   const aPublicExtendedMessageResponse: MessageResponseWithoutContent = {

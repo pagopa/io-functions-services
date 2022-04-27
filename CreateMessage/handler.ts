@@ -203,6 +203,7 @@ export const createMessageDocument = (
   senderUserId: IAzureApiAuthorization["userId"],
   recipientFiscalCode: FiscalCode,
   timeToLiveSeconds: ApiNewMessageWithDefaults["time_to_live"],
+  featureType: ApiNewMessageWithDefaults["feature_type"],
   serviceId: IAzureUserAttributes["service"]["serviceId"]
 ): TaskEither<
   IResponseErrorInternal | IResponseErrorQuery,
@@ -222,6 +223,8 @@ export const createMessageDocument = (
     senderServiceId: serviceId,
     senderUserId,
     timeToLiveSeconds
+    // TODO
+    // featureType
   };
 
   //
@@ -382,6 +385,7 @@ export function CreateMessageHandler(
           auth.userId,
           fiscalCode,
           messagePayload.time_to_live,
+          messagePayload.feature_type,
           serviceId
         )
       ),

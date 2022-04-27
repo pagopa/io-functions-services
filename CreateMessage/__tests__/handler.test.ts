@@ -25,6 +25,7 @@ import {
 
 import {
   alphaStringArb,
+  featureTypeArb,
   fiscalCodeArb,
   fiscalCodeArrayArb,
   fiscalCodeSetArb,
@@ -183,8 +184,16 @@ describe("createMessageDocument", () => {
         senderUserIdArb,
         fiscalCodeArb,
         messageTimeToLiveArb,
+        featureTypeArb,
         serviceIdArb,
-        async (messageId, senderUserId, fiscalCode, ttl, senderServiceId) => {
+        async (
+          messageId,
+          senderUserId,
+          fiscalCode,
+          ttl,
+          featureType,
+          senderServiceId
+        ) => {
           const mockMessageModel = ({
             create: jest.fn(() => TE.of({}))
           } as unknown) as MessageModel;
@@ -194,6 +203,7 @@ describe("createMessageDocument", () => {
             senderUserId,
             fiscalCode,
             ttl,
+            featureType,
             senderServiceId
           );
 
@@ -210,6 +220,8 @@ describe("createMessageDocument", () => {
             senderServiceId,
             senderUserId,
             timeToLiveSeconds: ttl
+            // TODO
+            // featureType
           });
         }
       )

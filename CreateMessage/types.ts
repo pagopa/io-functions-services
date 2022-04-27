@@ -1,4 +1,5 @@
 import * as t from "io-ts";
+import { FeatureType } from "@pagopa/io-functions-commons/dist/generated/definitions/FeatureType";
 import { TimeToLiveSeconds } from "@pagopa/io-functions-commons/dist/generated/definitions/TimeToLiveSeconds";
 import { NewMessage as ApiNewMessage } from "@pagopa/io-functions-commons/dist/generated/definitions/NewMessage";
 import { LegalData } from "../generated/definitions/LegalData";
@@ -8,7 +9,7 @@ export type ApiNewMessageWithDefaults = t.TypeOf<
 >;
 export const ApiNewMessageWithDefaults = t.intersection([
   ApiNewMessage,
-  t.interface({ time_to_live: TimeToLiveSeconds })
+  t.interface({ feature_type: FeatureType, time_to_live: TimeToLiveSeconds })
 ]);
 
 /**
