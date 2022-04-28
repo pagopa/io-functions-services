@@ -147,7 +147,7 @@ beforeAll(async () => {
   while (i < MAX_ATTEMPT) {
     console.log("Waiting the function to setup..");
     try {
-      const response = await nodeFetch("http://function:7071/api/info");
+      const response = await nodeFetch(`${baseUrl}/api/info`);
       break;
     } catch (e) {
       await delay(WAIT_MS);
@@ -189,6 +189,24 @@ describe("Create Message |> Middleware errors", () => {
       message: {
         fiscal_code: anAutoFiscalCode,
         content: aValidLegalMessageContent
+      }
+    };
+
+    const response = await postCreateMessage(nodeFetch)(body);
+
+    expect(response.status).toEqual(403);
+  });
+
+  it("should return 403 when creating an advanced message without right permission", async () => {
+    const nodeFetch = getNodeFetch({
+      "x-user-groups": "ApiMessageWrite"
+    });
+
+    const body = {
+      message: {
+        fiscal_code: anAutoFiscalCode,
+        feature_type: "ADVANCED",
+        content: aMessageContent
       }
     };
 
@@ -330,6 +348,57 @@ describe("Create Message", () => {
       //   status: 500,
       //   title: "Internal server error"
       // });
+    }
+  );
+});
+describe("Create Advanced Message", () => {
+  it.each`
+    profileType         | fiscalCode                       | serviceId
+    ${"LEGACY Profile"} | ${aLegacyInboxEnabledFiscalCode} | ${anEnabledServiceId}
+    ${"AUTO Profile"}   | ${anAutoFiscalCode}              | ${anEnabledServiceId}
+    ${"MANUAL Profile"} | ${aManualFiscalCode}             | ${anEnabledServiceId}
+  `(
+    "$profileType |> should return the message in PROCESSED status when service is allowed to send",
+    async ({ fiscalCode, serviceId }) => {
+      const body = {
+        message: {
+          fiscal_code: fiscalCode,
+          feature_type: "ADVANCED",
+          content: aMessageContent
+        }
+      };
+
+      const nodeFetch = getNodeFetch({
+        "x-subscription-id": serviceId,
+        "x-user-groups":
+          customHeaders["x-user-groups"] + ",ApiMessageWriteAdvanced"
+      });
+
+      const result = await postCreateMessage(nodeFetch)(body);
+
+      expect(result.status).toEqual(201);
+
+      const messageId = ((await result.json()) as CreatedMessage).id;
+      expect(messageId).not.toBeUndefined();
+
+      // Wait the process to complete
+      await delay(WAIT_MS);
+
+      const resultGet = await getSentMessage(nodeFetch)(fiscalCode, messageId);
+
+      expect(resultGet.status).toEqual(200);
+      const detail = (await resultGet.json()) as MessageResponseWithContent;
+
+      expect(detail).toEqual(
+        expect.objectContaining({
+          message: expect.objectContaining({
+            id: messageId,
+            ...body.message,
+            feature_type: "STANDARD"
+          }),
+          status: StatusEnum.PROCESSED
+        })
+      );
     }
   );
 });
@@ -497,6 +566,7 @@ describe("Create Legal Message", () => {
     }
   );
 });
+
 // -----------
 // Utils
 // -----------
