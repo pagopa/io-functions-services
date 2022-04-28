@@ -76,6 +76,7 @@ import { TaskEither } from "fp-ts/lib/TaskEither";
 import { PaymentDataWithRequiredPayee } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentDataWithRequiredPayee";
 import { NewMessage as ApiNewMessage } from "@pagopa/io-functions-commons/dist/generated/definitions/NewMessage";
 import { StandardServiceCategoryEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/StandardServiceCategory";
+import { FeatureTypeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/FeatureType";
 import {
   CommonMessageData,
   CreatedMessageEvent
@@ -497,6 +498,16 @@ export function CreateMessage(
         new Set([
           UserGroup.ApiMessageWriteWithLegalDataWithoutImpersonification
         ])
+      ),
+      // Allow only users in the ApiMessageWriteAdvanced group to send messages with "ADVANCED" feature_type
+      AzureAllowBodyPayloadMiddleware(
+        t.intersection([
+          ApiNewMessage,
+          t.interface({
+            feature_type: t.literal(FeatureTypeEnum.ADVANCED)
+          })
+        ]),
+        new Set([UserGroup.ApiMessageWriteAdvanced])
       )
     ] as const)
   );
