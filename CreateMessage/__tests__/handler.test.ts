@@ -25,6 +25,7 @@ import {
 
 import {
   alphaStringArb,
+  featureLevelTypeArb,
   fiscalCodeArb,
   fiscalCodeArrayArb,
   fiscalCodeSetArb,
@@ -184,8 +185,16 @@ describe("createMessageDocument", () => {
         senderUserIdArb,
         fiscalCodeArb,
         messageTimeToLiveArb,
+        featureLevelTypeArb,
         serviceIdArb,
-        async (messageId, senderUserId, fiscalCode, ttl, senderServiceId) => {
+        async (
+          messageId,
+          senderUserId,
+          fiscalCode,
+          ttl,
+          featureLevelType,
+          senderServiceId
+        ) => {
           const mockMessageModel = ({
             create: jest.fn(() => TE.of({}))
           } as unknown) as MessageModel;
@@ -195,7 +204,7 @@ describe("createMessageDocument", () => {
             senderUserId,
             fiscalCode,
             ttl,
-            FeatureLevelTypeEnum.STANDARD,
+            featureLevelType,
             senderServiceId
           );
 
@@ -204,6 +213,7 @@ describe("createMessageDocument", () => {
           expect(mockMessageModel.create).toHaveBeenCalledTimes(1);
           expect(E.isRight(response)).toBeTruthy();
           expect(pipe(response, E.getOrElse(undefined))).toMatchObject({
+            featureLevelType,
             fiscalCode,
             id: messageId,
             indexedId: messageId,
