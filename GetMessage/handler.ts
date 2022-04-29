@@ -76,8 +76,13 @@ import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/m
 import { readableReport } from "@pagopa/ts-commons/lib/reporters";
 import { pipe } from "fp-ts/lib/function";
 import * as t from "io-ts";
+import * as b from "fp-ts/lib/boolean";
 import { MessageContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageContent";
+import { ReadStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ReadStatus";
+import { PaymentStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentStatus";
+import { CreatedMessageWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/CreatedMessageWithoutContent";
 import { LegalData } from "../generated/definitions/LegalData";
+import { FeatureLevelTypeEnum } from "../generated/definitions/FeatureLevelType";
 
 /**
  * Converts a retrieved message to a message that can be shared via API
@@ -116,6 +121,16 @@ type IGetMessageHandler = (
 
 const LegalMessagePattern = t.interface({ legal_data: LegalData });
 type LegalMessagePattern = t.TypeOf<typeof LegalMessagePattern>;
+
+/**
+ * Checks whether the client service can read advanced message info (read_status and payment_Status)
+ */
+export const canReadAdvancedMessageInfo = (
+  message: CreatedMessageWithoutContent | CreatedMessageWithoutContent,
+  authGroups: IAzureApiAuthorization["groups"]
+): boolean =>
+  message.feature_level_type === FeatureLevelTypeEnum.ADVANCED &&
+  authGroups.has(UserGroup.ApiMessageReadAdvanced);
 
 /**
  * Handles requests for getting a single message for a recipient.
@@ -252,19 +267,34 @@ export function GetMessageHandler(
     }
     const maybeMessageStatus = errorOrMaybeMessageStatus.right;
 
-    const returnedMessage = {
-      message,
-      notification: pipe(notificationStatuses, O.toUndefined),
-      // we do not return the status date-time
-      status: pipe(
-        maybeMessageStatus,
-        O.map(messageStatus => messageStatus.status),
-        // when the message has been received but a MessageStatus
-        // does not exist yet, the message is considered to be
-        // in the ACCEPTED state (not yet stored in the inbox)
-        O.getOrElse(() => MessageStatusValueEnum.ACCEPTED)
-      )
-    };
+    const returnedMessage:
+      | MessageResponseWithContent
+      | MessageResponseWithoutContent = pipe(
+      {
+        message,
+        notification: pipe(notificationStatuses, O.toUndefined),
+        // we do not return the status date-time
+        status: pipe(
+          maybeMessageStatus,
+          O.map(messageStatus => messageStatus.status),
+          // when the message has been received but a MessageStatus
+          // does not exist yet, the message is considered to be
+          // in the ACCEPTED state (not yet stored in the inbox)
+          O.getOrElse(() => MessageStatusValueEnum.ACCEPTED)
+        )
+      },
+      // Enrich message info with advanced properties if user is allowed to read them
+      messageWithoutAdvacedProperties =>
+        b.fold(
+          () => messageWithoutAdvacedProperties,
+          () => ({
+            ...messageWithoutAdvacedProperties,
+            // TODO: wait new messageStatus property `paymentStatus`
+            payment_status: PaymentStatusEnum.NOT_PAID,
+            read_status: ReadStatusEnum.UNAVAILABLE
+          })
+        )(canReadAdvancedMessageInfo(message, auth.groups))
+    );
 
     return ResponseSuccessJson(returnedMessage);
   };
