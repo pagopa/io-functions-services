@@ -203,7 +203,7 @@ export const createMessageDocument = (
   senderUserId: IAzureApiAuthorization["userId"],
   recipientFiscalCode: FiscalCode,
   timeToLiveSeconds: ApiNewMessageWithDefaults["time_to_live"],
-  featureType: ApiNewMessageWithDefaults["feature_type"],
+  featureLevelType: ApiNewMessageWithDefaults["feature_level_type"],
   serviceId: IAzureUserAttributes["service"]["serviceId"]
 ): TaskEither<
   IResponseErrorInternal | IResponseErrorQuery,
@@ -215,6 +215,7 @@ export const createMessageDocument = (
   // message is handled separately (see below).
   const newMessageWithoutContent: NewMessageWithoutContent = {
     createdAt: new Date(),
+    featureLevelType,
     fiscalCode: recipientFiscalCode,
     id: messageId,
     indexedId: messageId,
@@ -223,8 +224,6 @@ export const createMessageDocument = (
     senderServiceId: serviceId,
     senderUserId,
     timeToLiveSeconds
-    // TODO
-    // featureType
   };
 
   //
@@ -385,7 +384,7 @@ export function CreateMessageHandler(
           auth.userId,
           fiscalCode,
           messagePayload.time_to_live,
-          messagePayload.feature_type,
+          messagePayload.feature_level_type,
           serviceId
         )
       ),

@@ -114,7 +114,7 @@ paths:
           x-examples:
             application/json:
               time_to_live: 3600
-              feature_type: STANDARD
+              feature_level_type: STANDARD
               content:
                 subject: ipsum labore deserunt fugiat
                 markdown: |-
@@ -172,7 +172,7 @@ paths:
           x-examples:
             application/json:
               time_to_live: 3600
-              feature_type: STANDARD
+              feature_level_type: STANDARD
               content:
                 subject: ipsum labore deserunt fugiat
                 markdown: |-
@@ -229,7 +229,7 @@ paths:
           x-examples:
             application/json:
               time_to_live: 3600
-              feature_type: STANDARD
+              feature_level_type: STANDARD
               content:
                 subject: ipsum labore deserunt fugiat
                 markdown: |-
@@ -798,8 +798,8 @@ definitions:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/NewMessageContent"
   NewMessage:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/NewMessage"
-  FeatureType:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/FeatureType"
+  FeatureLevelType:
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/FeatureLevelType"
   CIDR:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/CIDR"
   ServicePayload:

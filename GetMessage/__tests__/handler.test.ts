@@ -46,12 +46,13 @@ import { TimeToLiveSeconds } from "@pagopa/io-functions-commons/dist/generated/d
 
 import * as TE from "fp-ts/lib/TaskEither";
 
+import { FeatureLevelTypeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/FeatureLevelType";
+
 import { GetMessageHandler } from "../handler";
 import {
   aMessageContentWithLegalData,
   aMessagePayload
 } from "../../__mocks__/mocks";
-import { FeatureTypeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/FeatureType";
 
 describe("GetMessageHandler", () => {
   jest.useFakeTimers();
@@ -125,6 +126,7 @@ describe("GetMessageHandler", () => {
 
   const aNewMessageWithoutContent: NewMessageWithoutContent = {
     createdAt: new Date(),
+    featureLevelType: FeatureLevelTypeEnum.STANDARD,
     fiscalCode: aFiscalCode,
     id: "A_MESSAGE_ID" as NonEmptyString,
     indexedId: "A_MESSAGE_ID" as NonEmptyString,
@@ -146,7 +148,6 @@ describe("GetMessageHandler", () => {
 
   const aPublicExtendedMessage: CreatedMessageWithoutContent = {
     created_at: new Date(),
-    feature_type: FeatureTypeEnum.STANDARD,
     fiscal_code: aNewMessageWithoutContent.fiscalCode,
     id: "A_MESSAGE_ID",
     sender_service_id: aNewMessageWithoutContent.senderServiceId,

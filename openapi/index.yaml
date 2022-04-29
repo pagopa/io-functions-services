@@ -115,7 +115,7 @@ paths:
           x-examples:
             application/json:
               time_to_live: 3600
-              feature_type: STANDARD
+              feature_level_type: STANDARD
               content:
                 subject: ipsum labore deserunt fugiat
                 markdown: >-
@@ -182,7 +182,7 @@ paths:
           x-examples:
             application/json:
               time_to_live: 3600
-              feature_type: STANDARD
+              feature_level_type: STANDARD
               content:
                 subject: ipsum labore deserunt fugiat
                 markdown: >-
@@ -248,7 +248,7 @@ paths:
           x-examples:
             application/json:
               time_to_live: 3600
-              feature_type: STANDARD
+              feature_level_type: STANDARD
               content:
                 subject: ipsum labore deserunt fugiat
                 markdown: >-
@@ -940,15 +940,12 @@ definitions:
             $ref: '#/definitions/NewMessageContent'
           sender_service_id:
             $ref: '#/definitions/ServiceId'
-          feature_type:
-            $ref: '#/definitions/FeatureType'
         required:
           - id
           - fiscal_code
           - created_at
           - content
           - sender_service_id
-          - feature_type
       notification:
         type: object
         properties:
@@ -1173,11 +1170,11 @@ definitions:
             example: foobar@example.com
       fiscal_code:
         $ref: '#/definitions/FiscalCode'
-      feature_type:
-        $ref: '#/definitions/FeatureType'
+      feature_level_type:
+        $ref: '#/definitions/FeatureLevelType'
     required:
       - content
-  FeatureType:
+  FeatureLevelType:
     type: string
     default: STANDARD
     x-extensible-enum:

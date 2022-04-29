@@ -25,7 +25,7 @@ import {
 
 import {
   alphaStringArb,
-  featureTypeArb,
+  featureLevelTypeArb,
   fiscalCodeArb,
   fiscalCodeArrayArb,
   fiscalCodeSetArb,
@@ -184,14 +184,14 @@ describe("createMessageDocument", () => {
         senderUserIdArb,
         fiscalCodeArb,
         messageTimeToLiveArb,
-        featureTypeArb,
+        featureLevelTypeArb,
         serviceIdArb,
         async (
           messageId,
           senderUserId,
           fiscalCode,
           ttl,
-          featureType,
+          featureLevelType,
           senderServiceId
         ) => {
           const mockMessageModel = ({
@@ -203,7 +203,7 @@ describe("createMessageDocument", () => {
             senderUserId,
             fiscalCode,
             ttl,
-            featureType,
+            featureLevelType,
             senderServiceId
           );
 
@@ -212,6 +212,7 @@ describe("createMessageDocument", () => {
           expect(mockMessageModel.create).toHaveBeenCalledTimes(1);
           expect(E.isRight(response)).toBeTruthy();
           expect(pipe(response, E.getOrElse(undefined))).toMatchObject({
+            featureLevelType,
             fiscalCode,
             id: messageId,
             indexedId: messageId,
@@ -220,8 +221,6 @@ describe("createMessageDocument", () => {
             senderServiceId,
             senderUserId,
             timeToLiveSeconds: ttl
-            // TODO
-            // featureType
           });
         }
       )
