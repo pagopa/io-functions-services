@@ -148,6 +148,7 @@ describe("GetMessageHandler", () => {
 
   const aPublicExtendedMessage: CreatedMessageWithoutContent = {
     created_at: new Date(),
+    feature_level_type: FeatureLevelTypeEnum.STANDARD,
     fiscal_code: aNewMessageWithoutContent.fiscalCode,
     id: "A_MESSAGE_ID",
     sender_service_id: aNewMessageWithoutContent.senderServiceId,
