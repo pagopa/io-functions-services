@@ -76,7 +76,7 @@ import { TaskEither } from "fp-ts/lib/TaskEither";
 import { PaymentDataWithRequiredPayee } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentDataWithRequiredPayee";
 import { NewMessage as ApiNewMessage } from "@pagopa/io-functions-commons/dist/generated/definitions/NewMessage";
 import { StandardServiceCategoryEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/StandardServiceCategory";
-import { FeatureTypeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/FeatureType";
+import { FeatureLevelTypeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/FeatureLevelType";
 import {
   CommonMessageData,
   CreatedMessageEvent
@@ -504,7 +504,7 @@ export function CreateMessage(
         t.intersection([
           ApiNewMessage,
           t.interface({
-            feature_type: t.literal(FeatureTypeEnum.ADVANCED)
+            feature_level_type: t.literal(FeatureLevelTypeEnum.ADVANCED)
           })
         ]),
         new Set([UserGroup.ApiMessageWriteAdvanced])
