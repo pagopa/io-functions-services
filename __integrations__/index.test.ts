@@ -35,6 +35,7 @@ import { pipe } from "fp-ts/lib/function";
 import { sequenceS } from "fp-ts/lib/Apply";
 import { createBlobService } from "azure-storage";
 import { EmailString } from "@pagopa/ts-commons/lib/strings";
+import { FeatureLevelTypeEnum } from "./generated/fn-services/FeatureLevelType";
 
 const MAX_ATTEMPT = 50;
 jest.setTimeout(WAIT_MS * MAX_ATTEMPT);
@@ -196,6 +197,24 @@ describe("Create Message |> Middleware errors", () => {
     expect(response.status).toEqual(403);
   });
 
+  it("should return 403 when creating an advanced message without right permission", async () => {
+    const nodeFetch = getNodeFetch({
+      "x-user-groups": "ApiMessageWrite"
+    });
+
+    const body = {
+      message: {
+        fiscal_code: anAutoFiscalCode,
+        feature_level_type: "ADVANCED",
+        content: aMessageContent
+      }
+    };
+
+    const response = await postCreateMessage(nodeFetch)(body);
+
+    expect(response.status).toEqual(403);
+  });
+
   it("should return 201 when no middleware fails", async () => {
     const body = {
       message: {
@@ -243,6 +262,7 @@ describe("Create Message", () => {
         expect.objectContaining({
           message: expect.objectContaining({
             id: messageId,
+            feature_level_type: FeatureLevelTypeEnum.STANDARD,
             ...body.message
           }),
           status: StatusEnum.PROCESSED
@@ -291,7 +311,7 @@ describe("Create Message", () => {
               blobService,
               messageId as NonEmptyString
             ),
-            TE.orElseW(_ => TE.of(O.none))
+            TE.orElseW(_ => TE.of(O.none as O.Option<MessageContent>))
           )
         ),
         TE.mapLeft(_ => fail(`Error retrieving message data from Cosmos.`)),
