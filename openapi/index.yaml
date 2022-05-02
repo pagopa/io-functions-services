@@ -937,12 +937,15 @@ definitions:
             $ref: '#/definitions/NewMessageContent'
           sender_service_id:
             $ref: '#/definitions/ServiceId'
+          feature_level_type:
+            $ref: '#/definitions/FeatureLevelType'
         required:
           - id
           - fiscal_code
           - created_at
           - content
           - sender_service_id
+          - feature_level_type
       notification:
         type: object
         properties:
@@ -976,6 +979,17 @@ definitions:
           - PROCESSED
           - REJECTED
         example: ACCEPTED
+      read_status:
+        $ref: '#/definitions/ReadStatus'
+        description: |-
+          Describes whether a user has read the message or not
+          NOTE  : This value is only available for ADVANCED messages
+          NOTE 2: Without right permissions, `UNAVAILABLE` will be returned
+      payment_status:
+        $ref: '#/definitions/PaymentStatus'
+        description: |-
+          Describes the state of the related payment notice
+          NOTE: This value is only available for ADVANCED payment messages
     required:
       - message
   EUCovidCert:
@@ -1167,8 +1181,32 @@ definitions:
             example: foobar@example.com
       fiscal_code:
         $ref: '#/definitions/FiscalCode'
+      feature_level_type:
+        $ref: '#/definitions/FeatureLevelType'
     required:
       - content
+  FeatureLevelType:
+    type: string
+    default: STANDARD
+    x-extensible-enum:
+      - STANDARD
+      - ADVANCED
+    example: STANDARD
+  ReadStatus:
+    type: string
+    x-extensible-enum:
+      - UNAVAILABLE
+      - UNREAD
+      - READ
+    example: UNREAD
+    description: Api definition of read status enumeration
+  PaymentStatus:
+    type: string
+    description: Payment status enumeration
+    x-extensible-enum:
+      - PAID
+      - NOT_PAID
+    example: NOT_PAID
   CIDR:
     type: string
     description: Describes a single IP or a range of IPs.
