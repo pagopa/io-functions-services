@@ -288,6 +288,7 @@ paths:
             $ref: "#/definitions/MessageResponseWithContent"
           examples:
             application/json:
+              status: PROCESSED
               message:
                 id: 01BX9NSMKAAAS5PSP2FATZM6BQ
                 fiscal_code: QXJNTX9RCRVD6V4O
