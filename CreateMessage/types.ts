@@ -1,6 +1,10 @@
 import * as t from "io-ts";
 import { TimeToLiveSeconds } from "@pagopa/io-functions-commons/dist/generated/definitions/TimeToLiveSeconds";
 import { NewMessage as ApiNewMessage } from "@pagopa/io-functions-commons/dist/generated/definitions/NewMessage";
+import {
+  FeatureLevelType,
+  FeatureLevelTypeEnum
+} from "@pagopa/io-functions-commons/dist/generated/definitions/FeatureLevelType";
 import { LegalData } from "../generated/definitions/LegalData";
 
 export type ApiNewMessageWithDefaults = t.TypeOf<
@@ -8,7 +12,20 @@ export type ApiNewMessageWithDefaults = t.TypeOf<
 >;
 export const ApiNewMessageWithDefaults = t.intersection([
   ApiNewMessage,
-  t.interface({ time_to_live: TimeToLiveSeconds })
+  t.interface({
+    feature_level_type: FeatureLevelType,
+    time_to_live: TimeToLiveSeconds
+  })
+]);
+
+export type ApiNewMessageWithAdvancedFeatures = t.TypeOf<
+  typeof ApiNewMessageWithAdvancedFeatures
+>;
+export const ApiNewMessageWithAdvancedFeatures = t.intersection([
+  ApiNewMessage,
+  t.interface({
+    feature_level_type: t.literal(FeatureLevelTypeEnum.ADVANCED)
+  })
 ]);
 
 /**
