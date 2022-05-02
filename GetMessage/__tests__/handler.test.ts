@@ -824,7 +824,7 @@ describe("GetMessageHandler", () => {
     }
   });
 
-  it("should provide information about read and payment status if user is allowed and message is of type ADVANCED", async () => {
+  it("should provide information about read status if user is allowed and message is of type ADVANCED", async () => {
     const aRetrievedNotification: RetrievedNotification = {
       _etag: "_etag",
       _rid: "_rid",
@@ -877,8 +877,71 @@ describe("GetMessageHandler", () => {
     if (result.kind === "IResponseSuccessJson") {
       expect(result.value).toEqual({
         ...aPublicExtendedMessageResponseWithAdvancedFeatures,
-        payment_status: PaymentStatusEnum.NOT_PAID,
         read_status: ReadStatusEnum.UNAVAILABLE
+      });
+    }
+  });
+
+  it("should provide information about read and payment status if user is allowed and message is of type ADVANCED with payment data", async () => {
+    const aRetrievedNotification: RetrievedNotification = {
+      _etag: "_etag",
+      _rid: "_rid",
+      _self: "xyz",
+      _ts: 1,
+      channels: {
+        [NotificationChannelEnum.EMAIL]: {
+          addressSource: NotificationAddressSourceEnum.PROFILE_ADDRESS,
+          toAddress: "x@example.com" as EmailString
+        }
+      },
+      fiscalCode: aFiscalCode,
+      id: "A_NOTIFICATION_ID" as NonEmptyString,
+      kind: "IRetrievedNotification",
+      messageId: "A_MESSAGE_ID" as NonEmptyString
+    };
+
+    const mockMessageModel = {
+      findMessageForRecipient: jest.fn(() =>
+        TE.of(some(aRetrievedMessageWithAdvancedFeatures))
+      ),
+      getContentFromBlob: jest.fn(() => TE.of(none))
+    };
+
+    const aPaymentMessageStatus = {
+      ...aMessageStatus,
+      paymentStatus: PaymentStatusEnum.NOT_PAID
+    };
+
+    const getMessageHandler = GetMessageHandler(
+      mockMessageModel as any,
+      getMessageStatusModelMock(TE.of(some(aPaymentMessageStatus))),
+      getNotificationModelMock(aRetrievedNotification),
+      getNotificationStatusModelMock(),
+      {} as any
+    );
+
+    const result = await getMessageHandler(
+      mockContext,
+      aUserAuthenticationTrustedApplicationWithAdvancedFetures,
+      undefined as any, // not used
+      someUserAttributes,
+      aFiscalCode,
+      aRetrievedMessageWithoutContent.id
+    );
+
+    expect(mockMessageModel.getContentFromBlob).toHaveBeenCalledTimes(1);
+    expect(mockMessageModel.findMessageForRecipient).toHaveBeenCalledTimes(1);
+    expect(mockMessageModel.findMessageForRecipient).toHaveBeenCalledWith(
+      aRetrievedMessageWithoutContent.fiscalCode,
+      aRetrievedMessageWithoutContent.id
+    );
+
+    expect(result.kind).toBe("IResponseSuccessJson");
+    if (result.kind === "IResponseSuccessJson") {
+      expect(result.value).toEqual({
+        ...aPublicExtendedMessageResponseWithAdvancedFeatures,
+        read_status: ReadStatusEnum.UNAVAILABLE,
+        payment_status: aPaymentMessageStatus.paymentStatus
       });
     }
   });

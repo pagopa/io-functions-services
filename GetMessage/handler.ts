@@ -79,7 +79,6 @@ import * as t from "io-ts";
 import * as b from "fp-ts/lib/boolean";
 import { MessageContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageContent";
 import { ReadStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ReadStatus";
-import { PaymentStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentStatus";
 import { CreatedMessageWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/CreatedMessageWithoutContent";
 import { LegalData } from "../generated/definitions/LegalData";
 import { FeatureLevelTypeEnum } from "../generated/definitions/FeatureLevelType";
@@ -289,8 +288,11 @@ export function GetMessageHandler(
           () => messageWithoutAdvacedProperties,
           () => ({
             ...messageWithoutAdvacedProperties,
-            // TODO: wait new messageStatus property `paymentStatus`
-            payment_status: PaymentStatusEnum.NOT_PAID,
+            payment_status: pipe(
+              maybeMessageStatus,
+              O.map(messageStatus => messageStatus.paymentStatus),
+              O.toUndefined
+            ),
             read_status: ReadStatusEnum.UNAVAILABLE
           })
         )(canReadAdvancedMessageInfo(message, auth.groups))
