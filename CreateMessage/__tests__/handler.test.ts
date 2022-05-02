@@ -43,6 +43,7 @@ import {
 import { initAppInsights } from "@pagopa/ts-commons/lib/appinsights";
 import { ApiNewMessageWithDefaults } from "../types";
 import { Context } from "@azure/functions";
+import { FeatureLevelTypeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/FeatureLevelType";
 
 const createContext = (): Context =>
   (({
@@ -194,6 +195,7 @@ describe("createMessageDocument", () => {
             senderUserId,
             fiscalCode,
             ttl,
+            FeatureLevelTypeEnum.STANDARD,
             senderServiceId
           );
 

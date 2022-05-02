@@ -43,6 +43,7 @@ import { NotificationChannelEnum } from "@pagopa/io-functions-commons/dist/gener
 import { NotificationChannelStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/NotificationChannelStatusValue";
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { TimeToLiveSeconds } from "@pagopa/io-functions-commons/dist/generated/definitions/TimeToLiveSeconds";
+import { FeatureLevelTypeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/FeatureLevelType";
 
 import * as TE from "fp-ts/lib/TaskEither";
 
@@ -124,6 +125,7 @@ describe("GetMessageHandler", () => {
 
   const aNewMessageWithoutContent: NewMessageWithoutContent = {
     createdAt: new Date(),
+    featureLevelType: FeatureLevelTypeEnum.STANDARD,
     fiscalCode: aFiscalCode,
     id: "A_MESSAGE_ID" as NonEmptyString,
     indexedId: "A_MESSAGE_ID" as NonEmptyString,
@@ -145,9 +147,11 @@ describe("GetMessageHandler", () => {
 
   const aPublicExtendedMessage: CreatedMessageWithoutContent = {
     created_at: new Date(),
+    feature_level_type: FeatureLevelTypeEnum.STANDARD,
     fiscal_code: aNewMessageWithoutContent.fiscalCode,
     id: "A_MESSAGE_ID",
-    sender_service_id: aNewMessageWithoutContent.senderServiceId
+    sender_service_id: aNewMessageWithoutContent.senderServiceId,
+    time_to_live: 3600 as TimeToLiveSeconds
   };
 
   const aPublicExtendedMessageResponse: MessageResponseWithoutContent = {
@@ -515,6 +519,7 @@ describe("GetMessageHandler", () => {
         ...aPublicExtendedMessageResponse,
         message: {
           ...aPublicExtendedMessageResponse.message,
+          time_to_live: 3600,
           content: { ...aMessageContentWithLegalData }
         }
       });
@@ -600,7 +605,9 @@ describe("GetMessageHandler", () => {
 
     expect(result.kind).toBe("IResponseSuccessJson");
     if (result.kind === "IResponseSuccessJson") {
-      expect(result.value).toEqual(aPublicExtendedMessageResponse);
+      expect(result.value).toEqual({
+        ...aPublicExtendedMessageResponse
+      });
     }
   });
 

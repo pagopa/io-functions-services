@@ -23,6 +23,7 @@ import {
   PatternString
 } from "@pagopa/ts-commons/lib/strings";
 import { legacyProfileServicePreferencesSettings } from "../../__mocks__/mocks";
+import { FeatureLevelTypeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/FeatureLevelType";
 
 //
 // custom fastcheck arbitraries
@@ -165,6 +166,7 @@ export const newMessageWithoutContentArb = fc
       messageId
     ]) =>
       ({
+        featureLevelType: FeatureLevelTypeEnum.STANDARD,
         createdAt: new Date(createdAtEpoc),
         fiscalCode,
         id: messageId,
