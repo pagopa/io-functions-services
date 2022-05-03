@@ -50,7 +50,7 @@ import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/servi
 
 import { BlobService } from "azure-storage";
 
-import { MessageModel } from "@pagopa/io-functions-commons/dist/src/models/message";
+import { MessageModel, MessageWithContent, MessageWithoutContent, RetrievedMessage } from "@pagopa/io-functions-commons/dist/src/models/message";
 
 import * as TE from "fp-ts/lib/TaskEither";
 import * as E from "fp-ts/lib/Either";
@@ -88,11 +88,11 @@ type IGetMessageHandler = (
   clientIp: ClientIp,
   attrs: IAzureUserAttributes,
   fiscalCode: FiscalCode,
-  messageId: string
+  messageId: NonEmptyString
 ) => Promise<
   | IResponseSuccessJson<
-      MessageResponseWithContent | MessageResponseWithoutContent
-    >
+    MessageResponseWithContent | MessageResponseWithoutContent
+  >
   | IResponseErrorNotFound
   | IResponseErrorQuery
   | IResponseErrorValidation
@@ -116,67 +116,31 @@ export function GetMessageHandler(
 ): IGetMessageHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, max-params
   return async (context, auth, __, userAttributes, fiscalCode, messageId) => {
-    const errorOrMessageId = NonEmptyString.decode(messageId);
-
-    if (E.isLeft(errorOrMessageId)) {
-      return ResponseErrorValidation(
-        "Invalid messageId",
-        readableReport(errorOrMessageId.left)
-      );
-    }
-    const errorOrMaybeDocument = await messageModel.findMessageForRecipient(
-      fiscalCode,
-      errorOrMessageId.right
-    )();
-
-    if (E.isLeft(errorOrMaybeDocument)) {
-      // the query failed
-      return ResponseErrorQuery(
-        "Error while retrieving the message",
-        errorOrMaybeDocument.left
-      );
-    }
-
-    const maybeDocument = errorOrMaybeDocument.right;
-    if (O.isNone(maybeDocument)) {
-      // the document does not exist
-      return ResponseErrorNotFound(
-        "Message not found",
-        "The message that you requested was not found in the system."
-      );
-    }
-
-    const retrievedMessage = maybeDocument.value;
-
     const isUserAllowedForLegalMessages =
       [...auth.groups].indexOf(UserGroup.ApiLegalMessageRead) >= 0;
-    // the service is allowed to see the message when he is the sender of the message
-    const isUserAllowed =
-      retrievedMessage.senderServiceId === userAttributes.service.serviceId ||
-      isUserAllowedForLegalMessages;
 
-    if (!isUserAllowed) {
-      // the user is not allowed to see the message
-      return ResponseErrorForbiddenNotAuthorized;
-    }
+    // the service is allowed to see the message when he is the sender of the message
+    const isUserAllowed = (message: RetrievedMessage) => message.senderServiceId === userAttributes.service.serviceId ||
+      isUserAllowedForLegalMessages ? TE.right(message) : TE.left(ResponseErrorForbiddenNotAuthorized);
 
     // fetch the content of the message from the blob storage
-    const errorOrMaybeContent = await pipe(
-      messageModel.getContentFromBlob(blobService, retrievedMessage.id),
+    const retrieveContent = ({ document }: { document: RetrievedMessage }) => pipe(document,
+      (document) => messageModel.getContentFromBlob(blobService, document.id),
       TE.mapLeft(error => {
         context.log.error(`GetMessageHandler|${JSON.stringify(error)}`);
-        return ResponseErrorInternal(`${error.name}: ${error.message}`);
+        //line to check with attention during PR
+        return ResponseErrorInternal(`${(error as Error).name}: ${(error as Error).message}`);
       }),
       TE.chainW(
         O.fold(
           () =>
             isUserAllowedForLegalMessages
               ? TE.left(
-                  ResponseErrorNotFound(
-                    "Not Found",
-                    "Message Content not found"
-                  )
+                ResponseErrorNotFound(
+                  "Not Found",
+                  "Message Content not found"
                 )
+              )
               : TE.of(O.none),
           messageContent =>
             pipe(
@@ -188,71 +152,82 @@ export function GetMessageHandler(
                 !isUserAllowedForLegalMessages
                   ? TE.of(O.some(messageContent))
                   : TE.left<
-                      | IResponseErrorForbiddenNotAuthorized
-                      | IResponseErrorNotFound,
-                      O.Option<MessageContent>
-                    >(ResponseErrorForbiddenNotAuthorized)
+                    | IResponseErrorForbiddenNotAuthorized
+                    | IResponseErrorNotFound,
+                    O.Option<MessageContent>
+                  >(ResponseErrorForbiddenNotAuthorized)
               )
             )
         )
+      ),
+      TE.map(O.toUndefined)
+    )
+
+    return await pipe(messageModel.findMessageForRecipient(fiscalCode, messageId),
+      // the query failed
+      TE.mapLeft((err) => ResponseErrorQuery(
+        "Error while retrieving the message",
+        err
+      )),
+      // the document does not exist
+      TE.chainW((maybeDocument) => pipe(maybeDocument, TE.fromOption(() => ResponseErrorNotFound(
+        "Message not found",
+        "The message that you requested was not found in the system.")
+      ))),
+      //check if the user is allowed to see the message
+      TE.chainW((document) => isUserAllowed(document)),
+      // fetch the content of the message from the blob storage
+      TE.mapLeft((error) => {
+        context.log.error(
+          `GetMessageHandler|${JSON.stringify(error)}`
+        );
+        return error;
+      }),
+      TE.bindTo('document'),
+      TE.bindW('content', retrieveContent),
+      TE.bindW('message', ({ document, content }) => TE.of({
+        content,
+        ...retrievedMessageToPublic(document)
+      })),
+      TE.bindW('notification', ({ document }) => pipe(
+        getMessageNotificationStatuses(
+          notificationModel,
+          notificationStatusModel,
+          document.id
+        ),
+        TE.mapLeft((error) => ResponseErrorInternal(
+          `Error retrieving NotificationStatus: ${(error as Error).name}|${(error as Error).message}`
+        )),
+        TE.map(O.toUndefined)
       )
-    )();
-
-    if (E.isLeft(errorOrMaybeContent)) {
-      context.log.error(
-        `GetMessageHandler|${JSON.stringify(errorOrMaybeContent.left)}`
-      );
-      return errorOrMaybeContent.left;
-    }
-
-    const content = O.toUndefined(errorOrMaybeContent.right);
-
-    const message = {
-      content,
-      ...retrievedMessageToPublic(retrievedMessage)
-    };
-
-    const errorOrNotificationStatuses = await getMessageNotificationStatuses(
-      notificationModel,
-      notificationStatusModel,
-      retrievedMessage.id
-    )();
-
-    if (E.isLeft(errorOrNotificationStatuses)) {
-      return ResponseErrorInternal(
-        `Error retrieving NotificationStatus: ${errorOrNotificationStatuses.left.name}|${errorOrNotificationStatuses.left.message}`
-      );
-    }
-    const notificationStatuses = errorOrNotificationStatuses.right;
-
-    const errorOrMaybeMessageStatus = await messageStatusModel.findLastVersionByModelId(
-      [retrievedMessage.id]
-    )();
-
-    if (E.isLeft(errorOrMaybeMessageStatus)) {
-      return ResponseErrorInternal(
-        `Error retrieving MessageStatus: ${JSON.stringify(
-          errorOrMaybeMessageStatus.left
-        )}`
-      );
-    }
-    const maybeMessageStatus = errorOrMaybeMessageStatus.right;
-
-    const returnedMessage = {
-      message,
-      notification: pipe(notificationStatuses, O.toUndefined),
-      // we do not return the status date-time
-      status: pipe(
-        maybeMessageStatus,
-        O.map(messageStatus => messageStatus.status),
-        // when the message has been received but a MessageStatus
-        // does not exist yet, the message is considered to be
-        // in the ACCEPTED state (not yet stored in the inbox)
-        O.getOrElse(() => MessageStatusValueEnum.ACCEPTED)
+      ),
+      TE.bindW('status', ({ document }) => pipe(
+        messageStatusModel.findLastVersionByModelId([document.id]),
+        TE.mapLeft((error) => ResponseErrorInternal(
+          `Error retrieving MessageStatus: ${JSON.stringify(
+            error
+          )}`
+        )),
+        TE.map((maybeMessageStatus) => pipe(maybeMessageStatus,
+          O.map(messageStatus => messageStatus.status),
+          // when the message has been received but a MessageStatus
+          // does not exist yet, the message is considered to be
+          // in the ACCEPTED state (not yet stored in the inbox)
+          O.getOrElse(() => MessageStatusValueEnum.ACCEPTED))
+        ),
       )
-    };
-
-    return ResponseSuccessJson(returnedMessage);
+      ),
+      TE.map(messageToReturn =>
+      ({
+        message: messageToReturn.message,
+        notification: messageToReturn.notification,
+        // we do not return the status date-time
+        status: messageToReturn.status
+      })
+      ),
+      TE.map(message => ResponseSuccessJson(message)),
+      TE.toUnion
+    )();
   };
 }
 
