@@ -982,10 +982,13 @@ definitions:
         example: ACCEPTED
       read_status:
         $ref: '#/definitions/ReadStatus'
-        description: |-
+        description: >-
           Describes whether a user has read the message or not
+
           NOTE  : This value is only available for ADVANCED messages
-          NOTE 2: Without right permissions, `UNAVAILABLE` will be returned
+
+          NOTE 2: `UNAVAILABLE` will be returned if user revoked the permission
+          to access to read status
       payment_status:
         $ref: '#/definitions/PaymentStatus'
         description: |-
