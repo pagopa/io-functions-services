@@ -35,7 +35,6 @@ import {
   ResponseErrorForbiddenNotAuthorized,
   ResponseErrorInternal,
   ResponseErrorNotFound,
-  ResponseErrorValidation,
   ResponseSuccessJson
 } from "@pagopa/ts-commons/lib/responses";
 import { FiscalCode, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
@@ -50,10 +49,9 @@ import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/servi
 
 import { BlobService } from "azure-storage";
 
-import { MessageModel, MessageWithContent, MessageWithoutContent, RetrievedMessage } from "@pagopa/io-functions-commons/dist/src/models/message";
+import { MessageModel, RetrievedMessage } from "@pagopa/io-functions-commons/dist/src/models/message";
 
 import * as TE from "fp-ts/lib/TaskEither";
-import * as E from "fp-ts/lib/Either";
 import * as O from "fp-ts/lib/Option";
 
 import { MessageStatusModel } from "@pagopa/io-functions-commons/dist/src/models/message_status";
@@ -69,7 +67,6 @@ import { MessageResponseWithContent } from "@pagopa/io-functions-commons/dist/ge
 import { MessageResponseWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageResponseWithoutContent";
 import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
-import { readableReport } from "@pagopa/ts-commons/lib/reporters";
 import { pipe } from "fp-ts/lib/function";
 import * as t from "io-ts";
 import { MessageContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageContent";
