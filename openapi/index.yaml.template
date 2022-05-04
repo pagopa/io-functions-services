@@ -285,7 +285,7 @@ paths:
         "200":
           description: Message found.
           schema:
-            $ref: "#/definitions/MessageResponseWithContent"
+            $ref: "#/definitions/ExternalMessageResponseWithContent"
           examples:
             application/json:
               status: PROCESSED
@@ -768,6 +768,16 @@ definitions:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/NotificationChannelStatusValue"
   MessageResponseWithContent:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/MessageResponseWithContent"
+  ExternalMessageResponseWithContent:
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ExternalMessageResponseWithContent"
+  MessageResponseNotificationStatus:
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/MessageResponseNotificationStatus"
+  MessageStatusValue:
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/MessageStatusValue"
+  ExternalCreatedMessageWithContent:
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ExternalCreatedMessageWithContent"
+  CreatedMessageWithContent:
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/CreatedMessageWithContent"
   EUCovidCert:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/EUCovidCert"
   OrganizationFiscalCode:
