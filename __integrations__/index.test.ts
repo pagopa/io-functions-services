@@ -393,7 +393,6 @@ describe("Create Advanced Message", () => {
             ...body.message
           }),
           status: MessageStatusValueEnum.PROCESSED,
-          payment_status: PaymentStatusEnum.NOT_PAID,
           read_status: ReadStatusEnum.UNAVAILABLE
         })
       );
@@ -422,7 +421,8 @@ describe("Create Advanced Message", () => {
     }
   );
 
-  it("should return the PAYMENT message with payment_status, if user is allowed to read it", async () => {
+  // TODO: Enable when paymentStatus will be available
+  it.skip("should return the PAYMENT message with payment_status, if user is allowed to read it", async () => {
     const fiscalCode = anAutoFiscalCode;
     const serviceId = anEnabledServiceId;
 
