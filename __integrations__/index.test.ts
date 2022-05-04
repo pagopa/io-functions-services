@@ -14,10 +14,7 @@ import {
   QueueStorageConnection
 } from "./env";
 
-import {
-  MessageResponseWithContent,
-  StatusEnum
-} from "./generated/fn-services/MessageResponseWithContent";
+import { ExternalMessageResponseWithContent } from "./generated/fn-services/ExternalMessageResponseWithContent";
 import { CreatedMessage } from "./generated/fn-services/CreatedMessage";
 import { FiscalCode, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 import { exit } from "process";
@@ -36,6 +33,7 @@ import { sequenceS } from "fp-ts/lib/Apply";
 import { createBlobService } from "azure-storage";
 import { EmailString } from "@pagopa/ts-commons/lib/strings";
 import { FeatureLevelTypeEnum } from "./generated/fn-services/FeatureLevelType";
+import { MessageStatusValueEnum } from "./generated/fn-services/MessageStatusValue";
 
 const MAX_ATTEMPT = 50;
 jest.setTimeout(WAIT_MS * MAX_ATTEMPT);
@@ -256,7 +254,7 @@ describe("Create Message", () => {
       const resultGet = await getSentMessage(nodeFetch)(fiscalCode, messageId);
 
       expect(resultGet.status).toEqual(200);
-      const detail = (await resultGet.json()) as MessageResponseWithContent;
+      const detail = (await resultGet.json()) as ExternalMessageResponseWithContent;
 
       expect(detail).toEqual(
         expect.objectContaining({
@@ -265,7 +263,7 @@ describe("Create Message", () => {
             feature_level_type: FeatureLevelTypeEnum.STANDARD,
             ...body.message
           }),
-          status: StatusEnum.PROCESSED
+          status: MessageStatusValueEnum.PROCESSED
         })
       );
     }
@@ -321,7 +319,9 @@ describe("Create Message", () => {
           expect(O.isSome(content)).toBeFalsy();
 
           if (O.isSome(status))
-            expect(status.value.status).toEqual(StatusEnum.REJECTED);
+            expect(status.value.status).toEqual(
+              MessageStatusValueEnum.REJECTED
+            );
         })
       )();
 
