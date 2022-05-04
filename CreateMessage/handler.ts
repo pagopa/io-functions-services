@@ -9,7 +9,6 @@ import * as E from "fp-ts/lib/Either";
 import { pipe } from "fp-ts/lib/function";
 import * as O from "fp-ts/lib/Option";
 import * as TE from "fp-ts/lib/TaskEither";
-import * as T from "fp-ts/lib/Task";
 
 import * as t from "io-ts";
 
@@ -207,7 +206,7 @@ export const createMessageDocument = (
 ): TaskEither<
   IResponseErrorInternal | IResponseErrorQuery,
   NewMessageWithoutContent
-  // eslint-disable-next-line max-params
+// eslint-disable-next-line max-params
 > => {
   // create a new message from the payload
   // this object contains only the message metadata, the content of the
@@ -275,28 +274,6 @@ export function CreateMessageHandler(
     maybeFiscalCodeInPath
     // eslint-disable-next-line max-params
   ) => {
-    const maybeFiscalCodeInPayload = O.fromNullable(messagePayload.fiscal_code);
-
-    // The fiscal_code parameter must be specified in the path or in the payload but not in both
-    if (O.isSome(maybeFiscalCodeInPath) && O.isSome(maybeFiscalCodeInPayload)) {
-      return ResponseErrorValidation(
-        "Bad parameters",
-        "The fiscalcode parameter must be specified in the path or in the payload but not in both"
-      );
-    }
-
-    const maybeFiscalCode = pipe(
-      maybeFiscalCodeInPath,
-      O.alt(() => maybeFiscalCodeInPayload)
-    );
-    if (O.isNone(maybeFiscalCode)) {
-      return ResponseErrorValidation(
-        "Bad parameters",
-        "The fiscalcode parameter must be specified in the path or in the payload"
-      );
-    }
-
-    const fiscalCode = maybeFiscalCode.value;
     const { service, email: serviceUserEmail } = userAttributes;
     const { authorizedRecipients, serviceId } = service;
 
@@ -318,7 +295,7 @@ export function CreateMessageHandler(
           hasDefaultEmail: Boolean(
             // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
             messagePayload.default_addresses &&
-              messagePayload.default_addresses.email
+            messagePayload.default_addresses.email
           ).toString(),
           messageId,
           senderServiceId: serviceId,
@@ -334,31 +311,30 @@ export function CreateMessageHandler(
       isSuccess: boolean
     ): void =>
       context.log.verbose(
-        `CreateMessageHandler|SERVICE_ID=${serviceId}|RESPONSE=${r.kind}|${
-          r.detail
+        `CreateMessageHandler|SERVICE_ID=${serviceId}|RESPONSE=${r.kind}|${r.detail
         }|RESULT=${isSuccess ? "SUCCESS" : "FAILURE"}`
       );
 
     // here we create an async Task that processes the request
-    return pipe(
+    const processRequest = (fiscalCode: FiscalCode) => pipe(
       // check whether the client can create a message for the recipient
       TE.fromEither(
         canWriteMessage(auth.groups, authorizedRecipients, fiscalCode)
       ),
-      // Verify if the Service has the required quality to sent message
+      // Verify if the Service has the required quality to send message
       TE.chain(_ =>
         disableIncompleteServices &&
-        !incompleteServiceWhitelist.includes(serviceId) &&
-        !authorizedRecipients.has(fiscalCode)
+          !incompleteServiceWhitelist.includes(serviceId) &&
+          !authorizedRecipients.has(fiscalCode)
           ? TE.fromEither(
-              pipe(
-                ValidService.decode(userAttributes.service),
-                E.bimap(
-                  _1 => ResponseErrorForbiddenNotAuthorizedForRecipient,
-                  _1 => true
-                )
+            pipe(
+              ValidService.decode(userAttributes.service),
+              E.bimap(
+                _1 => ResponseErrorForbiddenNotAuthorizedForRecipient,
+                _1 => true
               )
             )
+          )
           : TE.right(true)
       ),
       TE.chainW(_ =>
@@ -416,7 +392,7 @@ export function CreateMessageHandler(
         )
       ),
 
-      // processing the message asynchrnously
+      // process the message asynchrounously
       TE.chain(newMessageWithoutContent =>
         pipe(
           {
@@ -441,15 +417,63 @@ export function CreateMessageHandler(
       ),
       // fold failure responses (left) and success responses (right) to a
       // single response
-      TE.toUnion,
-      T.map(r => {
+      TE.map(r => {
         // before returning the response to the client we log the result
         const isSuccess = r.kind === "IResponseSuccessRedirectToResource";
         trackResponse(r, isSuccess);
         logResponse(r, isSuccess);
         return r;
-      })
+      }),
+    );
+
+
+    return await pipe(messagePayload.fiscal_code,
+      O.fromNullable,
+      //if fiscalcode is not provided in the payload, we try to find it in the path
+      O.foldW(
+        () => pipe(maybeFiscalCodeInPath,
+          O.fold(
+            () => E.left(ResponseErrorValidation(
+              "Bad parameters",
+              "The fiscalcode parameter must be specified in the path or in the payload"
+            )),
+            (fiscalCodeInPath: FiscalCode) => E.right(fiscalCodeInPath)),
+        ),
+        // The fiscal_code parameter must be specified in the path or in the payload but not in both
+        (payloadFiscalCode: FiscalCode) => pipe(maybeFiscalCodeInPath,
+          O.fold(
+            () => E.right(payloadFiscalCode),
+            () => E.left(ResponseErrorValidation(
+              "Bad parameters",
+              "The fiscalcode parameter must be specified in the path or in the payload but not in both"
+            ))),
+        )
+      ),
+      TE.fromEither,
+      TE.chain(processRequest),
+      TE.toUnion,
     )();
+
+    // const maybeFiscalCodeInPayload = O.fromNullable(messagePayload.fiscal_code);
+
+    // The fiscal_code parameter must be specified in the path or in the payload but not in both
+    // if (O.isSome(maybeFiscalCodeInPath) && O.isSome(maybeFiscalCodeInPayload)) {
+    //   return ResponseErrorValidation(
+    //     "Bad parameters",
+    //     "The fiscalcode parameter must be specified in the path or in the payload but not in both"
+    //   );
+    // }
+
+    // const maybeFiscalCode = pipe(
+    //   maybeFiscalCodeInPath,
+    //   O.alt(() => maybeFiscalCodeInPayload)
+    // );
+    // if (O.isNone(maybeFiscalCode)) {
+    //   return ResponseErrorValidation(
+    //     "Bad parameters",
+    //     "The fiscalcode parameter must be specified in the path or in the payload"
+    //   );
+    // }
   };
 }
 

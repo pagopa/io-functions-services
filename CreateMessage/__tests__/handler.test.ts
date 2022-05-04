@@ -45,12 +45,12 @@ import { ApiNewMessageWithDefaults } from "../types";
 import { Context } from "@azure/functions";
 
 const createContext = (): Context =>
-  (({
-    bindings: {},
-    executionContext: { functionName: "funcname" },
-    // eslint-disable no-console
-    log: { ...console, verbose: console.log }
-  } as unknown) as Context);
+(({
+  bindings: {},
+  executionContext: { functionName: "funcname" },
+  // eslint-disable no-console
+  log: { ...console, verbose: console.log }
+} as unknown) as Context);
 
 //
 // tests
@@ -218,13 +218,26 @@ describe("createMessageDocument", () => {
 });
 
 describe("CreateMessageHandler", () => {
+  const mockAzureUserAttributes: IAzureUserAttributes = {
+    email: "" as EmailString,
+    kind: "IAzureUserAttributes",
+    service: {
+      ...anIncompleteService,
+      authorizedRecipients: new Set([aFiscalCode])
+    } as IAzureUserAttributes["service"]
+  };
+
+  const mockGenerateObjId = jest
+    .fn()
+    .mockImplementationOnce(() => "mocked-message-id");
+
   it("should return a validation error if fiscalcode is specified both in path and payload", async () => {
     await fc.assert(
       fc.asyncProperty(fiscalCodeArb, async fiscalCode => {
         const createMessageHandler = CreateMessageHandler(
           undefined as any,
           undefined as any,
-          undefined as any,
+          mockGenerateObjId,
           undefined as any,
           true,
           []
@@ -234,7 +247,7 @@ describe("CreateMessageHandler", () => {
           undefined as any,
           undefined as any,
           undefined as any,
-          undefined as any,
+          mockAzureUserAttributes,
           {
             fiscal_code: fiscalCode
           } as any,
@@ -250,7 +263,7 @@ describe("CreateMessageHandler", () => {
     const createMessageHandler = CreateMessageHandler(
       undefined as any,
       undefined as any,
-      undefined as any,
+      mockGenerateObjId,
       undefined as any,
       true,
       []
@@ -260,7 +273,7 @@ describe("CreateMessageHandler", () => {
       undefined as any,
       undefined as any,
       undefined as any,
-      undefined as any,
+      mockAzureUserAttributes,
       {} as any,
       none
     );
@@ -276,17 +289,6 @@ describe("CreateMessageHandler", () => {
       userId: "" as NonEmptyString
     };
 
-    const mockAzureUserAttributes: IAzureUserAttributes = {
-      email: "" as EmailString,
-      kind: "IAzureUserAttributes",
-      service: {
-        ...anIncompleteService,
-        authorizedRecipients: new Set([aFiscalCode])
-      } as IAzureUserAttributes["service"]
-    };
-    const mockGenerateObjId = jest
-      .fn()
-      .mockImplementationOnce(() => "mocked-message-id");
     const mockTelemetryClient = ({
       trackEvent: jest.fn()
     } as unknown) as ReturnType<typeof initAppInsights>;
