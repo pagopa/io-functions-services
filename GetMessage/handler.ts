@@ -59,7 +59,10 @@ import * as TE from "fp-ts/lib/TaskEither";
 import * as E from "fp-ts/lib/Either";
 import * as O from "fp-ts/lib/Option";
 
-import { MessageStatusModel } from "@pagopa/io-functions-commons/dist/src/models/message_status";
+import {
+  MessageStatusModel,
+  RetrievedMessageStatus
+} from "@pagopa/io-functions-commons/dist/src/models/message_status";
 import { NotificationStatusModel } from "@pagopa/io-functions-commons/dist/src/models/notification_status";
 
 import {
@@ -78,8 +81,11 @@ import { pipe } from "fp-ts/lib/function";
 import * as t from "io-ts";
 import * as b from "fp-ts/lib/boolean";
 import { MessageContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageContent";
-import { ReadStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ReadStatus";
-import { CreatedMessageWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/CreatedMessageWithoutContent";
+import {
+  ReadStatus,
+  ReadStatusEnum
+} from "@pagopa/io-functions-commons/dist/generated/definitions/ReadStatus";
+import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { LegalData } from "../generated/definitions/LegalData";
 import { FeatureLevelTypeEnum } from "../generated/definitions/FeatureLevelType";
 
@@ -125,11 +131,42 @@ type LegalMessagePattern = t.TypeOf<typeof LegalMessagePattern>;
  * Checks whether the client service can read advanced message info (read_status and payment_Status)
  */
 export const canReadAdvancedMessageInfo = (
-  message: CreatedMessageWithoutContent | CreatedMessageWithoutContent,
+  message:
+    | ExternalCreatedMessageWithoutContent
+    | ExternalCreatedMessageWithoutContent,
   authGroups: IAzureApiAuthorization["groups"]
 ): boolean =>
   message.feature_level_type === FeatureLevelTypeEnum.ADVANCED &&
   authGroups.has(UserGroup.ApiMessageReadAdvanced);
+
+/**
+ * Checks whether the client service can read message read status
+ *
+ * @param serviceId the subscription id of the service
+ * @returns false if user revoked the permission to access the read status, true otherwise
+ */
+export const canReadMessageReadStatus = (_serviceId: ServiceId): boolean =>
+  false;
+
+/**
+ * Return a ReadStatusEnum
+ *
+ * @param maybeMessageStatus an Option of MessageStatus
+ * @returns READ if message status exists and isRead is set to true, UNREAD otherwise
+ */
+export const getReadStatusForService = (
+  maybeMessageStatus: O.Option<RetrievedMessageStatus>
+): ReadStatus =>
+  pipe(
+    maybeMessageStatus,
+    O.map(messageStatus =>
+      b.fold(
+        () => ReadStatusEnum.UNREAD,
+        () => ReadStatusEnum.READ
+      )(messageStatus.isRead)
+    ),
+    O.getOrElse(() => ReadStatusEnum.UNREAD)
+  );
 
 /**
  * Handles requests for getting a single message for a recipient.
@@ -266,9 +303,7 @@ export function GetMessageHandler(
     }
     const maybeMessageStatus = errorOrMaybeMessageStatus.right;
 
-    const returnedMessage:
-      | MessageResponseWithContent
-      | MessageResponseWithoutContent = pipe(
+    const returnedMessage = pipe(
       {
         message,
         notification: pipe(notificationStatuses, O.toUndefined),
@@ -288,12 +323,10 @@ export function GetMessageHandler(
           () => messageWithoutAdvacedProperties,
           () => ({
             ...messageWithoutAdvacedProperties,
-            payment_status: pipe(
-              maybeMessageStatus,
-              O.map(messageStatus => messageStatus.paymentStatus),
-              O.toUndefined
-            ),
-            read_status: ReadStatusEnum.UNAVAILABLE
+            read_status: b.fold(
+              () => ReadStatusEnum.UNAVAILABLE,
+              () => getReadStatusForService(maybeMessageStatus)
+            )(canReadMessageReadStatus(auth.subscriptionId))
           })
         )(canReadAdvancedMessageInfo(message, auth.groups))
     );
