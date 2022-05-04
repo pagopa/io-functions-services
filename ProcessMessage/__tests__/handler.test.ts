@@ -196,6 +196,21 @@ const aSpecialMessageData: CommonMessageData = {
     serviceCategory: SpecialServiceCategoryEnum.SPECIAL
   }
 };
+
+// Advanced Messages
+
+// Ensure that ProcessMessage will handle messages during the switch
+// between old model (without featureLevelType) and new one (with featureLevelType)
+const {
+  featureLevelType,
+  ...aMessageWithoutFeatureLevelType
+} = aNewMessageWithoutContent;
+const aCommonMessageDataWithoutFeatureLevelType: CommonMessageData = {
+  content: aMessageContent,
+  message: aMessageWithoutFeatureLevelType as any,
+  senderMetadata: aCreatedMessageEventSenderMetadata
+};
+
 const mockRetrieveProcessingMessageData = jest.fn(() =>
   TE.of(O.some(aCommonMessageData))
 );
@@ -372,6 +387,7 @@ describe("getprocessMessageHandler", () => {
     ${"with original payment message with payee"}      | ${O.some(aRetrievedServicePreference)} | ${"not-called"}  | ${aCreatedMessageEvent} | ${{ ...aCommonMessageData, content: aMessageContentWithPaymentDataWithPayee }} | ${aPastOptOutEmailSwitchDate} | ${false}          | ${aPaymentDataWithPayee}                                                                                  | ${aRetrievedProfileWithAValidTimestamp} | ${aBlobResult} | ${aRetrievedMessage}
     ${"with overridden payee if no payee is provided"} | ${O.some(aRetrievedServicePreference)} | ${"not-called"}  | ${aCreatedMessageEvent} | ${{ ...aCommonMessageData, content: aMessageContentWithPaymentData }}          | ${aPastOptOutEmailSwitchDate} | ${false}          | ${{ ...aPaymentData, payee: { fiscal_code: aCreatedMessageEventSenderMetadata.organizationFiscalCode } }} | ${aRetrievedProfileWithAValidTimestamp} | ${aBlobResult} | ${aRetrievedMessage}
     ${"with a no payment message"}                     | ${O.none}                              | ${"not-called"}  | ${aCreatedMessageEvent} | ${aCommonMessageData}                                                          | ${aPastOptOutEmailSwitchDate} | ${false}          | ${undefined}                                                                                              | ${aRetrievedProfileWithAValidTimestamp} | ${aBlobResult} | ${aRetrievedMessage}
+    ${"a message without featureLevelType field"}      | ${O.none}                              | ${"not-called"}  | ${aCreatedMessageEvent} | ${aCommonMessageDataWithoutFeatureLevelType}                                   | ${aPastOptOutEmailSwitchDate} | ${false}          | ${undefined}                                                                                              | ${aRetrievedProfileWithAValidTimestamp} | ${aBlobResult} | ${aRetrievedMessage}
   `(
     "should succeed with $scenario",
     async ({
