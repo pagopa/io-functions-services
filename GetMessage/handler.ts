@@ -214,12 +214,12 @@ export function GetMessageHandler(
         ),
       )
       ),
-      TE.map(messageToReturn =>
+      TE.map(({ message, notification, status }) =>
       ({
-        message: messageToReturn.message,
-        notification: messageToReturn.notification,
+        message,
+        notification,
         // we do not return the status date-time
-        status: messageToReturn.status
+        status
       })
       ),
       TE.map(message => ResponseSuccessJson(message)),
