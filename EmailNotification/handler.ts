@@ -1,7 +1,7 @@
 import * as t from "io-ts";
 import * as E from "fp-ts/lib/Either";
 import * as TE from "fp-ts/lib/TaskEither";
-import { pipe } from "fp-ts/lib/function";
+import { flow, pipe } from "fp-ts/lib/function";
 
 import * as HtmlToText from "html-to-text";
 import * as NodeMailer from "nodemailer";
@@ -132,7 +132,7 @@ export const getEmailNotificationHandler = (
                     `Error while fetching the notification: ${JSON.stringify(error)}`
                   );
                 }),
-                TE.chain((maybeNotification) => pipe(maybeNotification,
+                TE.chain(flow(
                   E.fromOption(() => {
                     context.log.warn(`${logPrefix}|RESULT=NOTIFICATION_NOT_FOUND`);
                     throw new Error(`Notification not found`);

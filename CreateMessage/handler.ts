@@ -432,48 +432,27 @@ export function CreateMessageHandler(
       //if fiscalcode is not provided in the payload, we try to find it in the path
       O.foldW(
         () => pipe(maybeFiscalCodeInPath,
-          O.fold(
-            () => E.left(ResponseErrorValidation(
+          E.fromOption(() =>
+            ResponseErrorValidation(
               "Bad parameters",
               "The fiscalcode parameter must be specified in the path or in the payload"
-            )),
-            (fiscalCodeInPath: FiscalCode) => E.right(fiscalCodeInPath)),
+            )
+          ),
         ),
         // The fiscal_code parameter must be specified in the path or in the payload but not in both
         (payloadFiscalCode: FiscalCode) => pipe(maybeFiscalCodeInPath,
-          O.fold(
-            () => E.right(payloadFiscalCode),
-            () => E.left(ResponseErrorValidation(
-              "Bad parameters",
-              "The fiscalcode parameter must be specified in the path or in the payload but not in both"
-            ))),
+          E.fromOption(() => payloadFiscalCode),
+          E.map(() => ResponseErrorValidation(
+            "Bad parameters",
+            "The fiscalcode parameter must be specified in the path or in the payload but not in both"
+          )),
+          E.swap,
         )
       ),
       TE.fromEither,
       TE.chain(processRequest),
       TE.toUnion,
     )();
-
-    // const maybeFiscalCodeInPayload = O.fromNullable(messagePayload.fiscal_code);
-
-    // The fiscal_code parameter must be specified in the path or in the payload but not in both
-    // if (O.isSome(maybeFiscalCodeInPath) && O.isSome(maybeFiscalCodeInPayload)) {
-    //   return ResponseErrorValidation(
-    //     "Bad parameters",
-    //     "The fiscalcode parameter must be specified in the path or in the payload but not in both"
-    //   );
-    // }
-
-    // const maybeFiscalCode = pipe(
-    //   maybeFiscalCodeInPath,
-    //   O.alt(() => maybeFiscalCodeInPayload)
-    // );
-    // if (O.isNone(maybeFiscalCode)) {
-    //   return ResponseErrorValidation(
-    //     "Bad parameters",
-    //     "The fiscalcode parameter must be specified in the path or in the payload"
-    //   );
-    // }
   };
 }
 

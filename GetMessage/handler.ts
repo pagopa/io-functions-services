@@ -67,7 +67,7 @@ import { MessageResponseWithContent } from "@pagopa/io-functions-commons/dist/ge
 import { MessageResponseWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageResponseWithoutContent";
 import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
-import { pipe } from "fp-ts/lib/function";
+import { flow, pipe } from "fp-ts/lib/function";
 import * as t from "io-ts";
 import { MessageContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageContent";
 import { LegalData } from "../generated/definitions/LegalData";
@@ -117,8 +117,8 @@ export function GetMessageHandler(
       [...auth.groups].indexOf(UserGroup.ApiLegalMessageRead) >= 0;
 
     // the service is allowed to see the message when he is the sender of the message
-    const isUserAllowed = (message: RetrievedMessage) => message.senderServiceId === userAttributes.service.serviceId ||
-      isUserAllowedForLegalMessages ? TE.right(message) : TE.left(ResponseErrorForbiddenNotAuthorized);
+    const isUserAllowed = TE.fromPredicate((message: RetrievedMessage) => message.senderServiceId === userAttributes.service.serviceId ||
+      isUserAllowedForLegalMessages, () => ResponseErrorForbiddenNotAuthorized)
 
     // fetch the content of the message from the blob storage
     const retrieveContent = ({ document }: { document: RetrievedMessage }) => pipe(document,
@@ -167,12 +167,14 @@ export function GetMessageHandler(
         err
       )),
       // the document does not exist
-      TE.chainW((maybeDocument) => pipe(maybeDocument, TE.fromOption(() => ResponseErrorNotFound(
-        "Message not found",
-        "The message that you requested was not found in the system.")
-      ))),
+      TE.chainW(TE.fromOption(() =>
+        ResponseErrorNotFound(
+          "Message not found",
+          "The message that you requested was not found in the system."
+        )
+      )),
       //check if the user is allowed to see the message
-      TE.chainW((document) => isUserAllowed(document)),
+      TE.chainW(isUserAllowed),
       // fetch the content of the message from the blob storage
       TE.mapLeft((error) => {
         context.log.error(
@@ -205,7 +207,7 @@ export function GetMessageHandler(
             error
           )}`
         )),
-        TE.map((maybeMessageStatus) => pipe(maybeMessageStatus,
+        TE.map(flow(
           O.map(messageStatus => messageStatus.status),
           // when the message has been received but a MessageStatus
           // does not exist yet, the message is considered to be
