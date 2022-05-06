@@ -536,7 +536,11 @@ export const getProcessMessageHandler = ({
           telemetryClient.trackEvent({
             name: "api.messages.processed",
             properties: {
+              featureLevelType: createdMessageEvent.message.featureLevelType,
               fiscalCode: toHash(profile.fiscalCode),
+              hasPaymentData: PaymentData.is(
+                createdMessageEvent.content.payment_data
+              ),
               messageId: createdMessageEvent.message.id,
               mode: profile.servicePreferencesSettings.mode,
               senderId: createdMessageEvent.message.senderServiceId,
