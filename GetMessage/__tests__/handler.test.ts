@@ -129,7 +129,6 @@ describe("GetMessageHandler", () => {
       UserGroup.ApiMessageRead,
       UserGroup.ApiMessageList,
       UserGroup.ApiMessageReadAdvanced,
-      UserGroup.ApiMessageReadAdvanced
     ]),
     kind: "IAzureApiAuthorization",
     subscriptionId: "s123" as NonEmptyString,
