@@ -35,14 +35,15 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/models/notification_status";
 import { toAuthorizedCIDRs } from "@pagopa/io-functions-commons/dist/src/models/service";
 
-import { CreatedMessageWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/CreatedMessageWithoutContent";
+import { ExternalCreatedMessageWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/ExternalCreatedMessageWithoutContent";
+import { ExternalMessageResponseWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/ExternalMessageResponseWithoutContent";
 import { MaxAllowedPaymentAmount } from "@pagopa/io-functions-commons/dist/generated/definitions/MaxAllowedPaymentAmount";
-import { MessageResponseWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageResponseWithoutContent";
 import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
 import { NotificationChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/NotificationChannel";
 import { NotificationChannelStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/NotificationChannelStatusValue";
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { TimeToLiveSeconds } from "@pagopa/io-functions-commons/dist/generated/definitions/TimeToLiveSeconds";
+import { FeatureLevelTypeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/FeatureLevelType";
 
 import * as TE from "fp-ts/lib/TaskEither";
 
@@ -124,6 +125,7 @@ describe("GetMessageHandler", () => {
 
   const aNewMessageWithoutContent: NewMessageWithoutContent = {
     createdAt: new Date(),
+    featureLevelType: FeatureLevelTypeEnum.STANDARD,
     fiscalCode: aFiscalCode,
     id: "A_MESSAGE_ID" as NonEmptyString,
     indexedId: "A_MESSAGE_ID" as NonEmptyString,
@@ -143,14 +145,16 @@ describe("GetMessageHandler", () => {
     kind: "IRetrievedMessageWithoutContent"
   };
 
-  const aPublicExtendedMessage: CreatedMessageWithoutContent = {
+  const aPublicExtendedMessage: ExternalCreatedMessageWithoutContent = {
     created_at: new Date(),
+    feature_level_type: FeatureLevelTypeEnum.STANDARD,
     fiscal_code: aNewMessageWithoutContent.fiscalCode,
     id: "A_MESSAGE_ID",
-    sender_service_id: aNewMessageWithoutContent.senderServiceId
+    sender_service_id: aNewMessageWithoutContent.senderServiceId,
+    time_to_live: 3600 as TimeToLiveSeconds
   };
 
-  const aPublicExtendedMessageResponse: MessageResponseWithoutContent = {
+  const aPublicExtendedMessageResponse: ExternalMessageResponseWithoutContent = {
     message: aPublicExtendedMessage,
     notification: {
       email: NotificationChannelStatusValueEnum.SENT,
@@ -515,6 +519,7 @@ describe("GetMessageHandler", () => {
         ...aPublicExtendedMessageResponse,
         message: {
           ...aPublicExtendedMessageResponse.message,
+          time_to_live: 3600,
           content: { ...aMessageContentWithLegalData }
         }
       });
@@ -600,7 +605,9 @@ describe("GetMessageHandler", () => {
 
     expect(result.kind).toBe("IResponseSuccessJson");
     if (result.kind === "IResponseSuccessJson") {
-      expect(result.value).toEqual(aPublicExtendedMessageResponse);
+      expect(result.value).toEqual({
+        ...aPublicExtendedMessageResponse
+      });
     }
   });
 

@@ -50,7 +50,10 @@ import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/servi
 
 import { BlobService } from "azure-storage";
 
-import { MessageModel } from "@pagopa/io-functions-commons/dist/src/models/message";
+import {
+  MessageModel,
+  RetrievedMessage
+} from "@pagopa/io-functions-commons/dist/src/models/message";
 
 import * as TE from "fp-ts/lib/TaskEither";
 import * as E from "fp-ts/lib/Either";
@@ -65,8 +68,9 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/utils/messages";
 
 import { Context } from "@azure/functions";
-import { MessageResponseWithContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageResponseWithContent";
-import { MessageResponseWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageResponseWithoutContent";
+import { ExternalMessageResponseWithContent } from "@pagopa/io-functions-commons/dist/generated/definitions/ExternalMessageResponseWithContent";
+import { ExternalMessageResponseWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/ExternalMessageResponseWithoutContent";
+import { ExternalCreatedMessageWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/ExternalCreatedMessageWithoutContent";
 import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { readableReport } from "@pagopa/ts-commons/lib/reporters";
@@ -74,6 +78,16 @@ import { pipe } from "fp-ts/lib/function";
 import * as t from "io-ts";
 import { MessageContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageContent";
 import { LegalData } from "../generated/definitions/LegalData";
+
+/**
+ * Converts a retrieved message to a message that can be shared via API
+ */
+export const retrievedMessageToExternal = (
+  retrievedMessage: RetrievedMessage
+): ExternalCreatedMessageWithoutContent => ({
+  ...retrievedMessageToPublic(retrievedMessage),
+  feature_level_type: retrievedMessage.featureLevelType
+});
 
 /**
  * Type of a GetMessage handler.
@@ -91,7 +105,7 @@ type IGetMessageHandler = (
   messageId: string
 ) => Promise<
   | IResponseSuccessJson<
-      MessageResponseWithContent | MessageResponseWithoutContent
+      ExternalMessageResponseWithContent | ExternalMessageResponseWithoutContent
     >
   | IResponseErrorNotFound
   | IResponseErrorQuery
@@ -209,7 +223,7 @@ export function GetMessageHandler(
 
     const message = {
       content,
-      ...retrievedMessageToPublic(retrievedMessage)
+      ...retrievedMessageToExternal(retrievedMessage)
     };
 
     const errorOrNotificationStatuses = await getMessageNotificationStatuses(

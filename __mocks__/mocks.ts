@@ -48,6 +48,7 @@ import { ActivationStatusEnum } from "@pagopa/io-functions-commons/dist/generate
 import { generateComposedVersionedModelId } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model_composed_versioned";
 import { RetrievedMessageStatus } from "@pagopa/io-functions-commons/dist/src/models/message_status";
 import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
+import { FeatureLevelTypeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/FeatureLevelType";
 
 export const aFiscalCode = "AAABBB01C02D345D" as FiscalCode;
 export const anotherFiscalCode = "AAABBB01C02D345W" as FiscalCode;
@@ -153,6 +154,7 @@ export const aRetrievedProfile: RetrievedProfile = {
 export const aRetrievedMessage: RetrievedMessageWithoutContent = {
   ...aCosmosResourceMetadata,
   createdAt: new Date(),
+  featureLevelType: FeatureLevelTypeEnum.STANDARD,
   fiscalCode: aFiscalCode,
   id: "A_MESSAGE_ID" as NonEmptyString,
   kind: "IRetrievedMessageWithoutContent",
@@ -182,6 +184,7 @@ export const aSerializedNewMessageWithContent = {
 
 export const aNewMessageWithoutContent: NewMessageWithoutContent = {
   createdAt: new Date(),
+  featureLevelType: FeatureLevelTypeEnum.STANDARD,
   fiscalCode: aFiscalCode,
   id: "A_MESSAGE_ID" as NonEmptyString,
   indexedId: "A_MESSAGE_ID" as NonEmptyString,

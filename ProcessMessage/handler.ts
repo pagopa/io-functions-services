@@ -35,6 +35,7 @@ import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/ac
 import { ActivationStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ActivationStatus";
 import * as T from "fp-ts/lib/Task";
 import { Second } from "@pagopa/ts-commons/lib/units";
+import { EUCovidCert } from "@pagopa/io-functions-commons/dist/generated/definitions/EUCovidCert";
 import { initTelemetryClient } from "../utils/appinsights";
 import { toHash } from "../utils/crypto";
 import { PaymentData } from "../generated/definitions/PaymentData";
@@ -47,6 +48,7 @@ import {
   ProcessedMessageEvent
 } from "../utils/events/message";
 import { SpecialServiceCategoryEnum } from "../generated/api-admin/SpecialServiceCategory";
+import { LegalData } from "../generated/definitions/LegalData";
 
 // Interface that marks an unexpected value
 interface IUnexpectedValue {
@@ -536,7 +538,19 @@ export const getProcessMessageHandler = ({
           telemetryClient.trackEvent({
             name: "api.messages.processed",
             properties: {
+              featureLevelType: createdMessageEvent.message.featureLevelType,
               fiscalCode: toHash(profile.fiscalCode),
+              hasAttachments:
+                createdMessageEvent.content.legal_data?.has_attachment ?? false,
+              hasEuCovidCertData: EUCovidCert.is(
+                createdMessageEvent.content.eu_covid_cert
+              ),
+              hasLegalData: LegalData.is(
+                createdMessageEvent.content.legal_data
+              ),
+              hasPaymentData: PaymentData.is(
+                createdMessageEvent.content.payment_data
+              ),
               messageId: createdMessageEvent.message.id,
               mode: profile.servicePreferencesSettings.mode,
               senderId: createdMessageEvent.message.senderServiceId,
