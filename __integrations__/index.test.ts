@@ -339,6 +339,59 @@ describe("Create Message", () => {
   );
 });
 
+describe("Create Advanced Message", () => {
+  it.each`
+    profileType         | fiscalCode                       | serviceId
+    ${"LEGACY Profile"} | ${aLegacyInboxEnabledFiscalCode} | ${anEnabledServiceId}
+    ${"AUTO Profile"}   | ${anAutoFiscalCode}              | ${anEnabledServiceId}
+    ${"MANUAL Profile"} | ${aManualFiscalCode}             | ${anEnabledServiceId}
+  `(
+    "$profileType |> should return the message in PROCESSED status when service is allowed to send",
+    async ({ fiscalCode, serviceId }) => {
+      const body = {
+        message: {
+          fiscal_code: fiscalCode,
+          feature_level_type: "ADVANCED",
+          content: aMessageContent
+        }
+      };
+
+      const nodeFetch = getNodeFetch({
+        "x-subscription-id": serviceId,
+        "x-user-groups":
+          customHeaders["x-user-groups"] + ",ApiMessageWriteAdvanced"
+      });
+
+      const result = await postCreateMessage(nodeFetch)(body);
+
+      expect(result.status).toEqual(201);
+
+      const messageId = ((await result.json()) as CreatedMessage).id;
+      expect(messageId).not.toBeUndefined();
+
+      // Wait the process to complete
+      await delay(WAIT_MS);
+
+      const resultGet = await getSentMessage(nodeFetch)(fiscalCode, messageId);
+
+      expect(resultGet.status).toEqual(200);
+      const detail = (await resultGet.json()) as ExternalMessageResponseWithContent;
+
+      // TODO Change when getMessage is merged
+      expect(detail).toMatchObject(
+        expect.objectContaining({
+          message: expect.objectContaining({
+            id: messageId,
+            feature_level_type: FeatureLevelTypeEnum.ADVANCED,
+            ...body.message
+          }),
+          status: MessageStatusValueEnum.PROCESSED
+        })
+      );
+    }
+  );
+});
+
 describe("Create Legal Message |> Middleware errors", () => {
   it("should return 403 when creating a legal message from a non existing Service", async () => {
     const nodeFetch = getNodeFetch({
