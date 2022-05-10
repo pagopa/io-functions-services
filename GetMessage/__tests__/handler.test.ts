@@ -48,7 +48,6 @@ import { FeatureLevelTypeEnum } from "@pagopa/io-functions-commons/dist/generate
 import * as TE from "fp-ts/lib/TaskEither";
 
 import { ReadStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ReadStatus";
-import { PaymentStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentStatus";
 
 import { GetMessageHandler } from "../handler";
 import {
