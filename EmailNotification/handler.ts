@@ -1,6 +1,7 @@
 import * as t from "io-ts";
 import * as E from "fp-ts/lib/Either";
 import * as TE from "fp-ts/lib/TaskEither";
+import * as O from "fp-ts/lib/Option";
 import { flow, pipe } from "fp-ts/lib/function";
 
 import * as HtmlToText from "html-to-text";
@@ -109,47 +110,38 @@ export const getEmailNotificationHandler = (
             )
           )
 
-          // Check whether the message is expired
-          const errorOrActiveMessage = ActiveMessage.decode(message);
-
-          return await pipe(errorOrActiveMessage,
+          return await pipe(ActiveMessage.decode(message),
             TE.fromEither,
-            TE.foldW(() => {
+            // Check whether the message is expired
+            TE.mapLeft(() => {
+              // if the message is expired no more processing is necessary
               context.log.warn(`${logPrefix}|RESULT=TTL_EXPIRED`)
-              return TE.left(EmailNotificationResult.encode({
+              return EmailNotificationResult.encode({
                 kind: "SUCCESS",
                 result: "EXPIRED"
-              }))
-            },
+              })
+            }),
+            TE.chainW(
               () => pipe(
+                // fetch the notification
                 lNotificationModel.find([
                   notificationId,
                   message.id
                 ]),
                 TE.mapLeft((error) => {
+                  // we got an error while fetching the notification
                   context.log.warn(`${logPrefix}|RESULT=TTL_EXPIRED`);
                   throw new Error(
                     `Error while fetching the notification: ${JSON.stringify(error)}`
                   );
                 }),
-                TE.chain(flow(
-                  E.fromOption(() => {
-                    context.log.warn(`${logPrefix}|RESULT=NOTIFICATION_NOT_FOUND`);
-                    throw new Error(`Notification not found`);
-                  }),
-                  E.chain(EmailNotification.decode),
-                  E.mapLeft((error) => {
-                    // The notification object is not compatible with this code
-                    const formattedError = readableReport(error);
-                    context.log.error(`${logPrefix}|ERROR`);
-                    context.log.verbose(`${logPrefix}|ERROR_DETAILS=${formattedError}`);
-                    return EmailNotificationResult.encode({
-                      kind: "FAILURE",
-                      reason: "DECODE_ERROR"
-                    });
-                  }),
-                  TE.fromEither
-                )),
+                // it may happen that the object is not yet visible to this function due to latency
+                // as the notification object is retrieved from database and we may be hitting a
+                // replica that is not yet in sync - throwing an error will trigger a retry
+                TE.map(O.getOrElse(() => {
+                  context.log.warn(`${logPrefix}|RESULT=NOTIFICATION_NOT_FOUND`);
+                  throw new Error(`Notification not found`);
+                })),
                 TE.map(triggerEmailDelivery)
               )
             ),
