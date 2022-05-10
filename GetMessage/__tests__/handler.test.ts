@@ -128,7 +128,6 @@ describe("GetMessageHandler", () => {
     groups: new Set([
       UserGroup.ApiMessageRead,
       UserGroup.ApiMessageList,
-      UserGroup.ApiMessageReadAdvanced,
       UserGroup.ApiMessageReadAdvanced
     ]),
     kind: "IAzureApiAuthorization",
