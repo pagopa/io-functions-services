@@ -73,13 +73,14 @@ import {
 import { Context } from "@azure/functions";
 import { ExternalMessageResponseWithContent } from "@pagopa/io-functions-commons/dist/generated/definitions/ExternalMessageResponseWithContent";
 import { ExternalMessageResponseWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/ExternalMessageResponseWithoutContent";
+import { ExternalCreatedMessageWithContent } from "@pagopa/io-functions-commons/dist/generated/definitions/ExternalCreatedMessageWithContent";
 import { ExternalCreatedMessageWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/ExternalCreatedMessageWithoutContent";
 import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { readableReport } from "@pagopa/ts-commons/lib/reporters";
 import { pipe } from "fp-ts/lib/function";
 import * as t from "io-ts";
-import * as b from "fp-ts/lib/boolean";
+import * as B from "fp-ts/lib/boolean";
 import { MessageContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageContent";
 import {
   ReadStatus,
@@ -133,12 +134,13 @@ type LegalMessagePattern = t.TypeOf<typeof LegalMessagePattern>;
 export const canReadAdvancedMessageInfo = (
   message:
     | ExternalCreatedMessageWithoutContent
-    | ExternalCreatedMessageWithoutContent,
+    | ExternalCreatedMessageWithContent,
   authGroups: IAzureApiAuthorization["groups"]
 ): boolean =>
   message.feature_level_type === FeatureLevelTypeEnum.ADVANCED &&
   authGroups.has(UserGroup.ApiMessageReadAdvanced);
 
+// TODO: waiting for opt-out definition on profiles domain
 /**
  * Checks whether the client service can read message read status
  *
@@ -160,7 +162,7 @@ export const getReadStatusForService = (
   pipe(
     maybeMessageStatus,
     O.map(messageStatus =>
-      b.fold(
+      B.fold(
         () => ReadStatusEnum.UNREAD,
         () => ReadStatusEnum.READ
       )(messageStatus.isRead)
@@ -318,12 +320,12 @@ export function GetMessageHandler(
         )
       },
       // Enrich message info with advanced properties if user is allowed to read them
-      messageWithoutAdvacedProperties =>
-        b.fold(
-          () => messageWithoutAdvacedProperties,
+      messageWithoutAdvancedProperties =>
+        B.fold(
+          () => messageWithoutAdvancedProperties,
           () => ({
-            ...messageWithoutAdvacedProperties,
-            read_status: b.fold(
+            ...messageWithoutAdvancedProperties,
+            read_status: B.fold(
               () => ReadStatusEnum.UNAVAILABLE,
               () => getReadStatusForService(maybeMessageStatus)
             )(canReadMessageReadStatus(auth.subscriptionId))
