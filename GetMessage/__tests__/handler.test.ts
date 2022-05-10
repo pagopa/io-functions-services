@@ -697,6 +697,23 @@ describe("GetMessageHandler", () => {
   // Advanced Features
   // ---------------------------
 
+  const aRetrievedNotification: RetrievedNotification = {
+    _etag: "_etag",
+    _rid: "_rid",
+    _self: "xyz",
+    _ts: 1,
+    channels: {
+      [NotificationChannelEnum.EMAIL]: {
+        addressSource: NotificationAddressSourceEnum.PROFILE_ADDRESS,
+        toAddress: "x@example.com" as EmailString
+      }
+    },
+    fiscalCode: aFiscalCode,
+    id: "A_NOTIFICATION_ID" as NonEmptyString,
+    kind: "IRetrievedNotification",
+    messageId: "A_MESSAGE_ID" as NonEmptyString
+  };
+
   const aRetrievedMessageWithAdvancedFeatures = {
     ...aRetrievedMessageWithoutContent,
     featureLevelType: FeatureLevelTypeEnum.ADVANCED
@@ -711,23 +728,6 @@ describe("GetMessageHandler", () => {
   };
 
   it("should NOT provide information about read and payment status if message is of type STANDARD", async () => {
-    const aRetrievedNotification: RetrievedNotification = {
-      _etag: "_etag",
-      _rid: "_rid",
-      _self: "xyz",
-      _ts: 1,
-      channels: {
-        [NotificationChannelEnum.EMAIL]: {
-          addressSource: NotificationAddressSourceEnum.PROFILE_ADDRESS,
-          toAddress: "x@example.com" as EmailString
-        }
-      },
-      fiscalCode: aFiscalCode,
-      id: "A_NOTIFICATION_ID" as NonEmptyString,
-      kind: "IRetrievedNotification",
-      messageId: "A_MESSAGE_ID" as NonEmptyString
-    };
-
     const mockMessageModel = {
       findMessageForRecipient: jest.fn(() =>
         TE.of(some(aRetrievedMessageWithoutContent))
@@ -768,26 +768,9 @@ describe("GetMessageHandler", () => {
   });
 
   it("should NOT provide information about read and payment status if user is not allowed", async () => {
-    const aRetrievedNotification: RetrievedNotification = {
-      _etag: "_etag",
-      _rid: "_rid",
-      _self: "xyz",
-      _ts: 1,
-      channels: {
-        [NotificationChannelEnum.EMAIL]: {
-          addressSource: NotificationAddressSourceEnum.PROFILE_ADDRESS,
-          toAddress: "x@example.com" as EmailString
-        }
-      },
-      fiscalCode: aFiscalCode,
-      id: "A_NOTIFICATION_ID" as NonEmptyString,
-      kind: "IRetrievedNotification",
-      messageId: "A_MESSAGE_ID" as NonEmptyString
-    };
-
     const mockMessageModel = {
       findMessageForRecipient: jest.fn(() =>
-        TE.of(some(aRetrievedMessageWithoutContent))
+        TE.of(some(aRetrievedMessageWithAdvancedFeatures))
       ),
       getContentFromBlob: jest.fn(() => TE.of(none))
     };
@@ -818,30 +801,15 @@ describe("GetMessageHandler", () => {
 
     expect(result.kind).toBe("IResponseSuccessJson");
     if (result.kind === "IResponseSuccessJson") {
-      expect(result.value).toEqual(aPublicExtendedMessageResponse);
+      expect(result.value).toEqual(
+        aPublicExtendedMessageResponseWithAdvancedFeatures
+      );
       expect(result.value).not.toHaveProperty("read_status");
       expect(result.value).not.toHaveProperty("payment_status");
     }
   });
 
   it("should provide information about read status if user is allowed and message is of type ADVANCED", async () => {
-    const aRetrievedNotification: RetrievedNotification = {
-      _etag: "_etag",
-      _rid: "_rid",
-      _self: "xyz",
-      _ts: 1,
-      channels: {
-        [NotificationChannelEnum.EMAIL]: {
-          addressSource: NotificationAddressSourceEnum.PROFILE_ADDRESS,
-          toAddress: "x@example.com" as EmailString
-        }
-      },
-      fiscalCode: aFiscalCode,
-      id: "A_NOTIFICATION_ID" as NonEmptyString,
-      kind: "IRetrievedNotification",
-      messageId: "A_MESSAGE_ID" as NonEmptyString
-    };
-
     const mockMessageModel = {
       findMessageForRecipient: jest.fn(() =>
         TE.of(some(aRetrievedMessageWithAdvancedFeatures))
