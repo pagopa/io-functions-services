@@ -161,11 +161,12 @@ export const getReadStatusForService = (
 ): ReadStatus =>
   pipe(
     maybeMessageStatus,
-    O.map(messageStatus =>
+    O.map(messageStatus => messageStatus.isRead),
+    O.map(
       B.fold(
         () => ReadStatusEnum.UNREAD,
         () => ReadStatusEnum.READ
-      )(messageStatus.isRead)
+      )
     ),
     O.getOrElse(() => ReadStatusEnum.UNREAD)
   );
