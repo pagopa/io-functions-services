@@ -35,16 +35,19 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/models/notification_status";
 import { toAuthorizedCIDRs } from "@pagopa/io-functions-commons/dist/src/models/service";
 
-import { CreatedMessageWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/CreatedMessageWithoutContent";
+import { ExternalCreatedMessageWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/ExternalCreatedMessageWithoutContent";
+import { ExternalMessageResponseWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/ExternalMessageResponseWithoutContent";
 import { MaxAllowedPaymentAmount } from "@pagopa/io-functions-commons/dist/generated/definitions/MaxAllowedPaymentAmount";
-import { MessageResponseWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageResponseWithoutContent";
 import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
 import { NotificationChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/NotificationChannel";
 import { NotificationChannelStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/NotificationChannelStatusValue";
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { TimeToLiveSeconds } from "@pagopa/io-functions-commons/dist/generated/definitions/TimeToLiveSeconds";
+import { FeatureLevelTypeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/FeatureLevelType";
 
 import * as TE from "fp-ts/lib/TaskEither";
+
+import { ReadStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ReadStatus";
 
 import { GetMessageHandler } from "../handler";
 import {
@@ -120,10 +123,22 @@ describe("GetMessageHandler", () => {
     userId: "u123" as NonEmptyString
   };
 
+  const aUserAuthenticationTrustedApplicationWithAdvancedFetures: IAzureApiAuthorization = {
+    groups: new Set([
+      UserGroup.ApiMessageRead,
+      UserGroup.ApiMessageList,
+      UserGroup.ApiMessageReadAdvanced
+    ]),
+    kind: "IAzureApiAuthorization",
+    subscriptionId: "s123" as NonEmptyString,
+    userId: "u123" as NonEmptyString
+  };
+
   const aMessageId = "A_MESSAGE_ID" as NonEmptyString;
 
   const aNewMessageWithoutContent: NewMessageWithoutContent = {
     createdAt: new Date(),
+    featureLevelType: FeatureLevelTypeEnum.STANDARD,
     fiscalCode: aFiscalCode,
     id: "A_MESSAGE_ID" as NonEmptyString,
     indexedId: "A_MESSAGE_ID" as NonEmptyString,
@@ -143,14 +158,16 @@ describe("GetMessageHandler", () => {
     kind: "IRetrievedMessageWithoutContent"
   };
 
-  const aPublicExtendedMessage: CreatedMessageWithoutContent = {
+  const aPublicExtendedMessage: ExternalCreatedMessageWithoutContent = {
     created_at: new Date(),
+    feature_level_type: FeatureLevelTypeEnum.STANDARD,
     fiscal_code: aNewMessageWithoutContent.fiscalCode,
     id: "A_MESSAGE_ID",
-    sender_service_id: aNewMessageWithoutContent.senderServiceId
+    sender_service_id: aNewMessageWithoutContent.senderServiceId,
+    time_to_live: 3600 as TimeToLiveSeconds
   };
 
-  const aPublicExtendedMessageResponse: MessageResponseWithoutContent = {
+  const aPublicExtendedMessageResponse: ExternalMessageResponseWithoutContent = {
     message: aPublicExtendedMessage,
     notification: {
       email: NotificationChannelStatusValueEnum.SENT,
@@ -515,6 +532,7 @@ describe("GetMessageHandler", () => {
         ...aPublicExtendedMessageResponse,
         message: {
           ...aPublicExtendedMessageResponse.message,
+          time_to_live: 3600,
           content: { ...aMessageContentWithLegalData }
         }
       });
@@ -600,7 +618,9 @@ describe("GetMessageHandler", () => {
 
     expect(result.kind).toBe("IResponseSuccessJson");
     if (result.kind === "IResponseSuccessJson") {
-      expect(result.value).toEqual(aPublicExtendedMessageResponse);
+      expect(result.value).toEqual({
+        ...aPublicExtendedMessageResponse
+      });
     }
   });
 
@@ -669,5 +689,162 @@ describe("GetMessageHandler", () => {
     );
 
     expect(result.kind).toBe("IResponseErrorInternal");
+  });
+
+  // ---------------------------
+  // Advanced Features
+  // ---------------------------
+
+  const aRetrievedNotification: RetrievedNotification = {
+    _etag: "_etag",
+    _rid: "_rid",
+    _self: "xyz",
+    _ts: 1,
+    channels: {
+      [NotificationChannelEnum.EMAIL]: {
+        addressSource: NotificationAddressSourceEnum.PROFILE_ADDRESS,
+        toAddress: "x@example.com" as EmailString
+      }
+    },
+    fiscalCode: aFiscalCode,
+    id: "A_NOTIFICATION_ID" as NonEmptyString,
+    kind: "IRetrievedNotification",
+    messageId: "A_MESSAGE_ID" as NonEmptyString
+  };
+
+  const aRetrievedMessageWithAdvancedFeatures = {
+    ...aRetrievedMessageWithoutContent,
+    featureLevelType: FeatureLevelTypeEnum.ADVANCED
+  };
+
+  const aPublicExtendedMessageResponseWithAdvancedFeatures = {
+    ...aPublicExtendedMessageResponse,
+    message: {
+      ...aPublicExtendedMessageResponse.message,
+      feature_level_type: FeatureLevelTypeEnum.ADVANCED
+    }
+  };
+
+  it("should NOT provide information about read and payment status if message is of type STANDARD", async () => {
+    const mockMessageModel = {
+      findMessageForRecipient: jest.fn(() =>
+        TE.of(some(aRetrievedMessageWithoutContent))
+      ),
+      getContentFromBlob: jest.fn(() => TE.of(none))
+    };
+
+    const getMessageHandler = GetMessageHandler(
+      mockMessageModel as any,
+      getMessageStatusModelMock(),
+      getNotificationModelMock(aRetrievedNotification),
+      getNotificationStatusModelMock(),
+      {} as any
+    );
+
+    const result = await getMessageHandler(
+      mockContext,
+      aUserAuthenticationTrustedApplicationWithAdvancedFetures,
+      undefined as any, // not used
+      someUserAttributes,
+      aFiscalCode,
+      aRetrievedMessageWithoutContent.id
+    );
+
+    expect(mockMessageModel.getContentFromBlob).toHaveBeenCalledTimes(1);
+    expect(mockMessageModel.findMessageForRecipient).toHaveBeenCalledTimes(1);
+    expect(mockMessageModel.findMessageForRecipient).toHaveBeenCalledWith(
+      aRetrievedMessageWithoutContent.fiscalCode,
+      aRetrievedMessageWithoutContent.id
+    );
+
+    expect(result.kind).toBe("IResponseSuccessJson");
+    if (result.kind === "IResponseSuccessJson") {
+      expect(result.value).toEqual(aPublicExtendedMessageResponse);
+      expect(result.value).not.toHaveProperty("read_status");
+      expect(result.value).not.toHaveProperty("payment_status");
+    }
+  });
+
+  it("should NOT provide information about read and payment status if user is not allowed", async () => {
+    const mockMessageModel = {
+      findMessageForRecipient: jest.fn(() =>
+        TE.of(some(aRetrievedMessageWithAdvancedFeatures))
+      ),
+      getContentFromBlob: jest.fn(() => TE.of(none))
+    };
+
+    const getMessageHandler = GetMessageHandler(
+      mockMessageModel as any,
+      getMessageStatusModelMock(),
+      getNotificationModelMock(aRetrievedNotification),
+      getNotificationStatusModelMock(),
+      {} as any
+    );
+
+    const result = await getMessageHandler(
+      mockContext,
+      aUserAuthenticationTrustedApplication,
+      undefined as any, // not used
+      someUserAttributes,
+      aFiscalCode,
+      aRetrievedMessageWithoutContent.id
+    );
+
+    expect(mockMessageModel.getContentFromBlob).toHaveBeenCalledTimes(1);
+    expect(mockMessageModel.findMessageForRecipient).toHaveBeenCalledTimes(1);
+    expect(mockMessageModel.findMessageForRecipient).toHaveBeenCalledWith(
+      aRetrievedMessageWithoutContent.fiscalCode,
+      aRetrievedMessageWithoutContent.id
+    );
+
+    expect(result.kind).toBe("IResponseSuccessJson");
+    if (result.kind === "IResponseSuccessJson") {
+      expect(result.value).toEqual(
+        aPublicExtendedMessageResponseWithAdvancedFeatures
+      );
+      expect(result.value).not.toHaveProperty("read_status");
+      expect(result.value).not.toHaveProperty("payment_status");
+    }
+  });
+
+  it("should provide information about read status if user is allowed and message is of type ADVANCED", async () => {
+    const mockMessageModel = {
+      findMessageForRecipient: jest.fn(() =>
+        TE.of(some(aRetrievedMessageWithAdvancedFeatures))
+      ),
+      getContentFromBlob: jest.fn(() => TE.of(none))
+    };
+
+    const getMessageHandler = GetMessageHandler(
+      mockMessageModel as any,
+      getMessageStatusModelMock(),
+      getNotificationModelMock(aRetrievedNotification),
+      getNotificationStatusModelMock(),
+      {} as any
+    );
+
+    const result = await getMessageHandler(
+      mockContext,
+      aUserAuthenticationTrustedApplicationWithAdvancedFetures,
+      undefined as any, // not used
+      someUserAttributes,
+      aFiscalCode,
+      aRetrievedMessageWithoutContent.id
+    );
+
+    expect(mockMessageModel.getContentFromBlob).toHaveBeenCalledTimes(1);
+    expect(mockMessageModel.findMessageForRecipient).toHaveBeenCalledTimes(1);
+    expect(mockMessageModel.findMessageForRecipient).toHaveBeenCalledWith(
+      aRetrievedMessageWithoutContent.fiscalCode,
+      aRetrievedMessageWithoutContent.id
+    );
+
+    expect(result.kind).toBe("IResponseSuccessJson");
+    if (result.kind === "IResponseSuccessJson") {
+      expect(result.value).toEqual({
+        ...aPublicExtendedMessageResponseWithAdvancedFeatures,
+        read_status: ReadStatusEnum.UNAVAILABLE
+      });
+    }
   });
 });

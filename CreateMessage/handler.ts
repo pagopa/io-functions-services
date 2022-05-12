@@ -81,7 +81,11 @@ import {
 } from "../utils/events/message";
 import { commonCreateMessageMiddlewares } from "../utils/message_middlewares";
 import { LegalData } from "../generated/definitions/LegalData";
-import { ApiNewMessageWithContentOf, ApiNewMessageWithDefaults } from "./types";
+import {
+  ApiNewMessageWithAdvancedFeatures,
+  ApiNewMessageWithContentOf,
+  ApiNewMessageWithDefaults
+} from "./types";
 import { makeUpsertBlobFromObject } from "./utils";
 
 /**
@@ -202,6 +206,7 @@ export const createMessageDocument = (
   senderUserId: IAzureApiAuthorization["userId"],
   recipientFiscalCode: FiscalCode,
   timeToLiveSeconds: ApiNewMessageWithDefaults["time_to_live"],
+  featureLevelType: ApiNewMessageWithDefaults["feature_level_type"],
   serviceId: IAzureUserAttributes["service"]["serviceId"]
 ): TaskEither<
   IResponseErrorInternal | IResponseErrorQuery,
@@ -213,6 +218,7 @@ export const createMessageDocument = (
   // message is handled separately (see below).
   const newMessageWithoutContent: NewMessageWithoutContent = {
     createdAt: new Date(),
+    featureLevelType,
     fiscalCode: recipientFiscalCode,
     id: messageId,
     indexedId: messageId,
@@ -358,6 +364,7 @@ export function CreateMessageHandler(
           auth.userId,
           fiscalCode,
           messagePayload.time_to_live,
+          messagePayload.feature_level_type,
           serviceId
         )
       ),
@@ -497,6 +504,11 @@ export function CreateMessage(
         new Set([
           UserGroup.ApiMessageWriteWithLegalDataWithoutImpersonification
         ])
+      ),
+      // Allow only users in the ApiMessageWriteAdvanced group to send messages with "ADVANCED" feature_type
+      AzureAllowBodyPayloadMiddleware(
+        ApiNewMessageWithAdvancedFeatures,
+        new Set([UserGroup.ApiMessageWriteAdvanced])
       )
     ] as const)
   );
@@ -504,7 +516,7 @@ export function CreateMessage(
   return wrapRequestHandler(
     middlewaresWrap(
       // eslint-disable-next-line max-params
-      checkSourceIpForHandler(handler, (_, __, c, u, ___, ____) =>
+      checkSourceIpForHandler(handler, (_, __, c, u, ___, ____, _____) =>
         ipTuple(c, u)
       )
     )

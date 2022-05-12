@@ -25,6 +25,7 @@ import {
 
 import {
   alphaStringArb,
+  featureLevelTypeArb,
   fiscalCodeArb,
   fiscalCodeArrayArb,
   fiscalCodeSetArb,
@@ -43,6 +44,7 @@ import {
 import { initAppInsights } from "@pagopa/ts-commons/lib/appinsights";
 import { ApiNewMessageWithDefaults } from "../types";
 import { Context } from "@azure/functions";
+import { FeatureLevelTypeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/FeatureLevelType";
 
 const createContext = (): Context =>
 (({
@@ -183,8 +185,16 @@ describe("createMessageDocument", () => {
         senderUserIdArb,
         fiscalCodeArb,
         messageTimeToLiveArb,
+        featureLevelTypeArb,
         serviceIdArb,
-        async (messageId, senderUserId, fiscalCode, ttl, senderServiceId) => {
+        async (
+          messageId,
+          senderUserId,
+          fiscalCode,
+          ttl,
+          featureLevelType,
+          senderServiceId
+        ) => {
           const mockMessageModel = ({
             create: jest.fn(() => TE.of({}))
           } as unknown) as MessageModel;
@@ -194,6 +204,7 @@ describe("createMessageDocument", () => {
             senderUserId,
             fiscalCode,
             ttl,
+            featureLevelType,
             senderServiceId
           );
 
@@ -202,6 +213,7 @@ describe("createMessageDocument", () => {
           expect(mockMessageModel.create).toHaveBeenCalledTimes(1);
           expect(E.isRight(response)).toBeTruthy();
           expect(pipe(response, E.getOrElse(undefined))).toMatchObject({
+            featureLevelType,
             fiscalCode,
             id: messageId,
             indexedId: messageId,

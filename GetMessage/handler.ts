@@ -54,7 +54,10 @@ import { MessageModel, RetrievedMessage } from "@pagopa/io-functions-commons/dis
 import * as TE from "fp-ts/lib/TaskEither";
 import * as O from "fp-ts/lib/Option";
 
-import { MessageStatusModel } from "@pagopa/io-functions-commons/dist/src/models/message_status";
+import {
+  MessageStatusModel,
+  RetrievedMessageStatus
+} from "@pagopa/io-functions-commons/dist/src/models/message_status";
 import { NotificationStatusModel } from "@pagopa/io-functions-commons/dist/src/models/notification_status";
 
 import {
@@ -63,14 +66,33 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/utils/messages";
 
 import { Context } from "@azure/functions";
-import { MessageResponseWithContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageResponseWithContent";
-import { MessageResponseWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageResponseWithoutContent";
+import { ExternalMessageResponseWithContent } from "@pagopa/io-functions-commons/dist/generated/definitions/ExternalMessageResponseWithContent";
+import { ExternalMessageResponseWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/ExternalMessageResponseWithoutContent";
+import { ExternalCreatedMessageWithContent } from "@pagopa/io-functions-commons/dist/generated/definitions/ExternalCreatedMessageWithContent";
+import { ExternalCreatedMessageWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/ExternalCreatedMessageWithoutContent";
 import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
-import { flow, pipe } from "fp-ts/lib/function";
+import { pipe } from "fp-ts/lib/function";
 import * as t from "io-ts";
+import * as B from "fp-ts/lib/boolean";
 import { MessageContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageContent";
+import {
+  ReadStatus,
+  ReadStatusEnum
+} from "@pagopa/io-functions-commons/dist/generated/definitions/ReadStatus";
+import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { LegalData } from "../generated/definitions/LegalData";
+import { FeatureLevelTypeEnum } from "../generated/definitions/FeatureLevelType";
+
+/**
+ * Converts a retrieved message to a message that can be shared via API
+ */
+export const retrievedMessageToExternal = (
+  retrievedMessage: RetrievedMessage
+): ExternalCreatedMessageWithoutContent => ({
+  ...retrievedMessageToPublic(retrievedMessage),
+  feature_level_type: retrievedMessage.featureLevelType
+});
 
 /**
  * Type of a GetMessage handler.
@@ -88,7 +110,7 @@ type IGetMessageHandler = (
   messageId: NonEmptyString
 ) => Promise<
   | IResponseSuccessJson<
-    MessageResponseWithContent | MessageResponseWithoutContent
+    ExternalMessageResponseWithContent | ExternalMessageResponseWithoutContent
   >
   | IResponseErrorNotFound
   | IResponseErrorQuery
@@ -99,6 +121,49 @@ type IGetMessageHandler = (
 
 const LegalMessagePattern = t.interface({ legal_data: LegalData });
 type LegalMessagePattern = t.TypeOf<typeof LegalMessagePattern>;
+
+/**
+ * Checks whether the client service can read advanced message info (read_status and payment_Status)
+ */
+export const canReadAdvancedMessageInfo = (
+  message:
+    | ExternalCreatedMessageWithoutContent
+    | ExternalCreatedMessageWithContent,
+  authGroups: IAzureApiAuthorization["groups"]
+): boolean =>
+  message.feature_level_type === FeatureLevelTypeEnum.ADVANCED &&
+  authGroups.has(UserGroup.ApiMessageReadAdvanced);
+
+// TODO: waiting for opt-out definition on profiles domain
+/**
+ * Checks whether the client service can read message read status
+ *
+ * @param serviceId the subscription id of the service
+ * @returns false if user revoked the permission to access the read status, true otherwise
+ */
+export const canReadMessageReadStatus = (_serviceId: ServiceId): boolean =>
+  false;
+
+/**
+ * Return a ReadStatusEnum
+ *
+ * @param maybeMessageStatus an Option of MessageStatus
+ * @returns READ if message status exists and isRead is set to true, UNREAD otherwise
+ */
+export const getReadStatusForService = (
+  maybeMessageStatus: O.Option<RetrievedMessageStatus>
+): ReadStatus =>
+  pipe(
+    maybeMessageStatus,
+    O.map(messageStatus => messageStatus.isRead),
+    O.map(
+      B.fold(
+        () => ReadStatusEnum.UNREAD,
+        () => ReadStatusEnum.READ
+      )
+    ),
+    O.getOrElse(() => ReadStatusEnum.UNREAD)
+  );
 
 /**
  * Handles requests for getting a single message for a recipient.
@@ -125,8 +190,7 @@ export function GetMessageHandler(
       (document) => messageModel.getContentFromBlob(blobService, document.id),
       TE.mapLeft(error => {
         context.log.error(`GetMessageHandler|${JSON.stringify(error)}`);
-        //line to check with attention during PR
-        return ResponseErrorInternal(`${(error as Error).name}: ${(error as Error).message}`);
+        return ResponseErrorInternal(`${error.name}: ${error.message}`);
       }),
       TE.chainW(
         O.fold(
@@ -160,7 +224,8 @@ export function GetMessageHandler(
       TE.map(O.toUndefined)
     )
 
-    return await pipe(messageModel.findMessageForRecipient(fiscalCode, messageId),
+    return await pipe(
+      messageModel.findMessageForRecipient(fiscalCode, messageId),
       // the query failed
       TE.mapLeft((err) => ResponseErrorQuery(
         "Error while retrieving the message",
@@ -175,18 +240,11 @@ export function GetMessageHandler(
       )),
       //check if the user is allowed to see the message
       TE.chainW(isUserAllowed),
-      // fetch the content of the message from the blob storage
-      TE.mapLeft((error) => {
-        context.log.error(
-          `GetMessageHandler|${JSON.stringify(error)}`
-        );
-        return error;
-      }),
       TE.bindTo('document'),
       TE.bindW('content', retrieveContent),
       TE.bindW('message', ({ document, content }) => TE.of({
         content,
-        ...retrievedMessageToPublic(document)
+        ...retrievedMessageToExternal(document)
       })),
       TE.bindW('notification', ({ document }) => pipe(
         getMessageNotificationStatuses(
@@ -195,35 +253,51 @@ export function GetMessageHandler(
           document.id
         ),
         TE.mapLeft((error) => ResponseErrorInternal(
-          `Error retrieving NotificationStatus: ${(error as Error).name}|${(error as Error).message}`
+          `Error retrieving NotificationStatus: ${error.name}|${error.message}`
         )),
         TE.map(O.toUndefined)
       )
       ),
-      TE.bindW('status', ({ document }) => pipe(
+      TE.bindW("maybeMessageStatus", ({ document }) => pipe(
         messageStatusModel.findLastVersionByModelId([document.id]),
         TE.mapLeft((error) => ResponseErrorInternal(
           `Error retrieving MessageStatus: ${JSON.stringify(
             error
           )}`
-        )),
-        TE.map(flow(
-          O.map(messageStatus => messageStatus.status),
-          // when the message has been received but a MessageStatus
-          // does not exist yet, the message is considered to be
-          // in the ACCEPTED state (not yet stored in the inbox)
-          O.getOrElse(() => MessageStatusValueEnum.ACCEPTED))
-        ),
+        ))
+      )),
+      TE.bindW('status', ({ maybeMessageStatus }) => pipe(
+        maybeMessageStatus,
+        O.map((messageStatus) => messageStatus.status),
+        // when the message has been received but a MessageStatus
+        // does not exist yet, the message is considered to be
+        // in the ACCEPTED state (not yet stored in the inbox)
+        O.getOrElse(() => MessageStatusValueEnum.ACCEPTED),
+        TE.of
       )
       ),
-      TE.map(({ message, notification, status }) =>
-      ({
-        message,
-        notification,
-        // we do not return the status date-time
-        status
-      })
-      ),
+
+      TE.bindW("maybeReadStatus", ({ message, maybeMessageStatus }) => pipe(
+        canReadAdvancedMessageInfo(message, auth.groups) ? O.some(true) : O.none,
+        O.map(() => pipe(
+          canReadMessageReadStatus(auth.subscriptionId),
+          B.fold(
+            () => ReadStatusEnum.UNAVAILABLE,
+            () => getReadStatusForService(maybeMessageStatus)
+          )
+        )),
+        TE.of
+      )),
+
+      TE.map(({ message, notification, status, maybeReadStatus }) => pipe(
+        maybeReadStatus,
+        O.fold(
+          () => ({ message, notification, status }),
+          //Enrich message info with advanced properties if user is allowed to read them
+          (read_status) => ({ message, notification, status, read_status }),
+        )
+      )),
+
       TE.map(message => ResponseSuccessJson(message)),
       TE.toUnion
     )();
