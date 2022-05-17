@@ -274,7 +274,7 @@ const getBlockedInboxesForSpecialService = (
 const createMessageOrThrow = async (
   context: Context,
   lMessageModel: MessageModel,
-  lMessageStatusModel: MessageStatusModel,
+  messageStatusUpdater: ReturnType<typeof getMessageStatusUpdater>,
   lBlobService: BlobService,
   createdMessageEvent: CreatedMessageEvent & CommonMessageData
 ): Promise<void> => {
@@ -327,11 +327,7 @@ const createMessageOrThrow = async (
   // In case it fails, throw an Error and try again
   // NOTE: this will cause message content to be overwritten
   await pipe(
-    getMessageStatusUpdater(
-      lMessageStatusModel,
-      createdMessageEvent.message.id,
-      createdMessageEvent.message.fiscalCode
-    )(MessageStatusValueEnum.PROCESSED),
+    messageStatusUpdater(MessageStatusValueEnum.PROCESSED),
     TE.getOrElse(e => {
       context.log.error(
         `${logPrefixWithMessage}|UPSERT_STATUS=PROCESSED|ERROR=${JSON.stringify(
@@ -403,6 +399,11 @@ export const getProcessMessageHandler = ({
           const newMessageWithoutContent = createdMessageEvent.message;
 
           const logPrefix = `${context.executionContext.functionName}|MESSAGE_ID=${newMessageWithoutContent.id}`;
+          const messageStatusUpdater = getMessageStatusUpdater(
+            lMessageStatusModel,
+            createdMessageEvent.message.id,
+            newMessageWithoutContent.fiscalCode
+          );
 
           context.log.verbose(`${logPrefix}|STARTING`);
 
@@ -427,11 +428,7 @@ export const getProcessMessageHandler = ({
           if (O.isNone(maybeProfile)) {
             // the recipient doesn't have any profile yet
             await pipe(
-              getMessageStatusUpdater(
-                lMessageStatusModel,
-                createdMessageEvent.message.id,
-                newMessageWithoutContent.fiscalCode
-              )(MessageStatusValueEnum.REJECTED),
+              messageStatusUpdater(MessageStatusValueEnum.REJECTED),
               TE.getOrElse(e => {
                 context.log.error(
                   `${logPrefix}|PROFILE_NOT_FOUND|UPSERT_STATUS=REJECTED|ERROR=${JSON.stringify(
@@ -460,11 +457,7 @@ export const getProcessMessageHandler = ({
           if (!isInboxEnabled) {
             // the recipient's inbox is disabled
             await pipe(
-              getMessageStatusUpdater(
-                lMessageStatusModel,
-                createdMessageEvent.message.id,
-                newMessageWithoutContent.fiscalCode
-              )(MessageStatusValueEnum.REJECTED),
+              messageStatusUpdater(MessageStatusValueEnum.REJECTED),
               TE.getOrElse(e => {
                 context.log.error(
                   `${logPrefix}|MASTER_INBOX_DISABLED|UPSERT_STATUS=REJECTED|ERROR=${JSON.stringify(
@@ -559,11 +552,7 @@ export const getProcessMessageHandler = ({
 
           if (isMessageStorageBlockedForService) {
             await pipe(
-              getMessageStatusUpdater(
-                lMessageStatusModel,
-                createdMessageEvent.message.id,
-                profile.fiscalCode
-              )(MessageStatusValueEnum.REJECTED),
+              messageStatusUpdater(MessageStatusValueEnum.REJECTED),
               TE.getOrElse(e => {
                 context.log.error(
                   `${logPrefix}|SENDER_BLOCKED|UPSERT_STATUS=REJECTED|ERROR=${JSON.stringify(
@@ -583,7 +572,7 @@ export const getProcessMessageHandler = ({
           await createMessageOrThrow(
             context,
             lMessageModel,
-            lMessageStatusModel,
+            messageStatusUpdater,
             lBlobService,
             createdMessageEvent
           );
