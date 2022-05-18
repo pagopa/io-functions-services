@@ -59,12 +59,12 @@ import { DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS } from "../../utils/con
 import * as MS from "@pagopa/io-functions-commons/dist/src/models/message_status";
 import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
 
-const createContext = (): Context =>
+const createContext = (functionName: string = "funcname"): Context =>
   (({
     bindings: {},
-    executionContext: { functionName: "funcname" },
+    executionContext: { functionName },
     // eslint-disable no-console
-    log: { ...console, verbose: console.log }
+    log: { ...console, verbose: console.log, error: jest.fn(console.log) }
   } as unknown) as Context);
 
 const mockTelemetryClient = ({
@@ -633,6 +633,90 @@ describe("getprocessMessageHandler", () => {
       expect(activationFindLastVersionMock).toBeCalledTimes(
         skipActivationMock ? 0 : 1
       );
+    }
+  );
+
+  it.each`
+    scenario                                                    | loggedError                                                                              | profileResult                                                     | preferenceResult
+    ${"while storing PROCESSED status"}                         | ${'UPSERT_STATUS=PROCESSED|ERROR={"kind":"COSMOS_EMPTY_RESPONSE"}'}                      | ${TE.of(O.some(aRetrievedProfile))}                               | ${"not-called"}
+    ${"while storing REJECTED status if PROFILE NOT FOUND"}     | ${'PROFILE_NOT_FOUND|UPSERT_STATUS=REJECTED|ERROR={"kind":"COSMOS_EMPTY_RESPONSE"}'}     | ${TE.of(O.none)}                                                  | ${"not-called"}
+    ${"while storing REJECTED status if MASTER INBOX DISABLED"} | ${'MASTER_INBOX_DISABLED|UPSERT_STATUS=REJECTED|ERROR={"kind":"COSMOS_EMPTY_RESPONSE"}'} | ${TE.of(O.some({ ...aRetrievedProfile, isInboxEnabled: false }))} | ${"not-called"}
+    ${"while storing REJECTED status if SENDER IS BLOCKED"}     | ${'SENDER_BLOCKED|UPSERT_STATUS=REJECTED|ERROR={"kind":"COSMOS_EMPTY_RESPONSE"}'}        | ${TE.of(O.some({ ...aRetrievedProfileWithAutoPreferences }))}     | ${TE.of(O.some(aDisabledServicePreference))}
+  `(
+    "should throw an Error if MessageStatus upsert fails $scenario",
+    async ({
+      loggedError,
+      profileResult,
+      preferenceResult,
+      messageEvent = aCreatedMessageEvent,
+      messageData = aCommonMessageData,
+      // mock implementation must be set only if we expect the function to be called, otherwise it will interfere with other tests
+      //   we use "not-called" to determine such
+      skipProfileMock = profileResult === "not-called",
+      skipPreferenceMock = preferenceResult === "not-called"
+    }) => {
+      !skipProfileMock &&
+        findLastVersionByModelIdMock.mockImplementationOnce(
+          () => profileResult
+        );
+      // upsertMessageMock.mockImplementationOnce(() => upsertResult);
+      !skipPreferenceMock &&
+        findServicePreferenceMock.mockImplementationOnce(
+          () => preferenceResult
+        );
+      !skipPreferenceMock &&
+        findServicePreferenceMock.mockImplementationOnce(
+          () => preferenceResult
+        );
+      storeContentAsBlobMock.mockImplementationOnce(() =>
+        TE.of(O.some(aBlobResult))
+      );
+      getMessageStatusUpdaterMock.mockImplementationOnce(
+        (
+          _messageStatusModel: MS.MessageStatusModel,
+          _messageId: NonEmptyString,
+          _fiscalCode: FiscalCode
+        ) => (_status: MessageStatusValueEnum) =>
+          TE.left({ kind: "COSMOS_EMPTY_RESPONSE" })
+      );
+      mockRetrieveProcessingMessageData.mockImplementationOnce(() =>
+        TE.of(O.some(messageData))
+      );
+      const processMessageHandler = getProcessMessageHandler({
+        lActivation,
+        lProfileModel,
+        lMessageModel,
+        lBlobService: {} as any,
+        lServicePreferencesModel,
+        lMessageStatusModel,
+        optOutEmailSwitchDate: aPastOptOutEmailSwitchDate,
+        pendingActivationGracePeriod: DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS as Second,
+        isOptInEmailEnabled: false,
+        telemetryClient: mockTelemetryClient,
+        retrieveProcessingMessageData: mockRetrieveProcessingMessageData
+      });
+
+      const funcName = "ProcessMessage";
+      const context = createContext(funcName);
+
+      await expect(
+        processMessageHandler(context, JSON.stringify(messageEvent))
+      ).rejects.toThrow();
+
+      // check if models are being used only when expected
+      expect(findLastVersionByModelIdMock).toBeCalledTimes(
+        skipProfileMock ? 0 : 1
+      );
+      expect(getMessageStatusUpdaterMock).toBeCalledTimes(1);
+      expect(context.log.error).toHaveBeenCalledWith(
+        `${funcName}|MESSAGE_ID=${messageEvent.messageId}|${loggedError}`
+      );
+
+      expect(upsertMessageMock).toBeCalledTimes(0);
+      expect(findServicePreferenceMock).toBeCalledTimes(
+        skipPreferenceMock ? 0 : 1
+      );
+      expect(activationFindLastVersionMock).toBeCalledTimes(0);
     }
   );
 });

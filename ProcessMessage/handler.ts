@@ -274,6 +274,7 @@ const getBlockedInboxesForSpecialService = (
 const createMessageOrThrow = async (
   context: Context,
   lMessageModel: MessageModel,
+  messageStatusUpdater: ReturnType<typeof getMessageStatusUpdater>,
   lBlobService: BlobService,
   createdMessageEvent: CreatedMessageEvent & CommonMessageData
 ): Promise<void> => {
@@ -322,8 +323,25 @@ const createMessageOrThrow = async (
     throw new Error("Error while storing message content");
   }
 
+  // Save new MessageStatus in PROCESSED status
+  // In case it fails, throw an Error and try again
+  // NOTE: this will cause message content to be overwritten
+  await pipe(
+    messageStatusUpdater(MessageStatusValueEnum.PROCESSED),
+    TE.getOrElse(e => {
+      context.log.error(
+        `${logPrefixWithMessage}|UPSERT_STATUS=PROCESSED|ERROR=${JSON.stringify(
+          e
+        )}`
+      );
+      throw new Error("Error while updating message status to PROCESSED");
+    })
+  )();
+
   // Now that the message content has been stored, we can make the message
   // visible to getMessages by changing the pending flag to false
+  // NOTE: in case of failure, this will cause message content to be overwritten
+  // and message-status to create a new version
   const updatedMessageOrError = await lMessageModel.upsert({
     ...newMessageWithoutContent,
     isPending: false
@@ -381,6 +399,11 @@ export const getProcessMessageHandler = ({
           const newMessageWithoutContent = createdMessageEvent.message;
 
           const logPrefix = `${context.executionContext.functionName}|MESSAGE_ID=${newMessageWithoutContent.id}`;
+          const messageStatusUpdater = getMessageStatusUpdater(
+            lMessageStatusModel,
+            createdMessageEvent.message.id,
+            newMessageWithoutContent.fiscalCode
+          );
 
           context.log.verbose(`${logPrefix}|STARTING`);
 
@@ -404,13 +427,21 @@ export const getProcessMessageHandler = ({
 
           if (O.isNone(maybeProfile)) {
             // the recipient doesn't have any profile yet
-            context.log.warn(`${logPrefix}|RESULT=PROFILE_NOT_FOUND`);
-            await getMessageStatusUpdater(
-              lMessageStatusModel,
-              createdMessageEvent.message.id,
-              newMessageWithoutContent.fiscalCode
-            )(MessageStatusValueEnum.REJECTED)();
+            await pipe(
+              messageStatusUpdater(MessageStatusValueEnum.REJECTED),
+              TE.getOrElse(e => {
+                context.log.error(
+                  `${logPrefix}|PROFILE_NOT_FOUND|UPSERT_STATUS=REJECTED|ERROR=${JSON.stringify(
+                    e
+                  )}`
+                );
+                throw new Error(
+                  "Error while updating message status to REJECTED|PROFILE_NOT_FOUND"
+                );
+              })
+            )();
 
+            context.log.warn(`${logPrefix}|RESULT=PROFILE_NOT_FOUND`);
             return;
           }
 
@@ -425,12 +456,21 @@ export const getProcessMessageHandler = ({
 
           if (!isInboxEnabled) {
             // the recipient's inbox is disabled
+            await pipe(
+              messageStatusUpdater(MessageStatusValueEnum.REJECTED),
+              TE.getOrElse(e => {
+                context.log.error(
+                  `${logPrefix}|MASTER_INBOX_DISABLED|UPSERT_STATUS=REJECTED|ERROR=${JSON.stringify(
+                    e
+                  )}`
+                );
+                throw new Error(
+                  "Error while updating message status to REJECTED|MASTER_INBOX_DISABLED"
+                );
+              })
+            )();
+
             context.log.warn(`${logPrefix}|RESULT=MASTER_INBOX_DISABLED`);
-            await getMessageStatusUpdater(
-              lMessageStatusModel,
-              createdMessageEvent.message.id,
-              newMessageWithoutContent.fiscalCode
-            )(MessageStatusValueEnum.REJECTED)();
             return;
           }
 
@@ -511,29 +551,33 @@ export const getProcessMessageHandler = ({
           });
 
           if (isMessageStorageBlockedForService) {
+            await pipe(
+              messageStatusUpdater(MessageStatusValueEnum.REJECTED),
+              TE.getOrElse(e => {
+                context.log.error(
+                  `${logPrefix}|SENDER_BLOCKED|UPSERT_STATUS=REJECTED|ERROR=${JSON.stringify(
+                    e
+                  )}`
+                );
+                throw new Error(
+                  "Error while updating message status to REJECTED|SENDER_BLOCKED"
+                );
+              })
+            )();
+
             context.log.warn(`${logPrefix}|RESULT=SENDER_BLOCKED`);
-            await getMessageStatusUpdater(
-              lMessageStatusModel,
-              createdMessageEvent.message.id,
-              profile.fiscalCode
-            )(MessageStatusValueEnum.REJECTED)();
             return;
           }
 
           await createMessageOrThrow(
             context,
             lMessageModel,
+            messageStatusUpdater,
             lBlobService,
             createdMessageEvent
           );
 
           context.log.verbose(`${logPrefix}|RESULT=SUCCESS`);
-
-          await getMessageStatusUpdater(
-            lMessageStatusModel,
-            createdMessageEvent.message.id,
-            profile.fiscalCode
-          )(MessageStatusValueEnum.PROCESSED)();
 
           telemetryClient.trackEvent({
             name: "api.messages.processed",
