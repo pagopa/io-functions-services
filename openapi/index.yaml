@@ -1027,6 +1027,31 @@ definitions:
         type: string
     required:
       - auth_code
+  ThirdPartyData:
+    type: object
+    description: >-
+      Paylod containing all information needed to retrieve and visualize third
+      party message details
+    properties:
+      id:
+        type: string
+        description: >-
+          Unique id for retrieving third party enriched information about the
+          message
+      original_sender:
+        type: string
+        description: Either a ServiceId or a simple string representing the sender name
+        minLength: 1
+      has_attachments:
+        type: boolean
+        default: false
+      external_receipt_date:
+        $ref: '#/definitions/Timestamp'
+      summary:
+        type: string
+        minLength: 1
+    required:
+      - id
   OrganizationFiscalCode:
     type: string
     description: Organization fiscal code.
@@ -1172,6 +1197,8 @@ definitions:
             $ref: '#/definitions/LegalData'
           eu_covid_cert:
             $ref: '#/definitions/EUCovidCert'
+          third_party_data:
+            $ref: '#/definitions/ThirdPartyData'
           due_date:
             $ref: '#/definitions/Timestamp'
   NewMessageContent:
@@ -1187,6 +1214,8 @@ definitions:
             $ref: '#/definitions/PrescriptionData'
           eu_covid_cert:
             $ref: '#/definitions/EUCovidCert'
+          third_party_data:
+            $ref: '#/definitions/ThirdPartyData'
           legal_data:
             $ref: '#/definitions/LegalData'
   NewMessage:
