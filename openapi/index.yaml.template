@@ -717,11 +717,11 @@ paths:
             $ref: "#/definitions/ActivationPayload"
 definitions:
   ActivationStatus:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/ActivationStatus"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ActivationStatus"
   Activation:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/Activation"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/Activation"
   ActivationPayload:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/ActivationPayload"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ActivationPayload"
   FiscalCodePayload:
     type: object
     properties:
@@ -763,99 +763,99 @@ definitions:
     pattern: "[0-9]{4}-[0-9]{2}-[0-9]{2}"
     x-example: "2019-09-15"
   ProblemJson:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/ProblemJson"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ProblemJson"
   NotificationChannelStatusValue:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/NotificationChannelStatusValue"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/NotificationChannelStatusValue"
   MessageResponseWithContent:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/MessageResponseWithContent"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/MessageResponseWithContent"
   ExternalMessageResponseWithContent:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/ExternalMessageResponseWithContent"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ExternalMessageResponseWithContent"
   MessageResponseNotificationStatus:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/MessageResponseNotificationStatus"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/MessageResponseNotificationStatus"
   MessageStatusValue:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/MessageStatusValue"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/MessageStatusValue"
   ExternalCreatedMessageWithContent:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/ExternalCreatedMessageWithContent"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ExternalCreatedMessageWithContent"
   CreatedMessageWithContent:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/CreatedMessageWithContent"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/CreatedMessageWithContent"
   EUCovidCert:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/EUCovidCert"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/EUCovidCert"
   ThirdPartyData: 
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/ThirdPartyData"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ThirdPartyData"
   OrganizationFiscalCode:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/OrganizationFiscalCode"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/OrganizationFiscalCode"
   FiscalCode:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/FiscalCode"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/FiscalCode"
   LimitedProfile:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/LimitedProfile"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/LimitedProfile"
   Timestamp:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/Timestamp"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/Timestamp"
   TimeToLiveSeconds:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/TimeToLiveSeconds"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/TimeToLiveSeconds"
   PrescriptionData:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/PrescriptionData"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PrescriptionData"
   PrescriptionNRE:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/PrescriptionNRE"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PrescriptionNRE"
   PrescriptionIUP:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/PrescriptionIUP"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PrescriptionIUP"
   PrescriberFiscalCode:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/PrescriberFiscalCode"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PrescriberFiscalCode"
   MessageContentBase:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/MessageContentBase"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/MessageContentBase"
   MessageContent:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/MessageContent"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/MessageContent"
   NewMessageContent:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/NewMessageContent"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/NewMessageContent"
   NewMessage:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/NewMessage"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/NewMessage"
   FeatureLevelType:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/FeatureLevelType"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/FeatureLevelType"
   ReadStatus:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/ReadStatus"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ReadStatus"
   PaymentStatus:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/PaymentStatus"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PaymentStatus"
   CIDR:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/CIDR"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/CIDR"
   ServicePayload:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/ServicePayload"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ServicePayload"
   HiddenServicePayload:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/HiddenServicePayload"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/HiddenServicePayload"
   VisibleServicePayload:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/VisibleServicePayload"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/VisibleServicePayload"
   ExtendedServicePayload:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/ExtendedServicePayload"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ExtendedServicePayload"
   CommonServicePayload:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/CommonServicePayload"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/CommonServicePayload"
   Service:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/Service"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/Service"
   ServiceMetadata:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/ServiceMetadata"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ServiceMetadata"
   StandardServiceMetadata:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/StandardServiceMetadata"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/StandardServiceMetadata"
   SpecialServiceMetadata:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/SpecialServiceMetadata"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/SpecialServiceMetadata"
   CommonServiceMetadata:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/CommonServiceMetadata"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/CommonServiceMetadata"
   ServiceScope:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/ServiceScope"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ServiceScope"
   ServiceId:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/ServiceId"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ServiceId"
   ServiceName:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/ServiceName"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ServiceName"
   OrganizationName:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/OrganizationName"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/OrganizationName"
   DepartmentName:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/DepartmentName"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/DepartmentName"
   PaymentDataBase:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/PaymentDataBase"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PaymentDataBase"
   PaymentData:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/PaymentData"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PaymentData"
   Payee:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/Payee"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/Payee"
   PaymentDataWithRequiredPayee:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/PaymentDataWithRequiredPayee"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PaymentDataWithRequiredPayee"
   LegalData:
-    $ref: "https://raw.githubusercontent.com/pagopa/io-functions-commons/ICC-68--add-ExternalMessageData/openapi/definitions.yaml#/LegalData"
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/LegalData"
   SubscriptionKeys:
     type: object
     properties:

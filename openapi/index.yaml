@@ -1030,7 +1030,7 @@ definitions:
   ThirdPartyData:
     type: object
     description: >-
-      Paylod containing all information needed to retrieve and visualize third
+      Payload containing all information needed to retrieve and visualize third
       party message details
     properties:
       id:
@@ -1042,11 +1042,11 @@ definitions:
         type: string
         description: Either a ServiceId or a simple string representing the sender name
         minLength: 1
+      original_receipt_date:
+        $ref: '#/definitions/Timestamp'
       has_attachments:
         type: boolean
         default: false
-      external_receipt_date:
-        $ref: '#/definitions/Timestamp'
       summary:
         type: string
         minLength: 1
