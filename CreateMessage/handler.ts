@@ -32,7 +32,6 @@ import {
 import { IAzureUserAttributes } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
 import { ClientIp } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
 import {
-  IRequestMiddleware,
   withRequestMiddlewares,
   wrapRequestHandler
 } from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
@@ -61,8 +60,6 @@ import {
   IResponseErrorInternal,
   IResponseErrorValidation,
   IResponseSuccessRedirectToResource,
-  ResponseErrorForbiddenNoAuthorizationGroups,
-  ResponseErrorForbiddenNotAuthorized,
   ResponseErrorForbiddenNotAuthorizedForDefaultAddresses,
   ResponseErrorForbiddenNotAuthorizedForProduction,
   ResponseErrorForbiddenNotAuthorizedForRecipient,
@@ -463,61 +460,6 @@ export function CreateMessageHandler(
     )();
   };
 }
-
-type AzureAllowBodyPayloadMiddlewareErrorResponses =
-  | IResponseErrorForbiddenNoAuthorizationGroups
-  | IResponseErrorForbiddenNotAuthorized;
-
-const toUserGroup = (name: string): Option<UserGroup> =>
-  O.fromNullable(UserGroup[name as keyof typeof UserGroup]);
-
-const getGroupsFromHeader = (groupsHeader: string): ReadonlySet<UserGroup> =>
-  new Set(
-    groupsHeader
-      .split(",")
-      .map(v => toUserGroup(v))
-      .filter(g => O.isSome(g))
-      .map(g => (g as O.Some<UserGroup>).value)
-  );
-
-export const NewAzureAllowBodyPayloadMiddleware = <S, A>(
-  pattern: t.Type<A, S>,
-  allowedGroups: ReadonlySet<UserGroup>
-): IRequestMiddleware<
-  | "IResponseErrorForbiddenNotAuthorized"
-  | "IResponseErrorForbiddenNoAuthorizationGroups",
-  void
-> => async (
-  request
-): Promise<E.Either<AzureAllowBodyPayloadMiddlewareErrorResponses, void>> =>
-  pipe(
-    E.of<AzureAllowBodyPayloadMiddlewareErrorResponses, unknown>(request.body),
-    E.chain(payload =>
-      pipe(
-        pattern.decode(payload),
-        E.fold(
-          // if pattern does not match payload, just skip the middleware
-          _ => E.right(void 0),
-          _ =>
-            pipe(
-              NonEmptyString.decode(request.header("x-user-groups")),
-              E.mapLeft(_errors => ResponseErrorForbiddenNoAuthorizationGroups),
-              E.map(getGroupsFromHeader),
-              // check if current user belongs to at least one of the allowed groups
-              E.map(userGroups =>
-                Array.from(allowedGroups).some(e => userGroups.has(e))
-              ),
-              E.chainW(isInGroup =>
-                isInGroup
-                  ? E.right(void 0)
-                  : E.left(ResponseErrorForbiddenNotAuthorized)
-              )
-            )
-        )
-      )
-    )
-  );
-
 /**
  * Wraps a CreateMessage handler inside an Express request handler.
  */
