@@ -34,14 +34,26 @@ export const ApiNewMessageWithAdvancedFeatures = t.intersection([
  * @param contentPattern a coded that matches a content pattern
  * @returns a codec that specialize ApiNewMessage
  */
+
+type PartialMessageContent = Partial<t.TypeOf<typeof ApiNewMessage>["content"]>;
+/**
+ * Codec that matches a Message with a specific content pattern
+ *
+ * @param contentPattern a coded that matches a content pattern
+ * @returns a codec that specialize ApiNewMessage
+ */
 export type ApiNewMessageWithContentOf<
-  T extends Partial<typeof ApiNewMessage._O["content"]>
+  T extends PartialMessageContent
 > = ApiNewMessage & { readonly content: T };
 export const ApiNewMessageWithContentOf = <
-  T extends Partial<typeof ApiNewMessage._O["content"]>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  T extends t.Type<PartialMessageContent, any>
 >(
-  contentPattern: t.Mixed
-): t.Type<ApiNewMessage & { readonly content: T }, typeof ApiNewMessage._O> =>
+  contentPattern: T
+): t.Type<
+  ApiNewMessage & { readonly content: t.TypeOf<T> },
+  ApiNewMessage & { readonly content: t.OutputOf<T> }
+> =>
   t.intersection([
     ApiNewMessage,
     t.interface({
