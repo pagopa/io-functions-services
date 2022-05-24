@@ -4,6 +4,7 @@ import { readableReport } from "@pagopa/ts-commons/lib/reporters";
 import { ApiNewMessageWithContentOf } from "../types";
 import { PaymentData } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentData";
 import { json } from "express";
+import { ThirdPartyData } from "../../generated/definitions/ThirdPartyData";
 
 import { pipe } from "fp-ts/lib/function";
 import * as E from "fp-ts/lib/Either";
@@ -41,6 +42,51 @@ describe("ApiNewMessageWithContentOf", () => {
     // negative scenario: we expect a no-match
     pipe(
       codec.decode(aMessageWithDifferentSubject),
+      E.fold(
+        _ => {
+          expect(true).toBe(true);
+        },
+        e => fail(`Should have not decoded the value: ${toString(e)}`)
+      )
+    );
+  });
+
+  it("should decode Third Party Data", () => {
+    const aSubject = "my specific subject";
+    const aThirdPartyData = {
+      id: "ID"
+    };
+    const aMessageWithSuchSubject = {
+      content: { ...aMessageContent, subject: aSubject }
+    };
+
+    const aMessageWithThirdParty = {
+      ...aMessageWithSuchSubject,
+      content: {
+        ...aMessageContent,
+        subject: aSubject,
+        third_party_data: aThirdPartyData
+      }
+    };
+
+    const pattern = t.interface({ third_party_data: ThirdPartyData });
+
+    const codec = ApiNewMessageWithContentOf(pattern);
+
+    // positive scenario: we expect a match
+    pipe(
+      codec.decode(aMessageWithThirdParty),
+      E.fold(
+        e => fail(`Should have decoded the value: ${readableReport(e)}`),
+        e => {
+          expect(e.content.subject).toBe(aSubject);
+        }
+      )
+    );
+
+    // negative scenario: we expect a no-match
+    pipe(
+      codec.decode(aMessageWithSuchSubject),
       E.fold(
         _ => {
           expect(true).toBe(true);

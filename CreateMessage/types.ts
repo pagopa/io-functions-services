@@ -40,7 +40,7 @@ export type ApiNewMessageWithContentOf<
 export const ApiNewMessageWithContentOf = <
   T extends Partial<typeof ApiNewMessage._O["content"]>
 >(
-  contentPattern: t.Type<T, Partial<typeof ApiNewMessage._O["content"]>>
+  contentPattern: t.Mixed
 ): t.Type<ApiNewMessage & { readonly content: T }, typeof ApiNewMessage._O> =>
   t.intersection([
     ApiNewMessage,
