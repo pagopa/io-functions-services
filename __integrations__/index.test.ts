@@ -96,6 +96,10 @@ const aValidLegalMessageContent = {
   }
 };
 
+const aValidThirdPartyMessageContent = {
+  id: "ID"
+};
+
 // Must correspond to an existing serviceId within "services" colletion
 const aSubscriptionKey = "aSubscriptionKey";
 
@@ -189,6 +193,26 @@ describe("Create Message |> Middleware errors", () => {
       message: {
         fiscal_code: anAutoFiscalCode,
         content: aValidLegalMessageContent
+      }
+    };
+
+    const response = await postCreateMessage(nodeFetch)(body);
+
+    expect(response.status).toEqual(403);
+  });
+
+  it("should return 403 when creating a third party message without right permission", async () => {
+    const nodeFetch = getNodeFetch({
+      "x-user-groups": "ApiMessageWrite"
+    });
+
+    const body = {
+      message: {
+        fiscal_code: anAutoFiscalCode,
+        content: {
+          ...aMessageContent,
+          third_party_data: aValidThirdPartyMessageContent
+        }
       }
     };
 
@@ -337,6 +361,60 @@ describe("Create Message", () => {
       //   status: 500,
       //   title: "Internal server error"
       // });
+    }
+  );
+});
+
+describe("Create Third Party Message", () => {
+  it.each`
+    profileType         | fiscalCode                       | serviceId
+    ${"LEGACY Profile"} | ${aLegacyInboxEnabledFiscalCode} | ${anEnabledServiceId}
+    ${"AUTO Profile"}   | ${anAutoFiscalCode}              | ${anEnabledServiceId}
+    ${"MANUAL Profile"} | ${aManualFiscalCode}             | ${anEnabledServiceId}
+  `(
+    "$profileType |> should return the message in PROCESSED status when service is allowed to send",
+    async ({ fiscalCode, serviceId }) => {
+      const body = {
+        message: {
+          fiscal_code: fiscalCode,
+          content: {
+            aMessageContent,
+            third_party_data: aValidThirdPartyMessageContent
+          }
+        }
+      };
+
+      const nodeFetch = getNodeFetch({
+        "x-subscription-id": serviceId,
+        "x-user-groups":
+          customHeaders["x-user-groups"] + ",ApiThirdPartyMessageWrite"
+      });
+
+      const result = await postCreateMessage(nodeFetch)(body);
+
+      expect(result.status).toEqual(201);
+
+      const messageId = ((await result.json()) as CreatedMessage).id;
+      expect(messageId).not.toBeUndefined();
+
+      // Wait the process to complete
+      await delay(WAIT_MS);
+
+      const resultGet = await getSentMessage(nodeFetch)(fiscalCode, messageId);
+
+      expect(resultGet.status).toEqual(200);
+      const detail = (await resultGet.json()) as ExternalMessageResponseWithContent;
+
+      expect(detail).toEqual(
+        expect.objectContaining({
+          message: expect.objectContaining({
+            id: messageId,
+            feature_level_type: FeatureLevelTypeEnum.STANDARD,
+            ...body.message
+          }),
+          status: MessageStatusValueEnum.PROCESSED
+        })
+      );
     }
   );
 });
