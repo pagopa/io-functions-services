@@ -82,6 +82,7 @@ import {
 } from "../utils/events/message";
 import { commonCreateMessageMiddlewares } from "../utils/message_middlewares";
 import { LegalData } from "../generated/definitions/LegalData";
+import { ThirdPartyData } from "../generated/definitions/ThirdPartyData";
 import {
   ApiNewMessageWithAdvancedFeatures,
   ApiNewMessageWithContentOf,
@@ -506,10 +507,16 @@ export function CreateMessage(
       AzureAllowBodyPayloadMiddleware(
         ApiNewMessageWithAdvancedFeatures,
         new Set([UserGroup.ApiMessageWriteAdvanced])
+      ),
+      // Allow only users in the ApiThirdPartyMessageWrite group to send messages with ThirdPartyData
+      AzureAllowBodyPayloadMiddleware(
+        ApiNewMessageWithContentOf(
+          t.interface({ third_party_data: ThirdPartyData })
+        ),
+        new Set([UserGroup.ApiThirdPartyMessageWrite])
       )
     ] as const)
   );
-
   return wrapRequestHandler(
     middlewaresWrap(
       // eslint-disable-next-line max-params

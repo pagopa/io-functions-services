@@ -28,6 +28,8 @@ export const ApiNewMessageWithAdvancedFeatures = t.intersection([
   })
 ]);
 
+type PartialMessageContent = Partial<typeof ApiNewMessage._A["content"]>;
+
 /**
  * Codec that matches a Message with a specific content pattern
  *
@@ -35,11 +37,9 @@ export const ApiNewMessageWithAdvancedFeatures = t.intersection([
  * @returns a codec that specialize ApiNewMessage
  */
 export type ApiNewMessageWithContentOf<
-  T extends Partial<typeof ApiNewMessage._O["content"]>
+  T extends PartialMessageContent
 > = ApiNewMessage & { readonly content: T };
-export const ApiNewMessageWithContentOf = <
-  T extends Partial<typeof ApiNewMessage._O["content"]>
->(
+export const ApiNewMessageWithContentOf = <T extends PartialMessageContent>(
   contentPattern: t.Type<T, Partial<typeof ApiNewMessage._O["content"]>>
 ): t.Type<ApiNewMessage & { readonly content: T }, typeof ApiNewMessage._O> =>
   t.intersection([
