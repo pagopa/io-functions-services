@@ -780,6 +780,8 @@ definitions:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/CreatedMessageWithContent"
   EUCovidCert:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/EUCovidCert"
+  ThirdPartyData: 
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ThirdPartyData"
   OrganizationFiscalCode:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/OrganizationFiscalCode"
   FiscalCode:
