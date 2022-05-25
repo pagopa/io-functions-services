@@ -28,13 +28,6 @@ export const ApiNewMessageWithAdvancedFeatures = t.intersection([
   })
 ]);
 
-/**
- * Codec that matches a Message with a specific content pattern
- *
- * @param contentPattern a coded that matches a content pattern
- * @returns a codec that specialize ApiNewMessage
- */
-
 type PartialMessageContent = Partial<typeof ApiNewMessage._A["content"]>;
 
 /**
