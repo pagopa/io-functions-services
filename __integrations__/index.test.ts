@@ -378,7 +378,7 @@ describe("Create Third Party Message", () => {
         message: {
           fiscal_code: fiscalCode,
           content: {
-            aMessageContent,
+            ...aMessageContent,
             third_party_data: aValidThirdPartyMessageContent
           }
         }
@@ -408,9 +408,15 @@ describe("Create Third Party Message", () => {
       expect(detail).toEqual(
         expect.objectContaining({
           message: expect.objectContaining({
-            id: messageId,
+            ...body.message,
             feature_level_type: FeatureLevelTypeEnum.STANDARD,
-            ...body.message
+            content: {
+              ...body.message.content,
+              third_party_data: {
+                ...body.message.content.third_party_data,
+                has_attachments: false
+              }
+            }
           }),
           status: MessageStatusValueEnum.PROCESSED
         })
