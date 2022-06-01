@@ -1038,6 +1038,7 @@ definitions:
         description: >-
           Unique id for retrieving third party enriched information about the
           message
+        minLength: 1
       original_sender:
         type: string
         description: Either a ServiceId or a simple string representing the sender name
