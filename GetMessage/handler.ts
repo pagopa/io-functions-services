@@ -35,7 +35,6 @@ import {
   ResponseErrorForbiddenNotAuthorized,
   ResponseErrorInternal,
   ResponseErrorNotFound,
-  ResponseErrorValidation,
   ResponseSuccessJson
 } from "@pagopa/ts-commons/lib/responses";
 import { FiscalCode, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
@@ -50,13 +49,9 @@ import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/servi
 
 import { BlobService } from "azure-storage";
 
-import {
-  MessageModel,
-  RetrievedMessage
-} from "@pagopa/io-functions-commons/dist/src/models/message";
+import { MessageModel, RetrievedMessage } from "@pagopa/io-functions-commons/dist/src/models/message";
 
 import * as TE from "fp-ts/lib/TaskEither";
-import * as E from "fp-ts/lib/Either";
 import * as O from "fp-ts/lib/Option";
 
 import {
@@ -77,7 +72,6 @@ import { ExternalCreatedMessageWithContent } from "@pagopa/io-functions-commons/
 import { ExternalCreatedMessageWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/ExternalCreatedMessageWithoutContent";
 import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
-import { readableReport } from "@pagopa/ts-commons/lib/reporters";
 import { pipe } from "fp-ts/lib/function";
 import * as t from "io-ts";
 import * as B from "fp-ts/lib/boolean";
@@ -113,11 +107,11 @@ type IGetMessageHandler = (
   clientIp: ClientIp,
   attrs: IAzureUserAttributes,
   fiscalCode: FiscalCode,
-  messageId: string
+  messageId: NonEmptyString
 ) => Promise<
   | IResponseSuccessJson<
-      ExternalMessageResponseWithContent | ExternalMessageResponseWithoutContent
-    >
+    ExternalMessageResponseWithContent | ExternalMessageResponseWithoutContent
+  >
   | IResponseErrorNotFound
   | IResponseErrorQuery
   | IResponseErrorValidation
@@ -184,53 +178,16 @@ export function GetMessageHandler(
 ): IGetMessageHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, max-params
   return async (context, auth, __, userAttributes, fiscalCode, messageId) => {
-    const errorOrMessageId = NonEmptyString.decode(messageId);
-
-    if (E.isLeft(errorOrMessageId)) {
-      return ResponseErrorValidation(
-        "Invalid messageId",
-        readableReport(errorOrMessageId.left)
-      );
-    }
-    const errorOrMaybeDocument = await messageModel.findMessageForRecipient(
-      fiscalCode,
-      errorOrMessageId.right
-    )();
-
-    if (E.isLeft(errorOrMaybeDocument)) {
-      // the query failed
-      return ResponseErrorQuery(
-        "Error while retrieving the message",
-        errorOrMaybeDocument.left
-      );
-    }
-
-    const maybeDocument = errorOrMaybeDocument.right;
-    if (O.isNone(maybeDocument)) {
-      // the document does not exist
-      return ResponseErrorNotFound(
-        "Message not found",
-        "The message that you requested was not found in the system."
-      );
-    }
-
-    const retrievedMessage = maybeDocument.value;
-
     const isUserAllowedForLegalMessages =
       [...auth.groups].indexOf(UserGroup.ApiLegalMessageRead) >= 0;
-    // the service is allowed to see the message when he is the sender of the message
-    const isUserAllowed =
-      retrievedMessage.senderServiceId === userAttributes.service.serviceId ||
-      isUserAllowedForLegalMessages;
 
-    if (!isUserAllowed) {
-      // the user is not allowed to see the message
-      return ResponseErrorForbiddenNotAuthorized;
-    }
+    // the service is allowed to see the message when he is the sender of the message
+    const isUserAllowed = TE.fromPredicate((message: RetrievedMessage) => message.senderServiceId === userAttributes.service.serviceId ||
+      isUserAllowedForLegalMessages, () => ResponseErrorForbiddenNotAuthorized)
 
     // fetch the content of the message from the blob storage
-    const errorOrMaybeContent = await pipe(
-      messageModel.getContentFromBlob(blobService, retrievedMessage.id),
+    const retrieveContent = ({ document }: { document: RetrievedMessage }) => pipe(document,
+      (document) => messageModel.getContentFromBlob(blobService, document.id),
       TE.mapLeft(error => {
         context.log.error(`GetMessageHandler|${JSON.stringify(error)}`);
         return ResponseErrorInternal(`${error.name}: ${error.message}`);
@@ -240,11 +197,11 @@ export function GetMessageHandler(
           () =>
             isUserAllowedForLegalMessages
               ? TE.left(
-                  ResponseErrorNotFound(
-                    "Not Found",
-                    "Message Content not found"
-                  )
+                ResponseErrorNotFound(
+                  "Not Found",
+                  "Message Content not found"
                 )
+              )
               : TE.of(O.none),
           messageContent =>
             pipe(
@@ -256,85 +213,94 @@ export function GetMessageHandler(
                 !isUserAllowedForLegalMessages
                   ? TE.of(O.some(messageContent))
                   : TE.left<
-                      | IResponseErrorForbiddenNotAuthorized
-                      | IResponseErrorNotFound,
-                      O.Option<MessageContent>
-                    >(ResponseErrorForbiddenNotAuthorized)
+                    | IResponseErrorForbiddenNotAuthorized
+                    | IResponseErrorNotFound,
+                    O.Option<MessageContent>
+                  >(ResponseErrorForbiddenNotAuthorized)
               )
             )
         )
-      )
-    )();
+      ),
+      TE.map(O.toUndefined)
+    )
 
-    if (E.isLeft(errorOrMaybeContent)) {
-      context.log.error(
-        `GetMessageHandler|${JSON.stringify(errorOrMaybeContent.left)}`
-      );
-      return errorOrMaybeContent.left;
-    }
-
-    const content = O.toUndefined(errorOrMaybeContent.right);
-
-    const message = {
-      content,
-      ...retrievedMessageToExternal(retrievedMessage)
-    };
-
-    const errorOrNotificationStatuses = await getMessageNotificationStatuses(
-      notificationModel,
-      notificationStatusModel,
-      retrievedMessage.id
-    )();
-
-    if (E.isLeft(errorOrNotificationStatuses)) {
-      return ResponseErrorInternal(
-        `Error retrieving NotificationStatus: ${errorOrNotificationStatuses.left.name}|${errorOrNotificationStatuses.left.message}`
-      );
-    }
-    const notificationStatuses = errorOrNotificationStatuses.right;
-
-    const errorOrMaybeMessageStatus = await messageStatusModel.findLastVersionByModelId(
-      [retrievedMessage.id]
-    )();
-
-    if (E.isLeft(errorOrMaybeMessageStatus)) {
-      return ResponseErrorInternal(
-        `Error retrieving MessageStatus: ${JSON.stringify(
-          errorOrMaybeMessageStatus.left
-        )}`
-      );
-    }
-    const maybeMessageStatus = errorOrMaybeMessageStatus.right;
-
-    const returnedMessage = pipe(
-      {
-        message,
-        notification: pipe(notificationStatuses, O.toUndefined),
-        // we do not return the status date-time
-        status: pipe(
-          maybeMessageStatus,
-          O.map(messageStatus => messageStatus.status),
-          // when the message has been received but a MessageStatus
-          // does not exist yet, the message is considered to be
-          // in the ACCEPTED state (not yet stored in the inbox)
-          O.getOrElse(() => MessageStatusValueEnum.ACCEPTED)
+    return await pipe(
+      messageModel.findMessageForRecipient(fiscalCode, messageId),
+      // the query failed
+      TE.mapLeft((err) => ResponseErrorQuery(
+        "Error while retrieving the message",
+        err
+      )),
+      // the document does not exist
+      TE.chainW(TE.fromOption(() =>
+        ResponseErrorNotFound(
+          "Message not found",
+          "The message that you requested was not found in the system."
         )
-      },
-      // Enrich message info with advanced properties if user is allowed to read them
-      messageWithoutAdvancedProperties =>
-        B.fold(
-          () => messageWithoutAdvancedProperties,
-          () => ({
-            ...messageWithoutAdvancedProperties,
-            read_status: B.fold(
-              () => ReadStatusEnum.UNAVAILABLE,
-              () => getReadStatusForService(maybeMessageStatus)
-            )(canReadMessageReadStatus(auth.subscriptionId))
-          })
-        )(canReadAdvancedMessageInfo(message, auth.groups))
-    );
+      )),
+      //check if the user is allowed to see the message
+      TE.chainW(isUserAllowed),
+      TE.bindTo('document'),
+      TE.bindW('content', retrieveContent),
+      TE.bindW('message', ({ document, content }) => TE.of({
+        content,
+        ...retrievedMessageToExternal(document)
+      })),
+      TE.bindW('notification', ({ document }) => pipe(
+        getMessageNotificationStatuses(
+          notificationModel,
+          notificationStatusModel,
+          document.id
+        ),
+        TE.mapLeft((error) => ResponseErrorInternal(
+          `Error retrieving NotificationStatus: ${error.name}|${error.message}`
+        )),
+        TE.map(O.toUndefined)
+      )
+      ),
+      TE.bindW("maybeMessageStatus", ({ document }) => pipe(
+        messageStatusModel.findLastVersionByModelId([document.id]),
+        TE.mapLeft((error) => ResponseErrorInternal(
+          `Error retrieving MessageStatus: ${JSON.stringify(
+            error
+          )}`
+        ))
+      )),
+      TE.bindW('status', ({ maybeMessageStatus }) => pipe(
+        maybeMessageStatus,
+        O.map((messageStatus) => messageStatus.status),
+        // when the message has been received but a MessageStatus
+        // does not exist yet, the message is considered to be
+        // in the ACCEPTED state (not yet stored in the inbox)
+        O.getOrElse(() => MessageStatusValueEnum.ACCEPTED),
+        TE.of
+      )
+      ),
 
-    return ResponseSuccessJson(returnedMessage);
+      TE.bindW("maybeReadStatus", ({ message, maybeMessageStatus }) => pipe(
+        canReadAdvancedMessageInfo(message, auth.groups) ? O.some(true) : O.none,
+        O.map(() => pipe(
+          canReadMessageReadStatus(auth.subscriptionId),
+          B.fold(
+            () => ReadStatusEnum.UNAVAILABLE,
+            () => getReadStatusForService(maybeMessageStatus)
+          )
+        )),
+        TE.of
+      )),
+
+      TE.map(({ message, notification, status, maybeReadStatus }) => pipe(
+        maybeReadStatus,
+        O.fold(
+          () => ({ message, notification, status }),
+          //Enrich message info with advanced properties if user is allowed to read them
+          (read_status) => ({ message, notification, status, read_status }),
+        )
+      )),
+
+      TE.map(message => ResponseSuccessJson(message)),
+      TE.toUnion
+    )();
   };
 }
 

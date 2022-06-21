@@ -1,8 +1,8 @@
 import * as t from "io-ts";
 import * as E from "fp-ts/lib/Either";
-import * as O from "fp-ts/lib/Option";
 import * as TE from "fp-ts/lib/TaskEither";
-import { pipe } from "fp-ts/lib/function";
+import * as O from "fp-ts/lib/Option";
+import { flow, pipe } from "fp-ts/lib/function";
 
 import * as HtmlToText from "html-to-text";
 import * as NodeMailer from "nodemailer";
@@ -71,61 +71,6 @@ export const getEmailNotificationHandler = (
         ): Promise<EmailNotificationResult> => {
           const logPrefix = `${context.executionContext.functionName}|MESSAGE_ID=${message.id}|NOTIFICATION_ID=${notificationId}`;
 
-          // Check whether the message is expired
-          const errorOrActiveMessage = ActiveMessage.decode(message);
-
-          if (E.isLeft(errorOrActiveMessage)) {
-            // if the message is expired no more processing is necessary
-            context.log.warn(`${logPrefix}|RESULT=TTL_EXPIRED`);
-            return EmailNotificationResult.encode({
-              kind: "SUCCESS",
-              result: "EXPIRED"
-            });
-          }
-
-          // fetch the notification
-          const errorOrMaybeNotification = await lNotificationModel.find([
-            notificationId,
-            message.id
-          ])();
-
-          if (E.isLeft(errorOrMaybeNotification)) {
-            const error = errorOrMaybeNotification.left;
-            // we got an error while fetching the notification
-            context.log.warn(`${logPrefix}|ERROR=${JSON.stringify(error)}`);
-            throw new Error(
-              `Error while fetching the notification: ${JSON.stringify(error)}`
-            );
-          }
-
-          const maybeEmailNotification = errorOrMaybeNotification.right;
-
-          if (O.isNone(maybeEmailNotification)) {
-            // it may happen that the object is not yet visible to this function due to latency
-            // as the notification object is retrieved from database and we may be hitting a
-            // replica that is not yet in sync - throwing an error will trigger a retry
-            context.log.warn(`${logPrefix}|RESULT=NOTIFICATION_NOT_FOUND`);
-            throw new Error(`Notification not found`);
-          }
-
-          const errorOrEmailNotification = EmailNotification.decode(
-            maybeEmailNotification.value
-          );
-
-          if (E.isLeft(errorOrEmailNotification)) {
-            // The notification object is not compatible with this code
-            const error = readableReport(errorOrEmailNotification.left);
-            context.log.error(`${logPrefix}|ERROR`);
-            context.log.verbose(`${logPrefix}|ERROR_DETAILS=${error}`);
-            return EmailNotificationResult.encode({
-              kind: "FAILURE",
-              reason: "DECODE_ERROR"
-            });
-          }
-
-          const emailNotification =
-            errorOrEmailNotification.right.channels.EMAIL;
-
           const documentHtml = await generateDocumentHtml(
             content.subject,
             content.markdown,
@@ -140,7 +85,7 @@ export const getEmailNotificationHandler = (
 
           // trigger email delivery
           // see https://nodemailer.com/message/
-          await pipe(
+          const triggerEmailDelivery = (emailNotification: EmailNotification) => pipe(
             sendMail(lMailerTransporter, {
               from: notificationDefaultParams.MAIL_FROM,
               headers: {
@@ -151,7 +96,7 @@ export const getEmailNotificationHandler = (
               messageId: message.id,
               subject: content.subject,
               text: bodyText,
-              to: emailNotification.toAddress
+              to: emailNotification.channels.EMAIL.toAddress
               // priority: "high", // TODO: set based on kind of notification
               // disableFileAccess: true,
               // disableUrlAccess: true,
@@ -163,15 +108,53 @@ export const getEmailNotificationHandler = (
               },
               () => context.log.verbose(`${logPrefix}|RESULT=SUCCESS`)
             )
-          )();
+          )
 
-          // TODO: handling bounces and delivery updates
-          // see https://nodemailer.com/usage/#sending-mail
-          // see #150597597
-          return EmailNotificationResult.encode({
-            kind: "SUCCESS",
-            result: "OK"
-          });
+          return await pipe(ActiveMessage.decode(message),
+            TE.fromEither,
+            // Check whether the message is expired
+            TE.mapLeft(() => {
+              // if the message is expired no more processing is necessary
+              context.log.warn(`${logPrefix}|RESULT=TTL_EXPIRED`)
+              return EmailNotificationResult.encode({
+                kind: "SUCCESS",
+                result: "EXPIRED"
+              })
+            }),
+            TE.chainW(
+              () => pipe(
+                // fetch the notification
+                lNotificationModel.find([
+                  notificationId,
+                  message.id
+                ]),
+                TE.mapLeft((error) => {
+                  // we got an error while fetching the notification
+                  context.log.warn(`${logPrefix}|RESULT=TTL_EXPIRED`);
+                  throw new Error(
+                    `Error while fetching the notification: ${JSON.stringify(error)}`
+                  );
+                }),
+                // it may happen that the object is not yet visible to this function due to latency
+                // as the notification object is retrieved from database and we may be hitting a
+                // replica that is not yet in sync - throwing an error will trigger a retry
+                TE.map(O.getOrElse(() => {
+                  context.log.warn(`${logPrefix}|RESULT=NOTIFICATION_NOT_FOUND`);
+                  throw new Error(`Notification not found`);
+                })),
+                TE.map(triggerEmailDelivery)
+              )
+            ),
+            // TODO: handling bounces and delivery updates
+            // see https://nodemailer.com/usage/#sending-mail
+            // see #150597597
+            TE.map(() => EmailNotificationResult.encode({
+              kind: "SUCCESS",
+              result: "OK"
+            })
+            ),
+            TE.toUnion
+          )();
         }
       )
     )
