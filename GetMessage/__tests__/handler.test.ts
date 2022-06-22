@@ -45,7 +45,7 @@ import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitio
 import { TimeToLiveSeconds } from "@pagopa/io-functions-commons/dist/generated/definitions/TimeToLiveSeconds";
 import { FeatureLevelTypeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/FeatureLevelType";
 
-import * as TE from "fp-ts/lib/TaskEither";
+import * as TE from "fp-ts/TaskEither";
 
 import { ReadStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ReadStatus";
 
@@ -54,8 +54,12 @@ import {
   aMessageContentWithLegalData,
   aMessagePayload
 } from "../../__mocks__/mocks";
+import { PaymentStatusEnum } from "../../generated/definitions/PaymentStatus";
 
 describe("GetMessageHandler", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
   jest.useFakeTimers();
 
   const mockContext = {
@@ -233,6 +237,19 @@ describe("GetMessageHandler", () => {
       upsert: jest.fn(status => TE.left(status))
     };
   }
+
+  const getPaymentUpdaterClientMock = (isPaid: boolean = false) => ({
+    checkAssistenza: jest.fn().mockImplementation(() =>
+      TE.right({
+        status: 200,
+        value: {
+          isPaid
+        },
+        headers: {}
+      })()
+    )
+  });
+
   it("should respond with a message if requesting user is the sender", async () => {
     const mockMessageModel = {
       findMessageForRecipient: jest.fn(() =>
@@ -246,7 +263,8 @@ describe("GetMessageHandler", () => {
       getMessageStatusModelMock(),
       getNotificationModelMock(),
       getNotificationStatusModelMock(),
-      {} as any
+      {} as any,
+      getPaymentUpdaterClientMock()
     );
 
     const result = await getMessageHandler(
@@ -283,7 +301,8 @@ describe("GetMessageHandler", () => {
       getMessageStatusModelMock(),
       getNotificationModelMock(),
       getNotificationStatusModelMock(),
-      {} as any
+      {} as any,
+      getPaymentUpdaterClientMock()
     );
 
     const result = await getMessageHandler(
@@ -318,7 +337,8 @@ describe("GetMessageHandler", () => {
       getMessageStatusModelMock(),
       getNotificationModelMock(),
       getNotificationStatusModelMock(),
-      {} as any
+      {} as any,
+      getPaymentUpdaterClientMock()
     );
 
     const result = await getMessageHandler(
@@ -359,7 +379,8 @@ describe("GetMessageHandler", () => {
       getMessageStatusModelMock(),
       {} as any,
       {} as any,
-      {} as any
+      {} as any,
+      getPaymentUpdaterClientMock()
     );
 
     const result = await getMessageHandler(
@@ -398,7 +419,8 @@ describe("GetMessageHandler", () => {
       getMessageStatusModelMock(),
       {} as any,
       {} as any,
-      {} as any
+      {} as any,
+      getPaymentUpdaterClientMock()
     );
 
     const result = await getMessageHandler(
@@ -435,7 +457,8 @@ describe("GetMessageHandler", () => {
       getMessageStatusModelMock(),
       {} as any,
       {} as any,
-      {} as any
+      {} as any,
+      getPaymentUpdaterClientMock()
     );
 
     const result = await getMessageHandler(
@@ -472,7 +495,8 @@ describe("GetMessageHandler", () => {
       getMessageStatusModelMock(),
       {} as any,
       {} as any,
-      {} as any
+      {} as any,
+      getPaymentUpdaterClientMock()
     );
 
     const result = await getMessageHandler(
@@ -508,7 +532,8 @@ describe("GetMessageHandler", () => {
       getMessageStatusModelMock(),
       getNotificationModelMock(),
       getNotificationStatusModelMock(),
-      {} as any
+      {} as any,
+      getPaymentUpdaterClientMock()
     );
 
     const result = await getMessageHandler(
@@ -550,7 +575,8 @@ describe("GetMessageHandler", () => {
       getMessageStatusModelMock(),
       {} as any,
       {} as any,
-      {} as any
+      {} as any,
+      getPaymentUpdaterClientMock()
     );
 
     const result = await getMessageHandler(
@@ -597,7 +623,8 @@ describe("GetMessageHandler", () => {
       getMessageStatusModelMock(),
       getNotificationModelMock(aRetrievedNotification),
       getNotificationStatusModelMock(),
-      {} as any
+      {} as any,
+      getPaymentUpdaterClientMock()
     );
 
     const result = await getMessageHandler(
@@ -642,7 +669,8 @@ describe("GetMessageHandler", () => {
       ),
       getNotificationModelMock(),
       getNotificationStatusModelMock(),
-      {} as any
+      {} as any,
+      getPaymentUpdaterClientMock()
     );
 
     const result = await getMessageHandler(
@@ -676,7 +704,8 @@ describe("GetMessageHandler", () => {
         )
       } as any,
       getNotificationStatusModelMock(),
-      {} as any
+      {} as any,
+      getPaymentUpdaterClientMock()
     );
 
     const result = await getMessageHandler(
@@ -738,7 +767,8 @@ describe("GetMessageHandler", () => {
       getMessageStatusModelMock(),
       getNotificationModelMock(aRetrievedNotification),
       getNotificationStatusModelMock(),
-      {} as any
+      {} as any,
+      getPaymentUpdaterClientMock()
     );
 
     const result = await getMessageHandler(
@@ -778,7 +808,8 @@ describe("GetMessageHandler", () => {
       getMessageStatusModelMock(),
       getNotificationModelMock(aRetrievedNotification),
       getNotificationStatusModelMock(),
-      {} as any
+      {} as any,
+      getPaymentUpdaterClientMock()
     );
 
     const result = await getMessageHandler(
@@ -820,7 +851,8 @@ describe("GetMessageHandler", () => {
       getMessageStatusModelMock(),
       getNotificationModelMock(aRetrievedNotification),
       getNotificationStatusModelMock(),
-      {} as any
+      {} as any,
+      getPaymentUpdaterClientMock()
     );
 
     const result = await getMessageHandler(
@@ -843,7 +875,51 @@ describe("GetMessageHandler", () => {
     if (result.kind === "IResponseSuccessJson") {
       expect(result.value).toEqual({
         ...aPublicExtendedMessageResponseWithAdvancedFeatures,
-        read_status: ReadStatusEnum.UNAVAILABLE
+        read_status: ReadStatusEnum.UNAVAILABLE,
+        payment_status: PaymentStatusEnum.NOT_PAID
+      });
+    }
+  });
+
+  it("should provide information about payment status if user is allowed and message is of type ADVANCED", async () => {
+    const mockMessageModel = {
+      findMessageForRecipient: jest.fn(() =>
+        TE.of(some(aRetrievedMessageWithAdvancedFeatures))
+      ),
+      getContentFromBlob: jest.fn(() => TE.of(none))
+    };
+
+    const getMessageHandler = GetMessageHandler(
+      mockMessageModel as any,
+      getMessageStatusModelMock(),
+      getNotificationModelMock(aRetrievedNotification),
+      getNotificationStatusModelMock(),
+      {} as any,
+      getPaymentUpdaterClientMock(true)
+    );
+
+    const result = await getMessageHandler(
+      mockContext,
+      aUserAuthenticationTrustedApplicationWithAdvancedFetures,
+      undefined as any, // not used
+      someUserAttributes,
+      aFiscalCode,
+      aRetrievedMessageWithoutContent.id
+    );
+
+    expect(mockMessageModel.getContentFromBlob).toHaveBeenCalledTimes(1);
+    expect(mockMessageModel.findMessageForRecipient).toHaveBeenCalledTimes(1);
+    expect(mockMessageModel.findMessageForRecipient).toHaveBeenCalledWith(
+      aRetrievedMessageWithoutContent.fiscalCode,
+      aRetrievedMessageWithoutContent.id
+    );
+
+    expect(result.kind).toBe("IResponseSuccessJson");
+    if (result.kind === "IResponseSuccessJson") {
+      expect(result.value).toEqual({
+        ...aPublicExtendedMessageResponseWithAdvancedFeatures,
+        read_status: ReadStatusEnum.UNAVAILABLE,
+        payment_status: PaymentStatusEnum.PAID
       });
     }
   });

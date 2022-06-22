@@ -31,6 +31,7 @@ import {
 import { cosmosdbInstance } from "../utils/cosmosdb";
 
 import { getConfigOrThrow } from "../utils/config";
+import { paymentUpdaterClient } from "../clients/payment-updater";
 import { GetMessage } from "./handler";
 
 const config = getConfigOrThrow();
@@ -75,7 +76,8 @@ app.get(
     messageStatusModel,
     notificationModel,
     notificationStatusModel,
-    blobService
+    blobService,
+    paymentUpdaterClient
   )
 );
 

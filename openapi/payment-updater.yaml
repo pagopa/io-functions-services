@@ -1,0 +1,56 @@
+swagger: '2.0'
+info:
+  title: Microservice JAVA API
+  description: Microservice JAVA API
+  version: '0.0.1'
+host: localhost
+basePath: /api/v1/payment
+schemes:
+  - https
+
+tags:
+  - name: API  Payment
+    description: API  Payment
+security:
+  - SubscriptionKey: []
+paths:
+  /check/{noticeNumber}:
+    get:
+      tags:
+        - API  Payment
+      summary: Check by notice number
+      operationId: checkAssistenza
+      parameters:
+        - name: noticeNumber
+          in: path
+          required: true
+          description: payment's notice number
+          type: string      
+      responses:
+        200:
+          description: check if the message has been paid
+          schema:
+            $ref: '#/definitions/ResponseCheck'
+securityDefinitions:
+  SubscriptionKey:
+    type: "apiKey"
+    name: "Ocp-Apim-Subscription-Key"
+    in: "header"
+    description: "The API key to access this function app."
+definitions:
+  ResponseCheck:
+    type: object
+    properties:
+      isPaid: 
+        type: boolean
+    required:
+      - isPaid
+    example: 
+        { "isPaid": true}
+responses:
+  Internal Server Error:
+    description: Internal Server Error
+  Forbidden:
+    description: Forbidden
+  NotFound:
+    description: Not found

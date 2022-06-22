@@ -1,3 +1,4 @@
+/* eslint-disable max-params */
 import * as express from "express";
 
 import {
@@ -87,8 +88,13 @@ import {
   ReadStatusEnum
 } from "@pagopa/io-functions-commons/dist/generated/definitions/ReadStatus";
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
+import { PaymentStatus } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentStatus";
 import { LegalData } from "../generated/definitions/LegalData";
 import { FeatureLevelTypeEnum } from "../generated/definitions/FeatureLevelType";
+import { PaymentUpdaterClient } from "../clients/payment-updater";
+import { errorsToError } from "../utils/responses";
+import { ResponseCheck } from "../generated/payment-updater/ResponseCheck";
+import { PaymentStatusEnum } from "../generated/definitions/PaymentStatus";
 
 /**
  * Converts a retrieved message to a message that can be shared via API
@@ -171,6 +177,9 @@ export const getReadStatusForService = (
     O.getOrElse(() => ReadStatusEnum.UNREAD)
   );
 
+const mapPaymentStatus = ({ isPaid }: ResponseCheck): PaymentStatus =>
+  isPaid ? PaymentStatusEnum.PAID : PaymentStatusEnum.NOT_PAID;
+
 /**
  * Handles requests for getting a single message for a recipient.
  */
@@ -180,7 +189,8 @@ export function GetMessageHandler(
   messageStatusModel: MessageStatusModel,
   notificationModel: NotificationModel,
   notificationStatusModel: NotificationStatusModel,
-  blobService: BlobService
+  blobService: BlobService,
+  paymentUpdater: PaymentUpdaterClient
 ): IGetMessageHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, max-params
   return async (context, auth, __, userAttributes, fiscalCode, messageId) => {
@@ -306,6 +316,34 @@ export function GetMessageHandler(
     }
     const maybeMessageStatus = errorOrMaybeMessageStatus.right;
 
+    const errorOrPaymentStatus = await pipe(
+      TE.tryCatch(
+        () =>
+          paymentUpdater.checkAssistenza({ noticeNumber: retrievedMessage.id }), // FIXME replace checkAssistenza with new API endpoint when implemented
+        E.toError
+      ),
+      TE.map(E.mapLeft(errorsToError)),
+      TE.chain(TE.fromEither),
+      TE.chain(
+        TE.fromPredicate(
+          r => r.status === 200, // TODO: how it will work if message_id is not found? Return 200 with a default {isPaid: false} or an error? in the last case, we must
+          r =>
+            new Error(
+              `Failed to fetch payment status from Payment Updater: ${r.status}`
+            )
+        )
+      ),
+      TE.map(response => response.value)
+    )();
+    if (E.isLeft(errorOrPaymentStatus)) {
+      return ResponseErrorInternal(
+        `Error retrieving Payment Status: ${JSON.stringify(
+          errorOrPaymentStatus.left
+        )}`
+      );
+    }
+    const paymentStatus = errorOrPaymentStatus.right;
+
     const returnedMessage = pipe(
       {
         message,
@@ -326,6 +364,7 @@ export function GetMessageHandler(
           () => messageWithoutAdvancedProperties,
           () => ({
             ...messageWithoutAdvancedProperties,
+            payment_status: mapPaymentStatus(paymentStatus),
             read_status: B.fold(
               () => ReadStatusEnum.UNAVAILABLE,
               () => getReadStatusForService(maybeMessageStatus)
@@ -348,14 +387,16 @@ export function GetMessage(
   messageStatusModel: MessageStatusModel,
   notificationModel: NotificationModel,
   notificationStatusModel: NotificationStatusModel,
-  blobService: BlobService
+  blobService: BlobService,
+  paymentUpdater: PaymentUpdaterClient
 ): express.RequestHandler {
   const handler = GetMessageHandler(
     messageModel,
     messageStatusModel,
     notificationModel,
     notificationStatusModel,
-    blobService
+    blobService,
+    paymentUpdater
   );
   const middlewaresWrap = withRequestMiddlewares(
     ContextMiddleware(),
