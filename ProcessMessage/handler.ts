@@ -99,7 +99,7 @@ type ServicePreferenceValueOrError = (params: {
 
 type ServicePreferencesValues = Omit<
   ServicePreference,
-  "serviceId" | "fiscalCode" | "settingsVersion"
+  "serviceId" | "fiscalCode" | "settingsVersion" | "accessReadMessageStatus"
 >;
 
 const channelToBlockedInboxOrChannelEnum: {

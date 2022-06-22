@@ -43,6 +43,7 @@ import * as O from "fp-ts/lib/Option";
 
 import { UserGroup } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
 import { initTelemetryClient } from "../appinsights";
+import { ServiceId } from "../../generated/definitions/ServiceId";
 
 describe("isSenderAllowed", () => {
   it("should return false if the service is not allowed to send notifications to the user", async () => {
@@ -135,7 +136,10 @@ const mockServicePreferenceModel = ({
 } as unknown) as ServicesPreferencesModel;
 
 // utility that adds a given set of serviceIds to the profile's inbox blacklist
-const withBlacklist = (profile: RetrievedProfile, services = []) => ({
+const withBlacklist = (
+  profile: RetrievedProfile,
+  services: ServiceId[] = []
+) => ({
   ...profile,
   blockedInboxOrChannels: services.reduce(
     (obj, serviceId) => ({
@@ -160,7 +164,7 @@ describe("getLimitedProfileTask", () => {
     ${"the inbox is NOT enabled in the preferences"}   | ${"not allow"} | ${"AUTO"}   | ${some(aRetrievedProfileWithAutoPreferences)}                                                             | ${some({ ...aRetrievedServicePreference, isInboxEnabled: false })} | ${false}
     ${"there are not preferences set for the service"} | ${"not allow"} | ${"MANUAL"} | ${some(aRetrievedProfileWithManualPreferences)}                                                           | ${none}                                                            | ${false}
     ${"there are not preferences set for the service"} | ${"allow"}     | ${"AUTO"}   | ${some(aRetrievedProfileWithAutoPreferences)}                                                             | ${none}                                                            | ${true}
-    ${"the service is NOT in the blacklist"}           | ${"allow"}     | ${"LEGACY"} | ${some(withBlacklist(aRetrievedProfileWithLegacyPreferences, ["any-service-id"]))}                        | ${none}                                                            | ${true}
+    ${"the service is NOT in the blacklist"}           | ${"allow"}     | ${"LEGACY"} | ${some(withBlacklist(aRetrievedProfileWithLegacyPreferences, ["any-service-id" as ServiceId]))}           | ${none}                                                            | ${true}
     ${"has empty blacklist"}                           | ${"allow"}     | ${"LEGACY"} | ${some(withBlacklist(aRetrievedProfileWithLegacyPreferences, []))}                                        | ${none}                                                            | ${true}
     ${"the service is in the blacklist"}               | ${"not allow"} | ${"LEGACY"} | ${some(withBlacklist(aRetrievedProfileWithLegacyPreferences, [anAzureUserAttributes.service.serviceId]))} | ${none}                                                            | ${false}
   `(

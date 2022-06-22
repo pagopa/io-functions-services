@@ -6,7 +6,10 @@ import {
   Service,
   ValidService
 } from "@pagopa/io-functions-commons/dist/src/models/service";
-import { ServicePreference } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
+import {
+  AccessReadMessageStatusEnum,
+  ServicePreference
+} from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 import { CosmosResource } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
 import {
   IAzureApiAuthorization,
@@ -148,7 +151,8 @@ export const aRetrievedProfile: RetrievedProfile = {
   isWebhookEnabled: false,
   kind: "IRetrievedProfile",
   servicePreferencesSettings: legacyProfileServicePreferencesSettings,
-  version: 0 as NonNegativeInteger
+  version: 0 as NonNegativeInteger,
+  lastAppVersion: "UNKNOWN"
 };
 
 export const aRetrievedMessage: RetrievedMessageWithoutContent = {
@@ -209,7 +213,8 @@ export const aRetrievedServicePreference: ServicePreference = {
   isInboxEnabled: true,
   isWebhookEnabled: true,
   serviceId: aServiceId,
-  settingsVersion: 0 as NonNegativeInteger
+  settingsVersion: 0 as NonNegativeInteger,
+  accessReadMessageStatus: AccessReadMessageStatusEnum.UNKNOWN
 };
 
 export const anEnabledServicePreference: ServicePreference = {
@@ -218,7 +223,8 @@ export const anEnabledServicePreference: ServicePreference = {
   isInboxEnabled: true,
   isWebhookEnabled: true,
   serviceId: "01234567890" as NonEmptyString,
-  settingsVersion: 0 as NonNegativeInteger
+  settingsVersion: 0 as NonNegativeInteger,
+  accessReadMessageStatus: AccessReadMessageStatusEnum.UNKNOWN
 };
 
 export const aDisabledServicePreference: ServicePreference = {
@@ -227,7 +233,8 @@ export const aDisabledServicePreference: ServicePreference = {
   isInboxEnabled: false,
   isWebhookEnabled: false,
   serviceId: "01234567890" as NonEmptyString,
-  settingsVersion: 0 as NonNegativeInteger
+  settingsVersion: 0 as NonNegativeInteger,
+  accessReadMessageStatus: AccessReadMessageStatusEnum.UNKNOWN
 };
 
 export const aMessagePayload = {

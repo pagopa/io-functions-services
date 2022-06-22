@@ -743,13 +743,13 @@
   resolved "https://registry.yarnpkg.com/@pagopa/express-azure-functions/-/express-azure-functions-2.0.0.tgz#eb52a0b997d931c1509372e2a9bea22a8ca85c17"
   integrity sha512-IFZqtk0e2sfkMZIxYqPORzxcKRkbIrVJesR6eMLNwzh1rA4bl2uh9ZHk1m55LNq4ZmaxREDu+1JcGlIaZQgKNQ==
 
-"@pagopa/io-functions-commons@^24.5.1":
-  version "24.5.1"
-  resolved "https://registry.yarnpkg.com/@pagopa/io-functions-commons/-/io-functions-commons-24.5.1.tgz#5d67a21917d1dc4c23d458770b524edfd81b259a"
-  integrity sha512-wugvJRkCHg4PMdim84YIiZjdJLuCOrvS8/vv4dUbC37YViMqwGfW+UEAoYSKvKiwYs7cwQRseJ42i5JM5desDg==
+"@pagopa/io-functions-commons@^25.5.0":
+  version "25.5.0"
+  resolved "https://registry.yarnpkg.com/@pagopa/io-functions-commons/-/io-functions-commons-25.5.0.tgz#8351baa0c52c7bb2fd475b3c1201677957aac677"
+  integrity sha512-BZriw5LJlIKBbXORCMuuOWXLF4kENDKqMwfYzpJGuUMWfAzEAggd076C0V+eaILpdq5U2JmyfyvXFyAI5uUiZg==
   dependencies:
     "@azure/cosmos" "^3.15.1"
-    "@pagopa/ts-commons" "^10.3.0"
+    "@pagopa/ts-commons" "^10.5.0"
     applicationinsights "^1.8.10"
     azure-storage "^2.10.5"
     cidr-matcher "^2.1.1"
@@ -784,7 +784,7 @@
     write-yaml-file "^4.1.3"
     yargs "^15.0.1"
 
-"@pagopa/ts-commons@^10.0.0", "@pagopa/ts-commons@^10.2.0", "@pagopa/ts-commons@^10.3.0":
+"@pagopa/ts-commons@^10.0.0", "@pagopa/ts-commons@^10.2.0":
   version "10.2.0"
   resolved "https://registry.yarnpkg.com/@pagopa/ts-commons/-/ts-commons-10.2.0.tgz#ac4c65f2d24f8d2c427ab5e7fcb88732976800ef"
   integrity sha512-Uq+rmMR1+QvDZUUZeka/KaPVJaUeL3UHcPjVmHncSjAFQczL2mcAC9AadtY3cHiI+eQ0Mw2exjj4HOaABC2KAA==
@@ -797,6 +797,20 @@
     json-set-map "^1.1.2"
     node-fetch "^2.6.0"
     validator "^10.1.0"
+
+"@pagopa/ts-commons@^10.5.0":
+  version "10.5.0"
+  resolved "https://registry.yarnpkg.com/@pagopa/ts-commons/-/ts-commons-10.5.0.tgz#5c22cf3bc16af087beac5b0dfb3eef8f9231ab80"
+  integrity sha512-gD0X6inD0knEU4IJtHGqJ622AIAq11pdstrFDpt87tHLRsTpOk9EJ/4yhrokGPhfInKbOEkIV1TydUZIqEQ6Vw==
+  dependencies:
+    abort-controller "^3.0.0"
+    agentkeepalive "^4.1.4"
+    applicationinsights "^1.8.10"
+    fp-ts "^2.11.0"
+    io-ts "^2.2.16"
+    json-set-map "^1.1.2"
+    node-fetch "^2.6.0"
+    validator "^13.7.0"
 
 "@sendgrid/client@^6.5.5":
   version "6.5.5"
