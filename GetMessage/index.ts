@@ -32,6 +32,7 @@ import { cosmosdbInstance } from "../utils/cosmosdb";
 
 import { getConfigOrThrow } from "../utils/config";
 import { GetMessage } from "./handler";
+import { canAccessMessageReadStatus } from "./userPreferenceChecker/messageReadStatusAuth";
 
 const config = getConfigOrThrow();
 
@@ -75,7 +76,8 @@ app.get(
     messageStatusModel,
     notificationModel,
     notificationStatusModel,
-    blobService
+    blobService,
+    canAccessMessageReadStatus
   )
 );
 

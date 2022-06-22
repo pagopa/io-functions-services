@@ -86,9 +86,10 @@ import {
   ReadStatus,
   ReadStatusEnum
 } from "@pagopa/io-functions-commons/dist/generated/definitions/ReadStatus";
-import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { LegalData } from "../generated/definitions/LegalData";
 import { FeatureLevelTypeEnum } from "../generated/definitions/FeatureLevelType";
+
+import { MessageReadStatusAuth } from "./userPreferenceChecker/messageReadStatusAuth";
 
 /**
  * Converts a retrieved message to a message that can be shared via API
@@ -140,16 +141,6 @@ export const canReadAdvancedMessageInfo = (
   message.feature_level_type === FeatureLevelTypeEnum.ADVANCED &&
   authGroups.has(UserGroup.ApiMessageReadAdvanced);
 
-// TODO: waiting for opt-out definition on profiles domain
-/**
- * Checks whether the client service can read message read status
- *
- * @param serviceId the subscription id of the service
- * @returns false if user revoked the permission to access the read status, true otherwise
- */
-export const canReadMessageReadStatus = (_serviceId: ServiceId): boolean =>
-  false;
-
 /**
  * Return a ReadStatusEnum
  *
@@ -174,13 +165,14 @@ export const getReadStatusForService = (
 /**
  * Handles requests for getting a single message for a recipient.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, max-params
 export function GetMessageHandler(
   messageModel: MessageModel,
   messageStatusModel: MessageStatusModel,
   notificationModel: NotificationModel,
   notificationStatusModel: NotificationStatusModel,
-  blobService: BlobService
+  blobService: BlobService,
+  canAccessMessageReadStatus: MessageReadStatusAuth
 ): IGetMessageHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, max-params
   return async (context, auth, __, userAttributes, fiscalCode, messageId) => {
@@ -306,6 +298,22 @@ export function GetMessageHandler(
     }
     const maybeMessageStatus = errorOrMaybeMessageStatus.right;
 
+    const errorOrServiceCanReadMessageReadStatus = await canAccessMessageReadStatus(
+      auth.subscriptionId,
+      fiscalCode
+    )();
+
+    if (E.isLeft(errorOrServiceCanReadMessageReadStatus)) {
+      return ResponseErrorInternal(
+        `Error retrieving information about read status preferences: ${JSON.stringify(
+          errorOrServiceCanReadMessageReadStatus.left
+        )}`
+      );
+    }
+
+    const serviceCanReadMessageReadStatus =
+      errorOrServiceCanReadMessageReadStatus.right;
+
     const returnedMessage = pipe(
       {
         message,
@@ -329,7 +337,7 @@ export function GetMessageHandler(
             read_status: B.fold(
               () => ReadStatusEnum.UNAVAILABLE,
               () => getReadStatusForService(maybeMessageStatus)
-            )(canReadMessageReadStatus(auth.subscriptionId))
+            )(serviceCanReadMessageReadStatus)
           })
         )(canReadAdvancedMessageInfo(message, auth.groups))
     );
@@ -348,14 +356,16 @@ export function GetMessage(
   messageStatusModel: MessageStatusModel,
   notificationModel: NotificationModel,
   notificationStatusModel: NotificationStatusModel,
-  blobService: BlobService
+  blobService: BlobService,
+  canAccessMessageReadStatus: MessageReadStatusAuth
 ): express.RequestHandler {
   const handler = GetMessageHandler(
     messageModel,
     messageStatusModel,
     notificationModel,
     notificationStatusModel,
-    blobService
+    blobService,
+    canAccessMessageReadStatus
   );
   const middlewaresWrap = withRequestMiddlewares(
     ContextMiddleware(),

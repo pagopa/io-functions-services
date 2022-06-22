@@ -47,16 +47,26 @@ import { FeatureLevelTypeEnum } from "@pagopa/io-functions-commons/dist/generate
 
 import * as TE from "fp-ts/lib/TaskEither";
 
-import { ReadStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ReadStatus";
-
 import { GetMessageHandler } from "../handler";
+
 import {
   aMessageContentWithLegalData,
   aMessagePayload
 } from "../../__mocks__/mocks";
 
+// Tests
+// -----------------------
+
+// Read status checker
+const getMockMessageReadStatusAuth = () =>
+  jest.fn((_serviceId, _fiscalCode) => TE.of<Error, boolean>(false));
+
+let mockMessageReadStatusAuth = getMockMessageReadStatusAuth();
+
 describe("GetMessageHandler", () => {
   jest.useFakeTimers();
+
+  // -----------------------
 
   const mockContext = {
     log: {
@@ -74,6 +84,8 @@ describe("GetMessageHandler", () => {
   afterEach(() => {
     jest.resetAllMocks();
     jest.restoreAllMocks();
+
+    mockMessageReadStatusAuth = getMockMessageReadStatusAuth();
   });
 
   afterAll(() => {
@@ -177,7 +189,9 @@ describe("GetMessageHandler", () => {
   };
 
   function getNotificationModelMock(
-    aRetrievedNotification: any = { data: "data" }
+    aRetrievedNotification: any = {
+      data: "data"
+    }
   ): any {
     return {
       findNotificationForMessage: jest.fn(() =>
@@ -233,6 +247,7 @@ describe("GetMessageHandler", () => {
       upsert: jest.fn(status => TE.left(status))
     };
   }
+
   it("should respond with a message if requesting user is the sender", async () => {
     const mockMessageModel = {
       findMessageForRecipient: jest.fn(() =>
@@ -246,7 +261,8 @@ describe("GetMessageHandler", () => {
       getMessageStatusModelMock(),
       getNotificationModelMock(),
       getNotificationStatusModelMock(),
-      {} as any
+      {} as any,
+      mockMessageReadStatusAuth
     );
 
     const result = await getMessageHandler(
@@ -283,7 +299,8 @@ describe("GetMessageHandler", () => {
       getMessageStatusModelMock(),
       getNotificationModelMock(),
       getNotificationStatusModelMock(),
-      {} as any
+      {} as any,
+      mockMessageReadStatusAuth
     );
 
     const result = await getMessageHandler(
@@ -318,7 +335,8 @@ describe("GetMessageHandler", () => {
       getMessageStatusModelMock(),
       getNotificationModelMock(),
       getNotificationStatusModelMock(),
-      {} as any
+      {} as any,
+      mockMessageReadStatusAuth
     );
 
     const result = await getMessageHandler(
@@ -359,7 +377,8 @@ describe("GetMessageHandler", () => {
       getMessageStatusModelMock(),
       {} as any,
       {} as any,
-      {} as any
+      {} as any,
+      mockMessageReadStatusAuth
     );
 
     const result = await getMessageHandler(
@@ -398,7 +417,8 @@ describe("GetMessageHandler", () => {
       getMessageStatusModelMock(),
       {} as any,
       {} as any,
-      {} as any
+      {} as any,
+      mockMessageReadStatusAuth
     );
 
     const result = await getMessageHandler(
@@ -435,7 +455,8 @@ describe("GetMessageHandler", () => {
       getMessageStatusModelMock(),
       {} as any,
       {} as any,
-      {} as any
+      {} as any,
+      mockMessageReadStatusAuth
     );
 
     const result = await getMessageHandler(
@@ -472,7 +493,8 @@ describe("GetMessageHandler", () => {
       getMessageStatusModelMock(),
       {} as any,
       {} as any,
-      {} as any
+      {} as any,
+      mockMessageReadStatusAuth
     );
 
     const result = await getMessageHandler(
@@ -508,7 +530,8 @@ describe("GetMessageHandler", () => {
       getMessageStatusModelMock(),
       getNotificationModelMock(),
       getNotificationStatusModelMock(),
-      {} as any
+      {} as any,
+      mockMessageReadStatusAuth
     );
 
     const result = await getMessageHandler(
@@ -550,7 +573,8 @@ describe("GetMessageHandler", () => {
       getMessageStatusModelMock(),
       {} as any,
       {} as any,
-      {} as any
+      {} as any,
+      mockMessageReadStatusAuth
     );
 
     const result = await getMessageHandler(
@@ -597,7 +621,8 @@ describe("GetMessageHandler", () => {
       getMessageStatusModelMock(),
       getNotificationModelMock(aRetrievedNotification),
       getNotificationStatusModelMock(),
-      {} as any
+      {} as any,
+      mockMessageReadStatusAuth
     );
 
     const result = await getMessageHandler(
@@ -642,7 +667,8 @@ describe("GetMessageHandler", () => {
       ),
       getNotificationModelMock(),
       getNotificationStatusModelMock(),
-      {} as any
+      {} as any,
+      mockMessageReadStatusAuth
     );
 
     const result = await getMessageHandler(
@@ -656,6 +682,7 @@ describe("GetMessageHandler", () => {
 
     expect(result.kind).toBe("IResponseErrorInternal");
   });
+
   it("should fail if any error occurs trying to retrieve the notification status", async () => {
     const mockMessageModel = {
       findMessageForRecipient: jest.fn(() =>
@@ -676,7 +703,8 @@ describe("GetMessageHandler", () => {
         )
       } as any,
       getNotificationStatusModelMock(),
-      {} as any
+      {} as any,
+      mockMessageReadStatusAuth
     );
 
     const result = await getMessageHandler(
@@ -738,7 +766,8 @@ describe("GetMessageHandler", () => {
       getMessageStatusModelMock(),
       getNotificationModelMock(aRetrievedNotification),
       getNotificationStatusModelMock(),
-      {} as any
+      {} as any,
+      mockMessageReadStatusAuth
     );
 
     const result = await getMessageHandler(
@@ -778,7 +807,8 @@ describe("GetMessageHandler", () => {
       getMessageStatusModelMock(),
       getNotificationModelMock(aRetrievedNotification),
       getNotificationStatusModelMock(),
-      {} as any
+      {} as any,
+      mockMessageReadStatusAuth
     );
 
     const result = await getMessageHandler(
@@ -796,6 +826,7 @@ describe("GetMessageHandler", () => {
       aRetrievedMessageWithoutContent.fiscalCode,
       aRetrievedMessageWithoutContent.id
     );
+    expect(mockMessageReadStatusAuth).toHaveBeenCalled();
 
     expect(result.kind).toBe("IResponseSuccessJson");
     if (result.kind === "IResponseSuccessJson") {
@@ -815,12 +846,15 @@ describe("GetMessageHandler", () => {
       getContentFromBlob: jest.fn(() => TE.of(none))
     };
 
+    mockMessageReadStatusAuth.mockReturnValueOnce(TE.right(true));
+
     const getMessageHandler = GetMessageHandler(
       mockMessageModel as any,
       getMessageStatusModelMock(),
       getNotificationModelMock(aRetrievedNotification),
       getNotificationStatusModelMock(),
-      {} as any
+      {} as any,
+      mockMessageReadStatusAuth
     );
 
     const result = await getMessageHandler(
@@ -838,12 +872,13 @@ describe("GetMessageHandler", () => {
       aRetrievedMessageWithoutContent.fiscalCode,
       aRetrievedMessageWithoutContent.id
     );
+    expect(mockMessageReadStatusAuth).toHaveBeenCalled();
 
     expect(result.kind).toBe("IResponseSuccessJson");
     if (result.kind === "IResponseSuccessJson") {
       expect(result.value).toEqual({
         ...aPublicExtendedMessageResponseWithAdvancedFeatures,
-        read_status: ReadStatusEnum.UNAVAILABLE
+        read_status: aMessageStatus.isRead ? "READ" : "UNREAD"
       });
     }
   });
