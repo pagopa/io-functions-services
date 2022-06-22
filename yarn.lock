@@ -784,21 +784,7 @@
     write-yaml-file "^4.1.3"
     yargs "^15.0.1"
 
-"@pagopa/ts-commons@^10.0.0", "@pagopa/ts-commons@^10.2.0":
-  version "10.2.0"
-  resolved "https://registry.yarnpkg.com/@pagopa/ts-commons/-/ts-commons-10.2.0.tgz#ac4c65f2d24f8d2c427ab5e7fcb88732976800ef"
-  integrity sha512-Uq+rmMR1+QvDZUUZeka/KaPVJaUeL3UHcPjVmHncSjAFQczL2mcAC9AadtY3cHiI+eQ0Mw2exjj4HOaABC2KAA==
-  dependencies:
-    abort-controller "^3.0.0"
-    agentkeepalive "^4.1.4"
-    applicationinsights "^1.8.10"
-    fp-ts "^2.11.0"
-    io-ts "^2.2.16"
-    json-set-map "^1.1.2"
-    node-fetch "^2.6.0"
-    validator "^10.1.0"
-
-"@pagopa/ts-commons@^10.5.0":
+"@pagopa/ts-commons@^10.0.0", "@pagopa/ts-commons@^10.5.0":
   version "10.5.0"
   resolved "https://registry.yarnpkg.com/@pagopa/ts-commons/-/ts-commons-10.5.0.tgz#5c22cf3bc16af087beac5b0dfb3eef8f9231ab80"
   integrity sha512-gD0X6inD0knEU4IJtHGqJ622AIAq11pdstrFDpt87tHLRsTpOk9EJ/4yhrokGPhfInKbOEkIV1TydUZIqEQ6Vw==
