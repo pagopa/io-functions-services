@@ -43,6 +43,7 @@
     "@types/jest": "^24.0.15",
     "@types/lolex": "^5.1.2",
     "@types/nodemailer": "^4.6.2",
+    "@types/semver": "^7.3.10",
     "auto-changelog": "^2.2.1",
     "danger": "^10.6.6",
     "dependency-check": "^4.1.0",
@@ -78,7 +79,8 @@
     "newtype-ts": "^0.3.4",
     "node-fetch": "^2.6.7",
     "nodemailer": "^6.4.16",
-    "nodemailer-sendgrid": "^1.0.3"
+    "nodemailer-sendgrid": "^1.0.3",
+    "semver": "^7.3.7"
   },
   "resolutions": {
     "handlebars": "~4.5.3",
