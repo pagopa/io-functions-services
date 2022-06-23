@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import * as TE from "fp-ts/TaskEither";
-import * as E from "fp-ts/Either";
 import * as O from "fp-ts/Option";
 import { identity, pipe } from "fp-ts/lib/function";
 

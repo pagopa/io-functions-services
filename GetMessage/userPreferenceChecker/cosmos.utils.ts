@@ -4,10 +4,8 @@ import { identity, pipe } from "fp-ts/function";
 import { NonNegativeInteger } from "@pagopa/ts-commons/lib/numbers";
 
 import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
-import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 
 import {
-  AccessReadMessageStatusEnum,
   makeServicesPreferencesDocumentId,
   ServicesPreferencesModel
 } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
@@ -24,6 +22,7 @@ export type GetProfileOrError = (
 
 /**
  * Get last version of user's profile
+ *
  * @param profileModel
  * @returns
  */
@@ -37,13 +36,9 @@ GetProfileOrError = profileModel => fiscalCode =>
     TE.chainOptionK(() => Error(`Profile not found`))(identity)
   );
 
-export type GetAccessReadMessageStatusOrError = (
-  fiscalCode: FiscalCode,
-  serviceId: ServiceId
-) => TE.TaskEither<Error, AccessReadMessageStatusEnum>;
-
 /**
- * Get last version of user' service preference
+ * Get last version of user' service preferences, if exists
+ *
  * @param servicePreferencesModel
  * @returns
  */
