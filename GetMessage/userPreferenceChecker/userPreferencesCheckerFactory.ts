@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import * as TE from "fp-ts/TaskEither";
 import * as O from "fp-ts/Option";
-import { identity, pipe } from "fp-ts/lib/function";
+import * as b from "fp-ts/boolean";
+import { pipe } from "fp-ts/lib/function";
 
 import * as t from "io-ts";
 
@@ -34,11 +35,15 @@ export const userPreferencesCheckerFactory: UserPreferenceCheckerFactory = (
   servicePreferencesGetter,
   minAppVersionHandlingReadAuth
 ) =>
-  pipe(profile.lastAppVersion ?? "UNKNOWN", v =>
-    t.literal("UNKNOWN").is(v) ||
-    !appVersionHandleReadAuth(minAppVersionHandlingReadAuth)(v)
-      ? userPreferenceCheckerVersionUNKNOWNToVersionWithReadAuth
-      : userPreferenceCheckerVersionWithReadAuth(servicePreferencesGetter)
+  pipe(
+    profile.lastAppVersion ?? "UNKNOWN",
+    version =>
+      t.literal("UNKNOWN").is(version) ||
+      !appVersionHandleReadAuth(minAppVersionHandlingReadAuth)(version),
+    b.match(
+      () => userPreferenceCheckerVersionWithReadAuth(servicePreferencesGetter),
+      () => userPreferenceCheckerVersionUNKNOWNToVersionWithReadAuth
+    )
   );
 
 export type ServicePreferencesGetter = (
@@ -81,7 +86,7 @@ export const userPreferenceCheckerVersionWithReadAuth: (
     pipe(
       servicePreferencesGetter(fiscalCode, serviceId),
       TE.map(O.map(pref => pref.accessReadMessageStatus)),
-      TE.map(O.fold(() => AccessReadMessageStatusEnum.ALLOW, identity)),
+      TE.map(O.getOrElse(() => AccessReadMessageStatusEnum.ALLOW)),
       TE.map(readStatus => readStatus !== AccessReadMessageStatusEnum.DENY)
     )
 });
@@ -90,7 +95,7 @@ export const userPreferenceCheckerVersionWithReadAuth: (
 // Private Methods
 // ------------------------
 
-const appVersionHandleReadAuth = (minAppVersionHandlingReadAuth: Semver) => (
-  currentAppVersion: Semver
-): boolean =>
-  semver.satisfies(minAppVersionHandlingReadAuth, `<${currentAppVersion}`);
+export const appVersionHandleReadAuth = (
+  minAppVersionHandlingReadAuth: Semver
+) => (currentAppVersion: Semver): boolean =>
+  semver.satisfies(minAppVersionHandlingReadAuth, `<=${currentAppVersion}`);
