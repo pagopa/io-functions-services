@@ -64,6 +64,9 @@ const setupUserPreferencesChecker = (
 ) => (profile: RetrievedProfile): IUserPreferencesChecker =>
   userPreferencesCheckerFactory(
     profile,
-    getServicePreferenceSettings(servicePreferencesModel, profile.version),
+    getServicePreferenceSettings(
+      servicePreferencesModel,
+      profile.servicePreferencesSettings.version
+    ),
     minAppVersionHandlingReadAuth
   );

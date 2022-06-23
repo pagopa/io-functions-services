@@ -44,18 +44,24 @@ GetProfileOrError = profileModel => fiscalCode =>
  */
 export const getServicePreferenceSettings: (
   servicePreferencesModel: ServicesPreferencesModel,
-  profileVersion: NonNegativeInteger
-) => // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-ServicePreferencesGetter = (servicePreferencesModel, profileVersion) => (
-  fiscalCode,
-  serviceId
-) =>
-  pipe(
-    servicePreferencesModel.find([
-      makeServicesPreferencesDocumentId(fiscalCode, serviceId, profileVersion),
-      fiscalCode
-    ]),
-    TE.mapLeft(_ =>
-      Error(`Error retrieving user' service preferences from Cosmos DB`)
-    )
-  );
+  servicePreferencesSettingsVersion: NonNegativeInteger | -1
+) => ServicePreferencesGetter = (
+  servicePreferencesModel,
+  servicePreferencesSettingsVersion
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+) => (fiscalCode, serviceId) =>
+  servicePreferencesSettingsVersion !== -1
+    ? pipe(
+        servicePreferencesModel.find([
+          makeServicesPreferencesDocumentId(
+            fiscalCode,
+            serviceId,
+            servicePreferencesSettingsVersion
+          ),
+          fiscalCode
+        ]),
+        TE.mapLeft(_ =>
+          Error(`Error retrieving user' service preferences from Cosmos DB`)
+        )
+      )
+    : TE.left(Error("Legacy service preferences not allowed"));
