@@ -1,9 +1,20 @@
+/* eslint-disable @typescript-eslint/no-use-before-define */
 import * as TE from "fp-ts/TaskEither";
 import { pipe } from "fp-ts/function";
 
-import { FiscalCode } from "@pagopa/ts-commons/lib/strings";
+import { FiscalCode, Semver } from "@pagopa/ts-commons/lib/strings";
+import {
+  ProfileModel,
+  RetrievedProfile
+} from "@pagopa/io-functions-commons/dist/src/models/profile";
+import { ServicesPreferencesModel } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
-import { userPreferencesCheckerFactory } from "./userPreferencesCheckerFactory";
+
+import {
+  IUserPreferencesChecker,
+  userPreferencesCheckerFactory
+} from "./userPreferencesCheckerFactory";
+import { getProfile, getServicePreferenceSettings } from "./cosmos.utils";
 
 export type MessageReadStatusAuth = (
   serviceId: ServiceId,
@@ -18,14 +29,41 @@ export type MessageReadStatusAuth = (
  * @returns either false if user revoked the permission to access the read status, true otherwise
  * or an Error
  */
-export const canAccessMessageReadStatus: MessageReadStatusAuth = (
-  serviceId,
-  fiscalCode
+export const canAccessMessageReadStatus: (
+  profileModel: ProfileModel,
+  servicePreferencesModel: ServicesPreferencesModel,
+  minAppVersionHandlingReadAuth: Semver
+) => MessageReadStatusAuth = (
+  profileModel,
+  servicePreferencesModel,
+  minAppVersionHandlingReadAuth
 ) =>
-  pipe(
-    // Retrieve profile and service preferences
-    // setup userPreferenceCheckerFactory
-    userPreferencesCheckerFactory("UNKNOWN"),
-    // return check result
-    checker => checker.canAccessMessageReadStatus(serviceId, fiscalCode)
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+  (serviceId, fiscalCode) =>
+    pipe(
+      // Retrieve profile
+      fiscalCode,
+      getProfile(profileModel),
+      TE.map(
+        setupUserPreferencesChecker(
+          servicePreferencesModel,
+          minAppVersionHandlingReadAuth
+        )
+      ),
+      // return check result
+      TE.chain(checker =>
+        checker.canAccessMessageReadStatus(serviceId, fiscalCode)
+      )
+    );
+
+// ---------------------
+
+const setupUserPreferencesChecker = (
+  servicePreferencesModel: ServicesPreferencesModel,
+  minAppVersionHandlingReadAuth: Semver
+) => (profile: RetrievedProfile): IUserPreferencesChecker =>
+  userPreferencesCheckerFactory(
+    profile,
+    getServicePreferenceSettings(servicePreferencesModel, profile.version),
+    minAppVersionHandlingReadAuth
   );
