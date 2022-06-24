@@ -37,24 +37,22 @@ export const canAccessMessageReadStatus: (
   profileModel,
   servicePreferencesModel,
   minAppVersionHandlingReadAuth
-) =>
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  (serviceId, fiscalCode) =>
-    pipe(
-      // Retrieve profile
-      fiscalCode,
-      getProfile(profileModel),
-      TE.map(
-        setupUserPreferencesChecker(
-          servicePreferencesModel,
-          minAppVersionHandlingReadAuth
-        )
-      ),
-      // return check result
-      TE.chain(checker =>
-        checker.canAccessMessageReadStatus(serviceId, fiscalCode)
+) => (serviceId, fiscalCode): ReturnType<MessageReadStatusAuth> =>
+  pipe(
+    // Retrieve profile
+    fiscalCode,
+    getProfile(profileModel),
+    TE.map(
+      setupUserPreferencesChecker(
+        servicePreferencesModel,
+        minAppVersionHandlingReadAuth
       )
-    );
+    ),
+    // return check result
+    TE.chain(checker =>
+      checker.canAccessMessageReadStatus(serviceId, fiscalCode)
+    )
+  );
 
 // ---------------------
 

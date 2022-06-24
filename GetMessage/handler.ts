@@ -165,186 +165,188 @@ export const getReadStatusForService = (
 /**
  * Handles requests for getting a single message for a recipient.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, max-params
-export function GetMessageHandler(
+export const GetMessageHandler = (
   messageModel: MessageModel,
   messageStatusModel: MessageStatusModel,
   notificationModel: NotificationModel,
   notificationStatusModel: NotificationStatusModel,
   blobService: BlobService,
   canAccessMessageReadStatus: MessageReadStatusAuth
-): IGetMessageHandler {
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, max-params
-  return async (context, auth, __, userAttributes, fiscalCode, messageId) => {
-    const errorOrMessageId = NonEmptyString.decode(messageId);
+  // eslint-disable-next-line max-params
+): IGetMessageHandler => async (
+  context,
+  auth,
+  __,
+  userAttributes,
+  fiscalCode,
+  messageId
+  // eslint-disable-next-line max-params
+): ReturnType<IGetMessageHandler> => {
+  const errorOrMessageId = NonEmptyString.decode(messageId);
 
-    if (E.isLeft(errorOrMessageId)) {
-      return ResponseErrorValidation(
-        "Invalid messageId",
-        readableReport(errorOrMessageId.left)
-      );
-    }
-    const errorOrMaybeDocument = await messageModel.findMessageForRecipient(
-      fiscalCode,
-      errorOrMessageId.right
-    )();
-
-    if (E.isLeft(errorOrMaybeDocument)) {
-      // the query failed
-      return ResponseErrorQuery(
-        "Error while retrieving the message",
-        errorOrMaybeDocument.left
-      );
-    }
-
-    const maybeDocument = errorOrMaybeDocument.right;
-    if (O.isNone(maybeDocument)) {
-      // the document does not exist
-      return ResponseErrorNotFound(
-        "Message not found",
-        "The message that you requested was not found in the system."
-      );
-    }
-
-    const retrievedMessage = maybeDocument.value;
-
-    const isUserAllowedForLegalMessages =
-      [...auth.groups].indexOf(UserGroup.ApiLegalMessageRead) >= 0;
-    // the service is allowed to see the message when he is the sender of the message
-    const isUserAllowed =
-      retrievedMessage.senderServiceId === userAttributes.service.serviceId ||
-      isUserAllowedForLegalMessages;
-
-    if (!isUserAllowed) {
-      // the user is not allowed to see the message
-      return ResponseErrorForbiddenNotAuthorized;
-    }
-
-    // fetch the content of the message from the blob storage
-    const errorOrMaybeContent = await pipe(
-      messageModel.getContentFromBlob(blobService, retrievedMessage.id),
-      TE.mapLeft(error => {
-        context.log.error(`GetMessageHandler|${JSON.stringify(error)}`);
-        return ResponseErrorInternal(`${error.name}: ${error.message}`);
-      }),
-      TE.chainW(
-        O.fold(
-          () =>
-            isUserAllowedForLegalMessages
-              ? TE.left(
-                  ResponseErrorNotFound(
-                    "Not Found",
-                    "Message Content not found"
-                  )
-                )
-              : TE.of(O.none),
-          messageContent =>
-            pipe(
-              messageContent,
-              LegalMessagePattern.decode,
-              TE.fromEither,
-              TE.map(() => O.some(messageContent)),
-              TE.orElse(_ =>
-                !isUserAllowedForLegalMessages
-                  ? TE.of(O.some(messageContent))
-                  : TE.left<
-                      | IResponseErrorForbiddenNotAuthorized
-                      | IResponseErrorNotFound,
-                      O.Option<MessageContent>
-                    >(ResponseErrorForbiddenNotAuthorized)
-              )
-            )
-        )
-      )
-    )();
-
-    if (E.isLeft(errorOrMaybeContent)) {
-      context.log.error(
-        `GetMessageHandler|${JSON.stringify(errorOrMaybeContent.left)}`
-      );
-      return errorOrMaybeContent.left;
-    }
-
-    const content = O.toUndefined(errorOrMaybeContent.right);
-
-    const message = {
-      content,
-      ...retrievedMessageToExternal(retrievedMessage)
-    };
-
-    const errorOrNotificationStatuses = await getMessageNotificationStatuses(
-      notificationModel,
-      notificationStatusModel,
-      retrievedMessage.id
-    )();
-
-    if (E.isLeft(errorOrNotificationStatuses)) {
-      return ResponseErrorInternal(
-        `Error retrieving NotificationStatus: ${errorOrNotificationStatuses.left.name}|${errorOrNotificationStatuses.left.message}`
-      );
-    }
-    const notificationStatuses = errorOrNotificationStatuses.right;
-
-    const errorOrMaybeMessageStatus = await messageStatusModel.findLastVersionByModelId(
-      [retrievedMessage.id]
-    )();
-
-    if (E.isLeft(errorOrMaybeMessageStatus)) {
-      return ResponseErrorInternal(
-        `Error retrieving MessageStatus: ${JSON.stringify(
-          errorOrMaybeMessageStatus.left
-        )}`
-      );
-    }
-    const maybeMessageStatus = errorOrMaybeMessageStatus.right;
-
-    const errorOrServiceCanReadMessageReadStatus = await canAccessMessageReadStatus(
-      auth.subscriptionId,
-      fiscalCode
-    )();
-
-    if (E.isLeft(errorOrServiceCanReadMessageReadStatus)) {
-      return ResponseErrorInternal(
-        `Error retrieving information about read status preferences: ${JSON.stringify(
-          errorOrServiceCanReadMessageReadStatus.left
-        )}`
-      );
-    }
-
-    const serviceCanReadMessageReadStatus =
-      errorOrServiceCanReadMessageReadStatus.right;
-
-    const returnedMessage = pipe(
-      {
-        message,
-        notification: pipe(notificationStatuses, O.toUndefined),
-        // we do not return the status date-time
-        status: pipe(
-          maybeMessageStatus,
-          O.map(messageStatus => messageStatus.status),
-          // when the message has been received but a MessageStatus
-          // does not exist yet, the message is considered to be
-          // in the ACCEPTED state (not yet stored in the inbox)
-          O.getOrElse(() => MessageStatusValueEnum.ACCEPTED)
-        )
-      },
-      // Enrich message info with advanced properties if user is allowed to read them
-      messageWithoutAdvancedProperties =>
-        B.fold(
-          () => messageWithoutAdvancedProperties,
-          () => ({
-            ...messageWithoutAdvancedProperties,
-            read_status: B.fold(
-              () => ReadStatusEnum.UNAVAILABLE,
-              () => getReadStatusForService(maybeMessageStatus)
-            )(serviceCanReadMessageReadStatus)
-          })
-        )(canReadAdvancedMessageInfo(message, auth.groups))
+  if (E.isLeft(errorOrMessageId)) {
+    return ResponseErrorValidation(
+      "Invalid messageId",
+      readableReport(errorOrMessageId.left)
     );
+  }
+  const errorOrMaybeDocument = await messageModel.findMessageForRecipient(
+    fiscalCode,
+    errorOrMessageId.right
+  )();
 
-    return ResponseSuccessJson(returnedMessage);
+  if (E.isLeft(errorOrMaybeDocument)) {
+    // the query failed
+    return ResponseErrorQuery(
+      "Error while retrieving the message",
+      errorOrMaybeDocument.left
+    );
+  }
+
+  const maybeDocument = errorOrMaybeDocument.right;
+  if (O.isNone(maybeDocument)) {
+    // the document does not exist
+    return ResponseErrorNotFound(
+      "Message not found",
+      "The message that you requested was not found in the system."
+    );
+  }
+
+  const retrievedMessage = maybeDocument.value;
+
+  const isUserAllowedForLegalMessages =
+    [...auth.groups].indexOf(UserGroup.ApiLegalMessageRead) >= 0;
+  // the service is allowed to see the message when he is the sender of the message
+  const isUserAllowed =
+    retrievedMessage.senderServiceId === userAttributes.service.serviceId ||
+    isUserAllowedForLegalMessages;
+
+  if (!isUserAllowed) {
+    // the user is not allowed to see the message
+    return ResponseErrorForbiddenNotAuthorized;
+  }
+
+  // fetch the content of the message from the blob storage
+  const errorOrMaybeContent = await pipe(
+    messageModel.getContentFromBlob(blobService, retrievedMessage.id),
+    TE.mapLeft(error => {
+      context.log.error(`GetMessageHandler|${JSON.stringify(error)}`);
+      return ResponseErrorInternal(`${error.name}: ${error.message}`);
+    }),
+    TE.chainW(
+      O.fold(
+        () =>
+          isUserAllowedForLegalMessages
+            ? TE.left(
+                ResponseErrorNotFound("Not Found", "Message Content not found")
+              )
+            : TE.of(O.none),
+        messageContent =>
+          pipe(
+            messageContent,
+            LegalMessagePattern.decode,
+            TE.fromEither,
+            TE.map(() => O.some(messageContent)),
+            TE.orElse(_ =>
+              !isUserAllowedForLegalMessages
+                ? TE.of(O.some(messageContent))
+                : TE.left<
+                    | IResponseErrorForbiddenNotAuthorized
+                    | IResponseErrorNotFound,
+                    O.Option<MessageContent>
+                  >(ResponseErrorForbiddenNotAuthorized)
+            )
+          )
+      )
+    )
+  )();
+
+  if (E.isLeft(errorOrMaybeContent)) {
+    context.log.error(
+      `GetMessageHandler|${JSON.stringify(errorOrMaybeContent.left)}`
+    );
+    return errorOrMaybeContent.left;
+  }
+
+  const content = O.toUndefined(errorOrMaybeContent.right);
+
+  const message = {
+    content,
+    ...retrievedMessageToExternal(retrievedMessage)
   };
-}
+
+  const errorOrNotificationStatuses = await getMessageNotificationStatuses(
+    notificationModel,
+    notificationStatusModel,
+    retrievedMessage.id
+  )();
+
+  if (E.isLeft(errorOrNotificationStatuses)) {
+    return ResponseErrorInternal(
+      `Error retrieving NotificationStatus: ${errorOrNotificationStatuses.left.name}|${errorOrNotificationStatuses.left.message}`
+    );
+  }
+  const notificationStatuses = errorOrNotificationStatuses.right;
+
+  const errorOrMaybeMessageStatus = await messageStatusModel.findLastVersionByModelId(
+    [retrievedMessage.id]
+  )();
+
+  if (E.isLeft(errorOrMaybeMessageStatus)) {
+    return ResponseErrorInternal(
+      `Error retrieving MessageStatus: ${JSON.stringify(
+        errorOrMaybeMessageStatus.left
+      )}`
+    );
+  }
+  const maybeMessageStatus = errorOrMaybeMessageStatus.right;
+
+  const errorOrServiceCanReadMessageReadStatus = await canAccessMessageReadStatus(
+    auth.subscriptionId,
+    fiscalCode
+  )();
+
+  if (E.isLeft(errorOrServiceCanReadMessageReadStatus)) {
+    return ResponseErrorInternal(
+      `Error retrieving information about read status preferences: ${JSON.stringify(
+        errorOrServiceCanReadMessageReadStatus.left
+      )}`
+    );
+  }
+
+  const serviceCanReadMessageReadStatus =
+    errorOrServiceCanReadMessageReadStatus.right;
+
+  const returnedMessage = pipe(
+    {
+      message,
+      notification: pipe(notificationStatuses, O.toUndefined),
+      // we do not return the status date-time
+      status: pipe(
+        maybeMessageStatus,
+        O.map(messageStatus => messageStatus.status),
+        // when the message has been received but a MessageStatus
+        // does not exist yet, the message is considered to be
+        // in the ACCEPTED state (not yet stored in the inbox)
+        O.getOrElse(() => MessageStatusValueEnum.ACCEPTED)
+      )
+    },
+    // Enrich message info with advanced properties if user is allowed to read them
+    messageWithoutAdvancedProperties =>
+      B.fold(
+        () => messageWithoutAdvancedProperties,
+        () => ({
+          ...messageWithoutAdvancedProperties,
+          read_status: B.fold(
+            () => ReadStatusEnum.UNAVAILABLE,
+            () => getReadStatusForService(maybeMessageStatus)
+          )(serviceCanReadMessageReadStatus)
+        })
+      )(canReadAdvancedMessageInfo(message, auth.groups))
+  );
+
+  return ResponseSuccessJson(returnedMessage);
+};
 
 /**
  * Wraps a GetMessage handler inside an Express request handler.

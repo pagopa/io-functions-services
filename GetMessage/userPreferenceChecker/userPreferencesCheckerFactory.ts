@@ -81,8 +81,10 @@ export const userPreferenceCheckerVersionUNKNOWNToVersionWithReadAuth: IUserPref
 export const userPreferenceCheckerVersionWithReadAuth: (
   servicePreferencesGetter: ServicePreferencesGetter
 ) => IUserPreferencesChecker = servicePreferencesGetter => ({
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  canAccessMessageReadStatus: (serviceId, fiscalCode) =>
+  canAccessMessageReadStatus: (
+    serviceId,
+    fiscalCode
+  ): ReturnType<IUserPreferencesChecker["canAccessMessageReadStatus"]> =>
     pipe(
       servicePreferencesGetter(fiscalCode, serviceId),
       TE.map(O.map(pref => pref.accessReadMessageStatus)),
