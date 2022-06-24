@@ -17,7 +17,7 @@ import {
 import { ExternalMessageResponseWithContent } from "./generated/fn-services/ExternalMessageResponseWithContent";
 import { CreatedMessage } from "./generated/fn-services/CreatedMessage";
 import { FiscalCode, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
-import { exit } from "process";
+import { execPath, exit } from "process";
 
 import {
   MessageStatusModel,
@@ -117,7 +117,7 @@ const customHeaders = {
 
 const getNodeFetch = (
   headers: Partial<typeof customHeaders> = customHeaders
-) => async (input: RequestInfo, init?: RequestInit) => {
+): typeof fetch => async (input, init) => {
   const headersToAdd = {
     ...(init?.headers ?? {}),
     ...customHeaders,
@@ -368,8 +368,8 @@ describe("Create Message", () => {
 describe("Create Third Party Message", () => {
   it.each`
     profileType         | fiscalCode                       | serviceId
-    ${"LEGACY Profile"} | ${aLegacyInboxEnabledFiscalCode} | ${anEnabledServiceId}
     ${"AUTO Profile"}   | ${anAutoFiscalCode}              | ${anEnabledServiceId}
+    ${"LEGACY Profile"} | ${aLegacyInboxEnabledFiscalCode} | ${anEnabledServiceId}
     ${"MANUAL Profile"} | ${aManualFiscalCode}             | ${anEnabledServiceId}
   `(
     "$profileType |> should return the message in PROCESSED status when service is allowed to send",
@@ -400,7 +400,7 @@ describe("Create Third Party Message", () => {
       // Wait the process to complete
       await delay(WAIT_MS);
 
-      const resultGet = await getSentMessage(nodeFetch)(fiscalCode, messageId);
+      const resultGet = await getSentMessage(nodeFetch)(fiscalCode, messageId!);
 
       expect(resultGet.status).toEqual(200);
       const detail = (await resultGet.json()) as ExternalMessageResponseWithContent;
@@ -464,7 +464,7 @@ describe("Create Advanced Message", () => {
 
       // Check response having `ApiMessageReadAdvanced` authorization
 
-      const resultGet = await getSentMessage(nodeFetch)(fiscalCode, messageId);
+      const resultGet = await getSentMessage(nodeFetch)(fiscalCode, messageId!);
 
       expect(resultGet.status).toEqual(200);
       const detail = (await resultGet.json()) as ExternalMessageResponseWithContent;
@@ -472,12 +472,15 @@ describe("Create Advanced Message", () => {
       expect(detail).toMatchObject(
         expect.objectContaining({
           message: expect.objectContaining({
+            ...body.message,
             id: messageId,
-            feature_level_type: FeatureLevelTypeEnum.ADVANCED,
-            ...body.message
+            feature_level_type: FeatureLevelTypeEnum.ADVANCED
           }),
           status: MessageStatusValueEnum.PROCESSED,
-          read_status: ReadStatusEnum.UNAVAILABLE
+          read_status:
+            fiscalCode === aLegacyInboxEnabledFiscalCode
+              ? ReadStatusEnum.UNAVAILABLE
+              : ReadStatusEnum.UNREAD
         })
       );
 
@@ -485,7 +488,7 @@ describe("Create Advanced Message", () => {
 
       const resultGetWithoutPermission = await getSentMessage(
         nodeFetchWithoutPermission
-      )(fiscalCode, messageId);
+      )(fiscalCode, messageId!);
 
       expect(resultGetWithoutPermission.status).toEqual(200);
       const detailWithoutPermission = (await resultGetWithoutPermission.json()) as ExternalMessageResponseWithContent;
@@ -504,6 +507,78 @@ describe("Create Advanced Message", () => {
       expect(detailWithoutPermission).not.toHaveProperty("read_status");
     }
   );
+
+  it("should return the message without Read status, if user is allowed to read it", async () => {
+    const fiscalCode = anAutoFiscalCode;
+    const serviceId = aValidServiceId;
+
+    const body = {
+      message: {
+        fiscal_code: fiscalCode,
+        feature_level_type: "ADVANCED",
+        content: aMessageContent
+      }
+    };
+
+    const nodeFetchWithoutPermission = getNodeFetch({
+      "x-subscription-id": serviceId
+    });
+    const nodeFetch = getNodeFetch({
+      "x-subscription-id": serviceId,
+      "x-user-groups":
+        customHeaders["x-user-groups"] +
+        ",ApiMessageWriteAdvanced,ApiMessageReadAdvanced"
+    });
+
+    const result = await postCreateMessage(nodeFetch)(body);
+
+    expect(result.status).toEqual(201);
+
+    const messageId = ((await result.json()) as CreatedMessage).id;
+    expect(messageId).not.toBeUndefined();
+
+    // Wait the process to complete
+    await delay(WAIT_MS);
+
+    // Check response having `ApiMessageReadAdvanced` authorization
+    const resultGet = await getSentMessage(nodeFetch)(fiscalCode, messageId!);
+
+    expect(resultGet.status).toEqual(200);
+    const detail = (await resultGet.json()) as ExternalMessageResponseWithContent;
+
+    expect(detail).toMatchObject(
+      expect.objectContaining({
+        message: expect.objectContaining({
+          id: messageId,
+          ...body.message
+        }),
+        status: MessageStatusValueEnum.PROCESSED,
+        read_status: ReadStatusEnum.UNAVAILABLE
+      })
+    );
+
+    // Check response without having `ApiMessageReadAdvanced` authorization
+
+    const resultGetWithoutPermission = await getSentMessage(
+      nodeFetchWithoutPermission
+    )(fiscalCode, messageId!);
+
+    expect(resultGetWithoutPermission.status).toEqual(200);
+    const detailWithoutPermission = (await resultGetWithoutPermission.json()) as ExternalMessageResponseWithContent;
+
+    expect(detailWithoutPermission).toMatchObject(
+      expect.objectContaining({
+        message: expect.objectContaining({
+          id: messageId,
+          ...body.message
+        }),
+        status: MessageStatusValueEnum.PROCESSED
+      })
+    );
+
+    expect(detailWithoutPermission).not.toHaveProperty("payment_status");
+    expect(detailWithoutPermission).not.toHaveProperty("read_status");
+  });
 
   // TODO: Enable when paymentStatus will be available
   it.skip("should return the PAYMENT message with payment_status, if user is allowed to read it", async () => {
@@ -546,7 +621,7 @@ describe("Create Advanced Message", () => {
 
     // Check response having `ApiMessageReadAdvanced` authorization
 
-    const resultGet = await getSentMessage(nodeFetch)(fiscalCode, messageId);
+    const resultGet = await getSentMessage(nodeFetch)(fiscalCode, messageId!);
 
     expect(resultGet.status).toEqual(200);
     const detail = (await resultGet.json()) as ExternalMessageResponseWithContent;
@@ -567,7 +642,7 @@ describe("Create Advanced Message", () => {
 
     const resultGetWithoutPermission = await getSentMessage(
       nodeFetchWithoutPermission
-    )(fiscalCode, messageId);
+    )(fiscalCode, messageId!);
 
     expect(resultGetWithoutPermission.status).toEqual(200);
     const detailWithoutPermission = (await resultGetWithoutPermission.json()) as ExternalMessageResponseWithContent;
