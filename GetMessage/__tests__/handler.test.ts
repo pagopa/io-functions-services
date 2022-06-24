@@ -57,14 +57,11 @@ import {
 // Tests
 // -----------------------
 
-// Read status checker
-const getMockMessageReadStatusAuth = () =>
-  jest.fn((_serviceId, _fiscalCode) => TE.of<Error, boolean>(false));
-
-let mockMessageReadStatusAuth = getMockMessageReadStatusAuth();
-
 describe("GetMessageHandler", () => {
   jest.useFakeTimers();
+
+  // Read status checker
+  const mockMessageReadStatusAuth = jest.fn((_serviceId, _fiscalCode) => TE.of<Error, boolean>(false));
 
   // -----------------------
 
@@ -80,13 +77,6 @@ describe("GetMessageHandler", () => {
       warn: console.warn
     }
   } as any;
-
-  afterEach(() => {
-    jest.resetAllMocks();
-    jest.restoreAllMocks();
-
-    mockMessageReadStatusAuth = getMockMessageReadStatusAuth();
-  });
 
   afterAll(() => {
     jest.useRealTimers();
