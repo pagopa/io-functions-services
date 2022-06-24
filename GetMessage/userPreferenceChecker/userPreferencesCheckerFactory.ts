@@ -18,10 +18,6 @@ import {
 import { Semver } from "@pagopa/ts-commons/lib/strings";
 
 /**
- * An interface that describes all the checks over user' service prefereces
- */
-
-/**
  * It return the right UserPreferenceChecker, based on user's appVersion
  */
 export type UserPreferenceCheckerFactory = (
@@ -58,6 +54,9 @@ export type ServicePreferencesGetter = (
 // IUserPreferencesChecker implementation
 // ------------------------
 
+/**
+ * An interface that describes all the checks over user' service prefereces
+ */
 export interface IUserPreferencesChecker {
   // Check if the service has the permissions to know the citizen's reading status
   readonly canAccessMessageReadStatus: (
