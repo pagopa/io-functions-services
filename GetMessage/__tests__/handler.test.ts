@@ -239,11 +239,22 @@ describe("GetMessageHandler", () => {
   }
 
   const getPaymentUpdaterClientMock = (isPaid: boolean = false) => ({
-    checkAssistenza: jest.fn().mockImplementation(() =>
+    isMessagePaid: jest.fn().mockImplementation(() =>
       TE.right({
         status: 200,
         value: {
           isPaid
+        },
+        headers: {}
+      })()
+    )
+  });
+  const getBrokenPaymentUpdaterClientMock = (status: number) => ({
+    isMessagePaid: jest.fn().mockImplementation(() =>
+      TE.right({
+        status,
+        value: {
+          status
         },
         headers: {}
       })()
@@ -922,5 +933,84 @@ describe("GetMessageHandler", () => {
         payment_status: PaymentStatusEnum.PAID
       });
     }
+  });
+
+  it("should fail if user is allowed and message is of type ADVANCED and payment updater is not working", async () => {
+    const mockMessageModel = {
+      findMessageForRecipient: jest.fn(() =>
+        TE.of(some(aRetrievedMessageWithAdvancedFeatures))
+      ),
+      getContentFromBlob: jest.fn(() => TE.of(none))
+    };
+
+    const getMessageHandler = GetMessageHandler(
+      mockMessageModel as any,
+      getMessageStatusModelMock(),
+      getNotificationModelMock(aRetrievedNotification),
+      getNotificationStatusModelMock(),
+      {} as any,
+      getBrokenPaymentUpdaterClientMock(404)
+    );
+
+    const result = await getMessageHandler(
+      mockContext,
+      aUserAuthenticationTrustedApplicationWithAdvancedFetures,
+      undefined as any, // not used
+      someUserAttributes,
+      aFiscalCode,
+      aRetrievedMessageWithoutContent.id
+    );
+
+    expect(mockMessageModel.getContentFromBlob).toHaveBeenCalledTimes(1);
+    expect(mockMessageModel.findMessageForRecipient).toHaveBeenCalledTimes(1);
+    expect(mockMessageModel.findMessageForRecipient).toHaveBeenCalledWith(
+      aRetrievedMessageWithoutContent.fiscalCode,
+      aRetrievedMessageWithoutContent.id
+    );
+
+    expect(result.kind).toBe("IResponseSuccessJson");
+    if (result.kind === "IResponseSuccessJson") {
+      expect(result.value).toEqual({
+        ...aPublicExtendedMessageResponseWithAdvancedFeatures,
+        read_status: ReadStatusEnum.UNAVAILABLE,
+        payment_status: PaymentStatusEnum.NOT_PAID
+      });
+    }
+  });
+
+  it("should provide default information about payment status if user is allowed and message is of type ADVANCED and message is not found in payment updater", async () => {
+    const mockMessageModel = {
+      findMessageForRecipient: jest.fn(() =>
+        TE.of(some(aRetrievedMessageWithAdvancedFeatures))
+      ),
+      getContentFromBlob: jest.fn(() => TE.of(none))
+    };
+
+    const getMessageHandler = GetMessageHandler(
+      mockMessageModel as any,
+      getMessageStatusModelMock(),
+      getNotificationModelMock(aRetrievedNotification),
+      getNotificationStatusModelMock(),
+      {} as any,
+      getBrokenPaymentUpdaterClientMock(503)
+    );
+
+    const result = await getMessageHandler(
+      mockContext,
+      aUserAuthenticationTrustedApplicationWithAdvancedFetures,
+      undefined as any, // not used
+      someUserAttributes,
+      aFiscalCode,
+      aRetrievedMessageWithoutContent.id
+    );
+
+    expect(mockMessageModel.getContentFromBlob).toHaveBeenCalledTimes(1);
+    expect(mockMessageModel.findMessageForRecipient).toHaveBeenCalledTimes(1);
+    expect(mockMessageModel.findMessageForRecipient).toHaveBeenCalledWith(
+      aRetrievedMessageWithoutContent.fiscalCode,
+      aRetrievedMessageWithoutContent.id
+    );
+
+    expect(result.kind).toBe("IResponseErrorInternal");
   });
 });

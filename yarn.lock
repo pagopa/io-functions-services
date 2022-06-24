@@ -770,12 +770,12 @@
     unified "^9.2.2"
     winston "^3.1.0"
 
-"@pagopa/openapi-codegen-ts@^10.0.5":
-  version "10.0.5"
-  resolved "https://registry.yarnpkg.com/@pagopa/openapi-codegen-ts/-/openapi-codegen-ts-10.0.5.tgz#c78f1a51c136ad75ae8cae46787288692dee62bf"
-  integrity sha512-0vQI/5XDtPKPd8BIYP4Ort6nBK6VobMKInXpmLH1ydGsXA26JsPfa5LdAiikryGVP1I3WWroybYfcRC7IuZsig==
+"@pagopa/openapi-codegen-ts@^10.1.0":
+  version "10.1.0"
+  resolved "https://registry.yarnpkg.com/@pagopa/openapi-codegen-ts/-/openapi-codegen-ts-10.1.0.tgz#947712e362d12accb78dd789e5da566627d8c973"
+  integrity sha512-hWhpM0Vd07DnxUrZwRU/uSg78uSpwaTu4Q451+sWt48Mn+2AYdY130rL5o/wuiitmXBNEjz8LslLgR+qEy/KhQ==
   dependencies:
-    "@pagopa/ts-commons" "^10.0.0"
+    "@pagopa/ts-commons" "^10.3.0"
     fs-extra "^6.0.0"
     nunjucks "^3.2.3"
     prettier "^1.12.1"
@@ -784,7 +784,7 @@
     write-yaml-file "^4.1.3"
     yargs "^15.0.1"
 
-"@pagopa/ts-commons@^10.0.0", "@pagopa/ts-commons@^10.2.0", "@pagopa/ts-commons@^10.3.0":
+"@pagopa/ts-commons@^10.2.0", "@pagopa/ts-commons@^10.3.0":
   version "10.2.0"
   resolved "https://registry.yarnpkg.com/@pagopa/ts-commons/-/ts-commons-10.2.0.tgz#ac4c65f2d24f8d2c427ab5e7fcb88732976800ef"
   integrity sha512-Uq+rmMR1+QvDZUUZeka/KaPVJaUeL3UHcPjVmHncSjAFQczL2mcAC9AadtY3cHiI+eQ0Mw2exjj4HOaABC2KAA==
@@ -4942,7 +4942,7 @@ jsonpointer@^4.0.1:
 jsonschema-draft4@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/jsonschema-draft4/-/jsonschema-draft4-1.0.0.tgz#f0af2005054f0f0ade7ea2118614b69dc512d865"
-  integrity sha1-8K8gBQVPDwrefqIRhhS2ncUS2GU=
+  integrity sha512-sBV3UnQPRiyCTD6uzY/Oao2Yohv6KKgQq7zjPwjFHeR6scg/QSXnzDxdugsGaLQDmFUrUlTbMYdEE+72PizhGA==
 
 jsonschema@1.2.4:
   version "1.2.4"
@@ -7591,6 +7591,11 @@ ts-jest@^24.0.2:
     semver "^5.5"
     yargs-parser "10.x"
 
+ts-pattern@^4.0.3:
+  version "4.0.3"
+  resolved "https://registry.yarnpkg.com/ts-pattern/-/ts-pattern-4.0.3.tgz#4b5a08ff61fcd5a9bbfe3c1e686c35420ef87bda"
+  integrity sha512-OxQStbr1MKcYYz3YaXsFSBkMo3zjFODVkV8kaLfOak+sWSfx4B+jkOm/VoaWLhnMP+icnIcJ7ENYEnmpAv3jLg==
+
 tsconfig-paths@^3.9.0:
   version "3.10.1"
   resolved "https://registry.yarnpkg.com/tsconfig-paths/-/tsconfig-paths-3.10.1.tgz#79ae67a68c15289fdf5c51cb74f397522d795ed7"
@@ -7930,12 +7935,7 @@ validator@^10.0.0, validator@^10.1.0:
   resolved "https://registry.yarnpkg.com/validator/-/validator-10.11.0.tgz#003108ea6e9a9874d31ccc9e5006856ccd76b228"
   integrity sha512-X/p3UZerAIsbBfN/IwahhYaBbY68EN/UQBWHtsbXGT5bfrH/p4NQzUCG1kF/rtKaNpnJ7jAu6NGTdSNtyNIXMw==
 
-validator@^13.6.0:
-  version "13.6.0"
-  resolved "https://registry.yarnpkg.com/validator/-/validator-13.6.0.tgz#1e71899c14cdc7b2068463cb24c1cc16f6ec7059"
-  integrity sha512-gVgKbdbHgtxpRyR8K0O6oFZPhhB5tT1jeEHZR0Znr9Svg03U0+r9DXWMrnRAB+HtCStDQKlaIZm42tVsVjqtjg==
-
-validator@^13.7.0:
+validator@^13.6.0, validator@^13.7.0:
   version "13.7.0"
   resolved "https://registry.yarnpkg.com/validator/-/validator-13.7.0.tgz#4f9658ba13ba8f3d82ee881d3516489ea85c0857"
   integrity sha512-nYXQLCBkpJ8X6ltALua9dRrZDHVYxjJ1wgskNt1lH9fzGjs3tgojGSCBjmEPwkWS1y29+DrizMTW19Pr9uB2nw==

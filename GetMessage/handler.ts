@@ -89,11 +89,12 @@ import {
 } from "@pagopa/io-functions-commons/dist/generated/definitions/ReadStatus";
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { PaymentStatus } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentStatus";
+import { match } from "ts-pattern";
 import { LegalData } from "../generated/definitions/LegalData";
 import { FeatureLevelTypeEnum } from "../generated/definitions/FeatureLevelType";
 import { PaymentUpdaterClient } from "../clients/payment-updater";
 import { errorsToError } from "../utils/responses";
-import { ResponseCheck } from "../generated/payment-updater/ResponseCheck";
+import { PaymentStatus as PaymentStatusFromUpdater } from "../generated/payment-updater/PaymentStatus";
 import { PaymentStatusEnum } from "../generated/definitions/PaymentStatus";
 
 /**
@@ -177,7 +178,9 @@ export const getReadStatusForService = (
     O.getOrElse(() => ReadStatusEnum.UNREAD)
   );
 
-const mapPaymentStatus = ({ isPaid }: ResponseCheck): PaymentStatus =>
+const mapPaymentStatus = ({
+  isPaid
+}: PaymentStatusFromUpdater): PaymentStatus =>
   isPaid ? PaymentStatusEnum.PAID : PaymentStatusEnum.NOT_PAID;
 
 /**
@@ -318,22 +321,23 @@ export function GetMessageHandler(
 
     const errorOrPaymentStatus = await pipe(
       TE.tryCatch(
-        () =>
-          paymentUpdater.checkAssistenza({ noticeNumber: retrievedMessage.id }), // FIXME replace checkAssistenza with new API endpoint when implemented
+        () => paymentUpdater.isMessagePaid({ messageId: retrievedMessage.id }),
         E.toError
       ),
       TE.map(E.mapLeft(errorsToError)),
       TE.chain(TE.fromEither),
-      TE.chain(
-        TE.fromPredicate(
-          r => r.status === 200, // TODO: how it will work if message_id is not found? Return 200 with a default {isPaid: false} or an error? in the last case, we must
-          r =>
-            new Error(
-              `Failed to fetch payment status from Payment Updater: ${r.status}`
+      TE.chain(response =>
+        match(response)
+          .with({ status: 200 }, success => TE.right(success.value))
+          .with({ status: 404 }, _notFound => TE.right({ isPaid: false }))
+          .otherwise(error =>
+            TE.left(
+              new Error(
+                `Failed to fetch payment status from Payment Updater: ${error.status}`
+              )
             )
-        )
-      ),
-      TE.map(response => response.value)
+          )
+      )
     )();
     if (E.isLeft(errorOrPaymentStatus)) {
       return ResponseErrorInternal(

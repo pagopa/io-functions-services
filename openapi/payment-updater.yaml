@@ -1,56 +1,84 @@
 swagger: '2.0'
 info:
-  title: Microservice JAVA API
   description: Microservice JAVA API
-  version: '0.0.1'
-host: localhost
+  title: Microservice JAVA API
+  version: 1.0.1
+host: 'localhost:9090'
 basePath: /api/v1/payment
 schemes:
-  - https
-
-tags:
-  - name: API  Payment
-    description: API  Payment
-security:
-  - SubscriptionKey: []
+  - http
 paths:
-  /check/{noticeNumber}:
+  '/check/messages/{messageId}':
     get:
-      tags:
-        - API  Payment
-      summary: Check by notice number
-      operationId: checkAssistenza
+      produces:
+        - application/json
+        - application/problem+json
       parameters:
-        - name: noticeNumber
+        - description: payment's messageId
           in: path
+          name: messageId
           required: true
-          description: payment's notice number
-          type: string      
+          type: string
       responses:
-        200:
+        '200':
           description: check if the message has been paid
           schema:
-            $ref: '#/definitions/ResponseCheck'
-securityDefinitions:
-  SubscriptionKey:
-    type: "apiKey"
-    name: "Ocp-Apim-Subscription-Key"
-    in: "header"
-    description: "The API key to access this function app."
+            $ref: '#/definitions/PaymentStatus'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Problem'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Problem'
+        '404':
+          description: Not Found
+        '503':
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/Problem'
+      tags:
+        - API  Payment
+      operationId: isMessagePaid
+      summary: Check payment by messageId
+  
 definitions:
-  ResponseCheck:
+  PaymentStatus:
     type: object
     properties:
-      isPaid: 
+      isPaid:
         type: boolean
-    required:
-      - isPaid
-    example: 
-        { "isPaid": true}
-responses:
-  Internal Server Error:
-    description: Internal Server Error
-  Forbidden:
-    description: Forbidden
-  NotFound:
-    description: Not found
+  Problem:
+    properties:
+      error:
+        description: |
+          error description.
+        format: uri
+        type: string
+      path:
+        description: >
+          An absolute URI that identifies the specific occurrence of the
+          problem.
+          It may or may not yield further information if dereferenced.
+        type: string
+      status:
+        description: |
+          Status code description.
+        type: string
+      timestamp:
+        description: |
+          timestamp of the error
+        type: number
+    type: object
+securityDefinitions:
+  SubscriptionKey:
+    description: The API key to access this function app.
+    in: header
+    name: Ocp-Apim-Subscription-Key
+    type: apiKey
+security:
+  - SubscriptionKey: []
+tags:
+  - description: API  Payment
+    name: API  Payment
