@@ -10,7 +10,7 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 
 import {
-  appVersionHandleReadAuth,
+  isAppVersionHandlingReadAuthorization,
   ServicePreferencesGetter,
   userPreferenceCheckerVersionUNKNOWNToVersionWithReadAuth,
   userPreferenceCheckerVersionWithReadAuth,
@@ -193,9 +193,10 @@ describe("userPreferencesCheckerFactory |> userPreferencesCheckerFactory", () =>
   });
 });
 
-describe("appVersionHandleReadAuth", () => {
+describe("isAppVersionHandlingReadAuthorization", () => {
   it("should return false if currentAppVersion is lower than minAppVersionHandlingReadAuth", () => {
-    const res = appVersionHandleReadAuth(MIN_READ_STATUS_PREFERENCES_VERSION)(
+    const res = isAppVersionHandlingReadAuthorization(
+      MIN_READ_STATUS_PREFERENCES_VERSION,
       PREV_APP_VERIONS
     );
 
@@ -203,18 +204,42 @@ describe("appVersionHandleReadAuth", () => {
   });
 
   it("should return true if currentAppVersion is equal to minAppVersionHandlingReadAuth", () => {
-    const res = appVersionHandleReadAuth(MIN_READ_STATUS_PREFERENCES_VERSION)(
+    const res = isAppVersionHandlingReadAuthorization(
+      MIN_READ_STATUS_PREFERENCES_VERSION,
       MIN_READ_STATUS_PREFERENCES_VERSION
     );
 
     expect(res).toStrictEqual(true);
   });
 
-  it("should return true if currentAppVersion is greater than to minAppVersionHandlingReadAuth", () => {
-    const res = appVersionHandleReadAuth(MIN_READ_STATUS_PREFERENCES_VERSION)(
+  it("should return true if currentAppVersion is greater than minAppVersionHandlingReadAuth", () => {
+    const res = isAppVersionHandlingReadAuthorization(
+      MIN_READ_STATUS_PREFERENCES_VERSION,
       NEWER_APP_VERSION
     );
 
     expect(res).toStrictEqual(true);
+  });
+
+  it("should return true if a BUILD version is greater than minAppVersionHandlingReadAuth", () => {
+    const buildVersion = MIN_READ_STATUS_PREFERENCES_VERSION + ".1";
+
+    const res = isAppVersionHandlingReadAuthorization(
+      MIN_READ_STATUS_PREFERENCES_VERSION,
+      buildVersion as Semver
+    );
+
+    expect(res).toStrictEqual(true);
+  });
+
+  it("should return false if a BUILD version is lower than minAppVersionHandlingReadAuth", () => {
+    const buildVersion = PREV_APP_VERIONS + ".9";
+
+    const res = isAppVersionHandlingReadAuthorization(
+      MIN_READ_STATUS_PREFERENCES_VERSION,
+      buildVersion as Semver
+    );
+
+    expect(res).toStrictEqual(false);
   });
 });

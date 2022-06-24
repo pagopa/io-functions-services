@@ -39,7 +39,10 @@ export const userPreferencesCheckerFactory: UserPreferenceCheckerFactory = (
     profile.lastAppVersion ?? "UNKNOWN",
     version =>
       t.literal("UNKNOWN").is(version) ||
-      !appVersionHandleReadAuth(minAppVersionHandlingReadAuth)(version),
+      !isAppVersionHandlingReadAuthorization(
+        minAppVersionHandlingReadAuth,
+        version
+      ),
     b.match(
       () => userPreferenceCheckerVersionWithReadAuth(servicePreferencesGetter),
       () => userPreferenceCheckerVersionUNKNOWNToVersionWithReadAuth
@@ -97,7 +100,14 @@ export const userPreferenceCheckerVersionWithReadAuth: (
 // Private Methods
 // ------------------------
 
-export const appVersionHandleReadAuth = (
-  minAppVersionHandlingReadAuth: Semver
-) => (currentAppVersion: Semver): boolean =>
-  semver.satisfies(minAppVersionHandlingReadAuth, `<=${currentAppVersion}`);
+export const isAppVersionHandlingReadAuthorization = (
+  minAppVersionHandlingReadAuth: Semver,
+  currentAppVersion: Semver
+): boolean => {
+  const currentAppVersionWithoutBuild = currentAppVersion.slice(0, 5);
+
+  return semver.satisfies(
+    minAppVersionHandlingReadAuth,
+    `<=${currentAppVersionWithoutBuild}`
+  );
+};
