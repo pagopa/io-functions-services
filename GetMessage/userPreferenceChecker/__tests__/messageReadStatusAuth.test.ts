@@ -57,7 +57,7 @@ describe("canAccessMessageReadStatus |> ok", () => {
     jest.clearAllMocks();
   });
 
-  it("should return false if profile version is UNKNOWN", async () => {
+  it("should return false if profile lastAppVersion is UNKNOWN", async () => {
     mockProfileFindLastVersionByModelId.mockReturnValueOnce(
       TE.of(O.some(aRetrievedProfile))
     );
@@ -74,7 +74,7 @@ describe("canAccessMessageReadStatus |> ok", () => {
     expect(mockServicePreferencesFind).not.toHaveBeenCalled();
   });
 
-  it("should return false if profile version is < MIN_READ_STATUS_PREFERENCES_VERSION", async () => {
+  it("should return false if profile lastAppVersion is < MIN_READ_STATUS_PREFERENCES_VERSION", async () => {
     mockProfileFindLastVersionByModelId.mockReturnValueOnce(
       TE.of(O.some({ ...aRetrievedProfile, lastAppVersion: PREV_APP_VERIONS }))
     );
@@ -91,7 +91,7 @@ describe("canAccessMessageReadStatus |> ok", () => {
     expect(mockServicePreferencesFind).not.toHaveBeenCalled();
   });
 
-  it("should return true if profile version is = MIN_READ_STATUS_PREFERENCES_VERSION", async () => {
+  it("should return true if profile lastAppVersion is = MIN_READ_STATUS_PREFERENCES_VERSION", async () => {
     mockProfileFindLastVersionByModelId.mockReturnValueOnce(
       TE.of(
         O.some({
@@ -115,7 +115,7 @@ describe("canAccessMessageReadStatus |> ok", () => {
     expect(mockServicePreferencesFind).toHaveBeenCalled();
   });
 
-  it("should return true if profile version is > MIN_READ_STATUS_PREFERENCES_VERSION", async () => {
+  it("should return true if profile lastAppVersion is > MIN_READ_STATUS_PREFERENCES_VERSION", async () => {
     mockProfileFindLastVersionByModelId.mockReturnValueOnce(
       TE.of(
         O.some({
@@ -139,7 +139,7 @@ describe("canAccessMessageReadStatus |> ok", () => {
     expect(mockServicePreferencesFind).toHaveBeenCalled();
   });
 
-  it("should return false if profile version is > MIN_READ_STATUS_PREFERENCES_VERSION and service settings is set to DENY", async () => {
+  it("should return false if profile lastAppVersion is > MIN_READ_STATUS_PREFERENCES_VERSION and service settings is set to DENY", async () => {
     mockProfileFindLastVersionByModelId.mockReturnValueOnce(
       TE.of(
         O.some({

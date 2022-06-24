@@ -508,7 +508,9 @@ describe("Create Advanced Message", () => {
     }
   );
 
-  it("should return the message without Read status, if user is allowed to read it", async () => {
+  // This code is testing the case in which user explicitly disabled a service
+  // servicePreference in DENY state is defined in fixtures project
+  it("should return the message WITHOUT Read status, if user is NOT allowed to read it", async () => {
     const fiscalCode = anAutoFiscalCode;
     const serviceId = aValidServiceId;
 
