@@ -301,23 +301,7 @@ export const GetMessageHandler = (
   }
   const maybeMessageStatus = errorOrMaybeMessageStatus.right;
 
-  const errorOrServiceCanReadMessageReadStatus = await canAccessMessageReadStatus(
-    auth.subscriptionId,
-    fiscalCode
-  )();
-
-  if (E.isLeft(errorOrServiceCanReadMessageReadStatus)) {
-    return ResponseErrorInternal(
-      `Error retrieving information about read status preferences: ${JSON.stringify(
-        errorOrServiceCanReadMessageReadStatus.left
-      )}`
-    );
-  }
-
-  const serviceCanReadMessageReadStatus =
-    errorOrServiceCanReadMessageReadStatus.right;
-
-  const returnedMessage = pipe(
+  const returnedMessageOrError = await pipe(
     {
       message,
       notification: pipe(notificationStatuses, O.toUndefined),
@@ -333,17 +317,37 @@ export const GetMessageHandler = (
     },
     // Enrich message info with advanced properties if user is allowed to read them
     messageWithoutAdvancedProperties =>
-      B.fold(
-        () => messageWithoutAdvancedProperties,
-        () => ({
-          ...messageWithoutAdvancedProperties,
-          read_status: B.fold(
-            () => ReadStatusEnum.UNAVAILABLE,
-            () => getReadStatusForService(maybeMessageStatus)
-          )(serviceCanReadMessageReadStatus)
-        })
-      )(canReadAdvancedMessageInfo(message, auth.groups))
-  );
+      pipe(
+        canReadAdvancedMessageInfo(message, auth.groups),
+        B.foldW(
+          () =>
+            TE.of<
+              Error,
+              | ExternalMessageResponseWithContent
+              | ExternalMessageResponseWithoutContent
+            >(messageWithoutAdvancedProperties),
+          () =>
+            pipe(
+              canAccessMessageReadStatus(auth.subscriptionId, fiscalCode),
+              TE.map(serviceCanReadMessageReadStatus => ({
+                ...messageWithoutAdvancedProperties,
+                read_status: B.fold(
+                  () => ReadStatusEnum.UNAVAILABLE,
+                  () => getReadStatusForService(maybeMessageStatus)
+                )(serviceCanReadMessageReadStatus)
+              }))
+            )
+        )
+      )
+  )();
+
+  if (E.isLeft(returnedMessageOrError)) {
+    return ResponseErrorInternal(
+      `Error retrieving information about read status preferences`
+    );
+  }
+
+  const returnedMessage = returnedMessageOrError.right;
 
   return ResponseSuccessJson(returnedMessage);
 };

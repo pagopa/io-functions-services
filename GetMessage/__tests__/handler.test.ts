@@ -61,7 +61,9 @@ describe("GetMessageHandler", () => {
   jest.useFakeTimers();
 
   // Read status checker
-  const mockMessageReadStatusAuth = jest.fn((_serviceId, _fiscalCode) => TE.of<Error, boolean>(false));
+  const mockMessageReadStatusAuth = jest.fn((_serviceId, _fiscalCode) =>
+    TE.of<Error, boolean>(false)
+  );
 
   // -----------------------
 
@@ -816,7 +818,7 @@ describe("GetMessageHandler", () => {
       aRetrievedMessageWithoutContent.fiscalCode,
       aRetrievedMessageWithoutContent.id
     );
-    expect(mockMessageReadStatusAuth).toHaveBeenCalled();
+    expect(mockMessageReadStatusAuth).not.toHaveBeenCalled();
 
     expect(result.kind).toBe("IResponseSuccessJson");
     if (result.kind === "IResponseSuccessJson") {
