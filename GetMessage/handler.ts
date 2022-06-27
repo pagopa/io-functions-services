@@ -136,8 +136,10 @@ export const canReadAdvancedMessageInfo = (
   message:
     | ExternalCreatedMessageWithoutContent
     | ExternalCreatedMessageWithContent,
+  messageIsPending: boolean,
   authGroups: IAzureApiAuthorization["groups"]
 ): boolean =>
+  !messageIsPending &&
   message.feature_level_type === FeatureLevelTypeEnum.ADVANCED &&
   authGroups.has(UserGroup.ApiMessageReadAdvanced);
 
@@ -318,7 +320,11 @@ export const GetMessageHandler = (
     // Enrich message info with advanced properties if user is allowed to read them
     messageWithoutAdvancedProperties =>
       pipe(
-        canReadAdvancedMessageInfo(message, auth.groups),
+        canReadAdvancedMessageInfo(
+          message,
+          retrievedMessage.isPending ?? true,
+          auth.groups
+        ),
         B.foldW(
           () =>
             TE.of<

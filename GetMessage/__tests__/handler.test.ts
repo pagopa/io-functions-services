@@ -830,10 +830,58 @@ describe("GetMessageHandler", () => {
     }
   });
 
+  it("should NOT provide information about read status if message is pending", async () => {
+    const mockMessageModel = {
+      findMessageForRecipient: jest.fn(() =>
+        TE.of(
+          some({ ...aRetrievedMessageWithAdvancedFeatures, isPending: true })
+        )
+      ),
+      getContentFromBlob: jest.fn(() => TE.of(none))
+    };
+
+    mockMessageReadStatusAuth.mockReturnValueOnce(TE.right(true));
+
+    const getMessageHandler = GetMessageHandler(
+      mockMessageModel as any,
+      getMessageStatusModelMock(),
+      getNotificationModelMock(aRetrievedNotification),
+      getNotificationStatusModelMock(),
+      {} as any,
+      mockMessageReadStatusAuth
+    );
+
+    const result = await getMessageHandler(
+      mockContext,
+      aUserAuthenticationTrustedApplicationWithAdvancedFetures,
+      undefined as any, // not used
+      someUserAttributes,
+      aFiscalCode,
+      aRetrievedMessageWithoutContent.id
+    );
+
+    expect(mockMessageModel.getContentFromBlob).toHaveBeenCalledTimes(1);
+    expect(mockMessageModel.findMessageForRecipient).toHaveBeenCalledTimes(1);
+    expect(mockMessageModel.findMessageForRecipient).toHaveBeenCalledWith(
+      aRetrievedMessageWithoutContent.fiscalCode,
+      aRetrievedMessageWithoutContent.id
+    );
+    expect(mockMessageReadStatusAuth).not.toHaveBeenCalled();
+
+    expect(result.kind).toBe("IResponseSuccessJson");
+    if (result.kind === "IResponseSuccessJson") {
+      expect(result.value).toEqual({
+        ...aPublicExtendedMessageResponseWithAdvancedFeatures
+      });
+    }
+  });
+
   it("should provide information about read status if user is allowed and message is of type ADVANCED", async () => {
     const mockMessageModel = {
       findMessageForRecipient: jest.fn(() =>
-        TE.of(some(aRetrievedMessageWithAdvancedFeatures))
+        TE.of(
+          some({ ...aRetrievedMessageWithAdvancedFeatures, isPending: false })
+        )
       ),
       getContentFromBlob: jest.fn(() => TE.of(none))
     };
