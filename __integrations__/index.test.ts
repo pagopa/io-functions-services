@@ -277,7 +277,7 @@ describe("Create Message", () => {
       // Wait the process to complete
       await delay(WAIT_MS);
 
-      const resultGet = await getSentMessage(nodeFetch)(fiscalCode, messageId);
+      const resultGet = await getSentMessage(nodeFetch)(fiscalCode, messageId!);
 
       expect(resultGet.status).toEqual(200);
       const detail = (await resultGet.json()) as ExternalMessageResponseWithContent;
@@ -285,9 +285,9 @@ describe("Create Message", () => {
       expect(detail).toEqual(
         expect.objectContaining({
           message: expect.objectContaining({
+            ...body.message,
             id: messageId,
-            feature_level_type: FeatureLevelTypeEnum.STANDARD,
-            ...body.message
+            feature_level_type: FeatureLevelTypeEnum.STANDARD
           }),
           status: MessageStatusValueEnum.PROCESSED
         })
@@ -496,8 +496,8 @@ describe("Create Advanced Message", () => {
       expect(detailWithoutPermission).toMatchObject(
         expect.objectContaining({
           message: expect.objectContaining({
-            id: messageId,
-            ...body.message
+            ...body.message,
+            id: messageId
           }),
           status: MessageStatusValueEnum.PROCESSED
         })
@@ -551,8 +551,8 @@ describe("Create Advanced Message", () => {
     expect(detail).toMatchObject(
       expect.objectContaining({
         message: expect.objectContaining({
-          id: messageId,
-          ...body.message
+          ...body.message,
+          id: messageId
         }),
         status: MessageStatusValueEnum.PROCESSED,
         read_status: ReadStatusEnum.UNAVAILABLE
@@ -571,8 +571,8 @@ describe("Create Advanced Message", () => {
     expect(detailWithoutPermission).toMatchObject(
       expect.objectContaining({
         message: expect.objectContaining({
-          id: messageId,
-          ...body.message
+          ...body.message,
+          id: messageId
         }),
         status: MessageStatusValueEnum.PROCESSED
       })
@@ -631,8 +631,8 @@ describe("Create Advanced Message", () => {
     expect(detail).toMatchObject(
       expect.objectContaining({
         message: expect.objectContaining({
-          id: messageId,
-          ...body.message
+          ...body.message,
+          id: messageId
         }),
         status: MessageStatusValueEnum.PROCESSED,
         read_status: ReadStatusEnum.UNAVAILABLE,
@@ -652,8 +652,8 @@ describe("Create Advanced Message", () => {
     expect(detailWithoutPermission).toMatchObject(
       expect.objectContaining({
         message: expect.objectContaining({
-          id: messageId,
-          ...body.message
+          ...body.message,
+          id: messageId
         }),
         status: MessageStatusValueEnum.PROCESSED
       })
