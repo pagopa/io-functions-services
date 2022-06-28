@@ -3,6 +3,7 @@
 /* eslint-disable sonar/sonar-max-lines-per-function */
 
 import { none, Option, some } from "fp-ts/lib/Option";
+import * as O from "fp-ts/Option";
 
 import { QueryError } from "documentdb";
 
@@ -44,12 +45,14 @@ import { NotificationChannelStatusValueEnum } from "@pagopa/io-functions-commons
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { TimeToLiveSeconds } from "@pagopa/io-functions-commons/dist/generated/definitions/TimeToLiveSeconds";
 import { FeatureLevelTypeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/FeatureLevelType";
+import { ReadStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ReadStatus";
 
 import * as TE from "fp-ts/lib/TaskEither";
 
 import { GetMessageHandler } from "../handler";
 
 import {
+  aMessageContent,
   aMessageContentWithLegalData,
   aMessagePayload
 } from "../../__mocks__/mocks";
@@ -61,9 +64,13 @@ describe("GetMessageHandler", () => {
   jest.useFakeTimers();
 
   // Read status checker
-  const mockMessageReadStatusAuth = jest.fn((_serviceId, _fiscalCode) =>
+  const mockMessageReadStatusAuth = jest.fn();
+  mockMessageReadStatusAuth.mockImplementation((_serviceId, _fiscalCode) =>
     TE.of<Error, boolean>(false)
   );
+
+  const getMockMessageReadStatusAuth = () =>
+    jest.fn((_serviceId, _fiscalCode) => TE.of<Error, boolean>(false));
 
   // -----------------------
 
@@ -82,6 +89,10 @@ describe("GetMessageHandler", () => {
 
   afterAll(() => {
     jest.useRealTimers();
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
   const aFiscalCode = "FRLFRC74E04B157I" as FiscalCode;
@@ -734,13 +745,22 @@ describe("GetMessageHandler", () => {
 
   const aRetrievedMessageWithAdvancedFeatures = {
     ...aRetrievedMessageWithoutContent,
+    isPending: false,
     featureLevelType: FeatureLevelTypeEnum.ADVANCED
   };
 
-  const aPublicExtendedMessageResponseWithAdvancedFeatures = {
+  const aPublicExtendedMessageResponseWithContent = {
     ...aPublicExtendedMessageResponse,
     message: {
       ...aPublicExtendedMessageResponse.message,
+      content: aMessageContent
+    }
+  };
+
+  const aPublicExtendedMessageResponseWithContentWithAdvancedFeatures = {
+    ...aPublicExtendedMessageResponseWithContent,
+    message: {
+      ...aPublicExtendedMessageResponseWithContent.message,
       feature_level_type: FeatureLevelTypeEnum.ADVANCED
     }
   };
@@ -748,9 +768,9 @@ describe("GetMessageHandler", () => {
   it("should NOT provide information about read and payment status if message is of type STANDARD", async () => {
     const mockMessageModel = {
       findMessageForRecipient: jest.fn(() =>
-        TE.of(some(aRetrievedMessageWithoutContent))
+        TE.of(some({ ...aRetrievedMessageWithoutContent, isPending: false }))
       ),
-      getContentFromBlob: jest.fn(() => TE.of(none))
+      getContentFromBlob: jest.fn(() => TE.of(O.some(aMessageContent)))
     };
 
     const getMessageHandler = GetMessageHandler(
@@ -780,18 +800,18 @@ describe("GetMessageHandler", () => {
 
     expect(result.kind).toBe("IResponseSuccessJson");
     if (result.kind === "IResponseSuccessJson") {
-      expect(result.value).toEqual(aPublicExtendedMessageResponse);
+      expect(result.value).toEqual(aPublicExtendedMessageResponseWithContent);
       expect(result.value).not.toHaveProperty("read_status");
       expect(result.value).not.toHaveProperty("payment_status");
     }
   });
 
-  it("should NOT provide information about read and payment status if user is not allowed", async () => {
+  it("should NOT provide information about read and payment status if user is not allowed (no auth group)", async () => {
     const mockMessageModel = {
       findMessageForRecipient: jest.fn(() =>
         TE.of(some(aRetrievedMessageWithAdvancedFeatures))
       ),
-      getContentFromBlob: jest.fn(() => TE.of(none))
+      getContentFromBlob: jest.fn(() => TE.of(O.some(aMessageContent)))
     };
 
     const getMessageHandler = GetMessageHandler(
@@ -822,11 +842,11 @@ describe("GetMessageHandler", () => {
 
     expect(result.kind).toBe("IResponseSuccessJson");
     if (result.kind === "IResponseSuccessJson") {
-      expect(result.value).toEqual(
-        aPublicExtendedMessageResponseWithAdvancedFeatures
-      );
-      expect(result.value).not.toHaveProperty("read_status");
+      expect(result.value).toEqual({
+        ...aPublicExtendedMessageResponseWithContentWithAdvancedFeatures
+      });
       expect(result.value).not.toHaveProperty("payment_status");
+      expect(result.value).not.toHaveProperty("read_status");
     }
   });
 
@@ -837,7 +857,7 @@ describe("GetMessageHandler", () => {
           some({ ...aRetrievedMessageWithAdvancedFeatures, isPending: true })
         )
       ),
-      getContentFromBlob: jest.fn(() => TE.of(none))
+      getContentFromBlob: jest.fn(() => TE.of(O.some(aMessageContent)))
     };
 
     mockMessageReadStatusAuth.mockReturnValueOnce(TE.right(true));
@@ -871,8 +891,11 @@ describe("GetMessageHandler", () => {
     expect(result.kind).toBe("IResponseSuccessJson");
     if (result.kind === "IResponseSuccessJson") {
       expect(result.value).toEqual({
-        ...aPublicExtendedMessageResponseWithAdvancedFeatures
+        ...aPublicExtendedMessageResponseWithContentWithAdvancedFeatures
       });
+
+      expect(result.value).not.toHaveProperty("payment_status");
+      expect(result.value).not.toHaveProperty("read_status");
     }
   });
 
@@ -883,7 +906,7 @@ describe("GetMessageHandler", () => {
           some({ ...aRetrievedMessageWithAdvancedFeatures, isPending: false })
         )
       ),
-      getContentFromBlob: jest.fn(() => TE.of(none))
+      getContentFromBlob: jest.fn(() => TE.of(O.some(aMessageContent)))
     };
 
     mockMessageReadStatusAuth.mockReturnValueOnce(TE.right(true));
@@ -917,8 +940,59 @@ describe("GetMessageHandler", () => {
     expect(result.kind).toBe("IResponseSuccessJson");
     if (result.kind === "IResponseSuccessJson") {
       expect(result.value).toEqual({
-        ...aPublicExtendedMessageResponseWithAdvancedFeatures,
-        read_status: aMessageStatus.isRead ? "READ" : "UNREAD"
+        ...aPublicExtendedMessageResponseWithContentWithAdvancedFeatures,
+        read_status: aMessageStatus.isRead
+          ? ReadStatusEnum.READ
+          : ReadStatusEnum.UNREAD
+      });
+    }
+  });
+
+  it("should return UNAVAILABLE as read status if user is NOT allowed and message is of type ADVANCED", async () => {
+    const mockMessageModel = {
+      findMessageForRecipient: jest.fn(() =>
+        TE.of(
+          some({ ...aRetrievedMessageWithAdvancedFeatures, isPending: false })
+        )
+      ),
+      getContentFromBlob: jest.fn(() => TE.of(O.some(aMessageContent)))
+    };
+
+    // Using base mockMessageReadStatusAuth it's not working correctly
+    const mockMessageReadStatusAuth = getMockMessageReadStatusAuth();
+    mockMessageReadStatusAuth.mockReturnValueOnce(TE.of(false));
+
+    const getMessageHandler = GetMessageHandler(
+      mockMessageModel as any,
+      getMessageStatusModelMock(),
+      getNotificationModelMock(aRetrievedNotification),
+      getNotificationStatusModelMock(),
+      {} as any,
+      mockMessageReadStatusAuth
+    );
+
+    const result = await getMessageHandler(
+      mockContext,
+      aUserAuthenticationTrustedApplicationWithAdvancedFetures,
+      undefined as any, // not used
+      someUserAttributes,
+      aFiscalCode,
+      aRetrievedMessageWithoutContent.id
+    );
+
+    expect(mockMessageModel.getContentFromBlob).toHaveBeenCalledTimes(1);
+    expect(mockMessageModel.findMessageForRecipient).toHaveBeenCalledTimes(1);
+    expect(mockMessageModel.findMessageForRecipient).toHaveBeenCalledWith(
+      aRetrievedMessageWithoutContent.fiscalCode,
+      aRetrievedMessageWithoutContent.id
+    );
+    expect(mockMessageReadStatusAuth).toHaveBeenCalled();
+
+    expect(result.kind).toBe("IResponseSuccessJson");
+    if (result.kind === "IResponseSuccessJson") {
+      expect(result.value).toEqual({
+        ...aPublicExtendedMessageResponseWithContentWithAdvancedFeatures,
+        read_status: ReadStatusEnum.UNAVAILABLE
       });
     }
   });
