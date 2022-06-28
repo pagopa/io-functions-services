@@ -23,9 +23,9 @@ import {
   aServiceId
 } from "../../../__mocks__/mocks";
 
-const MIN_READ_STATUS_PREFERENCES_VERSION = "1.5.3" as Semver;
-const PREV_APP_VERIONS = "1.3.8" as Semver;
-const NEWER_APP_VERSION = "3.1.1" as Semver;
+const MIN_READ_STATUS_PREFERENCES_VERSION = "1.15.3" as Semver;
+const PREV_APP_VERIONS = "1.13.8" as Semver;
+const NEWER_APP_VERSION = "12.1.1" as Semver;
 
 const aServicePreferenceWithUNKNOWN: ServicePreference = {
   fiscalCode: aFiscalCode,

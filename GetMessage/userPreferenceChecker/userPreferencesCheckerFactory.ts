@@ -105,7 +105,10 @@ export const isAppVersionHandlingReadAuthorization = (
   minAppVersionHandlingReadAuth: Semver,
   currentAppVersion: Semver
 ): boolean => {
-  const currentAppVersionWithoutBuild = currentAppVersion.slice(0, 5);
+  const currentAppVersionWithoutBuild = currentAppVersion
+    .split(".")
+    .slice(0, 3)
+    .join(".");
 
   return semver.satisfies(
     minAppVersionHandlingReadAuth,
