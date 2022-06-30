@@ -806,7 +806,7 @@ describe("GetMessageHandler", () => {
     }
   });
 
-  it("should NOT provide information about read and payment status if user is not allowed (no auth group)", async () => {
+  it("should NOT provide information about read and payment status if user is not allowed (no 'ApiMessageReadAdvanced' auth group)", async () => {
     const mockMessageModel = {
       findMessageForRecipient: jest.fn(() =>
         TE.of(some(aRetrievedMessageWithAdvancedFeatures))

@@ -313,7 +313,7 @@ export const GetMessageHandler = (
         O.map(messageStatus => messageStatus.status),
         // when the message has been received but a MessageStatus
         // does not exist yet, the message is considered to be
-        // in the ACCEPTED state (not yet stored in the inbox)
+        // in the ACCEPTED state (not yet visible in the user's inbox)
         O.getOrElse(() => MessageStatusValueEnum.ACCEPTED)
       )
     },

@@ -101,6 +101,18 @@ export const userPreferenceCheckerVersionWithReadAuth: (
 // Private Methods
 // ------------------------
 
+/**
+ * Check if citizen's current app version is higher than or equal to the one that introduced
+ * opt-out read status functionality.
+ *
+ * NOTE: this check does not consider build number
+ *
+ * @param minAppVersionHandlingReadAuth the version that introduces opt-out functionality
+ * @param currentAppVersion the current version of citizen's app version
+ * @returns
+ * `true` if currentAppVersion is higher than or equal to minAppVersionHandlingReadAuth
+ * `false` otherwise
+ */
 export const isAppVersionHandlingReadAuthorization = (
   minAppVersionHandlingReadAuth: Semver,
   currentAppVersion: Semver
