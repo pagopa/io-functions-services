@@ -58,6 +58,7 @@ import { subSeconds } from "date-fns";
 import { DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS } from "../../utils/config";
 import * as MS from "@pagopa/io-functions-commons/dist/src/models/message_status";
 import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
+import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 
 const createContext = (functionName: string = "funcname"): Context =>
   (({
@@ -162,7 +163,10 @@ const aRetrievedProfileWithAutoPreferences = {
 };
 
 // utility that adds a given set of serviceIds to the profile's inbox blacklist
-const withBlacklist = (profile: RetrievedProfile, services = []) => ({
+const withBlacklist = (
+  profile: RetrievedProfile,
+  services: ServiceId[] = []
+) => ({
   ...profile,
   blockedInboxOrChannels: services.reduce(
     (obj, serviceId) => ({
@@ -173,7 +177,10 @@ const withBlacklist = (profile: RetrievedProfile, services = []) => ({
   )
 });
 
-const withBlockedEmail = (profile: RetrievedProfile, services = []) => ({
+const withBlockedEmail = (
+  profile: RetrievedProfile,
+  services: ServiceId[] = []
+) => ({
   ...profile,
   blockedInboxOrChannels: services.reduce(
     (obj, serviceId) => ({
@@ -285,7 +292,7 @@ describe("getprocessMessageHandler", () => {
     ${"empty blockedInboxOrChannels if message sender service exists and is enabled in user service preference (MANUAL SETTINGS)"}         | ${aRetrievedProfileWithManualPreferences}                                                                | ${aBlobResult} | ${aRetrievedMessage} | ${O.some(anEnabledServicePreference)}                               | ${"not-called"}                                                                                                                            | ${aCreatedMessageEvent} | ${aCommonMessageData}  | ${[]}                                | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"O.none"}
     ${"blocked EMAIL if message sender service exists and has EMAIL disabled in user service preference (MANUAL SETTINGS)"}                | ${aRetrievedProfileWithAutoPreferences}                                                                  | ${aBlobResult} | ${aRetrievedMessage} | ${O.some({ ...anEnabledServicePreference, isEmailEnabled: false })} | ${"not-called"}                                                                                                                            | ${aCreatedMessageEvent} | ${aCommonMessageData}  | ${[BlockedInboxOrChannelEnum.EMAIL]} | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"O.none"}
     ${"blocked EMAIL for a service in blockedInboxOrChannels with email disabled (LEGACY SETTINGS)"}                                       | ${withBlockedEmail(aRetrievedProfileWithLegacyPreferences, [aNewMessageWithoutContent.senderServiceId])} | ${aBlobResult} | ${aRetrievedMessage} | ${"not-called"}                                                     | ${"not-called"}                                                                                                                            | ${aCreatedMessageEvent} | ${aCommonMessageData}  | ${[BlockedInboxOrChannelEnum.EMAIL]} | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"O.none"}
-    ${"empty blockedInboxOrChannels if the service is not in user's blockedInboxOrChannels (LEGACY SETTINGS)"}                             | ${withBlacklist(aRetrievedProfileWithLegacyPreferences, ["another-service"])}                            | ${aBlobResult} | ${aRetrievedMessage} | ${"not-called"}                                                     | ${"not-called"}                                                                                                                            | ${aCreatedMessageEvent} | ${aCommonMessageData}  | ${[]}                                | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"O.none"}
+    ${"empty blockedInboxOrChannels if the service is not in user's blockedInboxOrChannels (LEGACY SETTINGS)"}                             | ${withBlacklist(aRetrievedProfileWithLegacyPreferences, ["another-service" as ServiceId])}               | ${aBlobResult} | ${aRetrievedMessage} | ${"not-called"}                                                     | ${"not-called"}                                                                                                                            | ${aCreatedMessageEvent} | ${aCommonMessageData}  | ${[]}                                | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"O.none"}
     ${"isEmailEnabled overridden to false if profile's timestamp is before optOutEmailSwitchDate"}                                         | ${aRetrievedProfileWithAValidTimestamp}                                                                  | ${aBlobResult} | ${aRetrievedMessage} | ${"not-called"}                                                     | ${"not-called"}                                                                                                                            | ${aCreatedMessageEvent} | ${aCommonMessageData}  | ${[]}                                | ${aFutureOptOutEmailSwitchDate} | ${true}           | ${{ ...aRetrievedProfileWithAValidTimestamp, isEmailEnabled: false }}
     ${"isEmailEnabled not overridden if profile's timestamp is after optOutEmailSwitchDate"}                                               | ${aRetrievedProfileWithAValidTimestamp}                                                                  | ${aBlobResult} | ${aRetrievedMessage} | ${"not-called"}                                                     | ${"not-called"}                                                                                                                            | ${aCreatedMessageEvent} | ${aCommonMessageData}  | ${[]}                                | ${aPastOptOutEmailSwitchDate}   | ${true}           | ${"O.none"}
     ${"empty blockedInboxOrChannels if message sender special service exists and is enabled in user service preference (AUTO SETTINGS)"}   | ${aRetrievedProfileWithAutoPreferences}                                                                  | ${aBlobResult} | ${aRetrievedMessage} | ${O.some(anEnabledServicePreference)}                               | ${O.some(anActiveActivation)}                                                                                                              | ${aCreatedMessageEvent} | ${aSpecialMessageData} | ${[]}                                | ${aPastOptOutEmailSwitchDate}   | ${false}          | ${"O.none"}

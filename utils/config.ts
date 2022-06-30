@@ -11,7 +11,7 @@ import * as O from "fp-ts/lib/Option";
 import * as E from "fp-ts/lib/Either";
 import * as t from "io-ts";
 import { readableReport } from "@pagopa/ts-commons/lib/reporters";
-import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
+import { NonEmptyString, Semver } from "@pagopa/ts-commons/lib/strings";
 import { DateFromTimestamp } from "@pagopa/ts-commons/lib/dates";
 import { NumberFromString } from "@pagopa/ts-commons/lib/numbers";
 import { flow, pipe } from "fp-ts/lib/function";
@@ -73,6 +73,9 @@ export const IConfig = t.intersection([
     FF_OPT_IN_EMAIL_ENABLED: t.boolean,
 
     PENDING_ACTIVATION_GRACE_PERIOD_SECONDS: t.number,
+
+    // eslint-disable-next-line sort-keys
+    MIN_APP_VERSION_WITH_READ_AUTH: Semver,
 
     isProduction: t.boolean
   }),
