@@ -120,7 +120,7 @@ describe("userPreferencesCheckerFactory |> userPreferencesCheckerFactory", () =>
     "userPreferenceCheckerVersionWithReadAuth"
   );
 
-  it("should call userPreferenceCheckerVersionWithReadAuth if appVersion is UNKNOWN", async () => {
+  it("should call userPreferenceCheckerVersionUNKNOWNToVersionWithReadAuth if appVersion is UNKNOWN", async () => {
     mockServicePreferencesGetter.mockReturnValueOnce(TE.of(O.none));
 
     const res = await userPreferencesCheckerFactory(
@@ -138,7 +138,7 @@ describe("userPreferencesCheckerFactory |> userPreferencesCheckerFactory", () =>
     expect(res).toStrictEqual(E.right(false));
   });
 
-  it("should call userPreferenceCheckerVersionWithReadAuth if appVersion is < MIN_READ_STATUS_PREFERENCES_VERSION", async () => {
+  it("should call userPreferenceCheckerVersionUNKNOWNToVersionWithReadAuth if appVersion is < MIN_READ_STATUS_PREFERENCES_VERSION", async () => {
     mockServicePreferencesGetter.mockReturnValueOnce(TE.of(O.none));
 
     const res = await userPreferencesCheckerFactory(
@@ -156,7 +156,7 @@ describe("userPreferencesCheckerFactory |> userPreferencesCheckerFactory", () =>
     expect(res).toStrictEqual(E.right(false));
   });
 
-  it("should call userPreferenceCheckerVersionUNKNOWNToVersionWithReadAuth if appVersion is = MIN_READ_STATUS_PREFERENCES_VERSION", async () => {
+  it("should call userPreferenceCheckerVersionWithReadAuth if appVersion is = MIN_READ_STATUS_PREFERENCES_VERSION", async () => {
     mockServicePreferencesGetter.mockReturnValueOnce(TE.of(O.none));
 
     const res = await userPreferencesCheckerFactory(
@@ -174,7 +174,7 @@ describe("userPreferencesCheckerFactory |> userPreferencesCheckerFactory", () =>
     expect(res).toStrictEqual(E.right(true));
   });
 
-  it("should call userPreferenceCheckerVersionUNKNOWNToVersionWithReadAuth if appVersion is > MIN_READ_STATUS_PREFERENCES_VERSION", async () => {
+  it("should call userPreferenceCheckerVersionWithReadAuth if appVersion is > MIN_READ_STATUS_PREFERENCES_VERSION", async () => {
     mockServicePreferencesGetter.mockReturnValueOnce(TE.of(O.none));
 
     const res = await userPreferencesCheckerFactory(
