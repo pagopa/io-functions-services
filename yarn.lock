@@ -7603,6 +7603,11 @@ ts-jest@^24.0.2:
     semver "^5.5"
     yargs-parser "10.x"
 
+ts-pattern@^4.0.3:
+  version "4.0.3"
+  resolved "https://registry.yarnpkg.com/ts-pattern/-/ts-pattern-4.0.3.tgz#4b5a08ff61fcd5a9bbfe3c1e686c35420ef87bda"
+  integrity sha512-OxQStbr1MKcYYz3YaXsFSBkMo3zjFODVkV8kaLfOak+sWSfx4B+jkOm/VoaWLhnMP+icnIcJ7ENYEnmpAv3jLg==
+
 tsconfig-paths@^3.9.0:
   version "3.10.1"
   resolved "https://registry.yarnpkg.com/tsconfig-paths/-/tsconfig-paths-3.10.1.tgz#79ae67a68c15289fdf5c51cb74f397522d795ed7"

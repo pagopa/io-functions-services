@@ -21,6 +21,7 @@
     "generate:definitions": "rimraf ./generated/definitions && shx mkdir -p ./generated/definitions && gen-api-models --api-spec ./openapi/index.yaml --no-strict --out-dir ./generated/definitions",
     "generate:api-notifications": "rimraf ./generated/notifications && shx mkdir -p ./generated/notifications && gen-api-models --api-spec https://raw.githubusercontent.com/pagopa/io-backend/master/api_notifications.yaml --out-dir ./generated/notifications --response-decoders --request-types",
     "generate:api-admin": "rimraf generated/api-admin && shx mkdir -p generated/api-admin && gen-api-models --api-spec https://raw.githubusercontent.com/pagopa/io-functions-admin/master/openapi/index.yaml --no-strict --out-dir generated/api-admin --request-types --response-decoders --client",
+    "generate:payment-updater": "rimraf generated/payment-updater && shx mkdir -p generated/payment-updater && gen-api-models --api-spec ./openapi/payment-updater.yaml --no-strict --out-dir ./generated/payment-updater --request-types --response-decoders --client",
     "openapi:bundle": "bundle-api-spec -i openapi/index.yaml.template -o openapi/index.yaml -V $npm_package_version",
     "openapi:validate": "oval validate -p openapi/index.yaml",
     "dist:modules": "modclean -r -n default:safe && yarn install --production",
@@ -80,7 +81,8 @@
     "node-fetch": "^2.6.7",
     "nodemailer": "^6.4.16",
     "nodemailer-sendgrid": "^1.0.3",
-    "semver": "^7.3.7"
+    "semver": "^7.3.7",
+    "ts-pattern": "^4.0.3"
   },
   "resolutions": {
     "handlebars": "~4.5.3",

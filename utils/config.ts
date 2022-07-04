@@ -45,6 +45,9 @@ const SubscriptionFeedStorageAccount = t.interface({
 export type IConfig = t.TypeOf<typeof IConfig>;
 export const IConfig = t.intersection([
   t.interface({
+    APIM_BASE_URL: NonEmptyString,
+    APIM_SUBSCRIPTION_KEY: NonEmptyString,
+
     APPINSIGHTS_INSTRUMENTATIONKEY: NonEmptyString,
 
     COSMOSDB_KEY: NonEmptyString,

@@ -14,6 +14,7 @@ import {
   ResponseErrorNotFound,
   ResponseErrorTooManyRequests
 } from "@pagopa/ts-commons/lib/responses";
+import { errorsToReadableMessages } from "@pagopa/ts-commons/lib/reporters";
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export const unhandledResponseStatus = (status: number) =>
@@ -71,3 +72,6 @@ export const toErrorServerResponse = <S extends number, T>(
       return unhandledResponseStatus(response.status);
   }
 };
+
+export const errorsToError = (errors: Errors): Error =>
+  new Error(errorsToReadableMessages(errors).join(" / "));
