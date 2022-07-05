@@ -20,10 +20,12 @@ import {
   ActivationModel,
   ACTIVATION_COLLECTION_NAME
 } from "@pagopa/io-functions-commons/dist/src/models/activation";
+import { Second } from "@pagopa/ts-commons/lib/units";
 import { initTelemetryClient } from "../utils/appinsights";
 import { getConfigOrThrow } from "../utils/config";
 import { cosmosdbInstance } from "../utils/cosmosdb";
 
+import { canSendMessageOnActivationWithGrace } from "../utils/services";
 import { GetLimitedProfile } from "./handler";
 
 const config = getConfigOrThrow();
@@ -64,6 +66,9 @@ app.get(
     config.FF_DISABLE_INCOMPLETE_SERVICES,
     config.FF_INCOMPLETE_SERVICE_WHITELIST,
     servicesPreferencesModel,
+    canSendMessageOnActivationWithGrace(
+      config.PENDING_ACTIVATION_GRACE_PERIOD_SECONDS as Second
+    ),
     telemetryClient
   )
 );

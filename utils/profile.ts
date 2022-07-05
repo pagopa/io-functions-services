@@ -40,12 +40,12 @@ import {
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import { pipe, identity } from "fp-ts/lib/function";
 import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
-import { ActivationStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ActivationStatus";
 import { FiscalCodePayload } from "../generated/definitions/FiscalCodePayload";
 import { canWriteMessage } from "../CreateMessage/handler";
 import { SpecialServiceCategoryEnum } from "../generated/api-admin/SpecialServiceCategory";
 import { initTelemetryClient } from "./appinsights";
 import { toHash } from "./crypto";
+import { canSendMessageOnActivationWithGrace } from "./services";
 
 // Map an error when an unexpected value is passed
 interface IUnexpectedValue {
@@ -173,6 +173,9 @@ export const getLimitedProfileTask = (
   incompleteServiceWhitelist: ReadonlyArray<ServiceId>,
   servicesPreferencesModel: ServicesPreferencesModel,
   serviceActivationModel: ActivationModel,
+  canSendMessageOnActivation: ReturnType<
+    typeof canSendMessageOnActivationWithGrace
+  >,
   telemetryClient: ReturnType<typeof initTelemetryClient>
   // eslint-disable-next-line max-params
 ): Task<IGetLimitedProfileResponses> =>
@@ -304,13 +307,8 @@ export const getLimitedProfileTask = (
                 userAttributes.service.serviceId,
                 profile.fiscalCode
               ]),
-              TE.map(maybeActivation => ({
-                isAllowed:
-                  O.isSome(maybeActivation) &&
-                  // TODO: Add the logic for PENDING Activation status
-                  maybeActivation.value.status === ActivationStatusEnum.ACTIVE,
-                profile
-              })),
+              TE.map(canSendMessageOnActivation),
+              TE.map(isAllowed => ({ isAllowed, profile })),
               TE.mapLeft(_ =>
                 ResponseErrorInternal(
                   "Error while retrieving the user service activation"

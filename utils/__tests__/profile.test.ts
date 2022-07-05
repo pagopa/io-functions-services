@@ -46,12 +46,11 @@ import { initTelemetryClient } from "../appinsights";
 import { ServiceId } from "../../generated/definitions/ServiceId";
 import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
 import { ActivationStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ActivationStatus";
-import {
-  SpecialServiceCategory,
-  SpecialServiceCategoryEnum
-} from "../../generated/api-admin/SpecialServiceCategory";
+import { SpecialServiceCategoryEnum } from "../../generated/api-admin/SpecialServiceCategory";
 import { ServiceScopeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceScope";
 import { toCosmosErrorResponse } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
+import { canSendMessageOnActivationWithGrace } from "../services";
+import { Second } from "@pagopa/ts-commons/lib/units";
 
 describe("isSenderAllowed", () => {
   it("should return false if the service is not allowed to send notifications to the user", async () => {
@@ -163,6 +162,9 @@ const withBlacklist = (
 });
 describe("getLimitedProfileTask", () => {
   const mockExpressResponse = MockResponse();
+  const canSendMessageOnActivation = canSendMessageOnActivationWithGrace(
+    1 as Second
+  );
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -196,6 +198,7 @@ describe("getLimitedProfileTask", () => {
         [],
         mockServicePreferenceModel,
         mockServiceActivationModel,
+        canSendMessageOnActivation,
         mockTelemetryClient
       )();
       result.apply(mockExpressResponse);
@@ -235,6 +238,7 @@ describe("getLimitedProfileTask", () => {
         [],
         mockServicePreferenceModel,
         mockServiceActivationModel,
+        canSendMessageOnActivation,
         mockTelemetryClient
       )();
 
@@ -280,6 +284,7 @@ describe("getLimitedProfileTask", () => {
         [],
         mockServicePreferenceModel,
         mockServiceActivationModel,
+        canSendMessageOnActivation,
         mockTelemetryClient
       )();
 
@@ -329,6 +334,7 @@ describe("getLimitedProfileTask", () => {
         [],
         mockServicePreferenceModel,
         mockServiceActivationModel,
+        canSendMessageOnActivation,
         mockTelemetryClient
       )();
       result.apply(mockExpressResponse);
@@ -370,6 +376,7 @@ describe("getLimitedProfileTask", () => {
       [],
       mockServicePreferenceModel,
       mockServiceActivationModel,
+      canSendMessageOnActivation,
       mockTelemetryClient
     )();
     result.apply(mockExpressResponse);
