@@ -24,7 +24,8 @@ import {
   aRetrievedServicePreference,
   autoProfileServicePreferencesSettings,
   legacyProfileServicePreferencesSettings,
-  manualProfileServicePreferencesSettings
+  manualProfileServicePreferencesSettings,
+  anActivation
 } from "../../__mocks__/mocks";
 
 import MockResponse from "../../__mocks__/response";
@@ -39,11 +40,18 @@ import { some, none } from "fp-ts/lib/Option";
 import { pipe } from "fp-ts/lib/function";
 import * as E from "fp-ts/lib/Either";
 import * as TE from "fp-ts/lib/TaskEither";
-import * as O from "fp-ts/lib/Option";
 
 import { UserGroup } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
 import { initTelemetryClient } from "../appinsights";
 import { ServiceId } from "../../generated/definitions/ServiceId";
+import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
+import { ActivationStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ActivationStatus";
+import {
+  SpecialServiceCategory,
+  SpecialServiceCategoryEnum
+} from "../../generated/api-admin/SpecialServiceCategory";
+import { ServiceScopeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceScope";
+import { toCosmosErrorResponse } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
 
 describe("isSenderAllowed", () => {
   it("should return false if the service is not allowed to send notifications to the user", async () => {
@@ -131,9 +139,13 @@ const mockProfileModel = ({
 } as unknown) as ProfileModel;
 
 const mockServicePreferenceFind = jest.fn();
+const mockServiceActivationFind = jest.fn();
 const mockServicePreferenceModel = ({
   find: mockServicePreferenceFind
 } as unknown) as ServicesPreferencesModel;
+const mockServiceActivationModel = ({
+  findLastVersionByModelId: mockServiceActivationFind
+} as unknown) as ActivationModel;
 
 // utility that adds a given set of serviceIds to the profile's inbox blacklist
 const withBlacklist = (
@@ -183,9 +195,14 @@ describe("getLimitedProfileTask", () => {
         false,
         [],
         mockServicePreferenceModel,
+        mockServiceActivationModel,
         mockTelemetryClient
       )();
       result.apply(mockExpressResponse);
+
+      expect(
+        mockServiceActivationModel.findLastVersionByModelId
+      ).not.toHaveBeenCalled();
 
       expect(result.kind).toBe("IResponseSuccessJson");
 
@@ -217,6 +234,7 @@ describe("getLimitedProfileTask", () => {
         true,
         [],
         mockServicePreferenceModel,
+        mockServiceActivationModel,
         mockTelemetryClient
       )();
 
@@ -226,6 +244,9 @@ describe("getLimitedProfileTask", () => {
       expect(mockProfileModel.findLastVersionByModelId).toBeCalledWith([
         aFiscalCode
       ]);
+      expect(
+        mockServiceActivationModel.findLastVersionByModelId
+      ).not.toHaveBeenCalled();
       expect(response.kind).toBe(responseKind);
     }
   );
@@ -258,14 +279,104 @@ describe("getLimitedProfileTask", () => {
         true,
         [],
         mockServicePreferenceModel,
+        mockServiceActivationModel,
         mockTelemetryClient
       )();
 
       expect(mockProfileModel.findLastVersionByModelId).not.toHaveBeenCalled();
+      expect(
+        mockServiceActivationModel.findLastVersionByModelId
+      ).not.toHaveBeenCalled();
 
       expect(response.kind).toBe(
         "IResponseErrorForbiddenNotAuthorizedForRecipient"
       );
     }
   );
+
+  it.each`
+    preferencesConfiguration                         | allowOrNot     | mode        | maybeProfile                                    | maybeActivation                                                     | expected
+    ${"the SPECIAL service has ACTIVE activation"}   | ${"allow"}     | ${"MANUAL"} | ${some(aRetrievedProfileWithManualPreferences)} | ${some(anActivation)}                                               | ${true}
+    ${"the SPECIAL service has ACTIVE activation"}   | ${"allow"}     | ${"AUTO"}   | ${some(aRetrievedProfileWithAutoPreferences)}   | ${some(anActivation)}                                               | ${true}
+    ${"the SPECIAL service has INACTIVE activation"} | ${"not allow"} | ${"MANUAL"} | ${some(aRetrievedProfileWithManualPreferences)} | ${some({ ...anActivation, status: ActivationStatusEnum.INACTIVE })} | ${false}
+    ${"the SPECIAL service has INACTIVE activation"} | ${"not allow"} | ${"AUTO"}   | ${some(aRetrievedProfileWithAutoPreferences)}   | ${some({ ...anActivation, status: ActivationStatusEnum.INACTIVE })} | ${false}
+    ${"the SPECIAL service has not an activation"}   | ${"not allow"} | ${"MANUAL"} | ${some(aRetrievedProfileWithManualPreferences)} | ${none}                                                             | ${false}
+    ${"the SPECIAL service has not an activation"}   | ${"not allow"} | ${"AUTO"}   | ${some(aRetrievedProfileWithAutoPreferences)}   | ${none}                                                             | ${false}
+  `(
+    "should $allowOrNot a sender if the user uses $mode subscription mode and $preferencesConfiguration",
+    async ({ maybeProfile, maybeActivation, expected }) => {
+      mockProfileFindLast.mockImplementationOnce(() => TE.of(maybeProfile));
+      mockServiceActivationFind.mockImplementationOnce(() =>
+        TE.of(maybeActivation)
+      );
+
+      const result = await getLimitedProfileTask(
+        anAzureApiAuthorization,
+        {
+          ...anAzureUserAttributes,
+          service: {
+            ...anAzureUserAttributes.service,
+            serviceMetadata: {
+              ...anAzureUserAttributes.service.serviceMetadata,
+              scope: ServiceScopeEnum.NATIONAL,
+              category: SpecialServiceCategoryEnum.SPECIAL
+            }
+          }
+        },
+        aFiscalCode,
+        mockProfileModel,
+        false,
+        [],
+        mockServicePreferenceModel,
+        mockServiceActivationModel,
+        mockTelemetryClient
+      )();
+      result.apply(mockExpressResponse);
+
+      expect(mockServicePreferenceModel.find).not.toHaveBeenCalled();
+
+      expect(result.kind).toBe("IResponseSuccessJson");
+
+      expect(mockExpressResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({ sender_allowed: expected })
+      );
+    }
+  );
+
+  it("should responde with an ResponseErrorInternal if an error occours accessing the activation", async () => {
+    mockProfileFindLast.mockImplementationOnce(() =>
+      TE.of(some(aRetrievedProfileWithManualPreferences))
+    );
+    mockServiceActivationFind.mockImplementationOnce(() =>
+      TE.left(toCosmosErrorResponse(new Error("Cosmos error")))
+    );
+
+    const result = await getLimitedProfileTask(
+      anAzureApiAuthorization,
+      {
+        ...anAzureUserAttributes,
+        service: {
+          ...anAzureUserAttributes.service,
+          serviceMetadata: {
+            ...anAzureUserAttributes.service.serviceMetadata,
+            scope: ServiceScopeEnum.NATIONAL,
+            category: SpecialServiceCategoryEnum.SPECIAL
+          }
+        }
+      },
+      aFiscalCode,
+      mockProfileModel,
+      false,
+      [],
+      mockServicePreferenceModel,
+      mockServiceActivationModel,
+      mockTelemetryClient
+    )();
+    result.apply(mockExpressResponse);
+
+    expect(mockServicePreferenceModel.find).not.toHaveBeenCalled();
+    expect(mockServiceActivationFind).toBeCalledTimes(1);
+
+    expect(result.kind).toBe("IResponseErrorInternal");
+  });
 });

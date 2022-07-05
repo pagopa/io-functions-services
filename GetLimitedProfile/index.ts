@@ -16,6 +16,10 @@ import { setAppContext } from "@pagopa/io-functions-commons/dist/src/utils/middl
 import cors = require("cors");
 import express = require("express");
 import createAzureFunctionHandler from "@pagopa/express-azure-functions/dist/src/createAzureFunctionsHandler";
+import {
+  ActivationModel,
+  ACTIVATION_COLLECTION_NAME
+} from "@pagopa/io-functions-commons/dist/src/models/activation";
 import { initTelemetryClient } from "../utils/appinsights";
 import { getConfigOrThrow } from "../utils/config";
 import { cosmosdbInstance } from "../utils/cosmosdb";
@@ -42,6 +46,10 @@ const profileModel = new ProfileModel(
   cosmosdbInstance.container(PROFILE_COLLECTION_NAME)
 );
 
+const serviceActivationModel = new ActivationModel(
+  cosmosdbInstance.container(ACTIVATION_COLLECTION_NAME)
+);
+
 const servicesPreferencesModel = new ServicesPreferencesModel(
   cosmosdbInstance.container(SERVICE_PREFERENCES_COLLECTION_NAME),
   SERVICE_PREFERENCES_COLLECTION_NAME
@@ -52,6 +60,7 @@ app.get(
   GetLimitedProfile(
     serviceModel,
     profileModel,
+    serviceActivationModel,
     config.FF_DISABLE_INCOMPLETE_SERVICES,
     config.FF_INCOMPLETE_SERVICE_WHITELIST,
     servicesPreferencesModel,
