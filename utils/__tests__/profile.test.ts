@@ -51,6 +51,7 @@ import { ServiceScopeEnum } from "@pagopa/io-functions-commons/dist/generated/de
 import { toCosmosErrorResponse } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
 import { canSendMessageOnActivationWithGrace } from "../services";
 import { Second } from "@pagopa/ts-commons/lib/units";
+import { subSeconds } from "date-fns";
 
 describe("isSenderAllowed", () => {
   it("should return false if the service is not allowed to send notifications to the user", async () => {
@@ -162,8 +163,9 @@ const withBlacklist = (
 });
 describe("getLimitedProfileTask", () => {
   const mockExpressResponse = MockResponse();
+  const mockGracePeriod = 100 as Second;
   const canSendMessageOnActivation = canSendMessageOnActivationWithGrace(
-    1 as Second
+    mockGracePeriod
   );
 
   beforeEach(() => {
@@ -300,13 +302,15 @@ describe("getLimitedProfileTask", () => {
   );
 
   it.each`
-    preferencesConfiguration                         | allowOrNot     | mode        | maybeProfile                                    | maybeActivation                                                     | expected
-    ${"the SPECIAL service has ACTIVE activation"}   | ${"allow"}     | ${"MANUAL"} | ${some(aRetrievedProfileWithManualPreferences)} | ${some(anActivation)}                                               | ${true}
-    ${"the SPECIAL service has ACTIVE activation"}   | ${"allow"}     | ${"AUTO"}   | ${some(aRetrievedProfileWithAutoPreferences)}   | ${some(anActivation)}                                               | ${true}
-    ${"the SPECIAL service has INACTIVE activation"} | ${"not allow"} | ${"MANUAL"} | ${some(aRetrievedProfileWithManualPreferences)} | ${some({ ...anActivation, status: ActivationStatusEnum.INACTIVE })} | ${false}
-    ${"the SPECIAL service has INACTIVE activation"} | ${"not allow"} | ${"AUTO"}   | ${some(aRetrievedProfileWithAutoPreferences)}   | ${some({ ...anActivation, status: ActivationStatusEnum.INACTIVE })} | ${false}
-    ${"the SPECIAL service has not an activation"}   | ${"not allow"} | ${"MANUAL"} | ${some(aRetrievedProfileWithManualPreferences)} | ${none}                                                             | ${false}
-    ${"the SPECIAL service has not an activation"}   | ${"not allow"} | ${"AUTO"}   | ${some(aRetrievedProfileWithAutoPreferences)}   | ${none}                                                             | ${false}
+    preferencesConfiguration                                             | allowOrNot     | mode        | maybeProfile                                    | maybeActivation                                                                                                  | expected
+    ${"the SPECIAL service has ACTIVE activation"}                       | ${"allow"}     | ${"MANUAL"} | ${some(aRetrievedProfileWithManualPreferences)} | ${some(anActivation)}                                                                                            | ${true}
+    ${"the SPECIAL service has ACTIVE activation"}                       | ${"allow"}     | ${"AUTO"}   | ${some(aRetrievedProfileWithAutoPreferences)}   | ${some(anActivation)}                                                                                            | ${true}
+    ${"the SPECIAL service has INACTIVE activation"}                     | ${"not allow"} | ${"MANUAL"} | ${some(aRetrievedProfileWithManualPreferences)} | ${some({ ...anActivation, status: ActivationStatusEnum.INACTIVE })}                                              | ${false}
+    ${"the SPECIAL service has INACTIVE activation"}                     | ${"not allow"} | ${"AUTO"}   | ${some(aRetrievedProfileWithAutoPreferences)}   | ${some({ ...anActivation, status: ActivationStatusEnum.INACTIVE })}                                              | ${false}
+    ${"the SPECIAL service has PENDING activation in grace period"}      | ${"allow"}     | ${"AUTO"}   | ${some(aRetrievedProfileWithAutoPreferences)}   | ${some({ ...anActivation, status: ActivationStatusEnum.PENDING, _ts: Date.now() })}                              | ${true}
+    ${"the SPECIAL service has PENDING activation outside grace period"} | ${"not allow"} | ${"AUTO"}   | ${some(aRetrievedProfileWithAutoPreferences)}   | ${some({ ...anActivation, status: ActivationStatusEnum.PENDING, _ts: subSeconds(Date.now(), mockGracePeriod) })} | ${false}
+    ${"the SPECIAL service has not an activation"}                       | ${"not allow"} | ${"MANUAL"} | ${some(aRetrievedProfileWithManualPreferences)} | ${none}                                                                                                          | ${false}
+    ${"the SPECIAL service has not an activation"}                       | ${"not allow"} | ${"AUTO"}   | ${some(aRetrievedProfileWithAutoPreferences)}   | ${none}                                                                                                          | ${false}
   `(
     "should $allowOrNot a sender if the user uses $mode subscription mode and $preferencesConfiguration",
     async ({ maybeProfile, maybeActivation, expected }) => {
