@@ -35,6 +35,14 @@ export const authorizedForSpecialServicesTask = (
     TE.fromOption(() => ResponseErrorForbiddenNotAuthorized)
   );
 
+/**
+ * Configure a function with grace period that
+ * returns true if:
+ * - the Service Activation is present and ACTIVE
+ * - the Service Activation is present and PENDING within the grace period
+ *
+ * @param pendingActivationGracePeriod PENDING grace period in seconds
+ */
 export const canSendMessageOnActivationWithGrace = (
   pendingActivationGracePeriod: Second
 ) => (maybeActivation: O.Option<RetrievedActivation>): boolean =>
