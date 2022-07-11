@@ -6,13 +6,12 @@ info:
 host: 'localhost:9090'
 basePath: /api/v1/payment
 schemes:
-  - http
+  - https
 paths:
   '/check/messages/{messageId}':
     get:
       produces:
         - application/json
-        - application/problem+json
       parameters:
         - description: payment's messageId
           in: path
@@ -23,7 +22,7 @@ paths:
         '200':
           description: check if the message has been paid
           schema:
-            $ref: '#/definitions/PaymentStatus'
+            $ref: '#/definitions/Payment'
         '400':
           description: Bad Request
           schema:
@@ -42,13 +41,85 @@ paths:
         - API  Payment
       operationId: isMessagePaid
       summary: Check payment by messageId
-  
 definitions:
-  PaymentStatus:
-    type: object
+  Message:
     properties:
-      isPaid:
+      content_paymentData_dueDate:
+        format: date
+        type: string
+      content_paymentData_invalidAfterDueDate:
         type: boolean
+      content_paymentData_noticeNumber:
+        type: string
+      content_paymentData_payeeFiscalCode:
+        type: string
+      content_subject:
+        type: string
+      content_type:
+        enum:
+          - GENERIC
+          - PAYMENT
+          - EU_COVID_CERT
+          - LEGAL
+        type: string
+      createdAt:
+        type: number
+      double content_paymentData_amount:
+        type: number
+      featureLevelType:
+        enum:
+          - STANDARD
+          - ADVANCED
+        type: string
+      fiscal_code:
+        type: string
+      id:
+        type: string
+      isPending:
+        type: boolean
+      senderServiceId:
+        type: string
+      senderUserId:
+        type: string
+      timeToLiveSeconds:
+        type: integer
+      timestamp:
+        type: number
+    type: object
+  Payment:
+    properties:
+      dateReminder:
+        items:
+          format: date-time
+          type: string
+        type: array
+      insertionDate:
+        format: date-time
+        type: string
+      lastDateReminder:
+        format: date-time
+        type: string
+      maxPaidMessageSend:
+        type: integer
+      maxReadMessageSend:
+        type: integer
+      message:
+        items:
+          $ref: '#/definitions/Message'
+        type: object
+      paidDate:
+        format: date-time
+        type: string
+      paidFlag:
+        type: boolean
+      readDate:
+        format: date-time
+        type: string
+      readFlag:
+        type: boolean
+      rptId:
+        type: string
+    type: object
   Problem:
     properties:
       error:
@@ -60,6 +131,7 @@ definitions:
         description: >
           An absolute URI that identifies the specific occurrence of the
           problem.
+
           It may or may not yield further information if dereferenced.
         type: string
       status:
@@ -73,7 +145,7 @@ definitions:
     type: object
 securityDefinitions:
   SubscriptionKey:
-    description: The API key to access this function app.
+    description: he API key obtained through the developer portal.
     in: header
     name: Ocp-Apim-Subscription-Key
     type: apiKey

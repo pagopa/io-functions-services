@@ -93,7 +93,7 @@ import { FeatureLevelTypeEnum } from "../generated/definitions/FeatureLevelType"
 
 import { PaymentUpdaterClient } from "../clients/payment-updater";
 import { errorsToError } from "../utils/responses";
-import { PaymentStatus as PaymentStatusFromUpdater } from "../generated/payment-updater/PaymentStatus";
+import { Payment } from "../generated/payment-updater/Payment";
 import { PaymentStatusEnum } from "../generated/definitions/PaymentStatus";
 import { MessageReadStatusAuth } from "./userPreferenceChecker/messageReadStatusAuth";
 
@@ -170,10 +170,8 @@ export const getReadStatusForService = (
     O.getOrElse(() => ReadStatusEnum.UNREAD)
   );
 
-const mapPaymentStatus = ({
-  isPaid
-}: PaymentStatusFromUpdater): PaymentStatus =>
-  isPaid ? PaymentStatusEnum.PAID : PaymentStatusEnum.NOT_PAID;
+const mapPaymentStatus = ({ paidFlag }: Payment): PaymentStatus =>
+  paidFlag ? PaymentStatusEnum.PAID : PaymentStatusEnum.NOT_PAID;
 
 const WithPayment = t.interface({
   message: t.interface({

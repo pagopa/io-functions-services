@@ -257,12 +257,12 @@ describe("GetMessageHandler", () => {
     };
   }
 
-  const getPaymentUpdaterClientMock = (isPaid: boolean = false) => ({
+  const getPaymentUpdaterClientMock = (paidFlag: boolean = false) => ({
     isMessagePaid: jest.fn().mockImplementation(() =>
       TE.right({
         status: 200,
         value: {
-          isPaid
+          paidFlag
         },
         headers: {}
       })()
