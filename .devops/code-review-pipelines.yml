@@ -113,6 +113,8 @@ stages:
             cd __integrations__
             yarn install --frozen-lockfile
             sleep 30s
+            docker logs integrations___function_1
+            sleep 5s
             docker exec integrations___testagent_1 yarn test
             #           ^^^ FIXME: reference container using a less arbitrary name
           displayName: 'Execute tests'
