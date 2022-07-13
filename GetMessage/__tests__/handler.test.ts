@@ -257,19 +257,19 @@ describe("GetMessageHandler", () => {
     };
   }
 
-  const getPaymentUpdaterClientMock = (paidFlag: boolean = false) => ({
-    isMessagePaid: jest.fn().mockImplementation(() =>
+  const getPaymentUpdaterClientMock = (paid: boolean = false) => ({
+    getMessagePayment: jest.fn().mockImplementation(() =>
       TE.right({
         status: 200,
         value: {
-          paidFlag
+          paid
         },
         headers: {}
       })()
     )
   });
   const getBrokenPaymentUpdaterClientMock = (status: number) => ({
-    isMessagePaid: jest.fn().mockImplementation(() =>
+    getMessagePayment: jest.fn().mockImplementation(() =>
       TE.right({
         status,
         value: {

@@ -93,7 +93,7 @@ import { FeatureLevelTypeEnum } from "../generated/definitions/FeatureLevelType"
 
 import { PaymentUpdaterClient } from "../clients/payment-updater";
 import { errorsToError } from "../utils/responses";
-import { Payment } from "../generated/payment-updater/Payment";
+import { ApiPaymentMessage } from "../generated/payment-updater/ApiPaymentMessage";
 import { PaymentStatusEnum } from "../generated/definitions/PaymentStatus";
 import { MessageReadStatusAuth } from "./userPreferenceChecker/messageReadStatusAuth";
 
@@ -170,8 +170,8 @@ export const getReadStatusForService = (
     O.getOrElse(() => ReadStatusEnum.UNREAD)
   );
 
-const mapPaymentStatus = ({ paidFlag }: Payment): PaymentStatus =>
-  paidFlag ? PaymentStatusEnum.PAID : PaymentStatusEnum.NOT_PAID;
+const mapPaymentStatus = ({ paid }: ApiPaymentMessage): PaymentStatus =>
+  paid ? PaymentStatusEnum.PAID : PaymentStatusEnum.NOT_PAID;
 
 const WithPayment = t.interface({
   message: t.interface({
@@ -207,7 +207,7 @@ const decorateWithPaymentStatus = <
         pipe(
           TE.tryCatch(
             () =>
-              paymentUpdater.isMessagePaid({
+              paymentUpdater.getMessagePayment({
                 messageId: messageWithContent.message.id
               }),
             E.toError
@@ -216,8 +216,10 @@ const decorateWithPaymentStatus = <
           TE.chain(TE.fromEither),
           TE.chain(response =>
             match(response)
-              .with({ status: 200 }, success => TE.right(success.value))
-              .with({ status: 404 }, _notFound => TE.right({ isPaid: false }))
+              .with({ status: 200 }, success =>
+                TE.right({ paid: success.value.paid })
+              )
+              .with({ status: 404 }, _notFound => TE.right({ paid: false }))
               .otherwise(error =>
                 TE.left(
                   new Error(
