@@ -382,7 +382,7 @@ describe("getLimitedProfileTask", () => {
     }
   );
 
-  it("should responde with an ResponseErrorInternal if an error occours accessing the activation", async () => {
+  it("should responde with an ResponseErrorInternal if an error occurs accessing the activation", async () => {
     mockProfileFindLast.mockImplementationOnce(() =>
       TE.of(some(aRetrievedProfileWithManualPreferences))
     );
