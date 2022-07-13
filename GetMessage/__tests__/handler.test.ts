@@ -1148,7 +1148,7 @@ describe("GetMessageHandler", () => {
     }
   });
 
-  it("should retrun an internal error if user is allowed and message is of type ADVANCED and payment updater is broken", async () => {
+  it("should return an internal error if user is allowed and message is of type ADVANCED and payment updater is broken", async () => {
     const mockMessageModel = {
       findMessageForRecipient: jest.fn(() =>
         TE.of(some(aRetrievedMessageWithAdvancedFeatures))
