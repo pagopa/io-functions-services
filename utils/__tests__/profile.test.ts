@@ -27,6 +27,7 @@ import {
   manualProfileServicePreferencesSettings,
   anActivation
 } from "../../__mocks__/mocks";
+import * as O from "fp-ts/Option";
 
 import MockResponse from "../../__mocks__/response";
 
@@ -34,7 +35,11 @@ const mockTelemetryClient = ({
   trackEvent: jest.fn()
 } as unknown) as ReturnType<typeof initTelemetryClient>;
 
-import { ServicesPreferencesModel } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
+import {
+  makeServicesPreferencesDocumentId,
+  RetrievedServicePreference,
+  ServicesPreferencesModel
+} from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 
 import { some, none } from "fp-ts/lib/Option";
 import { pipe } from "fp-ts/lib/function";
@@ -52,6 +57,7 @@ import { toCosmosErrorResponse } from "@pagopa/io-functions-commons/dist/src/uti
 import { canSendMessageOnActivationWithGrace } from "../services";
 import { Second } from "@pagopa/ts-commons/lib/units";
 import { subSeconds } from "date-fns";
+import { NonNegativeInteger } from "@pagopa/ts-commons/lib/numbers";
 
 describe("isSenderAllowed", () => {
   it("should return false if the service is not allowed to send notifications to the user", async () => {
@@ -173,20 +179,30 @@ describe("getLimitedProfileTask", () => {
   });
 
   it.each`
-    preferencesConfiguration                           | allowOrNot     | mode        | maybeProfile                                                                                              | maybePreference                                                    | expected
-    ${"the inbox is enabled in the preferences"}       | ${"allow"}     | ${"MANUAL"} | ${some(aRetrievedProfileWithManualPreferences)}                                                           | ${some({ ...aRetrievedServicePreference, isInboxEnabled: true })}  | ${true}
-    ${"the inbox is enabled in the preferences"}       | ${"allow"}     | ${"AUTO"}   | ${some(aRetrievedProfileWithAutoPreferences)}                                                             | ${some({ ...aRetrievedServicePreference, isInboxEnabled: true })}  | ${true}
-    ${"the inbox is NOT enabled in the preferences"}   | ${"not allow"} | ${"MANUAL"} | ${some(aRetrievedProfileWithManualPreferences)}                                                           | ${some({ ...aRetrievedServicePreference, isInboxEnabled: false })} | ${false}
-    ${"the inbox is NOT enabled in the preferences"}   | ${"not allow"} | ${"AUTO"}   | ${some(aRetrievedProfileWithAutoPreferences)}                                                             | ${some({ ...aRetrievedServicePreference, isInboxEnabled: false })} | ${false}
-    ${"there are not preferences set for the service"} | ${"not allow"} | ${"MANUAL"} | ${some(aRetrievedProfileWithManualPreferences)}                                                           | ${none}                                                            | ${false}
-    ${"there are not preferences set for the service"} | ${"allow"}     | ${"AUTO"}   | ${some(aRetrievedProfileWithAutoPreferences)}                                                             | ${none}                                                            | ${true}
-    ${"the service is NOT in the blacklist"}           | ${"allow"}     | ${"LEGACY"} | ${some(withBlacklist(aRetrievedProfileWithLegacyPreferences, ["any-service-id" as ServiceId]))}           | ${none}                                                            | ${true}
-    ${"has empty blacklist"}                           | ${"allow"}     | ${"LEGACY"} | ${some(withBlacklist(aRetrievedProfileWithLegacyPreferences, []))}                                        | ${none}                                                            | ${true}
-    ${"the service is in the blacklist"}               | ${"not allow"} | ${"LEGACY"} | ${some(withBlacklist(aRetrievedProfileWithLegacyPreferences, [anAzureUserAttributes.service.serviceId]))} | ${none}                                                            | ${false}
+    preferencesConfiguration                           | allowOrNot     | mode        | profile                                                                                             | maybePreference                                                    | expected
+    ${"the inbox is enabled in the preferences"}       | ${"allow"}     | ${"MANUAL"} | ${aRetrievedProfileWithManualPreferences}                                                           | ${some({ ...aRetrievedServicePreference, isInboxEnabled: true })}  | ${true}
+    ${"the inbox is enabled in the preferences"}       | ${"allow"}     | ${"AUTO"}   | ${aRetrievedProfileWithAutoPreferences}                                                             | ${some({ ...aRetrievedServicePreference, isInboxEnabled: true })}  | ${true}
+    ${"the inbox is NOT enabled in the preferences"}   | ${"not allow"} | ${"MANUAL"} | ${aRetrievedProfileWithManualPreferences}                                                           | ${some({ ...aRetrievedServicePreference, isInboxEnabled: false })} | ${false}
+    ${"the inbox is NOT enabled in the preferences"}   | ${"not allow"} | ${"AUTO"}   | ${aRetrievedProfileWithAutoPreferences}                                                             | ${some({ ...aRetrievedServicePreference, isInboxEnabled: false })} | ${false}
+    ${"there are not preferences set for the service"} | ${"not allow"} | ${"MANUAL"} | ${aRetrievedProfileWithManualPreferences}                                                           | ${none}                                                            | ${false}
+    ${"there are not preferences set for the service"} | ${"allow"}     | ${"AUTO"}   | ${aRetrievedProfileWithAutoPreferences}                                                             | ${none}                                                            | ${true}
+    ${"the service is NOT in the blacklist"}           | ${"allow"}     | ${"LEGACY"} | ${withBlacklist(aRetrievedProfileWithLegacyPreferences, ["any-service-id" as ServiceId])}           | ${none}                                                            | ${true}
+    ${"has empty blacklist"}                           | ${"allow"}     | ${"LEGACY"} | ${withBlacklist(aRetrievedProfileWithLegacyPreferences, [])}                                        | ${none}                                                            | ${true}
+    ${"the service is in the blacklist"}               | ${"not allow"} | ${"LEGACY"} | ${withBlacklist(aRetrievedProfileWithLegacyPreferences, [anAzureUserAttributes.service.serviceId])} | ${none}                                                            | ${false}
   `(
     "should $allowOrNot a sender if the user uses $mode subscription mode and $preferencesConfiguration",
-    async ({ maybeProfile, maybePreference, expected }) => {
-      mockProfileFindLast.mockImplementationOnce(() => TE.of(maybeProfile));
+    async ({
+      mode,
+      profile,
+      maybePreference,
+      expected
+    }: {
+      mode: "AUTO" | "MANUAL" | "LEGACY";
+      profile: RetrievedProfile;
+      maybePreference: O.Option<RetrievedServicePreference>;
+      expected: any;
+    }) => {
+      mockProfileFindLast.mockImplementationOnce(() => TE.of(some(profile)));
       mockServicePreferenceFind.mockImplementationOnce(() =>
         TE.of(maybePreference)
       );
@@ -208,6 +224,19 @@ describe("getLimitedProfileTask", () => {
       expect(
         mockServiceActivationModel.findLastVersionByModelId
       ).not.toHaveBeenCalled();
+      if (mode !== "LEGACY") {
+        expect(mockServicePreferenceModel.find).toBeCalledWith([
+          makeServicesPreferencesDocumentId(
+            aFiscalCode,
+            anAzureUserAttributes.service.serviceId,
+            profile.servicePreferencesSettings.version as NonNegativeInteger
+          ),
+          aFiscalCode
+        ]);
+      } else {
+        // LEGACY mode will use blacklist in profile instead of ServicePreference
+        expect(mockServicePreferenceModel.find).not.toBeCalled();
+      }
 
       expect(result.kind).toBe("IResponseSuccessJson");
 
