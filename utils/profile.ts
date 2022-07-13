@@ -244,12 +244,11 @@ export const getLimitedProfileTask = (
     ),
     TE.chain(profile =>
       pipe(
-        O.fromNullable(userAttributes.service.serviceMetadata),
-        O.map(serviceMetadata => serviceMetadata.category),
+        TE.of(void 0),
         TE.fromPredicate(
-          category =>
-            O.isSome(category) &&
-            category.value === SpecialServiceCategoryEnum.SPECIAL,
+          () =>
+            userAttributes.service.serviceMetadata?.category ===
+            SpecialServiceCategoryEnum.SPECIAL,
           identity
         ),
         TE.fold(
