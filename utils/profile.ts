@@ -45,7 +45,7 @@ import { canWriteMessage } from "../CreateMessage/handler";
 import { SpecialServiceCategoryEnum } from "../generated/api-admin/SpecialServiceCategory";
 import { initTelemetryClient } from "./appinsights";
 import { toHash } from "./crypto";
-import { canSendMessageOnActivationWithGrace } from "./services";
+import { CanSendMessageOnActivation } from "./services";
 
 // Map an error when an unexpected value is passed
 interface IUnexpectedValue {
@@ -173,9 +173,7 @@ export const getLimitedProfileTask = (
   incompleteServiceWhitelist: ReadonlyArray<ServiceId>,
   servicesPreferencesModel: ServicesPreferencesModel,
   serviceActivationModel: ActivationModel,
-  canSendMessageOnActivation: ReturnType<
-    typeof canSendMessageOnActivationWithGrace
-  >,
+  canSendMessageOnActivation: CanSendMessageOnActivation,
   telemetryClient: ReturnType<typeof initTelemetryClient>
   // eslint-disable-next-line max-params
 ): Task<IGetLimitedProfileResponses> =>

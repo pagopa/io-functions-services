@@ -35,6 +35,10 @@ export const authorizedForSpecialServicesTask = (
     TE.fromOption(() => ResponseErrorForbiddenNotAuthorized)
   );
 
+export type CanSendMessageOnActivation = (
+  maybeActivation: O.Option<RetrievedActivation>
+) => boolean;
+
 /**
  * Configure a function with grace period that
  * returns true if:
@@ -45,7 +49,9 @@ export const authorizedForSpecialServicesTask = (
  */
 export const canSendMessageOnActivationWithGrace = (
   pendingActivationGracePeriod: Second
-) => (maybeActivation: O.Option<RetrievedActivation>): boolean =>
+): CanSendMessageOnActivation => (
+  maybeActivation: O.Option<RetrievedActivation>
+): boolean =>
   pipe(
     maybeActivation,
     O.map(

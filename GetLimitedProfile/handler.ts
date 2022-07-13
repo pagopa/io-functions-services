@@ -33,7 +33,7 @@ import {
   getLimitedProfileTask,
   IGetLimitedProfileResponses
 } from "../utils/profile";
-import { canSendMessageOnActivationWithGrace } from "../utils/services";
+import { CanSendMessageOnActivation } from "../utils/services";
 
 /**
  * Type of a GetLimitedProfile handler.
@@ -58,9 +58,7 @@ export function GetLimitedProfileHandler(
   disableIncompleteServices: boolean,
   incompleteServiceWhitelist: ReadonlyArray<ServiceId>,
   servicesPreferencesModel: ServicesPreferencesModel,
-  canSendMessageOnActivation: ReturnType<
-    typeof canSendMessageOnActivationWithGrace
-  >,
+  canSendMessageOnActivation: CanSendMessageOnActivation,
   telemetryClient: ReturnType<typeof initTelemetryClient>
 ): IGetLimitedProfileHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -90,9 +88,7 @@ export function GetLimitedProfile(
   disableIncompleteServices: boolean,
   incompleteServiceWhitelist: ReadonlyArray<ServiceId>,
   servicesPreferencesModel: ServicesPreferencesModel,
-  canSendMessageOnActivation: ReturnType<
-    typeof canSendMessageOnActivationWithGrace
-  >,
+  canSendMessageOnActivation: CanSendMessageOnActivation,
   telemetryClient: ReturnType<typeof initTelemetryClient>
 ): express.RequestHandler {
   const handler = GetLimitedProfileHandler(
