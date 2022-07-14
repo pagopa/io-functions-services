@@ -64,7 +64,6 @@ import {
   RetrievedMessageStatus
 } from "@pagopa/io-functions-commons/dist/src/models/message_status";
 import { NotificationStatusModel } from "@pagopa/io-functions-commons/dist/src/models/notification_status";
-
 import {
   getMessageNotificationStatuses,
   retrievedMessageToPublic
@@ -86,9 +85,16 @@ import {
   ReadStatus,
   ReadStatusEnum
 } from "@pagopa/io-functions-commons/dist/generated/definitions/ReadStatus";
+import { PaymentStatus } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentStatus";
+import { match } from "ts-pattern";
+import { PaymentDataWithRequiredPayee } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentDataWithRequiredPayee";
 import { LegalData } from "../generated/definitions/LegalData";
 import { FeatureLevelTypeEnum } from "../generated/definitions/FeatureLevelType";
 
+import { PaymentUpdaterClient } from "../clients/payment-updater";
+import { errorsToError } from "../utils/responses";
+import { ApiPaymentMessage } from "../generated/payment-updater/ApiPaymentMessage";
+import { PaymentStatusEnum } from "../generated/definitions/PaymentStatus";
 import { MessageReadStatusAuth } from "./userPreferenceChecker/messageReadStatusAuth";
 
 /**
@@ -164,6 +170,78 @@ export const getReadStatusForService = (
     O.getOrElse(() => ReadStatusEnum.UNREAD)
   );
 
+const mapPaymentStatus = ({ paid }: ApiPaymentMessage): PaymentStatus =>
+  paid ? PaymentStatusEnum.PAID : PaymentStatusEnum.NOT_PAID;
+
+const WithPayment = t.interface({
+  message: t.interface({
+    content: t.interface({ payment_data: PaymentDataWithRequiredPayee })
+  })
+});
+const WithStatusProcessed = t.interface({
+  status: t.literal(MessageStatusValueEnum.PROCESSED)
+});
+const eligibleForPaymentStatus = (
+  messageWithContent: unknown
+): E.Either<t.Errors, unknown> =>
+  pipe(
+    messageWithContent,
+    E.right,
+    E.chainFirst(mwc => WithPayment.decode(mwc)),
+    E.chainFirst(mwc => WithStatusProcessed.decode(mwc))
+  );
+
+const decorateWithPaymentStatus = <
+  T extends { readonly message: { readonly id: string } }
+>(
+  paymentUpdater: PaymentUpdaterClient,
+  messageWithContent: T
+): TE.TaskEither<IResponseErrorInternal, T> =>
+  pipe(
+    messageWithContent,
+    eligibleForPaymentStatus,
+    TE.fromEither,
+    TE.foldW(
+      () => TE.right({ ...messageWithContent, payment_status: undefined }),
+      () =>
+        pipe(
+          TE.tryCatch(
+            () =>
+              paymentUpdater.getMessagePayment({
+                messageId: messageWithContent.message.id
+              }),
+            E.toError
+          ),
+          TE.map(E.mapLeft(errorsToError)),
+          TE.chain(TE.fromEither),
+          TE.chain(response =>
+            match(response)
+              .with({ status: 200 }, success =>
+                TE.right({ paid: success.value.paid })
+              )
+              .with({ status: 404 }, _notFound => TE.right({ paid: false }))
+              .otherwise(error =>
+                TE.left(
+                  new Error(
+                    `Failed to fetch payment status from Payment Updater: ${error.status}`
+                  )
+                )
+              )
+          ),
+          TE.mapLeft(error =>
+            ResponseErrorInternal(
+              `Error retrieving Payment Status: ${error.message}`
+            )
+          ),
+          TE.map(mapPaymentStatus),
+          TE.map(paymentStatus => ({
+            ...messageWithContent,
+            payment_status: paymentStatus
+          }))
+        )
+    )
+  );
+
 /**
  * Handles requests for getting a single message for a recipient.
  */
@@ -173,7 +251,8 @@ export const GetMessageHandler = (
   notificationModel: NotificationModel,
   notificationStatusModel: NotificationStatusModel,
   blobService: BlobService,
-  canAccessMessageReadStatus: MessageReadStatusAuth
+  canAccessMessageReadStatus: MessageReadStatusAuth,
+  paymentUpdater: PaymentUpdaterClient
   // eslint-disable-next-line max-params
 ): IGetMessageHandler => async (
   context,
@@ -303,7 +382,7 @@ export const GetMessageHandler = (
   }
   const maybeMessageStatus = errorOrMaybeMessageStatus.right;
 
-  const returnedMessageOrError = await pipe(
+  return pipe(
     {
       message,
       notification: pipe(notificationStatuses, O.toUndefined),
@@ -326,12 +405,7 @@ export const GetMessageHandler = (
           auth.groups
         ),
         B.foldW(
-          () =>
-            TE.of<
-              Error,
-              | ExternalMessageResponseWithContent
-              | ExternalMessageResponseWithoutContent
-            >(messageWithoutAdvancedProperties),
+          () => TE.of(messageWithoutAdvancedProperties),
           () =>
             pipe(
               canAccessMessageReadStatus(auth.subscriptionId, fiscalCode),
@@ -341,21 +415,19 @@ export const GetMessageHandler = (
                   () => ReadStatusEnum.UNAVAILABLE,
                   () => getReadStatusForService(maybeMessageStatus)
                 )(serviceCanReadMessageReadStatus)
-              }))
+              })),
+              TE.mapLeft(() =>
+                ResponseErrorInternal(
+                  `Error retrieving information about read status preferences`
+                )
+              ),
+              TE.chain(v => decorateWithPaymentStatus(paymentUpdater, v))
             )
-        )
+        ),
+        TE.map(ResponseSuccessJson),
+        TE.toUnion
       )
   )();
-
-  if (E.isLeft(returnedMessageOrError)) {
-    return ResponseErrorInternal(
-      `Error retrieving information about read status preferences`
-    );
-  }
-
-  const returnedMessage = returnedMessageOrError.right;
-
-  return ResponseSuccessJson(returnedMessage);
 };
 
 /**
@@ -369,7 +441,8 @@ export function GetMessage(
   notificationModel: NotificationModel,
   notificationStatusModel: NotificationStatusModel,
   blobService: BlobService,
-  canAccessMessageReadStatus: MessageReadStatusAuth
+  canAccessMessageReadStatus: MessageReadStatusAuth,
+  paymentUpdater: PaymentUpdaterClient
 ): express.RequestHandler {
   const handler = GetMessageHandler(
     messageModel,
@@ -377,7 +450,8 @@ export function GetMessage(
     notificationModel,
     notificationStatusModel,
     blobService,
-    canAccessMessageReadStatus
+    canAccessMessageReadStatus,
+    paymentUpdater
   );
   const middlewaresWrap = withRequestMiddlewares(
     ContextMiddleware(),

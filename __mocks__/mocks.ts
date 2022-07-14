@@ -1,3 +1,4 @@
+import * as E from "fp-ts/Either";
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { ServiceScopeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceScope";
 import { ServicesPreferencesModeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServicesPreferencesMode";
@@ -52,9 +53,16 @@ import { generateComposedVersionedModelId } from "@pagopa/io-functions-commons/d
 import { RetrievedMessageStatus } from "@pagopa/io-functions-commons/dist/src/models/message_status";
 import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
 import { FeatureLevelTypeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/FeatureLevelType";
+import { PaymentData } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentData";
+import { PaymentAmount } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentAmount";
+import { PaymentNoticeNumber } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentNoticeNumber";
+import { Payee } from "@pagopa/io-functions-commons/dist/generated/definitions/Payee";
+import { pipe } from "fp-ts/lib/function";
+import { errorsToError } from "../utils/responses";
 
 export const aFiscalCode = "AAABBB01C02D345D" as FiscalCode;
 export const anotherFiscalCode = "AAABBB01C02D345W" as FiscalCode;
+export const anOrganizationFiscalCode = "01234567890" as OrganizationFiscalCode;
 
 // CosmosResourceMetadata
 export const aCosmosResourceMetadata: Omit<CosmosResource, "id"> = {
@@ -173,6 +181,26 @@ export const aMessageBodyMarkdown = "test".repeat(80) as MessageBodyMarkdown;
 export const aMessageContent: MessageContent = {
   markdown: aMessageBodyMarkdown,
   subject: "test".repeat(10) as MessageSubject
+};
+
+export const aPaymentData = pipe(
+  {
+    amount: 100,
+    notice_number: "177777777777777777",
+    payee: {
+      fiscal_code: anOrganizationFiscalCode
+    }
+  },
+  PaymentData.decode,
+  E.getOrElseW(errors => {
+    throw Error(`Malformed Payee in __mocks__: ${errorsToError(errors)}`);
+  })
+);
+
+export const aPaymentMessageContent: MessageContent = {
+  markdown: aMessageBodyMarkdown,
+  subject: "test".repeat(10) as MessageSubject,
+  payment_data: aPaymentData
 };
 
 export const aSerializedNewMessageWithContent = {
