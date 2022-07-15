@@ -484,6 +484,8 @@ describe("Create Advanced Message", () => {
         })
       );
 
+      expect(detail).not.toHaveProperty("payment_status");
+
       // Check response without having `ApiMessageReadAdvanced` authorization
 
       const resultGetWithoutPermission = await getSentMessage(
