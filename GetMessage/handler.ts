@@ -95,6 +95,7 @@ import { PaymentUpdaterClient } from "../clients/payment-updater";
 import { errorsToError } from "../utils/responses";
 import { ApiPaymentMessage } from "../generated/payment-updater/ApiPaymentMessage";
 import { PaymentStatusEnum } from "../generated/definitions/PaymentStatus";
+import { IConfig } from "../utils/config";
 import { MessageReadStatusAuth } from "./userPreferenceChecker/messageReadStatusAuth";
 
 /**
@@ -181,25 +182,32 @@ const WithPayment = t.interface({
 const WithStatusProcessed = t.interface({
   status: t.literal(MessageStatusValueEnum.PROCESSED)
 });
-const eligibleForPaymentStatus = (
+const eligibleForPaymentStatus = (FF_PAYMENT_STATUS_ENABLED: boolean) => (
   messageWithContent: unknown
-): E.Either<t.Errors, unknown> =>
+): E.Either<Error | t.Errors, unknown> =>
   pipe(
     messageWithContent,
     E.right,
-    E.chainFirst(mwc => WithPayment.decode(mwc)),
-    E.chainFirst(mwc => WithStatusProcessed.decode(mwc))
+    E.chainFirst(
+      E.fromPredicate(
+        () => FF_PAYMENT_STATUS_ENABLED,
+        () => Error("Feature Flag disabled")
+      )
+    ),
+    E.chainFirstW(mwc => WithPayment.decode(mwc)),
+    E.chainFirstW(mwc => WithStatusProcessed.decode(mwc))
   );
 
 const decorateWithPaymentStatus = <
   T extends { readonly message: { readonly id: string } }
 >(
+  FF_PAYMENT_STATUS_ENABLED: boolean,
   paymentUpdater: PaymentUpdaterClient,
   messageWithContent: T
 ): TE.TaskEither<IResponseErrorInternal, T> =>
   pipe(
     messageWithContent,
-    eligibleForPaymentStatus,
+    eligibleForPaymentStatus(FF_PAYMENT_STATUS_ENABLED),
     TE.fromEither,
     TE.foldW(
       () => TE.right({ ...messageWithContent, payment_status: undefined }),
@@ -246,6 +254,7 @@ const decorateWithPaymentStatus = <
  * Handles requests for getting a single message for a recipient.
  */
 export const GetMessageHandler = (
+  FF_PAYMENT_STATUS_ENABLED: boolean,
   messageModel: MessageModel,
   messageStatusModel: MessageStatusModel,
   notificationModel: NotificationModel,
@@ -421,7 +430,13 @@ export const GetMessageHandler = (
                   `Error retrieving information about read status preferences`
                 )
               ),
-              TE.chain(v => decorateWithPaymentStatus(paymentUpdater, v))
+              TE.chain(v =>
+                decorateWithPaymentStatus(
+                  FF_PAYMENT_STATUS_ENABLED,
+                  paymentUpdater,
+                  v
+                )
+              )
             )
         ),
         TE.map(ResponseSuccessJson),
@@ -435,6 +450,7 @@ export const GetMessageHandler = (
  */
 // eslint-disable-next-line max-params, prefer-arrow/prefer-arrow-functions
 export function GetMessage(
+  { FF_PAYMENT_STATUS_ENABLED }: IConfig,
   serviceModel: ServiceModel,
   messageModel: MessageModel,
   messageStatusModel: MessageStatusModel,
@@ -445,6 +461,7 @@ export function GetMessage(
   paymentUpdater: PaymentUpdaterClient
 ): express.RequestHandler {
   const handler = GetMessageHandler(
+    FF_PAYMENT_STATUS_ENABLED,
     messageModel,
     messageStatusModel,
     notificationModel,

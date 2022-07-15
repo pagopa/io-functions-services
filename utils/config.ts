@@ -10,6 +10,8 @@ import { MailerConfig } from "@pagopa/io-functions-commons/dist/src/mailer";
 import * as O from "fp-ts/lib/Option";
 import * as E from "fp-ts/lib/Either";
 import * as t from "io-ts";
+import { BooleanFromString, withFallback } from "io-ts-types";
+
 import { readableReport } from "@pagopa/ts-commons/lib/reporters";
 import { NonEmptyString, Semver } from "@pagopa/ts-commons/lib/strings";
 import { DateFromTimestamp } from "@pagopa/ts-commons/lib/dates";
@@ -74,6 +76,8 @@ export const IConfig = t.intersection([
     FF_DISABLE_WEBHOOK_MESSAGE_CONTENT: t.boolean,
     FF_INCOMPLETE_SERVICE_WHITELIST: CommaSeparatedListOf(ServiceId),
     FF_OPT_IN_EMAIL_ENABLED: t.boolean,
+
+    FF_PAYMENT_STATUS_ENABLED: withFallback(BooleanFromString, false),
 
     PENDING_ACTIVATION_GRACE_PERIOD_SECONDS: t.number,
 
