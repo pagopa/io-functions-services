@@ -3,7 +3,19 @@
 import { Context } from "@azure/functions";
 import { BlockedInboxOrChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
 import { EUCovidCert } from "@pagopa/io-functions-commons/dist/generated/definitions/EUCovidCert";
+import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
+import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
+import { PaymentDataWithRequiredPayee } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentDataWithRequiredPayee";
+import {
+  ServicesPreferencesMode,
+  ServicesPreferencesModeEnum
+} from "@pagopa/io-functions-commons/dist/generated/definitions/ServicesPreferencesMode";
+import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
 import { MessageModel } from "@pagopa/io-functions-commons/dist/src/models/message";
+import {
+  getMessageStatusUpdater,
+  MessageStatusModel
+} from "@pagopa/io-functions-commons/dist/src/models/message_status";
 import { ProfileModel } from "@pagopa/io-functions-commons/dist/src/models/profile";
 import {
   makeServicesPreferencesDocumentId,
@@ -11,30 +23,20 @@ import {
   ServicesPreferencesModel
 } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 import { CosmosErrors } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
+import { UTCISODateFromString } from "@pagopa/ts-commons/lib/dates";
 import { NonNegativeInteger } from "@pagopa/ts-commons/lib/numbers";
 import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 import { Second } from "@pagopa/ts-commons/lib/units";
 import { BlobService } from "azure-storage";
-import * as E from "fp-ts/lib/Either";
-import * as O from "fp-ts/lib/Option";
-import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
-import {
-  ServicesPreferencesMode,
-  ServicesPreferencesModeEnum
-} from "@pagopa/io-functions-commons/dist/generated/definitions/ServicesPreferencesMode";
 import { isBefore } from "date-fns";
-import { UTCISODateFromString } from "@pagopa/ts-commons/lib/dates";
+import * as E from "fp-ts/lib/Either";
 import { flow, pipe } from "fp-ts/lib/function";
-import { PaymentDataWithRequiredPayee } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentDataWithRequiredPayee";
-import {
-  getMessageStatusUpdater,
-  MessageStatusModel
-} from "@pagopa/io-functions-commons/dist/src/models/message_status";
-import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
-import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
+import * as O from "fp-ts/lib/Option";
 import * as T from "fp-ts/lib/Task";
 import * as TE from "fp-ts/lib/TaskEither";
 import { TaskEither } from "fp-ts/lib/TaskEither";
+import { SpecialServiceCategoryEnum } from "../generated/api-admin/SpecialServiceCategory";
+import { LegalData } from "../generated/definitions/LegalData";
 import { PaymentData } from "../generated/definitions/PaymentData";
 import { ThirdPartyData } from "../generated/definitions/ThirdPartyData";
 import { initTelemetryClient } from "../utils/appinsights";
@@ -47,8 +49,6 @@ import {
 import { withDecodedInput } from "../utils/with-decoded-input";
 import { DataFetcher, withExpandedInput } from "../utils/with-expanded-input";
 import { withJsonInput } from "../utils/with-json-input";
-import { SpecialServiceCategoryEnum } from "../generated/api-admin/SpecialServiceCategory";
-import { LegalData } from "../generated/definitions/LegalData";
 import { canSendMessageOnActivationWithGrace } from "../utils/services";
 
 // Interface that marks an unexpected value
