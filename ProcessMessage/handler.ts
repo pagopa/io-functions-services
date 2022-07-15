@@ -1,54 +1,55 @@
 /* eslint-disable max-lines-per-function */
 
 import { Context } from "@azure/functions";
+import { ActivationStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ActivationStatus";
 import { BlockedInboxOrChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
+import { EUCovidCert } from "@pagopa/io-functions-commons/dist/generated/definitions/EUCovidCert";
+import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
+import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
+import { PaymentDataWithRequiredPayee } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentDataWithRequiredPayee";
+import {
+  ServicesPreferencesMode,
+  ServicesPreferencesModeEnum
+} from "@pagopa/io-functions-commons/dist/generated/definitions/ServicesPreferencesMode";
+import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
 import { MessageModel } from "@pagopa/io-functions-commons/dist/src/models/message";
+import {
+  getMessageStatusUpdater,
+  MessageStatusModel
+} from "@pagopa/io-functions-commons/dist/src/models/message_status";
 import { ProfileModel } from "@pagopa/io-functions-commons/dist/src/models/profile";
-import { BlobService } from "azure-storage";
-import * as E from "fp-ts/lib/Either";
-import * as O from "fp-ts/lib/Option";
 import {
   makeServicesPreferencesDocumentId,
   ServicePreference,
   ServicesPreferencesModel
 } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
-import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
-import { NonNegativeInteger } from "@pagopa/ts-commons/lib/numbers";
-import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
-import {
-  ServicesPreferencesMode,
-  ServicesPreferencesModeEnum
-} from "@pagopa/io-functions-commons/dist/generated/definitions/ServicesPreferencesMode";
-import * as TE from "fp-ts/lib/TaskEither";
-import { isBefore, subSeconds } from "date-fns";
-import { UTCISODateFromString } from "@pagopa/ts-commons/lib/dates";
 import { CosmosErrors } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
-import { TaskEither } from "fp-ts/lib/TaskEither";
-import { flow, pipe } from "fp-ts/lib/function";
-import { PaymentDataWithRequiredPayee } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentDataWithRequiredPayee";
-import {
-  getMessageStatusUpdater,
-  MessageStatusModel
-} from "@pagopa/io-functions-commons/dist/src/models/message_status";
-import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
-import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
-import { ActivationStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ActivationStatus";
-import * as T from "fp-ts/lib/Task";
+import { UTCISODateFromString } from "@pagopa/ts-commons/lib/dates";
+import { NonNegativeInteger } from "@pagopa/ts-commons/lib/numbers";
+import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 import { Second } from "@pagopa/ts-commons/lib/units";
-import { EUCovidCert } from "@pagopa/io-functions-commons/dist/generated/definitions/EUCovidCert";
+import { BlobService } from "azure-storage";
+import { isBefore, subSeconds } from "date-fns";
+import * as E from "fp-ts/lib/Either";
+import { flow, pipe } from "fp-ts/lib/function";
+import * as O from "fp-ts/lib/Option";
+import * as T from "fp-ts/lib/Task";
+import * as TE from "fp-ts/lib/TaskEither";
+import { TaskEither } from "fp-ts/lib/TaskEither";
+import { SpecialServiceCategoryEnum } from "../generated/api-admin/SpecialServiceCategory";
+import { LegalData } from "../generated/definitions/LegalData";
+import { PaymentData } from "../generated/definitions/PaymentData";
+import { ThirdPartyData } from "../generated/definitions/ThirdPartyData";
 import { initTelemetryClient } from "../utils/appinsights";
 import { toHash } from "../utils/crypto";
-import { PaymentData } from "../generated/definitions/PaymentData";
-import { withJsonInput } from "../utils/with-json-input";
-import { withDecodedInput } from "../utils/with-decoded-input";
-import { withExpandedInput, DataFetcher } from "../utils/with-expanded-input";
 import {
   CommonMessageData,
   CreatedMessageEvent,
   ProcessedMessageEvent
 } from "../utils/events/message";
-import { SpecialServiceCategoryEnum } from "../generated/api-admin/SpecialServiceCategory";
-import { LegalData } from "../generated/definitions/LegalData";
+import { withDecodedInput } from "../utils/with-decoded-input";
+import { DataFetcher, withExpandedInput } from "../utils/with-expanded-input";
+import { withJsonInput } from "../utils/with-json-input";
 
 // Interface that marks an unexpected value
 interface IUnexpectedValue {
@@ -594,6 +595,9 @@ export const getProcessMessageHandler = ({
               ),
               hasPaymentData: PaymentData.is(
                 createdMessageEvent.content.payment_data
+              ),
+              hasThirdPartyData: ThirdPartyData.is(
+                createdMessageEvent.content.third_party_data
               ),
               messageId: createdMessageEvent.message.id,
               mode: profile.servicePreferencesSettings.mode,
