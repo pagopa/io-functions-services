@@ -1,7 +1,6 @@
 /* eslint-disable max-lines-per-function */
 
 import { Context } from "@azure/functions";
-import { ActivationStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ActivationStatus";
 import { BlockedInboxOrChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
 import { EUCovidCert } from "@pagopa/io-functions-commons/dist/generated/definitions/EUCovidCert";
 import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
@@ -29,7 +28,7 @@ import { NonNegativeInteger } from "@pagopa/ts-commons/lib/numbers";
 import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 import { Second } from "@pagopa/ts-commons/lib/units";
 import { BlobService } from "azure-storage";
-import { isBefore, subSeconds } from "date-fns";
+import { isBefore } from "date-fns";
 import * as E from "fp-ts/lib/Either";
 import { flow, pipe } from "fp-ts/lib/function";
 import * as O from "fp-ts/lib/Option";
@@ -50,6 +49,7 @@ import {
 import { withDecodedInput } from "../utils/with-decoded-input";
 import { DataFetcher, withExpandedInput } from "../utils/with-expanded-input";
 import { withJsonInput } from "../utils/with-json-input";
+import { canSendMessageOnActivationWithGrace } from "../utils/services";
 
 // Interface that marks an unexpected value
 interface IUnexpectedValue {
@@ -230,22 +230,7 @@ const getBlockedInboxesForSpecialService = (
       context.log.error(`${logPrefix}|${activationError.kind}`);
       throw Error("Error while retrieving user's service Activation");
     }),
-    TE.map(maybeActivation =>
-      pipe(
-        maybeActivation,
-        O.map(
-          activation =>
-            activation.status === ActivationStatusEnum.ACTIVE ||
-            (activation.status === ActivationStatusEnum.PENDING &&
-              isBefore(
-                subSeconds(new Date(), pendingActivationGracePeriod),
-                // eslint-disable-next-line no-underscore-dangle
-                activation._ts
-              ))
-        ),
-        O.getOrElse(() => false)
-      )
-    ),
+    TE.map(canSendMessageOnActivationWithGrace(pendingActivationGracePeriod)),
     TE.chainW(
       TE.fromPredicate(
         hasActiveActivation => hasActiveActivation,

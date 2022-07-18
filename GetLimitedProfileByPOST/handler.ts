@@ -26,6 +26,7 @@ import {
 
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { ServicesPreferencesModel } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
+import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
 import { FiscalCodePayload } from "../generated/definitions/FiscalCodePayload";
 import {
   FiscalCodePayloadMiddleware,
@@ -33,6 +34,7 @@ import {
   getLimitedProfileTask
 } from "../utils/profile";
 import { initTelemetryClient } from "../utils/appinsights";
+import { CanSendMessageOnActivation } from "../utils/services";
 
 /**
  * Type of a GetLimitedProfileByPOST handler.
@@ -49,12 +51,14 @@ type IGetLimitedProfileByPOSTHandler = (
 /**
  * Returns a type safe GetLimitedProfileByPOST handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, max-params
 export function GetLimitedProfileByPOSTHandler(
   profileModel: ProfileModel,
   disableIncompleteServices: boolean,
   incompleteServiceWhitelist: ReadonlyArray<ServiceId>,
   servicesPreferencesModel: ServicesPreferencesModel,
+  serviceActivationModel: ActivationModel,
+  canSendMessageOnActivation: CanSendMessageOnActivation,
   telemetryClient: ReturnType<typeof initTelemetryClient>
 ): IGetLimitedProfileByPOSTHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -67,6 +71,8 @@ export function GetLimitedProfileByPOSTHandler(
       disableIncompleteServices,
       incompleteServiceWhitelist,
       servicesPreferencesModel,
+      serviceActivationModel,
+      canSendMessageOnActivation,
       telemetryClient
     )();
 }
@@ -81,6 +87,8 @@ export function GetLimitedProfileByPOST(
   disableIncompleteServices: boolean,
   incompleteServiceWhitelist: ReadonlyArray<ServiceId>,
   servicesPreferencesModel: ServicesPreferencesModel,
+  serviceActivationModel: ActivationModel,
+  canSendMessageOnActivation: CanSendMessageOnActivation,
   telemetryClient: ReturnType<typeof initTelemetryClient>
 ): express.RequestHandler {
   const handler = GetLimitedProfileByPOSTHandler(
@@ -88,6 +96,8 @@ export function GetLimitedProfileByPOST(
     disableIncompleteServices,
     incompleteServiceWhitelist,
     servicesPreferencesModel,
+    serviceActivationModel,
+    canSendMessageOnActivation,
     telemetryClient
   );
 

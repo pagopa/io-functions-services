@@ -26,12 +26,14 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
 import * as express from "express";
 import { FiscalCode } from "@pagopa/ts-commons/lib/strings";
+import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
 import { initTelemetryClient } from "../utils/appinsights";
 
 import {
   getLimitedProfileTask,
   IGetLimitedProfileResponses
 } from "../utils/profile";
+import { CanSendMessageOnActivation } from "../utils/services";
 
 /**
  * Type of a GetLimitedProfile handler.
@@ -49,12 +51,14 @@ type IGetLimitedProfileHandler = (
 /**
  * Returns a type safe GetLimitedProfile handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, max-params
 export function GetLimitedProfileHandler(
   profileModel: ProfileModel,
+  serviceActivationModel: ActivationModel,
   disableIncompleteServices: boolean,
   incompleteServiceWhitelist: ReadonlyArray<ServiceId>,
   servicesPreferencesModel: ServicesPreferencesModel,
+  canSendMessageOnActivation: CanSendMessageOnActivation,
   telemetryClient: ReturnType<typeof initTelemetryClient>
 ): IGetLimitedProfileHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -67,6 +71,8 @@ export function GetLimitedProfileHandler(
       disableIncompleteServices,
       incompleteServiceWhitelist,
       servicesPreferencesModel,
+      serviceActivationModel,
+      canSendMessageOnActivation,
       telemetryClient
     )();
 }
@@ -78,16 +84,20 @@ export function GetLimitedProfileHandler(
 export function GetLimitedProfile(
   serviceModel: ServiceModel,
   profileModel: ProfileModel,
+  serviceActivationModel: ActivationModel,
   disableIncompleteServices: boolean,
   incompleteServiceWhitelist: ReadonlyArray<ServiceId>,
   servicesPreferencesModel: ServicesPreferencesModel,
+  canSendMessageOnActivation: CanSendMessageOnActivation,
   telemetryClient: ReturnType<typeof initTelemetryClient>
 ): express.RequestHandler {
   const handler = GetLimitedProfileHandler(
     profileModel,
+    serviceActivationModel,
     disableIncompleteServices,
     incompleteServiceWhitelist,
     servicesPreferencesModel,
+    canSendMessageOnActivation,
     telemetryClient
   );
 
