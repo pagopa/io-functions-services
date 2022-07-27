@@ -329,34 +329,33 @@ paths:
           description: Message found.
           schema:
             $ref: '#/definitions/ExternalMessageResponseWithContent'
-          x-examples:
+          examples:
             application/json:
-              value:
-                status: PROCESSED
-                message:
-                  id: 01BX9NSMKAAAS5PSP2FATZM6BQ
-                  fiscal_code: QXJNTX9RCRVD6V4O
-                  time_to_live: 3600
-                  content:
-                    subject: message subject, aliquip sint nulla in estinut
-                    markdown: >-
-                      Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                      Maecenas et mollis felis.
+              status: PROCESSED
+              message:
+                id: 01BX9NSMKAAAS5PSP2FATZM6BQ
+                fiscal_code: QXJNTX9RCRVD6V4O
+                time_to_live: 3600
+                content:
+                  subject: message subject, aliquip sint nulla in estinut
+                  markdown: >-
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                    Maecenas et mollis felis.
 
-                      Vivamus orci nisl, commodo ut sodales ut, eleifend a
-                      libero. Donec dapibus, turpis in mattis tempor,
+                    Vivamus orci nisl, commodo ut sodales ut, eleifend a libero.
+                    Donec dapibus, turpis in mattis tempor,
 
-                      risus nunc malesuada ex, non aliquet metus nunc a lacus.
-                      Aenean in arcu vitae nisl porta
+                    risus nunc malesuada ex, non aliquet metus nunc a lacus.
+                    Aenean in arcu vitae nisl porta
 
-                      fermentum nec non nibh. Phasellus tortor tellus, semper in
-                      metus eget, eleifend
+                    fermentum nec non nibh. Phasellus tortor tellus, semper in
+                    metus eget, eleifend
 
-                      laoreet nibh. Aenean feugiat lectus ut nisl eleifend
-                      gravida.
-                  sender_service_id: 01BX9NSMKVXXS5PSP2FATZM6QX
-                notification:
-                  email: QUEUED
+                    laoreet nibh. Aenean feugiat lectus ut nisl eleifend
+                    gravida.
+                sender_service_id: 01BX9NSMKVXXS5PSP2FATZM6QX
+              notification:
+                email: QUEUED
         '401':
           description: Unauthorized
         '403':
