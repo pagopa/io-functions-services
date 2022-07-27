@@ -65,7 +65,7 @@ info:
       * An optional `feature_level_type`: the kind of the submitted message.
         It can be:
         - `STANDARD` for normal messages;
-        - `ADVANCED` to enable premium features.
+        - `ADVANCED` to enable premium features. 
         Default is `STANDARD`.
 
     ## Allowed Markdown formatting
