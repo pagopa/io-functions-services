@@ -63,7 +63,9 @@ info:
         dates is [ISO8601](https://it.wikipedia.org/wiki/ISO_8601) with time
         information and UTC timezone (ie. "2018-10-13T00:00:00.000Z").
       * An optional `feature_level_type`: the kind of the submitted message.
-        It can be `STANDARD` or `ADVANCED` in order to enable premium features.
+        It can be:
+        - `STANDARD` for normal messages;
+        - `ADVANCED` to enable premium features.
         Default is `STANDARD`.
 
     ## Allowed Markdown formatting
@@ -172,7 +174,7 @@ paths:
           schema:
             $ref: "#/definitions/NewMessage"
           examples:
-            example1:
+            application/json:
               value:
                 time_to_live: 3600
                 content:
@@ -192,7 +194,7 @@ paths:
                     Vestibulum in eros sapien. Donec ac odio sit amet dui semper ornare eget nec odio. Pellentesque habitant
                     morbi tristique senectus et netus et malesuada fames ac turpis egestas. Praesent nibh ex, mattis sit amet
                     felis id, sodales euismod velit. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                feature_level_type: STANDARD
+                feature_level_type: ADVANCED
       responses:
         "201":
           description: Message created.
@@ -289,8 +291,8 @@ paths:
       description: |-
         The previously created message with the provided message ID is
         returned. With right permission and `ADVANCED` feature level type
-        related to the previously submitted message, also read and paid status
-        infos are returned.
+        related to the previously submitted message, also read and payment
+        status infos (when applicable) are returned.
       parameters:
         - $ref: "#/parameters/FiscalCode"
         - name: id
@@ -304,7 +306,7 @@ paths:
           schema:
             $ref: "#/definitions/ExternalMessageResponseWithContent"
           examples:
-            example1:
+            application/json:
               value:
                 status: PROCESSED
                 message:
