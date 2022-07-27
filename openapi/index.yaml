@@ -63,10 +63,11 @@ info:
         dates is [ISO8601](https://it.wikipedia.org/wiki/ISO_8601) with time
         information and UTC timezone (ie. "2018-10-13T00:00:00.000Z").
       * An optional `feature_level_type`: the kind of the submitted message.
+
         It can be:
         - `STANDARD` for normal messages;
         - `ADVANCED` to enable premium features.
-         
+        
         Default is `STANDARD`.
 
     ## Allowed Markdown formatting
@@ -190,42 +191,23 @@ paths:
           in: body
           schema:
             $ref: '#/definitions/NewMessage'
-          examples:
+          x-examples:
             application/json:
-              value:
-                time_to_live: 3600
-                content:
-                  subject: ipsum labore deserunt fugiat
-                  markdown: >-
-                    Nullam dapibus metus sed elementum efficitur. Curabitur
-                    facilisis sagittis risus nec sodales.
+              time_to_live: 3600
+              content:
+                subject: ipsum labore deserunt fugiat
+                markdown: >-
+                  Nullam dapibus metus sed elementum efficitur. Curabitur
+                  facilisis sagittis risus nec sodales.
 
-                    Vestibulum in eros sapien. Donec ac odio sit amet dui semper
-                    ornare eget nec odio. Pellentesque habitant
+                  Vestibulum in eros sapien. Donec ac odio sit amet dui semper
+                  ornare eget nec odio. Pellentesque habitant
 
-                    morbi tristique senectus et netus et malesuada fames ac
-                    turpis egestas. Praesent nibh ex, mattis sit amet
+                  morbi tristique senectus et netus et malesuada fames ac turpis
+                  egestas. Praesent nibh ex, mattis sit amet
 
-                    felis id, sodales euismod velit. Lorem ipsum dolor sit amet,
-                    consectetur adipiscing elit.
-            example2:
-              value:
-                time_to_live: 3600
-                content:
-                  subject: ipsum labore deserunt fugiat
-                  markdown: >-
-                    Nullam dapibus metus sed elementum efficitur. Curabitur
-                    facilisis sagittis risus nec sodales.
-
-                    Vestibulum in eros sapien. Donec ac odio sit amet dui semper
-                    ornare eget nec odio. Pellentesque habitant
-
-                    morbi tristique senectus et netus et malesuada fames ac
-                    turpis egestas. Praesent nibh ex, mattis sit amet
-
-                    felis id, sodales euismod velit. Lorem ipsum dolor sit amet,
-                    consectetur adipiscing elit.
-                feature_level_type: ADVANCED
+                  felis id, sodales euismod velit. Lorem ipsum dolor sit amet,
+                  consectetur adipiscing elit.
       responses:
         '201':
           description: Message created.
@@ -347,7 +329,7 @@ paths:
           description: Message found.
           schema:
             $ref: '#/definitions/ExternalMessageResponseWithContent'
-          examples:
+          x-examples:
             application/json:
               value:
                 status: PROCESSED
@@ -375,35 +357,6 @@ paths:
                   sender_service_id: 01BX9NSMKVXXS5PSP2FATZM6QX
                 notification:
                   email: QUEUED
-            example2:
-              value:
-                status: PROCESSED
-                message:
-                  id: 01BX9NSMKAAAS5PSP2FATZM6BF
-                  fiscal_code: QXJNTX9RCRVD6V4O
-                  time_to_live: 3600
-                  content:
-                    subject: message subject, aliquip sint nulla in estinut
-                    markdown: >-
-                      Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                      Maecenas et mollis felis.
-
-                      Vivamus orci nisl, commodo ut sodales ut, eleifend a
-                      libero. Donec dapibus, turpis in mattis tempor,
-
-                      risus nunc malesuada ex, non aliquet metus nunc a lacus.
-                      Aenean in arcu vitae nisl porta
-
-                      fermentum nec non nibh. Phasellus tortor tellus, semper in
-                      metus eget, eleifend
-
-                      laoreet nibh. Aenean feugiat lectus ut nisl eleifend
-                      gravida.
-                  sender_service_id: 01BX9NSMKVXXS5PSP2FATZM6QX
-                notification:
-                  email: QUEUED
-                read_status: READ
-                payment_status: PAID
         '401':
           description: Unauthorized
         '403':
