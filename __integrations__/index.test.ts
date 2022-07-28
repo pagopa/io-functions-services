@@ -3,6 +3,7 @@ import { CosmosClient } from "@azure/cosmos";
 import nodeFetch from "node-fetch";
 
 import * as TE from "fp-ts/TaskEither";
+import * as E from "fp-ts/Either";
 import * as O from "fp-ts/Option";
 
 import {
@@ -17,7 +18,7 @@ import {
 import { ExternalMessageResponseWithContent } from "./generated/fn-services/ExternalMessageResponseWithContent";
 import { CreatedMessage } from "./generated/fn-services/CreatedMessage";
 import { FiscalCode, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
-import { execPath, exit } from "process";
+import { exit } from "process";
 
 import {
   MessageStatusModel,
@@ -36,6 +37,11 @@ import { FeatureLevelTypeEnum } from "./generated/fn-services/FeatureLevelType";
 import { MessageStatusValueEnum } from "./generated/fn-services/MessageStatusValue";
 import { ReadStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ReadStatus";
 import { PaymentStatusEnum } from "./generated/fn-services/PaymentStatus";
+import { NewMessage } from "./generated/fn-services/NewMessage";
+import { TimeToLiveSeconds } from "./generated/fn-services/TimeToLiveSeconds";
+import { NewMessageWithoutContent } from "@pagopa/io-functions-commons/dist/src/models/message";
+import { isRight } from "fp-ts/lib/Either";
+import { ulidGenerator } from "@pagopa/io-functions-commons/dist/src/utils/strings";
 
 const MAX_ATTEMPT = 50;
 jest.setTimeout(WAIT_MS * MAX_ATTEMPT);
@@ -762,6 +768,39 @@ describe("Create Legal Message", () => {
     }
   );
 });
+
+const aMessageId = ulidGenerator();
+const aSerializedNewMessageWithoutContent = {
+  createdAt: new Date().toISOString(),
+  featureLevelType: FeatureLevelTypeEnum.STANDARD,
+  fiscalCode: anAutoFiscalCode,
+  id: aMessageId,
+  indexedId: aMessageId,
+  senderServiceId: aValidServiceId,
+  senderUserId: "u123" as NonEmptyString,
+  timeToLiveSeconds: 3600 as TimeToLiveSeconds
+};
+const aNewMessageWithoutContent: NewMessageWithoutContent = {
+  ...aSerializedNewMessageWithoutContent,
+  createdAt: new Date(),
+  kind: "INewMessageWithoutContent"
+};
+
+describe("Get Message", () => {
+  //ENABLE ME when Azurite will proper support the 404 error when retrieving a missing blob
+  it.skip("Get existing message without content in ACCEPTED state", async () => {
+    const createResult = await messageModel.create(aNewMessageWithoutContent)();
+    expect(E.isRight(createResult)).toBeTruthy();
+
+    const nodeFetch = getNodeFetch({ "x-subscription-id": aValidServiceId });
+    const result = await getSentMessage(nodeFetch)(
+      anAutoFiscalCode,
+      aMessageId
+    );
+    expect(result.status).toEqual(200);
+  });
+});
+
 // -----------
 // Utils
 // -----------
