@@ -62,6 +62,13 @@ info:
         add a reminder when receiving the message. The format for all
         dates is [ISO8601](https://it.wikipedia.org/wiki/ISO_8601) with time
         information and UTC timezone (ie. "2018-10-13T00:00:00.000Z").
+      * An optional `feature_level_type`: the kind of the submitted message.
+
+        It can be:
+        - `STANDARD` for normal messages;
+        - `ADVANCED` to enable premium features.
+        
+        Default is `STANDARD`.
 
     ## Allowed Markdown formatting
 
@@ -157,7 +164,7 @@ paths:
       operationId: submitMessageforUserWithFiscalCodeInBody
       summary: Submit a Message passing the user fiscal_code in the request body
       description: |-
-        Submits a message to a user.
+        Submits a message to a user with STANDARD or ADVANCED features based on `feature_level_type` value.
         On error, the reason is returned in the response payload.
         In order to call `submitMessageforUser`, before sending any message,
         the sender MUST call `getProfile` and check that the profile exists
@@ -273,7 +280,9 @@ paths:
       summary: Get Message
       description: |-
         The previously created message with the provided message ID is
-        returned.
+        returned. With right permission and `ADVANCED` feature level type
+        related to the previously submitted message, also read and payment
+        status infos (when applicable) are returned.
       parameters:
         - $ref: "#/parameters/FiscalCode"
         - name: id
