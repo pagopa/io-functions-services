@@ -119,24 +119,23 @@ paths:
           in: body
           schema:
             $ref: '#/definitions/NewMessage'
-          x-examples:
+          x-example:
             application/json:
-              example1:
-                time_to_live: 3600
-                content:
-                  subject: ipsum labore deserunt fugiat
-                  markdown: >-
-                    Nullam dapibus metus sed elementum efficitur. Curabitur
-                    facilisis sagittis risus nec sodales.
+              time_to_live: 3600
+              content:
+                subject: ipsum labore deserunt fugiat
+                markdown: >-
+                  Nullam dapibus metus sed elementum efficitur. Curabitur
+                  facilisis sagittis risus nec sodales.
 
-                    Vestibulum in eros sapien. Donec ac odio sit amet dui semper
-                    ornare eget nec odio. Pellentesque habitant
+                  Vestibulum in eros sapien. Donec ac odio sit amet dui semper
+                  ornare eget nec odio. Pellentesque habitant
 
-                    morbi tristique senectus et netus et malesuada fames ac turpis
-                    egestas. Praesent nibh ex, mattis sit amet
+                  morbi tristique senectus et netus et malesuada fames ac turpis
+                  egestas. Praesent nibh ex, mattis sit amet
 
-                    felis id, sodales euismod velit. Lorem ipsum dolor sit amet,
-                    consectetur adipiscing elit.
+                  felis id, sodales euismod velit. Lorem ipsum dolor sit amet,
+                  consectetur adipiscing elit.
       responses:
         '201':
           description: Message created.
