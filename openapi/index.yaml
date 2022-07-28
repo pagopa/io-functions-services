@@ -119,7 +119,7 @@ paths:
           in: body
           schema:
             $ref: '#/definitions/NewMessage'
-          x-example:
+          x-examples:
             application/json:
               time_to_live: 3600
               content:
