@@ -115,7 +115,7 @@ const aValidPaymentDataMessageContent = {
   amount: 1,
   notice_number: "177777777777777777",
   payee: {
-    fiscalCode: "01234567890"  
+    fiscal_code: "01234567890"
   }
 }
 
