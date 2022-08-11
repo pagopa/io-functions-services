@@ -86,6 +86,6 @@
   },
   "resolutions": {
     "handlebars": "~4.5.3",
-    "@pagopa/ts-commons": "^10.2.0"
+    "@pagopa/ts-commons": "^10.9.0"
   }
 }
