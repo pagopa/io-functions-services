@@ -42,6 +42,7 @@ import { TimeToLiveSeconds } from "./generated/fn-services/TimeToLiveSeconds";
 import { NewMessageWithoutContent } from "@pagopa/io-functions-commons/dist/src/models/message";
 import { isRight } from "fp-ts/lib/Either";
 import { ulidGenerator } from "@pagopa/io-functions-commons/dist/src/utils/strings";
+import {ProblemJson} from "@pagopa/ts-commons/lib/responses";
 
 const MAX_ATTEMPT = 50;
 jest.setTimeout(WAIT_MS * MAX_ATTEMPT);
@@ -105,6 +106,16 @@ const aValidLegalMessageContent = {
 const aValidThirdPartyMessageContent = {
   id: "ID"
 };
+
+const aValidEuCovidCertMessageContent = {
+  auth_code: "auth_code"
+};
+
+const aValidPaymentDataMessageContent = {
+  amount: 1,
+  notice_number: "177777777777777777",
+  payee: {fiscalCode: anAutoFiscalCode}
+}
 
 // Must correspond to an existing serviceId within "services" colletion
 const aSubscriptionKey = "aSubscriptionKey";
@@ -205,6 +216,11 @@ describe("Create Message |> Middleware errors", () => {
     const response = await postCreateMessage(nodeFetch)(body);
 
     expect(response.status).toEqual(403);
+
+    const problemJson = (await response.json()) as ProblemJson;
+
+    expect(E.isRight(ProblemJson.decode(problemJson))).toBeTruthy();
+    expect(problemJson).toMatchObject({ detail: "You do not have enough permissions to send a legal message", title: "You are not allowed here" })
   });
 
   it("should return 403 when creating a third party message without right permission", async () => {
@@ -225,6 +241,64 @@ describe("Create Message |> Middleware errors", () => {
     const response = await postCreateMessage(nodeFetch)(body);
 
     expect(response.status).toEqual(403);
+
+    const problemJson = (await response.json()) as ProblemJson;
+
+    expect(E.isRight(ProblemJson.decode(problemJson))).toBeTruthy();
+    expect(problemJson).toMatchObject({detail: "You do not have enough permissions to send a third party message", title: "You are not allowed here"})
+
+  });
+
+  it("should return 403 when creating an EUCovidCert message without right permission", async () => {
+    const nodeFetch = getNodeFetch({
+      "x-user-groups": "ApiMessageWrite"
+    });
+
+    const body = {
+      message: {
+        fiscal_code: anAutoFiscalCode,
+        content: {
+          ...aMessageContent,
+         eu_covid_cert : aValidEuCovidCertMessageContent
+        }
+      }
+    };
+
+    const response = await postCreateMessage(nodeFetch)(body);
+
+    expect(response.status).toEqual(403);
+
+    const problemJson = (await response.json()) as ProblemJson;
+
+    expect(E.isRight(ProblemJson.decode(problemJson))).toBeTruthy();
+    expect(problemJson).toMatchObject({detail: "You do not have enough permissions to send an EUCovidCert message", title: "You are not allowed here"})
+
+  });
+
+  it("should return 403 when creating a payment message without right permission", async () => {
+    const nodeFetch = getNodeFetch({
+      "x-user-groups": "ApiMessageWrite"
+    });
+
+    const body = {
+      message: {
+        fiscal_code: anAutoFiscalCode,
+        content: {
+          ...aMessageContent,
+         payment_data: aValidPaymentDataMessageContent
+        }
+      }
+    };
+
+    const response = await postCreateMessage(nodeFetch)(body);
+
+    expect(response.status).toEqual(403);
+
+    const problemJson = (await response.json()) as ProblemJson;
+
+    expect(E.isRight(ProblemJson.decode(problemJson))).toBeTruthy();
+    expect(problemJson).toMatchObject({detail: "You do not have enough permissions to send a payment message", title: "You are not allowed here"})
+
   });
 
   it("should return 403 when creating an advanced message without right permission", async () => {
@@ -243,6 +317,12 @@ describe("Create Message |> Middleware errors", () => {
     const response = await postCreateMessage(nodeFetch)(body);
 
     expect(response.status).toEqual(403);
+
+    const problemJson = (await response.json()) as ProblemJson;
+
+    expect(E.isRight(ProblemJson.decode(problemJson))).toBeTruthy();
+    expect(problemJson).toMatchObject({detail: "You do not have enough permissions to send an advanced message", title: "You are not allowed here"})
+
   });
 
   it("should return 201 when no middleware fails", async () => {

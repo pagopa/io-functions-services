@@ -437,6 +437,7 @@ describe("GetMessageHandler", () => {
     );
 
     expect(result.kind).toBe("IResponseErrorForbiddenNotAuthorized");
+    expect(result.detail).toContain("You are not allowed to read this message, you can only read messages that you have sent");
   });
 
   it("should respond with forbidden if requesting user is not allowed to see legal message", async () => {
@@ -479,6 +480,7 @@ describe("GetMessageHandler", () => {
     );
 
     expect(result.kind).toBe("IResponseErrorForbiddenNotAuthorized");
+    expect(result.detail).toContain("You are not allowed to read this message, you can only read messages that you have sent");
   });
 
   it("should respond with forbidden if requesting user is allowed to see legal_message but not other messages", async () => {
