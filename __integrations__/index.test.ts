@@ -219,7 +219,6 @@ describe("Create Message |> Middleware errors", () => {
 
     const problemJson = (await response.json()) as ProblemJson;
 
-    expect(E.isRight(ProblemJson.decode(problemJson))).toBeTruthy();
     expect(problemJson).toMatchObject({ detail: "You do not have enough permissions to send a legal message", title: "You are not allowed here" })
   });
 
@@ -244,7 +243,6 @@ describe("Create Message |> Middleware errors", () => {
 
     const problemJson = (await response.json()) as ProblemJson;
 
-    expect(E.isRight(ProblemJson.decode(problemJson))).toBeTruthy();
     expect(problemJson).toMatchObject({detail: "You do not have enough permissions to send a third party message", title: "You are not allowed here"})
 
   });
@@ -270,7 +268,6 @@ describe("Create Message |> Middleware errors", () => {
 
     const problemJson = (await response.json()) as ProblemJson;
 
-    expect(E.isRight(ProblemJson.decode(problemJson))).toBeTruthy();
     expect(problemJson).toMatchObject({detail: "You do not have enough permissions to send an EUCovidCert message", title: "You are not allowed here"})
 
   });
@@ -296,7 +293,6 @@ describe("Create Message |> Middleware errors", () => {
 
     const problemJson = (await response.json()) as ProblemJson;
 
-    expect(E.isRight(ProblemJson.decode(problemJson))).toBeTruthy();
     expect(problemJson).toMatchObject({detail: "You do not have enough permissions to send a payment message", title: "You are not allowed here"})
 
   });
@@ -320,7 +316,6 @@ describe("Create Message |> Middleware errors", () => {
 
     const problemJson = (await response.json()) as ProblemJson;
 
-    expect(E.isRight(ProblemJson.decode(problemJson))).toBeTruthy();
     expect(problemJson).toMatchObject({detail: "You do not have enough permissions to send an advanced message", title: "You are not allowed here"})
 
   });
