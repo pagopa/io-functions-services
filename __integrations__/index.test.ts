@@ -114,7 +114,6 @@ const aValidEuCovidCertMessageContent = {
 const aValidPaymentDataMessageContent = {
   amount: 1,
   notice_number: "177777777777777777",
-  payee: {fiscalCode: anAutoFiscalCode}
 }
 
 // Must correspond to an existing serviceId within "services" colletion
