@@ -114,6 +114,9 @@ const aValidEuCovidCertMessageContent = {
 const aValidPaymentDataMessageContent = {
   amount: 1,
   notice_number: "177777777777777777",
+  payee: {
+    fiscalCode: "01234567890"  
+  }
 }
 
 // Must correspond to an existing serviceId within "services" colletion
@@ -292,7 +295,7 @@ describe("Create Message |> Middleware errors", () => {
 
     const problemJson = (await response.json()) as ProblemJson;
 
-    expect(problemJson).toMatchObject({detail: "You do not have enough permissions to send a payment message", title: "You are not allowed here"})
+    expect(problemJson).toMatchObject({detail: "You do not have enough permissions to send a payment message with payee", title: "You are not allowed here"})
 
   });
 

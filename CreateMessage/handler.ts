@@ -496,7 +496,7 @@ export function CreateMessage(
           t.interface({ payment_data: PaymentDataWithRequiredPayee })
         ),
         new Set([UserGroup.ApiMessageWriteWithPayee]),
-        "You do not have enough permissions to send a payment message"
+        "You do not have enough permissions to send a payment message with payee"
       ),
       // Ensures only users in ApiMessageWriteWithLegalDataWithoutImpersonification group can send legal messages
       AzureAllowBodyPayloadMiddleware(
