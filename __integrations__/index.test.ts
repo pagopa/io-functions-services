@@ -318,7 +318,7 @@ describe("Create Message |> Middleware errors", () => {
 
     const problemJson = (await response.json()) as ProblemJson;
 
-    expect(problemJson).toMatchObject({detail: "You do not have enough permissions to send an advanced message", title: "You are not allowed here"})
+    expect(problemJson).toMatchObject({detail: "You do not have enough permissions to send a Premium message", title: "You are not allowed here"})
 
   });
 

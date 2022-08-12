@@ -510,7 +510,7 @@ export function CreateMessage(
       AzureAllowBodyPayloadMiddleware(
         ApiNewMessageWithAdvancedFeatures,
         new Set([UserGroup.ApiMessageWriteAdvanced]),
-        "You do not have enough permissions to send an advanced message"
+        "You do not have enough permissions to send a Premium message"
       ),
       // Allow only users in the ApiThirdPartyMessageWrite group to send messages with ThirdPartyData
       AzureAllowBodyPayloadMiddleware(
