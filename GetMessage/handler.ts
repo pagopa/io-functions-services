@@ -27,6 +27,7 @@ import {
   wrapRequestHandler
 } from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
 import {
+  getResponseErrorForbiddenNotAuthorized,
   IResponseErrorForbiddenNotAuthorized,
   IResponseErrorInternal,
   IResponseErrorNotFound,
@@ -313,7 +314,9 @@ export const GetMessageHandler = (
 
   if (!isUserAllowed) {
     // the user is not allowed to see the message
-    return ResponseErrorForbiddenNotAuthorized;
+    return getResponseErrorForbiddenNotAuthorized(
+      "You are not allowed to read this message, you can only read messages that you have sent"
+    );
   }
 
   // fetch the content of the message from the blob storage

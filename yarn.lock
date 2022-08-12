@@ -743,13 +743,13 @@
   resolved "https://registry.yarnpkg.com/@pagopa/express-azure-functions/-/express-azure-functions-2.0.0.tgz#eb52a0b997d931c1509372e2a9bea22a8ca85c17"
   integrity sha512-IFZqtk0e2sfkMZIxYqPORzxcKRkbIrVJesR6eMLNwzh1rA4bl2uh9ZHk1m55LNq4ZmaxREDu+1JcGlIaZQgKNQ==
 
-"@pagopa/io-functions-commons@^25.5.2":
-  version "25.5.2"
-  resolved "https://registry.yarnpkg.com/@pagopa/io-functions-commons/-/io-functions-commons-25.5.2.tgz#5bb04ded9551100ba2477ee6207735e82362368e"
-  integrity sha512-+nXvYuK0Oc/KA3TBsXGDudNTycWH/5dzFwmd2QlBsv6lDc02h5ILw3R3RsqUrdx3ts03RfDfKejoBu9Misr9YQ==
+"@pagopa/io-functions-commons@^25.6.0":
+  version "25.6.0"
+  resolved "https://registry.yarnpkg.com/@pagopa/io-functions-commons/-/io-functions-commons-25.6.0.tgz#35bb4e09d88647f959333ea998b20b8ac65f4e30"
+  integrity sha512-RxWMUlLNGYt57qejfTy9caWSpSSjHTnzGp5m2T1dpCW49mKLIvFmv935aqJcV8Sdi4un2EV4LpSsC2EAON4BHQ==
   dependencies:
     "@azure/cosmos" "^3.15.1"
-    "@pagopa/ts-commons" "^10.5.0"
+    "@pagopa/ts-commons" "^10.9.0"
     applicationinsights "^1.8.10"
     azure-storage "^2.10.5"
     cidr-matcher "^2.1.1"
@@ -784,7 +784,7 @@
     write-yaml-file "^4.1.3"
     yargs "^15.0.1"
 
-"@pagopa/ts-commons@^10.0.0", "@pagopa/ts-commons@^10.2.0", "@pagopa/ts-commons@^10.5.0":
+"@pagopa/ts-commons@^10.0.0", "@pagopa/ts-commons@^10.2.0":
   version "10.5.1"
   resolved "https://registry.yarnpkg.com/@pagopa/ts-commons/-/ts-commons-10.5.1.tgz#70ac28006be8f3031132f5483a3aa69f365e06c6"
   integrity sha512-oqzwalVRp3eMUa3COhLn18MC00e6ytmbjTtON/gZePbeeqnvuX3tJJM8FsA16OIu9EnrjWMOb/s/CFG4MnPogw==
@@ -798,10 +798,10 @@
     node-fetch "^2.6.0"
     validator "^13.7.0"
 
-"@pagopa/ts-commons@^10.7.1":
-  version "10.7.1"
-  resolved "https://registry.yarnpkg.com/@pagopa/ts-commons/-/ts-commons-10.7.1.tgz#48324b106dc210221d14bc6d537ec64e926fa80f"
-  integrity sha512-obLOYOoOOiI8eFZ2fZOYj0Q/XMjL6muJGHU8GhQymeDw1GRu6aen7eO03W7qLYAXVKZ/pFSRO81AkNPY0ZFcgA==
+"@pagopa/ts-commons@^10.9.0":
+  version "10.9.0"
+  resolved "https://registry.yarnpkg.com/@pagopa/ts-commons/-/ts-commons-10.9.0.tgz#ca50f8f9b09499667b6f3532c897453918ed7c76"
+  integrity sha512-hnWpA8Le8ylxKGGj+IALFBhOQDgLDl8vb3opKr3MHVdkcvm4GONZkotGnnSQ3Bh/tasgmPbeOa4wAHJSLTRmXQ==
   dependencies:
     abort-controller "^3.0.0"
     agentkeepalive "^4.1.4"

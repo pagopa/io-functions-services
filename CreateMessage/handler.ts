@@ -487,33 +487,38 @@ export function CreateMessage(
       ...commonCreateMessageMiddlewares(serviceModel),
       AzureAllowBodyPayloadMiddleware(
         ApiNewMessageWithContentOf(t.interface({ eu_covid_cert: EUCovidCert })),
-        new Set([UserGroup.ApiMessageWriteEUCovidCert])
+        new Set([UserGroup.ApiMessageWriteEUCovidCert]),
+        "You do not have enough permissions to send an EUCovidCert message"
       ),
       // Ensures only users in ApiMessageWriteWithPayee group can send payment messages with payee payload
       AzureAllowBodyPayloadMiddleware(
         ApiNewMessageWithContentOf(
           t.interface({ payment_data: PaymentDataWithRequiredPayee })
         ),
-        new Set([UserGroup.ApiMessageWriteWithPayee])
+        new Set([UserGroup.ApiMessageWriteWithPayee]),
+        "You do not have enough permissions to send a payment message with payee"
       ),
       // Ensures only users in ApiMessageWriteWithLegalDataWithoutImpersonification group can send legal messages
       AzureAllowBodyPayloadMiddleware(
         ApiNewMessageWithContentOf(t.interface({ legal_data: LegalData })),
         new Set([
           UserGroup.ApiMessageWriteWithLegalDataWithoutImpersonification
-        ])
+        ]),
+        "You do not have enough permissions to send a legal message"
       ),
       // Allow only users in the ApiMessageWriteAdvanced group to send messages with "ADVANCED" feature_type
       AzureAllowBodyPayloadMiddleware(
         ApiNewMessageWithAdvancedFeatures,
-        new Set([UserGroup.ApiMessageWriteAdvanced])
+        new Set([UserGroup.ApiMessageWriteAdvanced]),
+        "You do not have enough permissions to send a Premium message"
       ),
       // Allow only users in the ApiThirdPartyMessageWrite group to send messages with ThirdPartyData
       AzureAllowBodyPayloadMiddleware(
         ApiNewMessageWithContentOf(
           t.interface({ third_party_data: ThirdPartyData })
         ),
-        new Set([UserGroup.ApiThirdPartyMessageWrite])
+        new Set([UserGroup.ApiThirdPartyMessageWrite]),
+        "You do not have enough permissions to send a third party message"
       )
     ] as const)
   );

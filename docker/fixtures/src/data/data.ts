@@ -49,7 +49,7 @@ const anEnabledService: ValidService = {
   authorizedCIDRs: new Set((["0.0.0.0"] as unknown) as ReadonlyArray<CIDR>),
   departmentName: "department" as NonEmptyString,
   isVisible: true,
-  maxAllowedPaymentAmount: (0 as unknown) as number &
+  maxAllowedPaymentAmount: (10 as unknown) as number &
     WithinRangeInteger<0, 9999999999>,
   organizationFiscalCode: "01234567890" as OrganizationFiscalCode,
   organizationName: "Organization" as NonEmptyString,
