@@ -784,10 +784,10 @@
     write-yaml-file "^4.1.3"
     yargs "^15.0.1"
 
-"@pagopa/ts-commons@^10.0.0", "@pagopa/ts-commons@^10.2.0":
-  version "10.5.1"
-  resolved "https://registry.yarnpkg.com/@pagopa/ts-commons/-/ts-commons-10.5.1.tgz#70ac28006be8f3031132f5483a3aa69f365e06c6"
-  integrity sha512-oqzwalVRp3eMUa3COhLn18MC00e6ytmbjTtON/gZePbeeqnvuX3tJJM8FsA16OIu9EnrjWMOb/s/CFG4MnPogw==
+"@pagopa/ts-commons@^10.0.0", "@pagopa/ts-commons@^10.9.0":
+  version "10.9.0"
+  resolved "https://registry.yarnpkg.com/@pagopa/ts-commons/-/ts-commons-10.9.0.tgz#ca50f8f9b09499667b6f3532c897453918ed7c76"
+  integrity sha512-hnWpA8Le8ylxKGGj+IALFBhOQDgLDl8vb3opKr3MHVdkcvm4GONZkotGnnSQ3Bh/tasgmPbeOa4wAHJSLTRmXQ==
   dependencies:
     abort-controller "^3.0.0"
     agentkeepalive "^4.1.4"
@@ -798,10 +798,10 @@
     node-fetch "^2.6.0"
     validator "^13.7.0"
 
-"@pagopa/ts-commons@^10.9.0":
-  version "10.9.0"
-  resolved "https://registry.yarnpkg.com/@pagopa/ts-commons/-/ts-commons-10.9.0.tgz#ca50f8f9b09499667b6f3532c897453918ed7c76"
-  integrity sha512-hnWpA8Le8ylxKGGj+IALFBhOQDgLDl8vb3opKr3MHVdkcvm4GONZkotGnnSQ3Bh/tasgmPbeOa4wAHJSLTRmXQ==
+"@pagopa/ts-commons@^10.10.0":
+  version "10.10.0"
+  resolved "https://registry.yarnpkg.com/@pagopa/ts-commons/-/ts-commons-10.10.0.tgz#9eae84003956ac44aad710b91abd7614bb09665e"
+  integrity sha512-/bIEHIvswrp9mi+NdBOJftPAP9YeI5Z1+mK1WV/RDTvy6nb5Zd7C9kwdBJbXjl4zW/eiQsb5PqLHEC6odQKlWg==
   dependencies:
     abort-controller "^3.0.0"
     agentkeepalive "^4.1.4"
