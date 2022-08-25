@@ -34,15 +34,16 @@ import { sequenceS } from "fp-ts/lib/Apply";
 import { createBlobService } from "azure-storage";
 import { EmailString } from "@pagopa/ts-commons/lib/strings";
 import { FeatureLevelTypeEnum } from "./generated/fn-services/FeatureLevelType";
-import { MessageStatusValueEnum } from "./generated/fn-services/MessageStatusValue";
+import { RejectedMessageStatusValueEnum } from "./generated/fn-services/RejectedMessageStatusValue";
+import { NotRejectedMessageStatusValueEnum } from "./generated/fn-services/NotRejectedMessageStatusValue";
 import { ReadStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ReadStatus";
 import { PaymentStatusEnum } from "./generated/fn-services/PaymentStatus";
-import { NewMessage } from "./generated/fn-services/NewMessage";
+import { RejectionReasonEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/RejectionReason";
 import { TimeToLiveSeconds } from "./generated/fn-services/TimeToLiveSeconds";
 import { NewMessageWithoutContent } from "@pagopa/io-functions-commons/dist/src/models/message";
 import { isRight } from "fp-ts/lib/Either";
 import { ulidGenerator } from "@pagopa/io-functions-commons/dist/src/utils/strings";
-import {ProblemJson} from "@pagopa/ts-commons/lib/responses";
+import { ProblemJson } from "@pagopa/ts-commons/lib/responses";
 
 const MAX_ATTEMPT = 50;
 jest.setTimeout(WAIT_MS * MAX_ATTEMPT);
@@ -122,7 +123,7 @@ const aValidPaymentDataMessageContent = {
   payee: {
     fiscal_code: "01234567890"
   }
-}
+};
 
 // Must correspond to an existing serviceId within "services" colletion
 const aSubscriptionKey = "aSubscriptionKey";
@@ -226,7 +227,10 @@ describe("Create Message |> Middleware errors", () => {
 
     const problemJson = (await response.json()) as ProblemJson;
 
-    expect(problemJson).toMatchObject({ detail: "You do not have enough permissions to send a legal message", title: "You are not allowed here" })
+    expect(problemJson).toMatchObject({
+      detail: "You do not have enough permissions to send a legal message",
+      title: "You are not allowed here"
+    });
   });
 
   it("should return 403 when creating a third party message without right permission", async () => {
@@ -250,8 +254,11 @@ describe("Create Message |> Middleware errors", () => {
 
     const problemJson = (await response.json()) as ProblemJson;
 
-    expect(problemJson).toMatchObject({detail: "You do not have enough permissions to send a third party message", title: "You are not allowed here"})
-
+    expect(problemJson).toMatchObject({
+      detail:
+        "You do not have enough permissions to send a third party message",
+      title: "You are not allowed here"
+    });
   });
 
   it("should return 403 when creating an EUCovidCert message without right permission", async () => {
@@ -264,7 +271,7 @@ describe("Create Message |> Middleware errors", () => {
         fiscal_code: anAutoFiscalCode,
         content: {
           ...aMessageContent,
-         eu_covid_cert : aValidEuCovidCertMessageContent
+          eu_covid_cert: aValidEuCovidCertMessageContent
         }
       }
     };
@@ -275,8 +282,11 @@ describe("Create Message |> Middleware errors", () => {
 
     const problemJson = (await response.json()) as ProblemJson;
 
-    expect(problemJson).toMatchObject({detail: "You do not have enough permissions to send an EUCovidCert message", title: "You are not allowed here"})
-
+    expect(problemJson).toMatchObject({
+      detail:
+        "You do not have enough permissions to send an EUCovidCert message",
+      title: "You are not allowed here"
+    });
   });
 
   it("should return 403 when creating a payment message without right permission", async () => {
@@ -289,7 +299,7 @@ describe("Create Message |> Middleware errors", () => {
         fiscal_code: anAutoFiscalCode,
         content: {
           ...aMessageContent,
-         payment_data: aValidPaymentDataMessageContent
+          payment_data: aValidPaymentDataMessageContent
         }
       }
     };
@@ -300,8 +310,11 @@ describe("Create Message |> Middleware errors", () => {
 
     const problemJson = (await response.json()) as ProblemJson;
 
-    expect(problemJson).toMatchObject({detail: "You do not have enough permissions to send a payment message with payee", title: "You are not allowed here"})
-
+    expect(problemJson).toMatchObject({
+      detail:
+        "You do not have enough permissions to send a payment message with payee",
+      title: "You are not allowed here"
+    });
   });
 
   it("should return 403 when creating an advanced message without right permission", async () => {
@@ -323,8 +336,10 @@ describe("Create Message |> Middleware errors", () => {
 
     const problemJson = (await response.json()) as ProblemJson;
 
-    expect(problemJson).toMatchObject({detail: "You do not have enough permissions to send a Premium message", title: "You are not allowed here"})
-
+    expect(problemJson).toMatchObject({
+      detail: "You do not have enough permissions to send a Premium message",
+      title: "You are not allowed here"
+    });
   });
 
   it("should return 201 when no middleware fails", async () => {
@@ -398,7 +413,7 @@ describe("Create Message", () => {
             id: messageId,
             feature_level_type: FeatureLevelTypeEnum.STANDARD
           }),
-          status: MessageStatusValueEnum.PROCESSED
+          status: NotRejectedMessageStatusValueEnum.PROCESSED
         })
       );
     }
@@ -453,10 +468,16 @@ describe("Create Message", () => {
           expect(O.isSome(status)).toBeTruthy();
           expect(O.isSome(content)).toBeFalsy();
 
-          if (O.isSome(status))
-            expect(status.value.status).toEqual(
-              MessageStatusValueEnum.REJECTED
-            );
+          console.log("status", status);
+
+          expect(status).toEqual(
+            O.some(
+              expect.objectContaining({
+                status: RejectedMessageStatusValueEnum.REJECTED,
+                rejection_reason: RejectionReasonEnum.SERVICE_NOT_ALLOWED
+              })
+            )
+          );
         })
       )();
 
@@ -472,6 +493,77 @@ describe("Create Message", () => {
       // });
     }
   );
+
+  it("should Reject message when user does not exist", async () => {
+    const nodeFetch = getNodeFetch({
+      "x-subscription-id": aValidServiceId
+    });
+    const aNonExistingFiscalCode = "XXXBBB01C02D345M" as FiscalCode;
+
+    const body = {
+      message: { fiscal_code: aNonExistingFiscalCode, content: aMessageContent }
+    };
+
+    const result = await postCreateMessage(nodeFetch)(body);
+
+    expect(result.status).toEqual(201);
+
+    const messageId = ((await result.json()) as CreatedMessage).id;
+    expect(messageId).not.toBeUndefined();
+
+    // Wait the process to complete
+    await delay(WAIT_MS);
+
+    await pipe(
+      {
+        message: messageModel.find([
+          messageId as NonEmptyString,
+          aNonExistingFiscalCode
+        ]),
+        status: messageStatusModel.findLastVersionByModelId([
+          messageId as NonEmptyString
+        ])
+      },
+      sequenceS(TE.ApplicativePar),
+      TE.bindW("content", _ =>
+        pipe(
+          messageModel.getContentFromBlob(
+            blobService,
+            messageId as NonEmptyString
+          ),
+          TE.orElseW(_ => TE.of(O.none as O.Option<MessageContent>))
+        )
+      ),
+      TE.mapLeft(_ => fail(`Error retrieving message data from Cosmos.`)),
+      TE.map(({ message, status, content }) => {
+        expect(O.isSome(message)).toBeTruthy();
+        expect(O.isSome(status)).toBeTruthy();
+        expect(O.isSome(content)).toBeFalsy();
+
+        console.log("status", status);
+
+        expect(status).toEqual(
+          O.some(
+            expect.objectContaining({
+              status: RejectedMessageStatusValueEnum.REJECTED,
+              rejection_reason: RejectionReasonEnum.USER_NOT_FOUND
+            })
+          )
+        );
+      })
+    )();
+
+    // TODO: Fix when getMessage will return the message status
+    // const resultGet = await getSentMessage(nodeFetch)(fiscalCode, messageId);
+    // const detail = await resultGet.json();
+
+    // expect(resultGet.status).toEqual(500);
+    // expect(detail).toEqual({
+    //   detail: "Error: Cannot get stored message content from blob",
+    //   status: 500,
+    //   title: "Internal server error"
+    // });
+  });
 });
 
 describe("Create Third Party Message", () => {
@@ -527,7 +619,7 @@ describe("Create Third Party Message", () => {
               }
             }
           }),
-          status: MessageStatusValueEnum.PROCESSED
+          status: NotRejectedMessageStatusValueEnum.PROCESSED
         })
       );
     }
@@ -585,7 +677,7 @@ describe("Create Advanced Message", () => {
             id: messageId,
             feature_level_type: FeatureLevelTypeEnum.ADVANCED
           }),
-          status: MessageStatusValueEnum.PROCESSED,
+          status: NotRejectedMessageStatusValueEnum.PROCESSED,
           read_status:
             fiscalCode === aLegacyInboxEnabledFiscalCode
               ? ReadStatusEnum.UNAVAILABLE
@@ -610,7 +702,7 @@ describe("Create Advanced Message", () => {
             ...body.message,
             id: messageId
           }),
-          status: MessageStatusValueEnum.PROCESSED
+          status: NotRejectedMessageStatusValueEnum.PROCESSED
         })
       );
 
@@ -665,7 +757,7 @@ describe("Create Advanced Message", () => {
           ...body.message,
           id: messageId
         }),
-        status: MessageStatusValueEnum.PROCESSED,
+        status: NotRejectedMessageStatusValueEnum.PROCESSED,
         read_status: ReadStatusEnum.UNAVAILABLE
       })
     );
@@ -685,7 +777,7 @@ describe("Create Advanced Message", () => {
           ...body.message,
           id: messageId
         }),
-        status: MessageStatusValueEnum.PROCESSED
+        status: NotRejectedMessageStatusValueEnum.PROCESSED
       })
     );
 
@@ -745,7 +837,7 @@ describe("Create Advanced Message", () => {
           ...body.message,
           id: messageId
         }),
-        status: MessageStatusValueEnum.PROCESSED,
+        status: NotRejectedMessageStatusValueEnum.PROCESSED,
         read_status: ReadStatusEnum.UNAVAILABLE,
         payment_status: PaymentStatusEnum.NOT_PAID
       })
@@ -766,7 +858,7 @@ describe("Create Advanced Message", () => {
           ...body.message,
           id: messageId
         }),
-        status: MessageStatusValueEnum.PROCESSED
+        status: NotRejectedMessageStatusValueEnum.PROCESSED
       })
     );
 
