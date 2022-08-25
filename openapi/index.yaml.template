@@ -781,6 +781,10 @@ definitions:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ExternalMessageResponseWithContent"
   MessageResponseNotificationStatus:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/MessageResponseNotificationStatus"
+  RejectedMessageStatusValue:
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/RejectedMessageStatusValue"
+  NotRejectedMessageStatusValue:
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/NotRejectedMessageStatusValue"
   MessageStatusValue:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/MessageStatusValue"
   ExternalCreatedMessageWithContent:
