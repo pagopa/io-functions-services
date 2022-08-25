@@ -5,8 +5,8 @@ import {
   getMessageStatusUpdater,
   MessageStatusModel
 } from "@pagopa/io-functions-commons/dist/src/models/message_status";
-import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
 import { MessageModel } from "@pagopa/io-functions-commons/dist/src/models/message";
+import { NotRejectedMessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/NotRejectedMessageStatusValue";
 import { constant, pipe } from "fp-ts/lib/function";
 import * as E from "fp-ts/Either";
 import * as TE from "fp-ts/TaskEither";
@@ -69,7 +69,7 @@ export const getOnFailedProcessMessageHandler = ({
             lMessageStatusModel,
             messageId,
             message.fiscalCode
-          )(MessageStatusValueEnum.FAILED)
+          )({ status: NotRejectedMessageStatusValueEnum.FAILED })
         ),
         TE.map(() => {
           telemetryClient.trackEvent({
