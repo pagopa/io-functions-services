@@ -36,6 +36,7 @@ import * as O from "fp-ts/lib/Option";
 import * as T from "fp-ts/lib/Task";
 import * as TE from "fp-ts/lib/TaskEither";
 import { TaskEither } from "fp-ts/lib/TaskEither";
+import { RejectionReasonEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/RejectionReason";
 import { SpecialServiceCategoryEnum } from "../generated/api-admin/SpecialServiceCategory";
 import { LegalData } from "../generated/definitions/LegalData";
 import { PaymentData } from "../generated/definitions/PaymentData";
@@ -51,7 +52,6 @@ import { withDecodedInput } from "../utils/with-decoded-input";
 import { DataFetcher, withExpandedInput } from "../utils/with-expanded-input";
 import { withJsonInput } from "../utils/with-json-input";
 import { canSendMessageOnActivationWithGrace } from "../utils/services";
-import { RejectionReasonEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/RejectionReason";
 
 // Interface that marks an unexpected value
 interface IUnexpectedValue {
