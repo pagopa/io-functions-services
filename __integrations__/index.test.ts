@@ -94,6 +94,11 @@ export const aMessageContent: MessageContent = {
   subject: "test".repeat(10)
 };
 
+export const anInvalidMessageContent: MessageContent = {
+  markdown: aMessageBodyMarkdown,
+  subject: "invalid"
+};
+
 const aValidLegalMessageContent = {
   ...aMessageContent,
   legal_data: {
@@ -333,6 +338,27 @@ describe("Create Message |> Middleware errors", () => {
     const response = await postCreateMessage(getNodeFetch())(body);
     expect(response.status).toEqual(201);
   });
+
+  it("should return 400 with simplified validation error when MessagePayloadMiddleware fails", async () => {
+      const body = {
+        message: {
+          fiscal_code: aLegacyInboxEnabledFiscalCode,
+          content: anInvalidMessageContent 
+        }
+      };
+
+      const response = await postCreateMessage(getNodeFetch())(body);
+
+      const problemJson = await response.json();
+
+      expect(problemJson).toMatchObject({
+        status: 400,
+        detail:
+          'value "invalid" at root.content.subject is not a valid [string of length >= 10 and < 121]'
+      });
+
+    });
+
 });
 
 describe("Create Message", () => {

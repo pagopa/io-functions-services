@@ -49,7 +49,7 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/utils/strings";
 
 import { initAppInsights } from "@pagopa/ts-commons/lib/appinsights";
-import { readableReport } from "@pagopa/ts-commons/lib/reporters";
+import { readableReportSimplified } from "@pagopa/ts-commons/lib/reporters";
 import {
   IResponseErrorForbiddenAnonymousUser,
   IResponseErrorForbiddenNoAuthorizationGroups,
@@ -437,7 +437,7 @@ export function CreateMessageHandler(
           TE.mapLeft(err =>
             ResponseErrorValidation(
               "Unable to decode CreatedMessageEvent",
-              readableReport(err)
+              readableReportSimplified(err)
             )
           ),
           TE.map(createdMessage => {
