@@ -8,20 +8,14 @@ import {
   IResponseErrorInternal,
   IResponseErrorNotFound,
   IResponseErrorTooManyRequests,
-  IResponseErrorValidation,
   ResponseErrorForbiddenNotAuthorized,
   ResponseErrorGeneric,
   ResponseErrorInternal,
   ResponseErrorNotFound,
-  ResponseErrorTooManyRequests,
-  ResponseErrorValidation
+  ResponseErrorTooManyRequests
 } from "@pagopa/ts-commons/lib/responses";
 
-import * as t from "io-ts";
-import {
-  errorsToReadableMessages,
-  readableReportSimplified
-} from "@pagopa/ts-commons/lib/reporters";
+import { errorsToReadableMessages } from "@pagopa/ts-commons/lib/reporters";
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export const unhandledResponseStatus = (status: number) =>
@@ -54,21 +48,6 @@ export function ResponseErrorUnauthorized(
     }
   };
 }
-
-/**
-Return a 400 response error witha  readable validation error
- */
-// this function should be moved to ts-commons
-export const ResponseErrorSimplifiedFromValidationErrors = <S, A>(
-  type: t.Type<A, S>
-): ((
-  errors: ReadonlyArray<t.ValidationError>
-) => // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-IResponseErrorValidation) => errors =>
-  ResponseErrorValidation(
-    `Invalid ${type.name}`,
-    readableReportSimplified(errors)
-  );
 
 export type ErrorResponses =
   | IResponseErrorNotFound

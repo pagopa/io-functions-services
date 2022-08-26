@@ -348,8 +348,15 @@ describe("Create Message |> Middleware errors", () => {
       };
 
       const response = await postCreateMessage(getNodeFetch())(body);
-      expect(response.status).toEqual(400);
-      expect(response.body).toContain('value "subject" at root.content.subject is not a valid [string of length >= 10 and < 121]');
+
+      const problemJson = await response.json();
+
+      expect(problemJson).toMatchObject({
+        status: 400,
+        detail:
+          'value "invalid" at root.content.subject is not a valid [string of length >= 10 and < 121]'
+      });
+
     });
 
 });

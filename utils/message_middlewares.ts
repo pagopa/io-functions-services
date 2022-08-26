@@ -16,14 +16,16 @@ import {
   IResponseErrorInternal,
   IResponseErrorNotFound,
   IResponseErrorTooManyRequests,
-  IResponseErrorValidation
+  IResponseErrorValidation,
+  ResponseErrorValidation
 } from "@pagopa/ts-commons/lib/responses";
 import { IResponseErrorQuery } from "@pagopa/io-functions-commons/dist/src/utils/response";
 import { IRequestMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
 import { pipe } from "fp-ts/lib/function";
 import * as TE from "fp-ts/lib/TaskEither";
+import { readableReportSimplified } from "@pagopa/ts-commons/lib/reporters";
+import { Errors } from "io-ts";
 import { ApiNewMessageWithDefaults } from "../CreateMessage/types";
-import { ResponseErrorSimplifiedFromValidationErrors } from "./responses";
 
 /**
  * A request middleware that validates the Message payload.
@@ -36,8 +38,11 @@ export const MessagePayloadMiddleware: IRequestMiddleware<
     request.body,
     ApiNewMessageWithDefaults.decode,
     TE.fromEither,
-    TE.mapLeft(
-      ResponseErrorSimplifiedFromValidationErrors(ApiNewMessageWithDefaults)
+    TE.mapLeft((errors: Errors) =>
+      ResponseErrorValidation(
+        "Invalid message structure",
+        readableReportSimplified(errors)
+      )
     )
   )();
 
