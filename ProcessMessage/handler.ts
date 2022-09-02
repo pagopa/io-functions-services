@@ -4,7 +4,8 @@ import { Context } from "@azure/functions";
 import { BlockedInboxOrChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
 import { EUCovidCert } from "@pagopa/io-functions-commons/dist/generated/definitions/EUCovidCert";
 import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
-import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
+import { RejectedMessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/RejectedMessageStatusValue";
+import { NotRejectedMessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/NotRejectedMessageStatusValue";
 import { PaymentDataWithRequiredPayee } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentDataWithRequiredPayee";
 import {
   ServicesPreferencesMode,
@@ -35,6 +36,7 @@ import * as O from "fp-ts/lib/Option";
 import * as T from "fp-ts/lib/Task";
 import * as TE from "fp-ts/lib/TaskEither";
 import { TaskEither } from "fp-ts/lib/TaskEither";
+import { RejectionReasonEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/RejectionReason";
 import { SpecialServiceCategoryEnum } from "../generated/api-admin/SpecialServiceCategory";
 import { LegalData } from "../generated/definitions/LegalData";
 import { PaymentData } from "../generated/definitions/PaymentData";
@@ -313,7 +315,9 @@ const createMessageOrThrow = async (
   // In case it fails, throw an Error and try again
   // NOTE: this will cause message content to be overwritten
   await pipe(
-    messageStatusUpdater(MessageStatusValueEnum.PROCESSED),
+    messageStatusUpdater({
+      status: NotRejectedMessageStatusValueEnum.PROCESSED
+    }),
     TE.getOrElse(e => {
       context.log.error(
         `${logPrefixWithMessage}|UPSERT_STATUS=PROCESSED|ERROR=${JSON.stringify(
@@ -414,7 +418,10 @@ export const getProcessMessageHandler = ({
           if (O.isNone(maybeProfile)) {
             // the recipient doesn't have any profile yet
             await pipe(
-              messageStatusUpdater(MessageStatusValueEnum.REJECTED),
+              messageStatusUpdater({
+                rejection_reason: RejectionReasonEnum.USER_NOT_FOUND,
+                status: RejectedMessageStatusValueEnum.REJECTED
+              }),
               TE.getOrElse(e => {
                 context.log.error(
                   `${logPrefix}|PROFILE_NOT_FOUND|UPSERT_STATUS=REJECTED|ERROR=${JSON.stringify(
@@ -443,7 +450,10 @@ export const getProcessMessageHandler = ({
           if (!isInboxEnabled) {
             // the recipient's inbox is disabled
             await pipe(
-              messageStatusUpdater(MessageStatusValueEnum.REJECTED),
+              messageStatusUpdater({
+                rejection_reason: RejectionReasonEnum.SERVICE_NOT_ALLOWED,
+                status: RejectedMessageStatusValueEnum.REJECTED
+              }),
               TE.getOrElse(e => {
                 context.log.error(
                   `${logPrefix}|MASTER_INBOX_DISABLED|UPSERT_STATUS=REJECTED|ERROR=${JSON.stringify(
@@ -538,7 +548,10 @@ export const getProcessMessageHandler = ({
 
           if (isMessageStorageBlockedForService) {
             await pipe(
-              messageStatusUpdater(MessageStatusValueEnum.REJECTED),
+              messageStatusUpdater({
+                rejection_reason: RejectionReasonEnum.SERVICE_NOT_ALLOWED,
+                status: RejectedMessageStatusValueEnum.REJECTED
+              }),
               TE.getOrElse(e => {
                 context.log.error(
                   `${logPrefix}|SENDER_BLOCKED|UPSERT_STATUS=REJECTED|ERROR=${JSON.stringify(

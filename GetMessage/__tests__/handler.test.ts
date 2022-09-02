@@ -39,7 +39,7 @@ import { toAuthorizedCIDRs } from "@pagopa/io-functions-commons/dist/src/models/
 import { ExternalCreatedMessageWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/ExternalCreatedMessageWithoutContent";
 import { ExternalMessageResponseWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/ExternalMessageResponseWithoutContent";
 import { MaxAllowedPaymentAmount } from "@pagopa/io-functions-commons/dist/generated/definitions/MaxAllowedPaymentAmount";
-import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
+import { NotRejectedMessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/NotRejectedMessageStatusValue";
 import { NotificationChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/NotificationChannel";
 import { NotificationChannelStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/NotificationChannelStatusValue";
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
@@ -194,7 +194,7 @@ describe("GetMessageHandler", () => {
       email: NotificationChannelStatusValueEnum.SENT,
       webhook: NotificationChannelStatusValueEnum.SENT
     },
-    status: MessageStatusValueEnum.ACCEPTED
+    status: NotRejectedMessageStatusValueEnum.ACCEPTED
   };
 
   function getNotificationModelMock(
@@ -230,7 +230,7 @@ describe("GetMessageHandler", () => {
 
   const aMessageStatus: MessageStatus = {
     messageId: aMessageId,
-    status: MessageStatusValueEnum.ACCEPTED,
+    status: NotRejectedMessageStatusValueEnum.ACCEPTED,
     updatedAt: new Date(),
     isRead: false,
     isArchived: false
@@ -437,7 +437,9 @@ describe("GetMessageHandler", () => {
     );
 
     expect(result.kind).toBe("IResponseErrorForbiddenNotAuthorized");
-    expect(result.detail).toContain("You are not allowed to read this message, you can only read messages that you have sent");
+    expect(result.detail).toContain(
+      "You are not allowed to read this message, you can only read messages that you have sent"
+    );
   });
 
   it("should respond with forbidden if requesting user is not allowed to see legal message", async () => {
@@ -480,7 +482,9 @@ describe("GetMessageHandler", () => {
     );
 
     expect(result.kind).toBe("IResponseErrorForbiddenNotAuthorized");
-    expect(result.detail).toContain("You are not allowed to read this message, you can only read messages that you have sent");
+    expect(result.detail).toContain(
+      "You are not allowed to read this message, you can only read messages that you have sent"
+    );
   });
 
   it("should respond with forbidden if requesting user is allowed to see legal_message but not other messages", async () => {
@@ -1085,7 +1089,10 @@ describe("GetMessageHandler", () => {
       mockMessageModel as any,
       getMessageStatusModelMock(
         TE.of(
-          some({ ...aMessageStatus, status: MessageStatusValueEnum.PROCESSED })
+          some({
+            ...aMessageStatus,
+            status: NotRejectedMessageStatusValueEnum.PROCESSED
+          })
         )
       ),
       getNotificationModelMock(aRetrievedNotification),
@@ -1134,7 +1141,10 @@ describe("GetMessageHandler", () => {
       mockMessageModel as any,
       getMessageStatusModelMock(
         TE.of(
-          some({ ...aMessageStatus, status: MessageStatusValueEnum.PROCESSED })
+          some({
+            ...aMessageStatus,
+            status: NotRejectedMessageStatusValueEnum.PROCESSED
+          })
         )
       ),
       getNotificationModelMock(aRetrievedNotification),
@@ -1183,7 +1193,10 @@ describe("GetMessageHandler", () => {
       mockMessageModel as any,
       getMessageStatusModelMock(
         TE.of(
-          some({ ...aMessageStatus, status: MessageStatusValueEnum.PROCESSED })
+          some({
+            ...aMessageStatus,
+            status: NotRejectedMessageStatusValueEnum.PROCESSED
+          })
         )
       ),
       getNotificationModelMock(aRetrievedNotification),
@@ -1232,7 +1245,10 @@ describe("GetMessageHandler", () => {
       mockMessageModel as any,
       getMessageStatusModelMock(
         TE.of(
-          some({ ...aMessageStatus, status: MessageStatusValueEnum.PROCESSED })
+          some({
+            ...aMessageStatus,
+            status: NotRejectedMessageStatusValueEnum.PROCESSED
+          })
         )
       ),
       getNotificationModelMock(aRetrievedNotification),

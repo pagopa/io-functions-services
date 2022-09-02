@@ -75,7 +75,7 @@ import { ExternalMessageResponseWithContent } from "@pagopa/io-functions-commons
 import { ExternalMessageResponseWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/ExternalMessageResponseWithoutContent";
 import { ExternalCreatedMessageWithContent } from "@pagopa/io-functions-commons/dist/generated/definitions/ExternalCreatedMessageWithContent";
 import { ExternalCreatedMessageWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/ExternalCreatedMessageWithoutContent";
-import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
+import { NotRejectedMessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/NotRejectedMessageStatusValue";
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { readableReport } from "@pagopa/ts-commons/lib/reporters";
 import { pipe } from "fp-ts/lib/function";
@@ -181,7 +181,7 @@ const WithPayment = t.interface({
   })
 });
 const WithStatusProcessed = t.interface({
-  status: t.literal(MessageStatusValueEnum.PROCESSED)
+  status: t.literal(NotRejectedMessageStatusValueEnum.PROCESSED)
 });
 const eligibleForPaymentStatus = (FF_PAYMENT_STATUS_ENABLED: boolean) => (
   messageWithContent: unknown
@@ -405,7 +405,7 @@ export const GetMessageHandler = (
         // when the message has been received but a MessageStatus
         // does not exist yet, the message is considered to be
         // in the ACCEPTED state (not yet visible in the user's inbox)
-        O.getOrElse(() => MessageStatusValueEnum.ACCEPTED)
+        O.getOrElse(() => NotRejectedMessageStatusValueEnum.ACCEPTED)
       )
     },
     // Enrich message info with advanced properties if user is allowed to read them

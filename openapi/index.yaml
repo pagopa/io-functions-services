@@ -978,8 +978,22 @@ definitions:
         $ref: '#/definitions/NotificationChannelStatusValue'
       webhook:
         $ref: '#/definitions/NotificationChannelStatusValue'
-  MessageStatusValue:
+  RejectedMessageStatusValue:
     type: string
+    x-extensible-enum:
+      - REJECTED
+  NotRejectedMessageStatusValue:
+    type: string
+    x-extensible-enum:
+      - ACCEPTED
+      - THROTTLED
+      - FAILED
+      - PROCESSED
+  MessageStatusValue:
+    x-one-of: true
+    allOf:
+      - $ref: '#/definitions/RejectedMessageStatusValue'
+      - $ref: '#/definitions/NotRejectedMessageStatusValue'
     description: >-
       The processing status of a message.
 
@@ -997,13 +1011,6 @@ definitions:
         we'll try to send a notification for each of the selected channels
       "REJECTED": either the recipient does not exist, or the sender has been
       blocked
-    x-extensible-enum:
-      - ACCEPTED
-      - THROTTLED
-      - FAILED
-      - PROCESSED
-      - REJECTED
-    example: ACCEPTED
   ExternalCreatedMessageWithContent:
     allOf:
       - $ref: '#/definitions/CreatedMessageWithContent'

@@ -3,7 +3,6 @@ import * as E from "fp-ts/lib/Either";
 import * as O from "fp-ts/lib/Option";
 import * as MS from "@pagopa/io-functions-commons/dist/src/models/message_status";
 import { initTelemetryClient } from "../../utils/appinsights";
-import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
 import { NonNegativeNumber } from "@pagopa/ts-commons/lib/numbers";
 import { FiscalCode, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 import { getOnFailedProcessMessageHandler } from "../handler";
@@ -51,12 +50,12 @@ beforeEach(() => {
       _messageStatusModel: MS.MessageStatusModel,
       messageId: NonEmptyString,
       fiscalCode: FiscalCode
-    ) => (status: MessageStatusValueEnum) =>
+    ) => (status: Parameters<MS.MessageStatusUpdater>[0]) =>
       TE.right({
         ...aRetrievedMessageStatus,
         id: messageId,
         messageId,
-        status,
+        ...status,
         fiscalCode
       })
   );

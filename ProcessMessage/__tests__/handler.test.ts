@@ -57,8 +57,9 @@ import * as lolex from "lolex";
 import { subSeconds } from "date-fns";
 import { DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS } from "../../utils/config";
 import * as MS from "@pagopa/io-functions-commons/dist/src/models/message_status";
-import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
+import { RejectedMessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/RejectedMessageStatusValue";
+import { RejectionReasonEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/RejectionReason";
 
 const createContext = (functionName: string = "funcname"): Context =>
   (({
@@ -258,22 +259,24 @@ beforeEach(() => {
       _messageStatusModel: MS.MessageStatusModel,
       messageId: NonEmptyString,
       fiscalCode: FiscalCode
-    ) => (status: MessageStatusValueEnum) =>
-      TE.right({
-        _etag: "a",
-        _rid: "a",
-        _self: "self",
-        _ts: 0,
-        kind: "IRetrievedMessageStatus",
-        id: messageId,
-        version: 0 as NonNegativeInteger,
-        messageId,
-        status,
-        updatedAt: new Date(),
-        isRead: false,
-        isArchived: false,
-        fiscalCode
-      })
+    ) =>
+      jest.fn((status: Parameters<MS.MessageStatusUpdater>[0]) =>
+        TE.right({
+          _etag: "a",
+          _rid: "a",
+          _self: "self",
+          _ts: 0,
+          kind: "IRetrievedMessageStatus",
+          id: messageId,
+          version: 0 as NonNegativeInteger,
+          messageId,
+          ...status,
+          updatedAt: new Date(),
+          isRead: false,
+          isArchived: false,
+          fiscalCode
+        })
+      )
   );
 });
 
@@ -500,6 +503,7 @@ describe("getprocessMessageHandler", () => {
   `(
     "should fail if $scenario",
     async ({
+      failureReason,
       profileResult,
       preferenceResult,
       activationResult,
@@ -547,6 +551,21 @@ describe("getprocessMessageHandler", () => {
       const result = context.bindings.processedMessage;
 
       expect(result).toBe(undefined);
+
+      expect(getMessageStatusUpdaterMock).toHaveBeenCalledTimes(1);
+      const messageStatusUpdaterMock = getMessageStatusUpdaterMock.mock
+        .results[0].value as jest.Mock;
+      expect(messageStatusUpdaterMock).toHaveBeenCalledTimes(1);
+      const messageStatusUpdaterParam =
+        messageStatusUpdaterMock.mock.calls[0][0];
+
+      expect(messageStatusUpdaterParam).toEqual({
+        status: RejectedMessageStatusValueEnum.REJECTED,
+        rejection_reason:
+          failureReason === "PROFILE_NOT_FOUND"
+            ? RejectionReasonEnum.USER_NOT_FOUND
+            : RejectionReasonEnum.SERVICE_NOT_ALLOWED
+      });
 
       // check if models are being used only when expected
       expect(findLastVersionByModelIdMock).toBeCalledTimes(
@@ -683,7 +702,7 @@ describe("getprocessMessageHandler", () => {
           _messageStatusModel: MS.MessageStatusModel,
           _messageId: NonEmptyString,
           _fiscalCode: FiscalCode
-        ) => (_status: MessageStatusValueEnum) =>
+        ) => (_status: Parameters<MS.MessageStatusUpdater>[0]) =>
           TE.left({ kind: "COSMOS_EMPTY_RESPONSE" })
       );
       mockRetrieveProcessingMessageData.mockImplementationOnce(() =>

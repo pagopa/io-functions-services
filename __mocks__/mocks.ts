@@ -51,7 +51,7 @@ import {
 import { ActivationStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ActivationStatus";
 import { generateComposedVersionedModelId } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model_composed_versioned";
 import { RetrievedMessageStatus } from "@pagopa/io-functions-commons/dist/src/models/message_status";
-import { MessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageStatusValue";
+import { NotRejectedMessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/NotRejectedMessageStatusValue";
 import { FeatureLevelTypeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/FeatureLevelType";
 import { PaymentData } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentData";
 import { PaymentAmount } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentAmount";
@@ -310,7 +310,7 @@ export const aRetrievedMessageStatus: RetrievedMessageStatus = {
   id: aMessageId,
   version: 0 as NonNegativeInteger,
   messageId: aMessageId,
-  status: MessageStatusValueEnum.PROCESSED,
+  status: NotRejectedMessageStatusValueEnum.PROCESSED,
   updatedAt: new Date(),
   isRead: false,
   isArchived: false,
