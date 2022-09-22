@@ -193,6 +193,8 @@ export function CreateServiceHandler(
         telemetryClient.trackEvent({
           name: "api.services.create",
           properties: {
+            has_primary_key: Boolean(subscription.primary_key),
+            has_secondary_key: Boolean(subscription.secondary_key),
             isVisible: String(service.is_visible),
             requesterUserEmail: userAttributes.email,
             subscriptionId
