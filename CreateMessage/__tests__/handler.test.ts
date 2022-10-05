@@ -53,6 +53,8 @@ const createContext = (): Context =>
     log: { ...console, verbose: console.log }
   } as unknown) as Context);
 
+const aSandboxFiscalCode = "AAAAAA12A12A111A" as NonEmptyString;
+
 //
 // tests
 //
@@ -238,7 +240,8 @@ describe("CreateMessageHandler", () => {
           undefined as any,
           undefined as any,
           true,
-          []
+          [],
+          aSandboxFiscalCode
         );
 
         const response = await createMessageHandler(
@@ -264,7 +267,8 @@ describe("CreateMessageHandler", () => {
       undefined as any,
       undefined as any,
       true,
-      []
+      [],
+      aSandboxFiscalCode
     );
 
     const response = await createMessageHandler(
@@ -311,7 +315,8 @@ describe("CreateMessageHandler", () => {
       mockGenerateObjId,
       mockSaveBlob,
       true,
-      []
+      [],
+      aSandboxFiscalCode
     );
 
     const response = await createMessageHandler(

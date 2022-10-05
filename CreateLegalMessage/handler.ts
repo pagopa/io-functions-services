@@ -34,7 +34,7 @@ import {
 import { RequiredParamMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_param";
 import { Context } from "@azure/functions";
 import { IAzureApiAuthorization } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
-import { EmailString } from "@pagopa/ts-commons/lib/strings";
+import { EmailString, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
 import { MessageModel } from "@pagopa/io-functions-commons/dist/src/models/message";
 import { initAppInsights } from "@pagopa/ts-commons/lib/appinsights";
@@ -197,7 +197,8 @@ export const CreateLegalMessage = (
   messageModel: MessageModel,
   saveProcessingMessage: ReturnType<typeof makeUpsertBlobFromObject>,
   disableIncompleteServices: boolean,
-  incompleteServiceWhitelist: ReadonlyArray<ServiceId>
+  incompleteServiceWhitelist: ReadonlyArray<ServiceId>,
+  sandboxFiscalCode: NonEmptyString
   // eslint-disable-next-line max-params
 ) => {
   const createMessageHandler = CreateMessageHandler(
@@ -206,7 +207,8 @@ export const CreateLegalMessage = (
     ulidGenerator,
     saveProcessingMessage,
     disableIncompleteServices,
-    incompleteServiceWhitelist
+    incompleteServiceWhitelist,
+    sandboxFiscalCode
   );
   const handler = CreateLegalMessageHandler(
     adminClient,

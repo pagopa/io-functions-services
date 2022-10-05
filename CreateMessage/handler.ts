@@ -270,7 +270,8 @@ export function CreateMessageHandler(
   generateObjectId: ObjectIdGenerator,
   saveProcessingMessage: ReturnType<typeof makeUpsertBlobFromObject>,
   disableIncompleteServices: boolean,
-  incompleteServiceWhitelist: ReadonlyArray<ServiceId>
+  incompleteServiceWhitelist: ReadonlyArray<ServiceId>,
+  sandboxFiscalCode: NonEmptyString
 ): ICreateMessageHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   return async (
@@ -316,7 +317,8 @@ export function CreateMessageHandler(
     // insights
     const trackResponse = (
       r: CreateMessageHandlerResponse,
-      isSuccess: boolean
+      isSuccess: boolean,
+      isSandbox: boolean
     ): void =>
       telemetryClient.trackEvent({
         name: "api.messages.create",
@@ -328,6 +330,7 @@ export function CreateMessageHandler(
               messagePayload.default_addresses.email
           ).toString(),
           messageId,
+          sandbox: isSandbox ? "true" : "false",
           senderServiceId: serviceId,
           senderUserId: auth.userId,
           success: isSuccess ? "true" : "false"
@@ -453,7 +456,8 @@ export function CreateMessageHandler(
       T.map(r => {
         // before returning the response to the client we log the result
         const isSuccess = r.kind === "IResponseSuccessRedirectToResource";
-        trackResponse(r, isSuccess);
+        const isSandbox = fiscalCode.toString() === sandboxFiscalCode;
+        trackResponse(r, isSuccess, isSandbox);
         logResponse(r, isSuccess);
         return r;
       })
@@ -471,7 +475,8 @@ export function CreateMessage(
   messageModel: MessageModel,
   saveProcessingMessage: ReturnType<typeof makeUpsertBlobFromObject>,
   disableIncompleteServices: boolean,
-  incompleteServiceWhitelist: ReadonlyArray<ServiceId>
+  incompleteServiceWhitelist: ReadonlyArray<ServiceId>,
+  sandboxFiscalCode: NonEmptyString
 ): express.RequestHandler {
   const handler = CreateMessageHandler(
     telemetryClient,
@@ -479,7 +484,8 @@ export function CreateMessage(
     ulidGenerator,
     saveProcessingMessage,
     disableIncompleteServices,
-    incompleteServiceWhitelist
+    incompleteServiceWhitelist,
+    sandboxFiscalCode
   );
   const middlewaresWrap = withRequestMiddlewares(
     ...([
