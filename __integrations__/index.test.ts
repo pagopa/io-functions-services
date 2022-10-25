@@ -397,7 +397,7 @@ describe("Create Message", () => {
 
       expect(result.status).toEqual(201);
 
-      const messageId = ((await result.json()) as CreatedMessage).id;
+      const messageId = createdMessage.id;
       expect(messageId).not.toBeUndefined();
 
       // Wait the process to complete
@@ -594,12 +594,12 @@ describe("Create Third Party Message", () => {
       });
 
       const result = await postCreateMessage(nodeFetch)(body);
-      const createdMessage = await result.json() as CreatedMessage;
+      const createdMessage = (await result.json()) as CreatedMessage;
       expect(createdMessage).not.toHaveProperty("ttl");
 
       expect(result.status).toEqual(201);
 
-      const messageId = ((await result.json()) as CreatedMessage).id;
+      const messageId = createdMessage.id;
       expect(messageId).not.toBeUndefined();
 
       // Wait the process to complete
@@ -663,7 +663,7 @@ describe("Create Advanced Message", () => {
 
       expect(result.status).toEqual(201);
 
-      const messageId = ((await result.json()) as CreatedMessage).id;
+      const messageId = createdMessage.id;
       expect(messageId).not.toBeUndefined();
 
       // Wait the process to complete
@@ -747,7 +747,7 @@ describe("Create Advanced Message", () => {
 
     expect(result.status).toEqual(201);
 
-    const messageId = ((await result.json()) as CreatedMessage).id;
+    const messageId = createdMessage.id;
     expect(messageId).not.toBeUndefined();
 
     // Wait the process to complete
