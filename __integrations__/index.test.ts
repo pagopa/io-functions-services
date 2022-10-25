@@ -392,6 +392,8 @@ describe("Create Message", () => {
       const nodeFetch = getNodeFetch({ "x-subscription-id": serviceId });
 
       const result = await postCreateMessage(nodeFetch)(body);
+      const createdMessage = await result.json() as CreatedMessage;
+      expect(createdMessage).not.toHaveProperty("ttl");
 
       expect(result.status).toEqual(201);
 
@@ -592,6 +594,8 @@ describe("Create Third Party Message", () => {
       });
 
       const result = await postCreateMessage(nodeFetch)(body);
+      const createdMessage = await result.json() as CreatedMessage;
+      expect(createdMessage).not.toHaveProperty("ttl");
 
       expect(result.status).toEqual(201);
 
@@ -654,6 +658,8 @@ describe("Create Advanced Message", () => {
       });
 
       const result = await postCreateMessage(nodeFetch)(body);
+      const createdMessage = await result.json() as CreatedMessage;
+      expect(createdMessage).not.toHaveProperty("ttl");
 
       expect(result.status).toEqual(201);
 
@@ -736,6 +742,8 @@ describe("Create Advanced Message", () => {
     });
 
     const result = await postCreateMessage(nodeFetch)(body);
+    const createdMessage = await result.json() as CreatedMessage;
+    expect(createdMessage).not.toHaveProperty("ttl");
 
     expect(result.status).toEqual(201);
 
@@ -933,6 +941,8 @@ describe("Create Legal Message |> Middleware errors", () => {
       aValidSenderEmail,
       body
     );
+    const createdMessage = await response.json() as CreatedMessage;
+    expect(createdMessage).not.toHaveProperty("ttl");
 
     expect(response.status).toEqual(201);
   });
