@@ -408,6 +408,41 @@ describe("Create Message", () => {
       expect(resultGet.status).toEqual(200);
       const detail = (await resultGet.json()) as ExternalMessageResponseWithContent;
 
+      await pipe(
+        {
+          message: messageModel.find([messageId as NonEmptyString, fiscalCode]),
+          status: messageStatusModel.findLastVersionByModelId([
+            messageId as NonEmptyString
+          ])
+        },
+        sequenceS(TE.ApplicativePar),
+        TE.bindW("content", _ =>
+          pipe(
+            messageModel.getContentFromBlob(
+              blobService,
+              messageId as NonEmptyString
+            ),
+            TE.orElseW(_ => TE.of(O.none as O.Option<MessageContent>))
+          )
+        ),
+        TE.mapLeft(_ => fail(`Error retrieving message data from Cosmos.`)),
+        TE.map(({ message, status, content }) => {
+          expect(O.isSome(message)).toBeTruthy();
+          expect(O.isSome(status)).toBeTruthy();
+          expect(O.isSome(content)).toBeFalsy();
+          expect(O.some(status)).not.toHaveProperty("ttl");
+          expect(O.some(message)).not.toHaveProperty("ttl");
+          expect(status).toEqual(
+            O.some(
+              expect.objectContaining({
+                status: RejectedMessageStatusValueEnum.REJECTED,
+                rejection_reason: RejectionReasonEnum.SERVICE_NOT_ALLOWED
+              })
+            )
+          );
+        })
+      )();
+
       expect(detail).toEqual(
         expect.objectContaining({
           message: expect.objectContaining({
@@ -610,6 +645,42 @@ describe("Create Third Party Message", () => {
       expect(resultGet.status).toEqual(200);
       const detail = (await resultGet.json()) as ExternalMessageResponseWithContent;
 
+      await pipe(
+        {
+          message: messageModel.find([messageId as NonEmptyString, fiscalCode]),
+          status: messageStatusModel.findLastVersionByModelId([
+            messageId as NonEmptyString
+          ])
+        },
+        sequenceS(TE.ApplicativePar),
+        TE.bindW("content", _ =>
+          pipe(
+            messageModel.getContentFromBlob(
+              blobService,
+              messageId as NonEmptyString
+            ),
+            TE.orElseW(_ => TE.of(O.none as O.Option<MessageContent>))
+          )
+        ),
+        TE.mapLeft(_ => fail(`Error retrieving message data from Cosmos.`)),
+        TE.map(({ message, status, content }) => {
+          expect(O.isSome(message)).toBeTruthy();
+          expect(O.isSome(status)).toBeTruthy();
+          expect(O.isSome(content)).toBeFalsy();
+          expect(O.some(status)).not.toHaveProperty("ttl");
+          expect(O.some(message)).not.toHaveProperty("ttl");
+          expect(status).toEqual(
+            O.some(
+              expect.objectContaining({
+                status: RejectedMessageStatusValueEnum.REJECTED,
+                rejection_reason: RejectionReasonEnum.SERVICE_NOT_ALLOWED
+              })
+            )
+          );
+        })
+      )();
+
+
       expect(detail).toEqual(
         expect.objectContaining({
           message: expect.objectContaining({
@@ -675,6 +746,42 @@ describe("Create Advanced Message", () => {
 
       expect(resultGet.status).toEqual(200);
       const detail = (await resultGet.json()) as ExternalMessageResponseWithContent;
+
+      await pipe(
+        {
+          message: messageModel.find([messageId as NonEmptyString, fiscalCode]),
+          status: messageStatusModel.findLastVersionByModelId([
+            messageId as NonEmptyString
+          ])
+        },
+        sequenceS(TE.ApplicativePar),
+        TE.bindW("content", _ =>
+          pipe(
+            messageModel.getContentFromBlob(
+              blobService,
+              messageId as NonEmptyString
+            ),
+            TE.orElseW(_ => TE.of(O.none as O.Option<MessageContent>))
+          )
+        ),
+        TE.mapLeft(_ => fail(`Error retrieving message data from Cosmos.`)),
+        TE.map(({ message, status, content }) => {
+          expect(O.isSome(message)).toBeTruthy();
+          expect(O.isSome(status)).toBeTruthy();
+          expect(O.isSome(content)).toBeFalsy();
+          expect(O.some(status)).not.toHaveProperty("ttl");
+          expect(O.some(message)).not.toHaveProperty("ttl");
+          expect(status).toEqual(
+            O.some(
+              expect.objectContaining({
+                status: RejectedMessageStatusValueEnum.REJECTED,
+                rejection_reason: RejectionReasonEnum.SERVICE_NOT_ALLOWED
+              })
+            )
+          );
+        })
+      )();
+
 
       expect(detail).toMatchObject(
         expect.objectContaining({
@@ -758,6 +865,42 @@ describe("Create Advanced Message", () => {
 
     expect(resultGet.status).toEqual(200);
     const detail = (await resultGet.json()) as ExternalMessageResponseWithContent;
+
+    await pipe(
+      {
+        message: messageModel.find([messageId as NonEmptyString, fiscalCode]),
+        status: messageStatusModel.findLastVersionByModelId([
+          messageId as NonEmptyString
+        ])
+      },
+      sequenceS(TE.ApplicativePar),
+      TE.bindW("content", _ =>
+        pipe(
+          messageModel.getContentFromBlob(
+            blobService,
+            messageId as NonEmptyString
+          ),
+          TE.orElseW(_ => TE.of(O.none as O.Option<MessageContent>))
+        )
+      ),
+      TE.mapLeft(_ => fail(`Error retrieving message data from Cosmos.`)),
+      TE.map(({ message, status, content }) => {
+        expect(O.isSome(message)).toBeTruthy();
+        expect(O.isSome(status)).toBeTruthy();
+        expect(O.isSome(content)).toBeFalsy();
+        expect(O.some(status)).not.toHaveProperty("ttl");
+        expect(O.some(message)).not.toHaveProperty("ttl");
+        expect(status).toEqual(
+          O.some(
+            expect.objectContaining({
+              status: RejectedMessageStatusValueEnum.REJECTED,
+              rejection_reason: RejectionReasonEnum.SERVICE_NOT_ALLOWED
+            })
+          )
+        );
+      })
+    )();
+
 
     expect(detail).toMatchObject(
       expect.objectContaining({
@@ -941,8 +1084,6 @@ describe("Create Legal Message |> Middleware errors", () => {
       aValidSenderEmail,
       body
     );
-    const createdMessage = await response.json() as CreatedMessage;
-    expect(createdMessage).not.toHaveProperty("ttl");
 
     expect(response.status).toEqual(201);
   });
