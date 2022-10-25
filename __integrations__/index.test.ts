@@ -430,8 +430,8 @@ describe("Create Message", () => {
           expect(O.isSome(message)).toBeTruthy();
           expect(O.isSome(status)).toBeTruthy();
           expect(O.isSome(content)).toBeFalsy();
-          expect(O.getOrElse(() => undefined)(status)).not.toHaveProperty("ttl");
-          expect(O.getOrElse(() => undefined)(message)).not.toHaveProperty("ttl");
+          expect(O.getOrElseW(() => undefined)(status)).not.toHaveProperty("ttl");
+          expect(O.getOrElseW(() => undefined)(message)).not.toHaveProperty("ttl");
         })
       )();
 
@@ -659,8 +659,8 @@ describe("Create Third Party Message", () => {
           expect(O.isSome(message)).toBeTruthy();
           expect(O.isSome(status)).toBeTruthy();
           expect(O.isSome(content)).toBeFalsy();
-          expect(O.getOrElse(() => undefined)(status)).not.toHaveProperty("ttl");
-          expect(O.getOrElse(() => undefined)(message)).not.toHaveProperty("ttl");
+          expect(O.getOrElseW(() => undefined)(status)).not.toHaveProperty("ttl");
+          expect(O.getOrElseW(() => undefined)(message)).not.toHaveProperty("ttl");
         })
       )();
 
@@ -752,8 +752,8 @@ describe("Create Advanced Message", () => {
           expect(O.isSome(message)).toBeTruthy();
           expect(O.isSome(status)).toBeTruthy();
           expect(O.isSome(content)).toBeFalsy();
-          expect(O.getOrElse(() => undefined)(status)).not.toHaveProperty("ttl");
-          expect(O.getOrElse(() => undefined)(message)).not.toHaveProperty("ttl");
+          expect(O.getOrElseW(() => undefined)(status)).not.toHaveProperty("ttl");
+          expect(O.getOrElseW(() => undefined)(message)).not.toHaveProperty("ttl");
         })
       )();
 
@@ -862,8 +862,8 @@ describe("Create Advanced Message", () => {
         expect(O.isSome(message)).toBeTruthy();
         expect(O.isSome(status)).toBeTruthy();
         expect(O.isSome(content)).toBeFalsy();
-        expect(O.getOrElse(() => undefined)(status)).not.toHaveProperty("ttl");
-        expect(O.getOrElse(() => undefined)(status)).not.toHaveProperty("ttl");
+        expect(O.getOrElseW(() => undefined)(status)).not.toHaveProperty("ttl");
+        expect(O.getOrElseW(() => undefined)(status)).not.toHaveProperty("ttl");
       })
     )();
 
