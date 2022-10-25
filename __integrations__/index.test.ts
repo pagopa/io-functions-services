@@ -864,14 +864,6 @@ describe("Create Advanced Message", () => {
         expect(O.isSome(content)).toBeFalsy();
         expect(O.some(status)).not.toHaveProperty("ttl");
         expect(O.some(message)).not.toHaveProperty("ttl");
-        expect(status).toEqual(
-          O.some(
-            expect.objectContaining({
-              status: RejectedMessageStatusValueEnum.REJECTED,
-              rejection_reason: RejectionReasonEnum.SERVICE_NOT_ALLOWED
-            })
-          )
-        );
       })
     )();
 
