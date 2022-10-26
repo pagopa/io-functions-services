@@ -392,10 +392,12 @@ describe("Create Message", () => {
       const nodeFetch = getNodeFetch({ "x-subscription-id": serviceId });
 
       const result = await postCreateMessage(nodeFetch)(body);
+      const createdMessage = await result.json() as CreatedMessage;
+      expect(createdMessage).not.toHaveProperty("ttl");
 
       expect(result.status).toEqual(201);
 
-      const messageId = ((await result.json()) as CreatedMessage).id;
+      const messageId = createdMessage.id;
       expect(messageId).not.toBeUndefined();
 
       // Wait the process to complete
@@ -405,6 +407,33 @@ describe("Create Message", () => {
 
       expect(resultGet.status).toEqual(200);
       const detail = (await resultGet.json()) as ExternalMessageResponseWithContent;
+
+      await pipe(
+        {
+          message: messageModel.find([messageId as NonEmptyString, fiscalCode]),
+          status: messageStatusModel.findLastVersionByModelId([
+            messageId as NonEmptyString
+          ])
+        },
+        sequenceS(TE.ApplicativePar),
+        TE.bindW("content", _ =>
+          pipe(
+            messageModel.getContentFromBlob(
+              blobService,
+              messageId as NonEmptyString
+            ),
+            TE.orElseW(_ => TE.of(O.none as O.Option<MessageContent>))
+          )
+        ),
+        TE.mapLeft(_ => fail(`Error retrieving message data from Cosmos.`)),
+        TE.map(({ message, status, content }) => {
+          expect(O.isSome(message)).toBeTruthy();
+          expect(O.isSome(status)).toBeTruthy();
+          expect(O.isSome(content)).toBeFalsy();
+          expect(O.getOrElseW(() => undefined)(status)).not.toHaveProperty("ttl");
+          expect(O.getOrElseW(() => undefined)(message)).not.toHaveProperty("ttl");
+        })
+      )();
 
       expect(detail).toEqual(
         expect.objectContaining({
@@ -592,10 +621,12 @@ describe("Create Third Party Message", () => {
       });
 
       const result = await postCreateMessage(nodeFetch)(body);
+      const createdMessage = (await result.json()) as CreatedMessage;
+      expect(createdMessage).not.toHaveProperty("ttl");
 
       expect(result.status).toEqual(201);
 
-      const messageId = ((await result.json()) as CreatedMessage).id;
+      const messageId = createdMessage.id;
       expect(messageId).not.toBeUndefined();
 
       // Wait the process to complete
@@ -605,6 +636,33 @@ describe("Create Third Party Message", () => {
 
       expect(resultGet.status).toEqual(200);
       const detail = (await resultGet.json()) as ExternalMessageResponseWithContent;
+
+      await pipe(
+        {
+          message: messageModel.find([messageId as NonEmptyString, fiscalCode]),
+          status: messageStatusModel.findLastVersionByModelId([
+            messageId as NonEmptyString
+          ])
+        },
+        sequenceS(TE.ApplicativePar),
+        TE.bindW("content", _ =>
+          pipe(
+            messageModel.getContentFromBlob(
+              blobService,
+              messageId as NonEmptyString
+            ),
+            TE.orElseW(_ => TE.of(O.none as O.Option<MessageContent>))
+          )
+        ),
+        TE.mapLeft(_ => fail(`Error retrieving message data from Cosmos.`)),
+        TE.map(({ message, status, content }) => {
+          expect(O.isSome(message)).toBeTruthy();
+          expect(O.isSome(status)).toBeTruthy();
+          expect(O.isSome(content)).toBeFalsy();
+          expect(O.getOrElseW(() => undefined)(status)).not.toHaveProperty("ttl");
+          expect(O.getOrElseW(() => undefined)(message)).not.toHaveProperty("ttl");
+        })
+      )();
 
       expect(detail).toEqual(
         expect.objectContaining({
@@ -654,10 +712,12 @@ describe("Create Advanced Message", () => {
       });
 
       const result = await postCreateMessage(nodeFetch)(body);
+      const createdMessage = await result.json() as CreatedMessage;
+      expect(createdMessage).not.toHaveProperty("ttl");
 
       expect(result.status).toEqual(201);
 
-      const messageId = ((await result.json()) as CreatedMessage).id;
+      const messageId = createdMessage.id;
       expect(messageId).not.toBeUndefined();
 
       // Wait the process to complete
@@ -669,6 +729,33 @@ describe("Create Advanced Message", () => {
 
       expect(resultGet.status).toEqual(200);
       const detail = (await resultGet.json()) as ExternalMessageResponseWithContent;
+
+      await pipe(
+        {
+          message: messageModel.find([messageId as NonEmptyString, fiscalCode]),
+          status: messageStatusModel.findLastVersionByModelId([
+            messageId as NonEmptyString
+          ])
+        },
+        sequenceS(TE.ApplicativePar),
+        TE.bindW("content", _ =>
+          pipe(
+            messageModel.getContentFromBlob(
+              blobService,
+              messageId as NonEmptyString
+            ),
+            TE.orElseW(_ => TE.of(O.none as O.Option<MessageContent>))
+          )
+        ),
+        TE.mapLeft(_ => fail(`Error retrieving message data from Cosmos.`)),
+        TE.map(({ message, status, content }) => {
+          expect(O.isSome(message)).toBeTruthy();
+          expect(O.isSome(status)).toBeTruthy();
+          expect(O.isSome(content)).toBeFalsy();
+          expect(O.getOrElseW(() => undefined)(status)).not.toHaveProperty("ttl");
+          expect(O.getOrElseW(() => undefined)(message)).not.toHaveProperty("ttl");
+        })
+      )();
 
       expect(detail).toMatchObject(
         expect.objectContaining({
@@ -736,10 +823,12 @@ describe("Create Advanced Message", () => {
     });
 
     const result = await postCreateMessage(nodeFetch)(body);
+    const createdMessage = await result.json() as CreatedMessage;
+    expect(createdMessage).not.toHaveProperty("ttl");
 
     expect(result.status).toEqual(201);
 
-    const messageId = ((await result.json()) as CreatedMessage).id;
+    const messageId = createdMessage.id;
     expect(messageId).not.toBeUndefined();
 
     // Wait the process to complete
@@ -750,6 +839,34 @@ describe("Create Advanced Message", () => {
 
     expect(resultGet.status).toEqual(200);
     const detail = (await resultGet.json()) as ExternalMessageResponseWithContent;
+
+    await pipe(
+      {
+        message: messageModel.find([messageId as NonEmptyString, fiscalCode]),
+        status: messageStatusModel.findLastVersionByModelId([
+          messageId as NonEmptyString
+        ])
+      },
+      sequenceS(TE.ApplicativePar),
+      TE.bindW("content", _ =>
+        pipe(
+          messageModel.getContentFromBlob(
+            blobService,
+            messageId as NonEmptyString
+          ),
+          TE.orElseW(_ => TE.of(O.none as O.Option<MessageContent>))
+        )
+      ),
+      TE.mapLeft(_ => fail(`Error retrieving message data from Cosmos.`)),
+      TE.map(({ message, status, content }) => {
+        expect(O.isSome(message)).toBeTruthy();
+        expect(O.isSome(status)).toBeTruthy();
+        expect(O.isSome(content)).toBeFalsy();
+        expect(O.getOrElseW(() => undefined)(status)).not.toHaveProperty("ttl");
+        expect(O.getOrElseW(() => undefined)(status)).not.toHaveProperty("ttl");
+      })
+    )();
+
 
     expect(detail).toMatchObject(
       expect.objectContaining({

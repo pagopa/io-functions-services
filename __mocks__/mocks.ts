@@ -158,6 +158,7 @@ export const aRetrievedProfile: RetrievedProfile = {
   isTestProfile: false,
   isWebhookEnabled: false,
   kind: "IRetrievedProfile",
+  reminderStatus: "UNSET",
   servicePreferencesSettings: legacyProfileServicePreferencesSettings,
   version: 0 as NonNegativeInteger,
   lastAppVersion: "UNKNOWN"
