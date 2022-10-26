@@ -9,31 +9,17 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 const main = async (): Promise<void> => {
   console.log("Wait the Cosmos Emulator to setup");
 
-  let db = undefined;
-  let ok = false;
-  let i = 0;
-  do {
-    const maybe_db = await initCosmosDb(
-      process.env.COSMOSDB_URI,
-      process.env.COSMOSDB_KEY,
-      process.env.COSMOSDB_NAME
-    );
+  const maybe_db = await initCosmosDb(
+    process.env.COSMOSDB_URI,
+    process.env.COSMOSDB_KEY,
+    process.env.COSMOSDB_NAME
+  );
 
-    console.log("i", i);
+  if (E.isLeft(maybe_db)) {
+    throw new Error(maybe_db.left.message);
+  }
 
-    if (E.isRight(maybe_db)) {
-      ok = true;
-      db = maybe_db.right;
-    } else {
-      console.log("Waiting..");
-      await delay(5000);
-    }
-    i++;
-  } while (!ok && i <= 25);
-
-  if (!ok) throw new Error("Cannot fill CosmosDb");
-
-  await fillCosmosDb(db);
+  await fillCosmosDb(maybe_db.right);
 
   await fillAzureStorage(process.env.QueueStorageConnection);
 };

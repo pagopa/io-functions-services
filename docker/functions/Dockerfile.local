@@ -1,3 +1,6 @@
 FROM functions-node-14
 
-CMD ["func", "start", "--javascript"]
+COPY ./docker/functions/ /usr/src/app
+
+
+CMD ["sh", "./docker/functions/start.sh"]

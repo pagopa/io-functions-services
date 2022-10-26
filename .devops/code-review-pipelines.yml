@@ -99,6 +99,9 @@ stages:
 
   - stage: Integration_Tests
     dependsOn: []
+    pool:
+          # Use ubuntu-18.04 for starting azure cosmosdb emulator
+          vmImage: 'ubuntu-18.04'  
     jobs:
       - job: integration_tests   
         steps:
@@ -107,12 +110,35 @@ stages:
             cd __integrations__
             cp environments/env.base environments/.env
             yarn install --frozen-lockfile
+
+            docker --version
+            docker-compose --version
+            
+            yarn generate-env
+            yarn start:cosmos
+
+            echo "Wait Cosmos container to setup"
+            sleep 15
+            
+            echo -n "CosmosDB starting..."
+            cosmos_started=$(docker logs azure-cosmosdb-linux-emulator | grep -wc Started) || "Not started"
+            echo "---> $cosmos_started"
+            while [ "$cosmos_started" != "12" ]
+            do
+                sleep 5
+                echo -n "."
+                cosmos_started=$(docker logs azure-cosmosdb-linux-emulator | grep -wc Started) || "Not started"
+                echo "-----> $cosmos_started"
+            done
+            echo "CosmosDB Started"
+            
             yarn start
+            
           displayName: 'Start test resources'
         - script: |
             cd __integrations__
             yarn install --frozen-lockfile
-            sleep 30s
+
             docker exec integrations___testagent_1 yarn test
             #           ^^^ FIXME: reference container using a less arbitrary name
           displayName: 'Execute tests'

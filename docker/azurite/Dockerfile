@@ -20,4 +20,4 @@ VOLUME /opt/azurite/folder
 
 ENV executable azurite
 
-CMD ["sh", "-c", "node bin/${executable} -l /opt/azurite/folder"]
+CMD ["sh", "-c", "node bin/${executable} -s -l /opt/azurite/folder"]

@@ -190,9 +190,13 @@ export const fillCosmosDb = async (
           createProfileData(db),
           createServicePreferencesData(db)
         ],
-        RA.sequence(TE.ApplicativePar),
+        RA.sequence(TE.ApplicativeSeq),
         TE.mapLeft(_ => {
-          log("Setup Error", _);
+          log("Setup Error", _.kind);
+          if (_.kind === "COSMOS_ERROR_RESPONSE") {
+            log("-> ", _.error.message);
+          }
+
           return Error("Setup Error");
         })
       )

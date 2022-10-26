@@ -10,7 +10,8 @@ services:
     command: /bin/true
 
   azure-cosmosdb-linux-emulator:
-    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator
+    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:latest
+    container_name: azure-cosmosdb-linux-emulator
     hostname: "azure-cosmosdb-linux-emulator"
     tty: true
     mem_limit: 3GB
@@ -26,7 +27,6 @@ services:
       - AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE=true
       - AZURE_COSMOS_EMULATOR_IP_ADDRESS_OVERRIDE=127.0.0.1
 
-
   storage-account:
     image: azurite
     build:
@@ -39,6 +39,7 @@ services:
 
   fixtures:
     image: fixtures
+    container_name: fixtures
     env_file:
       - ./environments/generated/env.io-fixtures
     build:

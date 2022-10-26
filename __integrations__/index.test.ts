@@ -187,6 +187,8 @@ beforeAll(async () => {
     console.log("Function unable to setup in time");
     exit(1);
   }
+
+  console.log("Function started...");
 });
 
 beforeEach(() => jest.clearAllMocks());
@@ -355,25 +357,23 @@ describe("Create Message |> Middleware errors", () => {
   });
 
   it("should return 400 with simplified validation error when MessagePayloadMiddleware fails", async () => {
-      const body = {
-        message: {
-          fiscal_code: aLegacyInboxEnabledFiscalCode,
-          content: anInvalidMessageContent 
-        }
-      };
+    const body = {
+      message: {
+        fiscal_code: aLegacyInboxEnabledFiscalCode,
+        content: anInvalidMessageContent
+      }
+    };
 
-      const response = await postCreateMessage(getNodeFetch())(body);
+    const response = await postCreateMessage(getNodeFetch())(body);
 
-      const problemJson = await response.json();
+    const problemJson = await response.json();
 
-      expect(problemJson).toMatchObject({
-        status: 400,
-        detail:
-          'value "invalid" at root.content.subject is not a valid [string of length >= 10 and < 121]'
-      });
-
+    expect(problemJson).toMatchObject({
+      status: 400,
+      detail:
+        'value "invalid" at root.content.subject is not a valid [string of length >= 10 and < 121]'
     });
-
+  });
 });
 
 describe("Create Message", () => {
@@ -392,7 +392,7 @@ describe("Create Message", () => {
       const nodeFetch = getNodeFetch({ "x-subscription-id": serviceId });
 
       const result = await postCreateMessage(nodeFetch)(body);
-      const createdMessage = await result.json() as CreatedMessage;
+      const createdMessage = (await result.json()) as CreatedMessage;
       expect(createdMessage).not.toHaveProperty("ttl");
 
       expect(result.status).toEqual(201);
@@ -430,8 +430,12 @@ describe("Create Message", () => {
           expect(O.isSome(message)).toBeTruthy();
           expect(O.isSome(status)).toBeTruthy();
           expect(O.isSome(content)).toBeFalsy();
-          expect(O.getOrElseW(() => undefined)(status)).not.toHaveProperty("ttl");
-          expect(O.getOrElseW(() => undefined)(message)).not.toHaveProperty("ttl");
+          expect(O.getOrElseW(() => undefined)(status)).not.toHaveProperty(
+            "ttl"
+          );
+          expect(O.getOrElseW(() => undefined)(message)).not.toHaveProperty(
+            "ttl"
+          );
         })
       )();
 
@@ -496,8 +500,6 @@ describe("Create Message", () => {
           expect(O.isSome(message)).toBeTruthy();
           expect(O.isSome(status)).toBeTruthy();
           expect(O.isSome(content)).toBeFalsy();
-
-          console.log("status", status);
 
           expect(status).toEqual(
             O.some(
@@ -568,8 +570,6 @@ describe("Create Message", () => {
         expect(O.isSome(message)).toBeTruthy();
         expect(O.isSome(status)).toBeTruthy();
         expect(O.isSome(content)).toBeFalsy();
-
-        console.log("status", status);
 
         expect(status).toEqual(
           O.some(
@@ -659,8 +659,12 @@ describe("Create Third Party Message", () => {
           expect(O.isSome(message)).toBeTruthy();
           expect(O.isSome(status)).toBeTruthy();
           expect(O.isSome(content)).toBeFalsy();
-          expect(O.getOrElseW(() => undefined)(status)).not.toHaveProperty("ttl");
-          expect(O.getOrElseW(() => undefined)(message)).not.toHaveProperty("ttl");
+          expect(O.getOrElseW(() => undefined)(status)).not.toHaveProperty(
+            "ttl"
+          );
+          expect(O.getOrElseW(() => undefined)(message)).not.toHaveProperty(
+            "ttl"
+          );
         })
       )();
 
@@ -712,7 +716,7 @@ describe("Create Advanced Message", () => {
       });
 
       const result = await postCreateMessage(nodeFetch)(body);
-      const createdMessage = await result.json() as CreatedMessage;
+      const createdMessage = (await result.json()) as CreatedMessage;
       expect(createdMessage).not.toHaveProperty("ttl");
 
       expect(result.status).toEqual(201);
@@ -752,8 +756,12 @@ describe("Create Advanced Message", () => {
           expect(O.isSome(message)).toBeTruthy();
           expect(O.isSome(status)).toBeTruthy();
           expect(O.isSome(content)).toBeFalsy();
-          expect(O.getOrElseW(() => undefined)(status)).not.toHaveProperty("ttl");
-          expect(O.getOrElseW(() => undefined)(message)).not.toHaveProperty("ttl");
+          expect(O.getOrElseW(() => undefined)(status)).not.toHaveProperty(
+            "ttl"
+          );
+          expect(O.getOrElseW(() => undefined)(message)).not.toHaveProperty(
+            "ttl"
+          );
         })
       )();
 
@@ -823,7 +831,7 @@ describe("Create Advanced Message", () => {
     });
 
     const result = await postCreateMessage(nodeFetch)(body);
-    const createdMessage = await result.json() as CreatedMessage;
+    const createdMessage = (await result.json()) as CreatedMessage;
     expect(createdMessage).not.toHaveProperty("ttl");
 
     expect(result.status).toEqual(201);
@@ -866,7 +874,6 @@ describe("Create Advanced Message", () => {
         expect(O.getOrElseW(() => undefined)(status)).not.toHaveProperty("ttl");
       })
     )();
-
 
     expect(detail).toMatchObject(
       expect.objectContaining({
