@@ -9,15 +9,23 @@ services:
       dockerfile: ./docker/functions-node-14/Dockerfile
     command: /bin/true
 
-  cosmosdb:
-    image: cosmosdb
-    env_file:
-      - ./environments/generated/env.cosmosdb
-    build:
-      context: ../docker/cosmosdb
-      dockerfile: ./Dockerfile
+  azure-cosmosdb-linux-emulator:
+    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator
+    hostname: "azure-cosmosdb-linux-emulator"
+    tty: true
+    mem_limit: 3GB
+    cpu_count: 2
     ports:
-      - ${COSMOSDB_PORT}:3000
+      - 8081:8081
+      - 10251:10251
+      - 10252:10252
+      - 10253:10253
+      - 10254:10254
+    environment:
+      - AZURE_COSMOS_EMULATOR_PARTITION_COUNT=10
+      - AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE=true
+      - AZURE_COSMOS_EMULATOR_IP_ADDRESS_OVERRIDE=127.0.0.1
+
 
   storage-account:
     image: azurite
@@ -28,7 +36,7 @@ services:
       - 10000:10000
       - 10001:10001
       - 10002:10002
-  
+
   fixtures:
     image: fixtures
     env_file:
@@ -38,7 +46,7 @@ services:
       dockerfile: ./Dockerfile
     links:
       - storage-account
-      - cosmosdb
+      - azure-cosmosdb-linux-emulator
 
   function:
     image: fn
@@ -50,7 +58,7 @@ services:
     ports:
       - ${FUNCTIONS_SERVICES_PORT}:7071
     links:
-      - cosmosdb
+      - azure-cosmosdb-linux-emulator
       - storage-account
     depends_on:
       - functions-node-14
@@ -66,7 +74,7 @@ services:
       - "./:/usr/src/app"
       - "../openapi:/usr/src/openapi"
     depends_on:
-      - cosmosdb
+      - azure-cosmosdb-linux-emulator
       - storage-account
       - fixtures
     links:
