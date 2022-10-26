@@ -13,7 +13,6 @@
     "pretest": "npm-run-all generate:models:*",
     "test": "jest --verbose --runInBand",
     "generate:models:services": "rimraf generated/fn-services && gen-api-models --api-spec ../openapi/index.yaml --no-strict --out-dir generated/fn-services --request-types --response-decoders",
-    "generate:env:cosmosdb": "dotenv -e environments/.env envsub environments/env.cosmosdb environments/generated/env.cosmosdb",
     "generate:env:io-fixtures": "dotenv -e environments/.env envsub environments/env.io-fixtures environments/generated/env.io-fixtures",
     "generate:env:io-functions-services": "dotenv -e environments/.env envsub environments/env.io-functions-services environments/generated/env.io-functions-services",
     "generate:env:integration-tests": "dotenv -e environments/.env envsub environments/env.integration-tests environments/generated/env.integration-tests",
