@@ -1,7 +1,10 @@
 /* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { BlockedInboxOrChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
-import { MessageModel } from "@pagopa/io-functions-commons/dist/src/models/message";
+import {
+  MessageModel,
+  RetrievedMessage
+} from "@pagopa/io-functions-commons/dist/src/models/message";
 import {
   ProfileModel,
   RetrievedProfile
@@ -86,9 +89,11 @@ const aBlobResult = {
 
 const storeContentAsBlobMock = jest.fn(() => TE.of(O.some(aBlobResult)));
 const upsertMessageMock = jest.fn<any, any>(() => TE.of(aRetrievedMessage));
+const patchMessageMock = jest.fn((_, __) => TE.right(aRetrievedMessage));
 const lMessageModel = ({
   storeContentAsBlob: storeContentAsBlobMock,
-  upsert: upsertMessageMock
+  upsert: upsertMessageMock,
+  patch: patchMessageMock
 } as unknown) as MessageModel;
 
 const findServicePreferenceMock = jest.fn<any, any>(() =>
@@ -98,9 +103,11 @@ const lServicePreferencesModel = ({
   find: findServicePreferenceMock
 } as unknown) as ServicesPreferencesModel;
 
+const updateTTLForAllVersionsMock = jest.fn(() => TE.right(1));
 const lMessageStatusModel = ({
   upsert: (...args) => TE.of({} /* anything */),
-  findLastVersionByModelId: (...args) => TE.right(O.none)
+  findLastVersionByModelId: (...args) => TE.right(O.none),
+  updateTTLForAllVersions: updateTTLForAllVersionsMock
 } as unknown) as MS.MessageStatusModel;
 const getMessageStatusUpdaterMock = jest.spyOn(MS, "getMessageStatusUpdater");
 
@@ -278,6 +285,8 @@ beforeEach(() => {
         })
       )
   );
+  patchMessageMock.mockReturnValue(TE.right(aRetrievedMessage));
+  updateTTLForAllVersionsMock.mockReturnValue(TE.right(1));
 });
 
 afterEach(() => {
@@ -389,6 +398,8 @@ describe("getprocessMessageHandler", () => {
       expect(activationFindLastVersionMock).toBeCalledTimes(
         skipActivationMock ? 0 : 1
       );
+      expect(patchMessageMock).not.toHaveBeenCalled();
+      expect(updateTTLForAllVersionsMock).not.toHaveBeenCalled();
     }
   );
 
@@ -478,6 +489,8 @@ describe("getprocessMessageHandler", () => {
           payment_data: expectedMessagePaymentData
         }
       );
+      expect(patchMessageMock).not.toHaveBeenCalled();
+      expect(updateTTLForAllVersionsMock).not.toHaveBeenCalled();
     }
   );
 
@@ -577,6 +590,11 @@ describe("getprocessMessageHandler", () => {
       expect(activationFindLastVersionMock).toBeCalledTimes(
         skipActivationMock ? 0 : 1
       );
+      //only in the first scenario the ttl should be setted
+      if(O.isSome(profileResult)){
+        expect(patchMessageMock).not.toHaveBeenCalled();
+        expect(updateTTLForAllVersionsMock).not.toHaveBeenCalled();
+      }
     }
   );
 
@@ -659,6 +677,9 @@ describe("getprocessMessageHandler", () => {
       expect(activationFindLastVersionMock).toBeCalledTimes(
         skipActivationMock ? 0 : 1
       );
+      // ensuring that ttl is never set in these scenarios
+      expect(patchMessageMock).not.toHaveBeenCalled();
+      expect(updateTTLForAllVersionsMock).not.toHaveBeenCalled();
     }
   );
 
@@ -743,6 +764,58 @@ describe("getprocessMessageHandler", () => {
         skipPreferenceMock ? 0 : 1
       );
       expect(activationFindLastVersionMock).toBeCalledTimes(0);
+      expect(patchMessageMock).not.toHaveBeenCalled();
+      expect(updateTTLForAllVersionsMock).not.toHaveBeenCalled();
     }
   );
+
+  it("it should fail if profile is not found, and the ttl must be defined", async () => {
+    findLastVersionByModelIdMock.mockImplementationOnce(() => {
+      return TE.of(O.none);
+    });
+    mockRetrieveProcessingMessageData.mockImplementationOnce(() =>
+      TE.of(O.some(aCommonMessageData))
+    );
+    const processMessageHandler = getProcessMessageHandler({
+      lActivation,
+      lProfileModel,
+      lMessageModel,
+      lBlobService: {} as any,
+      lServicePreferencesModel,
+      lMessageStatusModel,
+      optOutEmailSwitchDate: aPastOptOutEmailSwitchDate,
+      pendingActivationGracePeriod: DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS as Second,
+      isOptInEmailEnabled: false,
+      telemetryClient: mockTelemetryClient,
+      retrieveProcessingMessageData: mockRetrieveProcessingMessageData
+    });
+
+    const context = createContext();
+
+    await processMessageHandler(context, JSON.stringify(aCreatedMessageEvent));
+
+    const result = context.bindings.processedMessage;
+
+    expect(result).toBe(undefined);
+
+    expect(getMessageStatusUpdaterMock).toHaveBeenCalledTimes(1);
+    const messageStatusUpdaterMock = getMessageStatusUpdaterMock.mock.results[0]
+      .value as jest.Mock;
+    expect(messageStatusUpdaterMock).toHaveBeenCalledTimes(1);
+    const messageStatusUpdaterParam = messageStatusUpdaterMock.mock.calls[0][0];
+
+    expect(messageStatusUpdaterParam).toEqual({
+      status: RejectedMessageStatusValueEnum.REJECTED,
+      rejection_reason: RejectionReasonEnum.USER_NOT_FOUND
+    });
+
+    // check if models are being used only when expected
+    expect(findLastVersionByModelIdMock).toBeCalledTimes(1);
+    expect(patchMessageMock).toBeCalledTimes(1);
+    expect(patchMessageMock).toHaveBeenCalledWith(["A_MESSAGE_ID", "AAABBB01C02D345D"], {"ttl": 94670856});
+    expect(updateTTLForAllVersionsMock).toBeCalledTimes(1);
+    expect(updateTTLForAllVersionsMock).toHaveBeenCalledWith(["A_MESSAGE_ID"], 94670856);
+    expect(findServicePreferenceMock).toBeCalledTimes(0);
+    expect(activationFindLastVersionMock).toBeCalledTimes(0);
+  });
 });

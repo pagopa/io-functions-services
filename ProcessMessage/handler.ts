@@ -12,7 +12,10 @@ import {
   ServicesPreferencesModeEnum
 } from "@pagopa/io-functions-commons/dist/generated/definitions/ServicesPreferencesMode";
 import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
-import { MessageModel } from "@pagopa/io-functions-commons/dist/src/models/message";
+import {
+  MessageModel,
+  MessageWithoutContent
+} from "@pagopa/io-functions-commons/dist/src/models/message";
 import {
   getMessageStatusUpdater,
   MessageStatusModel
@@ -422,6 +425,23 @@ export const getProcessMessageHandler = ({
                 rejection_reason: RejectionReasonEnum.USER_NOT_FOUND,
                 status: RejectedMessageStatusValueEnum.REJECTED
               }),
+              TE.chain(() =>
+                //setting TTL to 3 years for message-status entries
+                lMessageStatusModel.updateTTLForAllVersions(
+                  [newMessageWithoutContent.id],
+                  94670856 as NonNegativeInteger
+                )
+              ),
+              TE.chain(() =>
+                //setting TTL to 3 years for message entry
+                lMessageModel.patch(
+                  [
+                    newMessageWithoutContent.id,
+                    newMessageWithoutContent.fiscalCode
+                  ],
+                  { ttl: 94670856 } as Partial<MessageWithoutContent>
+                )
+              ),
               TE.getOrElse(e => {
                 context.log.error(
                   `${logPrefix}|PROFILE_NOT_FOUND|UPSERT_STATUS=REJECTED|ERROR=${JSON.stringify(
