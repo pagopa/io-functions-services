@@ -426,14 +426,14 @@ export const getProcessMessageHandler = ({
                 status: RejectedMessageStatusValueEnum.REJECTED
               }),
               TE.chain(() =>
-                //setting TTL to 3 years for message-status entries
+                // setting TTL to 3 years for message-status entries
                 lMessageStatusModel.updateTTLForAllVersions(
                   [newMessageWithoutContent.id],
                   94670856 as NonNegativeInteger
                 )
               ),
               TE.chain(() =>
-                //setting TTL to 3 years for message entry
+                // setting TTL to 3 years for message entry
                 lMessageModel.patch(
                   [
                     newMessageWithoutContent.id,
