@@ -426,20 +426,50 @@ export const getProcessMessageHandler = ({
                 status: RejectedMessageStatusValueEnum.REJECTED
               }),
               TE.chain(() =>
-                // setting TTL to 3 years for message-status entries
-                lMessageStatusModel.updateTTLForAllVersions(
-                  [newMessageWithoutContent.id],
-                  94670856 as NonNegativeInteger
+                pipe(
+                  // setting TTL to 3 years for message-status entries
+                  lMessageStatusModel.updateTTLForAllVersions(
+                    [newMessageWithoutContent.id],
+                    94670856 as NonNegativeInteger
+                  ),
+                  TE.mapLeft((error: CosmosErrors) => {
+                    telemetryClient.trackEvent({
+                      name: "api.messages.create.failstatusttlset",
+                      properties: {
+                        fiscalCode: toHash(newMessageWithoutContent.fiscalCode),
+                        messageId: newMessageWithoutContent.id,
+                        senderId: newMessageWithoutContent.senderServiceId,
+                        error: `Something went wrong trying to update the ttl for the message status | ${error.kind}`
+                      },
+                      tagOverrides: { samplingEnabled: "false" }
+                    });
+                    return error;
+                  })
                 )
               ),
               TE.chain(() =>
-                // setting TTL to 3 years for message entry
-                lMessageModel.patch(
-                  [
-                    newMessageWithoutContent.id,
-                    newMessageWithoutContent.fiscalCode
-                  ],
-                  { ttl: 94670856 } as Partial<MessageWithoutContent>
+                pipe(
+                  // setting TTL to 3 years for message entry
+                  lMessageModel.patch(
+                    [
+                      newMessageWithoutContent.id,
+                      newMessageWithoutContent.fiscalCode
+                    ],
+                    { ttl: 94670856 } as Partial<MessageWithoutContent>
+                  ),
+                  TE.mapLeft((error: CosmosErrors) => {
+                    telemetryClient.trackEvent({
+                      name: "api.messages.create.failttlset",
+                      properties: {
+                        fiscalCode: toHash(newMessageWithoutContent.fiscalCode),
+                        messageId: newMessageWithoutContent.id,
+                        senderId: newMessageWithoutContent.senderServiceId,
+                        error: `Something went wrong trying to update the ttl for the message | ${error.kind}`
+                      },
+                      tagOverrides: { samplingEnabled: "false" }
+                    });
+                    return error;
+                  })
                 )
               ),
               TE.getOrElse(e => {
