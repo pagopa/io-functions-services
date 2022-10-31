@@ -1,6 +1,7 @@
 /* eslint-disable max-lines-per-function */
 
 import { Context } from "@azure/functions";
+import * as t from "io-ts";
 import { BlockedInboxOrChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
 import { EUCovidCert } from "@pagopa/io-functions-commons/dist/generated/definitions/EUCovidCert";
 import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
@@ -55,9 +56,6 @@ import { withDecodedInput } from "../utils/with-decoded-input";
 import { DataFetcher, withExpandedInput } from "../utils/with-expanded-input";
 import { withJsonInput } from "../utils/with-json-input";
 import { canSendMessageOnActivationWithGrace } from "../utils/services";
-import { getConfigOrThrow } from "../utils/config";
-
-const config = getConfigOrThrow();
 
 // Interface that marks an unexpected value
 interface IUnexpectedValue {
@@ -353,7 +351,12 @@ const createMessageOrThrow = async (
   }
 };
 
+// ttl can only be a positive integer or -1
+const ttlType = t.union([NonNegativeInteger, t.literal(-1)]);
+type TtlType = t.TypeOf<typeof ttlType>;
+
 export interface IProcessMessageHandlerInput {
+  readonly TTL_FOR_USER_NOT_FOUND: TtlType;
   readonly lActivation: ActivationModel;
   readonly lProfileModel: ProfileModel;
   readonly lMessageModel: MessageModel;
@@ -373,6 +376,7 @@ type Handler = (c: Context, i: unknown) => Promise<void>;
  * Returns a function for handling ProcessMessage
  */
 export const getProcessMessageHandler = ({
+  TTL_FOR_USER_NOT_FOUND,
   lActivation,
   lProfileModel,
   lMessageModel,
@@ -433,7 +437,7 @@ export const getProcessMessageHandler = ({
                   // setting TTL to 3 years for message-status entries
                   lMessageStatusModel.updateTTLForAllVersions(
                     [newMessageWithoutContent.id],
-                    config.TTL_FOR_USER_NOT_FOUND
+                    TTL_FOR_USER_NOT_FOUND
                   ),
                   TE.mapLeft((error: CosmosErrors) => {
                     telemetryClient.trackEvent({
@@ -458,7 +462,7 @@ export const getProcessMessageHandler = ({
                       newMessageWithoutContent.id,
                       newMessageWithoutContent.fiscalCode
                     ],
-                    { ttl: config.TTL_FOR_USER_NOT_FOUND } as Partial<
+                    { ttl: TTL_FOR_USER_NOT_FOUND } as Partial<
                       MessageWithoutContent
                     >
                   ),

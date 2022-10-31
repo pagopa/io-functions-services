@@ -72,6 +72,7 @@ const retrieveProcessingMessageData = makeRetrieveExpandedDataFromBlob(
 );
 
 const activityFunctionHandler: AzureFunction = getProcessMessageHandler({
+  TTL_FOR_USER_NOT_FOUND: config.TTL_FOR_USER_NOT_FOUND,
   isOptInEmailEnabled: config.FF_OPT_IN_EMAIL_ENABLED,
   lActivation: activationModel,
   lBlobService: blobServiceForMessageContent,

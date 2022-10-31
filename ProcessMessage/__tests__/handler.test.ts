@@ -1,10 +1,7 @@
 /* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { BlockedInboxOrChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
-import {
-  MessageModel,
-  RetrievedMessage
-} from "@pagopa/io-functions-commons/dist/src/models/message";
+import { MessageModel } from "@pagopa/io-functions-commons/dist/src/models/message";
 import {
   ProfileModel,
   RetrievedProfile
@@ -64,10 +61,7 @@ import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitio
 import { RejectedMessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/RejectedMessageStatusValue";
 import { RejectionReasonEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/RejectionReason";
 
-jest.mock("../../utils/config", () => ({
-  ...jest.requireActual("../../utils/config"),
-  getConfigOrThrow: () => ({ TTL_FOR_USER_NOT_FOUND: 94670856  })
-}));
+const TTL_FOR_USER_NOT_FOUND = 94670856 as NonNegativeInteger;
 
 const createContext = (functionName: string = "funcname"): Context =>
   (({
@@ -358,6 +352,7 @@ describe("getprocessMessageHandler", () => {
       );
 
       const processMessageHandler = getProcessMessageHandler({
+        TTL_FOR_USER_NOT_FOUND,
         lActivation,
         lProfileModel,
         lMessageModel,
@@ -455,6 +450,7 @@ describe("getprocessMessageHandler", () => {
       );
 
       const processMessageHandler = getProcessMessageHandler({
+        TTL_FOR_USER_NOT_FOUND,
         lActivation,
         lProfileModel,
         lMessageModel,
@@ -549,6 +545,7 @@ describe("getprocessMessageHandler", () => {
         TE.of(O.some(messageData))
       );
       const processMessageHandler = getProcessMessageHandler({
+        TTL_FOR_USER_NOT_FOUND,
         lActivation,
         lProfileModel,
         lMessageModel,
@@ -651,6 +648,7 @@ describe("getprocessMessageHandler", () => {
         TE.of(O.some(messageData))
       );
       const processMessageHandler = getProcessMessageHandler({
+        TTL_FOR_USER_NOT_FOUND,
         lActivation,
         lProfileModel,
         lMessageModel,
@@ -735,6 +733,7 @@ describe("getprocessMessageHandler", () => {
         TE.of(O.some(messageData))
       );
       const processMessageHandler = getProcessMessageHandler({
+        TTL_FOR_USER_NOT_FOUND,
         lActivation,
         lProfileModel,
         lMessageModel,
@@ -782,6 +781,7 @@ describe("getprocessMessageHandler", () => {
       TE.of(O.some(aCommonMessageData))
     );
     const processMessageHandler = getProcessMessageHandler({
+      TTL_FOR_USER_NOT_FOUND,
       lActivation,
       lProfileModel,
       lMessageModel,
