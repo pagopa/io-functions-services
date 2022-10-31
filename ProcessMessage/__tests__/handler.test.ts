@@ -64,6 +64,11 @@ import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitio
 import { RejectedMessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/RejectedMessageStatusValue";
 import { RejectionReasonEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/RejectionReason";
 
+jest.mock("../../utils/config", () => ({
+  ...jest.requireActual("../../utils/config"),
+  getConfigOrThrow: () => ({ TTL_FOR_USER_NOT_FOUND: 94670856  })
+}));
+
 const createContext = (functionName: string = "funcname"): Context =>
   (({
     bindings: {},
@@ -591,7 +596,7 @@ describe("getprocessMessageHandler", () => {
         skipActivationMock ? 0 : 1
       );
       //only in the first scenario the ttl should be setted
-      if(O.isSome(profileResult)){
+      if (O.isSome(profileResult)) {
         expect(patchMessageMock).not.toHaveBeenCalled();
         expect(updateTTLForAllVersionsMock).not.toHaveBeenCalled();
       }
@@ -812,9 +817,15 @@ describe("getprocessMessageHandler", () => {
     // check if models are being used only when expected
     expect(findLastVersionByModelIdMock).toBeCalledTimes(1);
     expect(patchMessageMock).toBeCalledTimes(1);
-    expect(patchMessageMock).toHaveBeenCalledWith(["A_MESSAGE_ID", "AAABBB01C02D345D"], {"ttl": 94670856});
+    expect(patchMessageMock).toHaveBeenCalledWith(
+      ["A_MESSAGE_ID", "AAABBB01C02D345D"],
+      { ttl: 94670856 }
+    );
     expect(updateTTLForAllVersionsMock).toBeCalledTimes(1);
-    expect(updateTTLForAllVersionsMock).toHaveBeenCalledWith(["A_MESSAGE_ID"], 94670856);
+    expect(updateTTLForAllVersionsMock).toHaveBeenCalledWith(
+      ["A_MESSAGE_ID"],
+      94670856
+    );
     expect(findServicePreferenceMock).toBeCalledTimes(0);
     expect(activationFindLastVersionMock).toBeCalledTimes(0);
   });

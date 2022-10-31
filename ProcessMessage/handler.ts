@@ -55,6 +55,9 @@ import { withDecodedInput } from "../utils/with-decoded-input";
 import { DataFetcher, withExpandedInput } from "../utils/with-expanded-input";
 import { withJsonInput } from "../utils/with-json-input";
 import { canSendMessageOnActivationWithGrace } from "../utils/services";
+import { getConfigOrThrow } from "../utils/config";
+
+const config = getConfigOrThrow();
 
 // Interface that marks an unexpected value
 interface IUnexpectedValue {
@@ -430,7 +433,7 @@ export const getProcessMessageHandler = ({
                   // setting TTL to 3 years for message-status entries
                   lMessageStatusModel.updateTTLForAllVersions(
                     [newMessageWithoutContent.id],
-                    94670856 as NonNegativeInteger
+                    config.TTL_FOR_USER_NOT_FOUND
                   ),
                   TE.mapLeft((error: CosmosErrors) => {
                     telemetryClient.trackEvent({
@@ -455,7 +458,9 @@ export const getProcessMessageHandler = ({
                       newMessageWithoutContent.id,
                       newMessageWithoutContent.fiscalCode
                     ],
-                    { ttl: 94670856 } as Partial<MessageWithoutContent>
+                    { ttl: config.TTL_FOR_USER_NOT_FOUND } as Partial<
+                      MessageWithoutContent
+                    >
                   ),
                   TE.mapLeft((error: CosmosErrors) => {
                     telemetryClient.trackEvent({

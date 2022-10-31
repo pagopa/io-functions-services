@@ -15,7 +15,10 @@ import { BooleanFromString, withFallback } from "io-ts-types";
 import { readableReport } from "@pagopa/ts-commons/lib/reporters";
 import { NonEmptyString, Semver } from "@pagopa/ts-commons/lib/strings";
 import { DateFromTimestamp } from "@pagopa/ts-commons/lib/dates";
-import { NumberFromString } from "@pagopa/ts-commons/lib/numbers";
+import {
+  NonNegativeInteger,
+  NumberFromString
+} from "@pagopa/ts-commons/lib/numbers";
 import { flow, pipe } from "fp-ts/lib/function";
 import { CommaSeparatedListOf } from "./comma-separated-list";
 
@@ -83,6 +86,8 @@ export const IConfig = t.intersection([
 
     // eslint-disable-next-line sort-keys
     MIN_APP_VERSION_WITH_READ_AUTH: Semver,
+
+    TTL_FOR_USER_NOT_FOUND: t.union([NonNegativeInteger, t.literal(-1)]),
 
     isProduction: t.boolean
   }),
