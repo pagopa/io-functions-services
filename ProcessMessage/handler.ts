@@ -439,10 +439,10 @@ export const getProcessMessageHandler = ({
                     telemetryClient.trackEvent({
                       name: "api.messages.create.failstatusttlset",
                       properties: {
+                        error: `Something went wrong trying to update the ttl for the message status | ${error.kind}`,
                         fiscalCode: toHash(newMessageWithoutContent.fiscalCode),
                         messageId: newMessageWithoutContent.id,
-                        senderId: newMessageWithoutContent.senderServiceId,
-                        error: `Something went wrong trying to update the ttl for the message status | ${error.kind}`
+                        senderId: newMessageWithoutContent.senderServiceId
                       },
                       tagOverrides: { samplingEnabled: "false" }
                     });
@@ -466,10 +466,10 @@ export const getProcessMessageHandler = ({
                     telemetryClient.trackEvent({
                       name: "api.messages.create.failttlset",
                       properties: {
+                        error: `Something went wrong trying to update the ttl for the message | ${error.kind}`,
                         fiscalCode: toHash(newMessageWithoutContent.fiscalCode),
                         messageId: newMessageWithoutContent.id,
-                        senderId: newMessageWithoutContent.senderServiceId,
-                        error: `Something went wrong trying to update the ttl for the message | ${error.kind}`
+                        senderId: newMessageWithoutContent.senderServiceId
                       },
                       tagOverrides: { samplingEnabled: "false" }
                     });
