@@ -101,6 +101,7 @@ stages:
     dependsOn: []
     pool:
           # Use ubuntu-18.04 for starting azure cosmosdb emulator
+          # see issue https://github.com/microsoft/azure-pipelines-tasks/issues/15865
           vmImage: 'ubuntu-18.04'  
     jobs:
       - job: integration_tests   
@@ -110,9 +111,6 @@ stages:
             cd __integrations__
             cp environments/env.base environments/.env
             yarn install --frozen-lockfile
-
-            docker --version
-            docker-compose --version
             
             yarn generate-env
             yarn start:cosmos
