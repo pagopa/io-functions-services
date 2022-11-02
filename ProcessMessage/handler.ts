@@ -434,7 +434,6 @@ export const getProcessMessageHandler = ({
               }),
               TE.chain(() =>
                 pipe(
-                  // setting TTL to 3 years for message-status entries
                   lMessageStatusModel.updateTTLForAllVersions(
                     [newMessageWithoutContent.id],
                     TTL_FOR_USER_NOT_FOUND
@@ -456,12 +455,12 @@ export const getProcessMessageHandler = ({
               ),
               TE.chain(() =>
                 pipe(
-                  // setting TTL to 3 years for message entry
                   lMessageModel.patch(
                     [
                       newMessageWithoutContent.id,
                       newMessageWithoutContent.fiscalCode
                     ],
+                    // this cast is needed cause patch does not accept ttl
                     { ttl: TTL_FOR_USER_NOT_FOUND } as Partial<
                       MessageWithoutContent
                     >
