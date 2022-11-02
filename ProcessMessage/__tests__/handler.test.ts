@@ -773,7 +773,7 @@ describe("getprocessMessageHandler", () => {
     }
   );
 
-  it("it should fail if profile is not found, and the ttl must be defined", async () => {
+  it("it should end with rejection if profile is not found, and the ttl must be defined", async () => {
     findLastVersionByModelIdMock.mockImplementationOnce(() => {
       return TE.of(O.none);
     });
