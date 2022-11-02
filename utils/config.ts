@@ -16,7 +16,7 @@ import { readableReport } from "@pagopa/ts-commons/lib/reporters";
 import { NonEmptyString, Semver } from "@pagopa/ts-commons/lib/strings";
 import { DateFromTimestamp } from "@pagopa/ts-commons/lib/dates";
 import {
-  NonNegativeInteger,
+  NonNegativeIntegerFromString,
   NumberFromString
 } from "@pagopa/ts-commons/lib/numbers";
 import { flow, pipe } from "fp-ts/lib/function";
@@ -87,7 +87,7 @@ export const IConfig = t.intersection([
     // eslint-disable-next-line sort-keys
     MIN_APP_VERSION_WITH_READ_AUTH: Semver,
 
-    TTL_FOR_USER_NOT_FOUND: t.union([NonNegativeInteger, t.literal(-1)]),
+    TTL_FOR_USER_NOT_FOUND: NonNegativeIntegerFromString,
 
     isProduction: t.boolean
   }),
