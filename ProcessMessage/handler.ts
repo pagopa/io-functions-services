@@ -441,7 +441,7 @@ export const getProcessMessageHandler = ({
                   ),
                   TE.mapLeft((error: CosmosErrors) => {
                     telemetryClient.trackEvent({
-                      name: "api.messages.create.failstatusttlset",
+                      name: "api.messages.create.fail-status-ttl-set",
                       properties: {
                         error: `Something went wrong trying to update the ttl for the message status | ${error.kind}`,
                         fiscalCode: toHash(newMessageWithoutContent.fiscalCode),
@@ -468,7 +468,7 @@ export const getProcessMessageHandler = ({
                   ),
                   TE.mapLeft((error: CosmosErrors) => {
                     telemetryClient.trackEvent({
-                      name: "api.messages.create.failttlset",
+                      name: "api.messages.create.fail-message-ttl-set",
                       properties: {
                         error: `Something went wrong trying to update the ttl for the message | ${error.kind}`,
                         fiscalCode: toHash(newMessageWithoutContent.fiscalCode),
