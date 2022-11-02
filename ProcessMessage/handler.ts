@@ -443,7 +443,7 @@ export const getProcessMessageHandler = ({
                     telemetryClient.trackEvent({
                       name: "api.messages.create.fail-status-ttl-set",
                       properties: {
-                        error: `Something went wrong trying to update the ttl for the message status | ${error.kind}`,
+                        errorKind: error.kind,
                         fiscalCode: toHash(newMessageWithoutContent.fiscalCode),
                         messageId: newMessageWithoutContent.id,
                         senderId: newMessageWithoutContent.senderServiceId
@@ -470,7 +470,7 @@ export const getProcessMessageHandler = ({
                     telemetryClient.trackEvent({
                       name: "api.messages.create.fail-message-ttl-set",
                       properties: {
-                        error: `Something went wrong trying to update the ttl for the message | ${error.kind}`,
+                        errorKind: error.kind,
                         fiscalCode: toHash(newMessageWithoutContent.fiscalCode),
                         messageId: newMessageWithoutContent.id,
                         senderId: newMessageWithoutContent.senderServiceId
