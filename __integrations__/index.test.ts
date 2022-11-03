@@ -415,7 +415,7 @@ describe("Create Message", () => {
             messageId as NonEmptyString
           ])
         },
-        sequenceS(TE.ApplicativePar),
+        sequenceS(TE.ApplicativeSeq),
         TE.bindW("content", _ =>
           pipe(
             messageModel.getContentFromBlob(
@@ -485,7 +485,7 @@ describe("Create Message", () => {
             messageId as NonEmptyString
           ])
         },
-        sequenceS(TE.ApplicativePar),
+        sequenceS(TE.ApplicativeSeq),
         TE.bindW("content", _ =>
           pipe(
             messageModel.getContentFromBlob(
@@ -555,7 +555,7 @@ describe("Create Message", () => {
           messageId as NonEmptyString
         ])
       },
-      sequenceS(TE.ApplicativePar),
+      sequenceS(TE.ApplicativeSeq),
       TE.bindW("content", _ =>
         pipe(
           messageModel.getContentFromBlob(
@@ -644,7 +644,7 @@ describe("Create Third Party Message", () => {
             messageId as NonEmptyString
           ])
         },
-        sequenceS(TE.ApplicativePar),
+        sequenceS(TE.ApplicativeSeq),
         TE.bindW("content", _ =>
           pipe(
             messageModel.getContentFromBlob(
@@ -741,7 +741,7 @@ describe("Create Advanced Message", () => {
             messageId as NonEmptyString
           ])
         },
-        sequenceS(TE.ApplicativePar),
+        sequenceS(TE.ApplicativeSeq),
         TE.bindW("content", _ =>
           pipe(
             messageModel.getContentFromBlob(
@@ -855,7 +855,7 @@ describe("Create Advanced Message", () => {
           messageId as NonEmptyString
         ])
       },
-      sequenceS(TE.ApplicativePar),
+      sequenceS(TE.ApplicativeSeq),
       TE.bindW("content", _ =>
         pipe(
           messageModel.getContentFromBlob(
