@@ -5,9 +5,6 @@ yarn generate-env
 
 yarn start azure-cosmosdb-linux-emulator
 
-echo "Wait Cosmos container to setup"
-sleep 15
-
 echo -n "CosmosDB starting..."
 cosmos_started=$(docker logs azure-cosmosdb-linux-emulator | grep -wc Started) || "Not started"
 echo "---> $cosmos_started"
@@ -20,9 +17,9 @@ do
 done
 echo "CosmosDB Started"
 
-sleep 30
 yarn start fixtures function testagent
 
 echo "Env Started"
 
+sleep 60
 docker logs fixtures
