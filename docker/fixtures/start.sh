@@ -1,7 +1,7 @@
 #!/bin/bash
 
-echo "Sleep 15 sec"
-sleep 15
+echo "Sleep 30 sec"
+sleep 30
 
 echo "Start Fixtures"
 node ./dist/index.js
