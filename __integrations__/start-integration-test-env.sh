@@ -22,4 +22,7 @@ echo "CosmosDB Started"
 
 sleep 30
 yarn start fixtures function testagent
+
 echo "Env Started"
+
+docker logs fixtures
