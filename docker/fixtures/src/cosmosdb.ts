@@ -40,7 +40,7 @@ const createServiceData = (db: Database) => {
             })
           )
         ),
-        RA.sequence(TE.ApplicativePar)
+        RA.sequence(TE.ApplicativeSeq)
       )
     ),
     TE.map(_ => log(`${_.length} Services data created`))
@@ -74,7 +74,7 @@ const createMessageData = (db: Database) => {
         NotificationStatusCollection.NOTIFICATION_STATUS_MODEL_PK_FIELD
       )
     ],
-    RA.sequence(TE.ApplicativePar),
+    RA.sequence(TE.ApplicativeSeq),
     TE.map(_ => log("Message data created"))
   );
 };
@@ -99,7 +99,7 @@ const createProfileData = (db: Database) => {
             ...aValidProfile
           })
         ),
-        RA.sequence(TE.ApplicativePar)
+        RA.sequence(TE.ApplicativeSeq)
       )
     ),
     TE.map(_ => log(`${_.profileCreated.length} Profiles data created`))
@@ -137,7 +137,7 @@ const createServicePreferencesData = (db: Database) => {
             ...sp
           })
         ),
-        RA.sequence(TE.ApplicativePar)
+        RA.sequence(TE.ApplicativeSeq)
       )
     ),
     TE.map(_ =>
