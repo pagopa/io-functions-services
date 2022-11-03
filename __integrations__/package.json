@@ -6,7 +6,6 @@
   "keywords": [],
   "author": "",
   "scripts": {
-    "prestart": "npm-run-all generate-env",
     "start": "docker-compose --env-file environments/.env up -d",
     "start:cosmos": "docker-compose --env-file environments/.env up -d azure-cosmosdb-linux-emulator",
     "stop": "docker-compose --env-file environments/.env down",

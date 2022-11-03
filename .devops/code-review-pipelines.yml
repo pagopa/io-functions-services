@@ -110,28 +110,8 @@ stages:
         - script: |
             cd __integrations__
             cp environments/env.base environments/.env
-            yarn install --frozen-lockfile
             
-            yarn generate-env
-            yarn start:cosmos
-
-            echo "Wait Cosmos container to setup"
-            sleep 15
-            
-            echo -n "CosmosDB starting..."
-            cosmos_started=$(docker logs azure-cosmosdb-linux-emulator | grep -wc Started) || "Not started"
-            echo "---> $cosmos_started"
-            while [ "$cosmos_started" != "12" ]
-            do
-                sleep 5
-                echo -n "."
-                cosmos_started=$(docker logs azure-cosmosdb-linux-emulator | grep -wc Started) || "Not started"
-                echo "-----> $cosmos_started"
-            done
-            echo "CosmosDB Started"
-            
-            sleep 15
-            yarn start
+            ./start-integration-test-env.sh
             
           displayName: 'Start test resources'
         - script: |
