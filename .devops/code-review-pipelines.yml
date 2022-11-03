@@ -130,6 +130,7 @@ stages:
             done
             echo "CosmosDB Started"
             
+            sleep 15
             yarn start
             
           displayName: 'Start test resources'
