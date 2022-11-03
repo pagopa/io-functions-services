@@ -14,8 +14,8 @@ services:
     container_name: azure-cosmosdb-linux-emulator
     hostname: "azure-cosmosdb-linux-emulator"
     tty: true
-    mem_limit: 3GB
-    cpu_count: 2
+    mem_limit: 12GB
+    cpu_count: 6
     ports:
       - 8081:8081
       - 10251:10251
