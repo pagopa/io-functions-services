@@ -19,7 +19,11 @@ const main = async (): Promise<void> => {
     throw new Error(maybe_db.left.message);
   }
 
-  await fillCosmosDb(maybe_db.right);
+  const error_or_CosmosDbSetup = await fillCosmosDb(maybe_db.right);
+
+  if (E.isLeft(error_or_CosmosDbSetup)) {
+    throw new Error(error_or_CosmosDbSetup.left.message);
+  }
 
   await fillAzureStorage(process.env.QueueStorageConnection);
 };

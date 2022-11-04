@@ -18,10 +18,20 @@ do
     cosmos_started=$(docker logs azure-cosmosdb-linux-emulator | grep -wc Started)
     echo "-----> $cosmos_started"
 done
-sleep 30
 echo "CosmosDB Started"
 
-# Start other containers
-yarn start function testagent
+sleep 15
 
+# Start other containers
+yarn start fixtures function testagent
+
+# Check fixtures exit code
+fixtures_exit_code=$(docker wait fixtures)
+echo "fixtures_setup ---> $fixtures_exit_code"
+
+if [ "$fixtures_exit_code" -eq "0" ]; then
 echo "Env Started"
+else
+echo "Fixtures in error."
+exit 1;
+fi
