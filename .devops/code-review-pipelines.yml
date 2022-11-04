@@ -117,7 +117,8 @@ stages:
         - script: |
             cd __integrations__
             yarn install --frozen-lockfile
-            sleep 90s
+            sleep 120s
+            # Print fixtures logs
             docker logs fixtures
             docker exec integrations___testagent_1 yarn test
             #           ^^^ FIXME: reference container using a less arbitrary name
