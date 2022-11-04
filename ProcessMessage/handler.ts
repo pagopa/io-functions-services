@@ -357,6 +357,7 @@ type TtlType = t.TypeOf<typeof ttlType>;
 
 export interface IProcessMessageHandlerInput {
   readonly TTL_FOR_USER_NOT_FOUND: TtlType;
+  readonly isUserForFeatureFlag: (fc: FiscalCode) => boolean;
   readonly lActivation: ActivationModel;
   readonly lProfileModel: ProfileModel;
   readonly lMessageModel: MessageModel;
@@ -377,6 +378,7 @@ type Handler = (c: Context, i: unknown) => Promise<void>;
  */
 export const getProcessMessageHandler = ({
   TTL_FOR_USER_NOT_FOUND,
+  isUserForFeatureFlag,
   lActivation,
   lProfileModel,
   lMessageModel,
@@ -432,54 +434,6 @@ export const getProcessMessageHandler = ({
                 rejection_reason: RejectionReasonEnum.USER_NOT_FOUND,
                 status: RejectedMessageStatusValueEnum.REJECTED
               }),
-              TE.chain(() =>
-                pipe(
-                  lMessageStatusModel.updateTTLForAllVersions(
-                    [newMessageWithoutContent.id],
-                    TTL_FOR_USER_NOT_FOUND
-                  ),
-                  TE.mapLeft((error: CosmosErrors) => {
-                    telemetryClient.trackEvent({
-                      name: "api.messages.create.fail-status-ttl-set",
-                      properties: {
-                        errorKind: error.kind,
-                        fiscalCode: toHash(newMessageWithoutContent.fiscalCode),
-                        messageId: newMessageWithoutContent.id,
-                        senderId: newMessageWithoutContent.senderServiceId
-                      },
-                      tagOverrides: { samplingEnabled: "false" }
-                    });
-                    return error;
-                  })
-                )
-              ),
-              TE.chain(() =>
-                pipe(
-                  lMessageModel.patch(
-                    [
-                      newMessageWithoutContent.id,
-                      newMessageWithoutContent.fiscalCode
-                    ],
-                    // this cast is needed cause patch does not accept ttl
-                    { ttl: TTL_FOR_USER_NOT_FOUND } as Partial<
-                      MessageWithoutContent
-                    >
-                  ),
-                  TE.mapLeft((error: CosmosErrors) => {
-                    telemetryClient.trackEvent({
-                      name: "api.messages.create.fail-message-ttl-set",
-                      properties: {
-                        errorKind: error.kind,
-                        fiscalCode: toHash(newMessageWithoutContent.fiscalCode),
-                        messageId: newMessageWithoutContent.id,
-                        senderId: newMessageWithoutContent.senderServiceId
-                      },
-                      tagOverrides: { samplingEnabled: "false" }
-                    });
-                    return error;
-                  })
-                )
-              ),
               TE.getOrElse(e => {
                 context.log.error(
                   `${logPrefix}|PROFILE_NOT_FOUND|UPSERT_STATUS=REJECTED|ERROR=${JSON.stringify(
@@ -491,6 +445,57 @@ export const getProcessMessageHandler = ({
                 );
               })
             )();
+
+            if (isUserForFeatureFlag(newMessageWithoutContent.fiscalCode)) {
+              await pipe(
+                lMessageStatusModel.updateTTLForAllVersions(
+                  [newMessageWithoutContent.id],
+                  TTL_FOR_USER_NOT_FOUND
+                ),
+                TE.mapLeft((error: CosmosErrors) => {
+                  telemetryClient.trackEvent({
+                    name: "api.messages.create.fail-status-ttl-set",
+                    properties: {
+                      errorKind: error.kind,
+                      fiscalCode: toHash(newMessageWithoutContent.fiscalCode),
+                      messageId: newMessageWithoutContent.id,
+                      senderId: newMessageWithoutContent.senderServiceId
+                    },
+                    tagOverrides: { samplingEnabled: "false" }
+                  });
+                  return error;
+                }),
+                TE.chain(() =>
+                  pipe(
+                    lMessageModel.patch(
+                      [
+                        newMessageWithoutContent.id,
+                        newMessageWithoutContent.fiscalCode
+                      ],
+                      // this cast is needed cause patch does not accept ttl
+                      { ttl: TTL_FOR_USER_NOT_FOUND } as Partial<
+                        MessageWithoutContent
+                      >
+                    ),
+                    TE.mapLeft((error: CosmosErrors) => {
+                      telemetryClient.trackEvent({
+                        name: "api.messages.create.fail-message-ttl-set",
+                        properties: {
+                          errorKind: error.kind,
+                          fiscalCode: toHash(
+                            newMessageWithoutContent.fiscalCode
+                          ),
+                          messageId: newMessageWithoutContent.id,
+                          senderId: newMessageWithoutContent.senderServiceId
+                        },
+                        tagOverrides: { samplingEnabled: "false" }
+                      });
+                      return error;
+                    })
+                  )
+                )
+              )();
+            }
 
             context.log.warn(`${logPrefix}|RESULT=PROFILE_NOT_FOUND`);
             return;

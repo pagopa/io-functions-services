@@ -62,6 +62,7 @@ import { RejectedMessageStatusValueEnum } from "@pagopa/io-functions-commons/dis
 import { RejectionReasonEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/RejectionReason";
 
 const TTL_FOR_USER_NOT_FOUND = 94670856 as NonNegativeInteger;
+const isUserForFeatureFlag = (_: FiscalCode) => true;
 
 const createContext = (functionName: string = "funcname"): Context =>
   (({
@@ -353,6 +354,7 @@ describe("getprocessMessageHandler", () => {
 
       const processMessageHandler = getProcessMessageHandler({
         TTL_FOR_USER_NOT_FOUND,
+        isUserForFeatureFlag,
         lActivation,
         lProfileModel,
         lMessageModel,
@@ -451,6 +453,7 @@ describe("getprocessMessageHandler", () => {
 
       const processMessageHandler = getProcessMessageHandler({
         TTL_FOR_USER_NOT_FOUND,
+        isUserForFeatureFlag,
         lActivation,
         lProfileModel,
         lMessageModel,
@@ -546,6 +549,7 @@ describe("getprocessMessageHandler", () => {
       );
       const processMessageHandler = getProcessMessageHandler({
         TTL_FOR_USER_NOT_FOUND,
+        isUserForFeatureFlag,
         lActivation,
         lProfileModel,
         lMessageModel,
@@ -649,6 +653,7 @@ describe("getprocessMessageHandler", () => {
       );
       const processMessageHandler = getProcessMessageHandler({
         TTL_FOR_USER_NOT_FOUND,
+        isUserForFeatureFlag,
         lActivation,
         lProfileModel,
         lMessageModel,
@@ -734,6 +739,7 @@ describe("getprocessMessageHandler", () => {
       );
       const processMessageHandler = getProcessMessageHandler({
         TTL_FOR_USER_NOT_FOUND,
+        isUserForFeatureFlag,
         lActivation,
         lProfileModel,
         lMessageModel,
@@ -782,6 +788,7 @@ describe("getprocessMessageHandler", () => {
     );
     const processMessageHandler = getProcessMessageHandler({
       TTL_FOR_USER_NOT_FOUND,
+      isUserForFeatureFlag,
       lActivation,
       lProfileModel,
       lMessageModel,
