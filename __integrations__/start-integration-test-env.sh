@@ -20,11 +20,13 @@ do
 done
 echo "CosmosDB Started"
 
-sleep 30
+sleep 60
 
+echo "Start Env"
 # Start other containers
 yarn start fixtures function testagent
 
+echo "Wait fixtures"
 # Check fixtures exit code
 fixtures_exit_code=$(docker wait fixtures)
 echo "fixtures_setup ---> $fixtures_exit_code"
@@ -33,6 +35,6 @@ if [ "$fixtures_exit_code" -eq "0" ]; then
 echo "Env Started"
 else
 echo "Fixtures in error."
-docker log fixtures
+docker logs fixtures
 exit 1;
 fi
