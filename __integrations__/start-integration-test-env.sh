@@ -18,6 +18,7 @@ do
     cosmos_started=$(docker logs azure-cosmosdb-linux-emulator | grep -wc Started)
     echo "-----> $cosmos_started"
 done
+sleep 30
 echo "CosmosDB Started"
 
 # Start other containers
