@@ -357,7 +357,7 @@ type TtlType = t.TypeOf<typeof ttlType>;
 
 export interface IProcessMessageHandlerInput {
   readonly TTL_FOR_USER_NOT_FOUND: TtlType;
-  readonly isUserForFeatureFlag: (fc: FiscalCode) => boolean;
+  readonly isUserEligibleForNewFeature: (fc: FiscalCode) => boolean;
   readonly lActivation: ActivationModel;
   readonly lProfileModel: ProfileModel;
   readonly lMessageModel: MessageModel;
@@ -378,7 +378,7 @@ type Handler = (c: Context, i: unknown) => Promise<void>;
  */
 export const getProcessMessageHandler = ({
   TTL_FOR_USER_NOT_FOUND,
-  isUserForFeatureFlag,
+  isUserEligibleForNewFeature,
   lActivation,
   lProfileModel,
   lMessageModel,
@@ -446,7 +446,9 @@ export const getProcessMessageHandler = ({
               })
             )();
 
-            if (isUserForFeatureFlag(newMessageWithoutContent.fiscalCode)) {
+            if (
+              isUserEligibleForNewFeature(newMessageWithoutContent.fiscalCode)
+            ) {
               await pipe(
                 lMessageStatusModel.updateTTLForAllVersions(
                   [newMessageWithoutContent.id],
@@ -493,7 +495,10 @@ export const getProcessMessageHandler = ({
                       return error;
                     })
                   )
-                )
+                ),
+                TE.mapLeft(_ => {
+                  throw new Error("Error while setting ttl");
+                })
               )();
             }
 

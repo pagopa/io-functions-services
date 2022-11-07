@@ -1,7 +1,10 @@
 /* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { BlockedInboxOrChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
-import { MessageModel } from "@pagopa/io-functions-commons/dist/src/models/message";
+import {
+  MessageModel,
+  RetrievedMessage
+} from "@pagopa/io-functions-commons/dist/src/models/message";
 import {
   ProfileModel,
   RetrievedProfile
@@ -60,9 +63,10 @@ import * as MS from "@pagopa/io-functions-commons/dist/src/models/message_status
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { RejectedMessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/RejectedMessageStatusValue";
 import { RejectionReasonEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/RejectionReason";
+import { CosmosErrors } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
 
 const TTL_FOR_USER_NOT_FOUND = 94670856 as NonNegativeInteger;
-const isUserForFeatureFlag = (_: FiscalCode) => true;
+const isUserEligibleForNewFeature = (_: FiscalCode) => true;
 
 const createContext = (functionName: string = "funcname"): Context =>
   (({
@@ -89,7 +93,10 @@ const aBlobResult = {
 
 const storeContentAsBlobMock = jest.fn(() => TE.of(O.some(aBlobResult)));
 const upsertMessageMock = jest.fn<any, any>(() => TE.of(aRetrievedMessage));
-const patchMessageMock = jest.fn((_, __) => TE.right(aRetrievedMessage));
+const patchMessageMock: jest.Mock<TE.TaskEither<
+  CosmosErrors,
+  RetrievedMessage
+>> = jest.fn((_, __) => TE.right(aRetrievedMessage));
 const lMessageModel = ({
   storeContentAsBlob: storeContentAsBlobMock,
   upsert: upsertMessageMock,
@@ -103,7 +110,10 @@ const lServicePreferencesModel = ({
   find: findServicePreferenceMock
 } as unknown) as ServicesPreferencesModel;
 
-const updateTTLForAllVersionsMock = jest.fn(() => TE.right(1));
+const updateTTLForAllVersionsMock: jest.Mock<TE.TaskEither<
+  CosmosErrors,
+  number
+>> = jest.fn(() => TE.right(1));
 const lMessageStatusModel = ({
   upsert: (...args) => TE.of({} /* anything */),
   findLastVersionByModelId: (...args) => TE.right(O.none),
@@ -354,7 +364,7 @@ describe("getprocessMessageHandler", () => {
 
       const processMessageHandler = getProcessMessageHandler({
         TTL_FOR_USER_NOT_FOUND,
-        isUserForFeatureFlag,
+        isUserEligibleForNewFeature,
         lActivation,
         lProfileModel,
         lMessageModel,
@@ -453,7 +463,7 @@ describe("getprocessMessageHandler", () => {
 
       const processMessageHandler = getProcessMessageHandler({
         TTL_FOR_USER_NOT_FOUND,
-        isUserForFeatureFlag,
+        isUserEligibleForNewFeature,
         lActivation,
         lProfileModel,
         lMessageModel,
@@ -549,7 +559,7 @@ describe("getprocessMessageHandler", () => {
       );
       const processMessageHandler = getProcessMessageHandler({
         TTL_FOR_USER_NOT_FOUND,
-        isUserForFeatureFlag,
+        isUserEligibleForNewFeature: _ => false,
         lActivation,
         lProfileModel,
         lMessageModel,
@@ -653,7 +663,7 @@ describe("getprocessMessageHandler", () => {
       );
       const processMessageHandler = getProcessMessageHandler({
         TTL_FOR_USER_NOT_FOUND,
-        isUserForFeatureFlag,
+        isUserEligibleForNewFeature,
         lActivation,
         lProfileModel,
         lMessageModel,
@@ -739,7 +749,7 @@ describe("getprocessMessageHandler", () => {
       );
       const processMessageHandler = getProcessMessageHandler({
         TTL_FOR_USER_NOT_FOUND,
-        isUserForFeatureFlag,
+        isUserEligibleForNewFeature,
         lActivation,
         lProfileModel,
         lMessageModel,
@@ -788,7 +798,7 @@ describe("getprocessMessageHandler", () => {
     );
     const processMessageHandler = getProcessMessageHandler({
       TTL_FOR_USER_NOT_FOUND,
-      isUserForFeatureFlag,
+      isUserEligibleForNewFeature,
       lActivation,
       lProfileModel,
       lMessageModel,
@@ -835,5 +845,69 @@ describe("getprocessMessageHandler", () => {
     );
     expect(findServicePreferenceMock).toBeCalledTimes(0);
     expect(activationFindLastVersionMock).toBeCalledTimes(0);
+  });
+
+  it("it should throw an error if the set of ttl on message fails", async () => {
+    findLastVersionByModelIdMock.mockImplementationOnce(() => {
+      return TE.of(O.none);
+    });
+    mockRetrieveProcessingMessageData.mockImplementationOnce(() =>
+      TE.of(O.some(aCommonMessageData))
+    );
+    patchMessageMock.mockReturnValueOnce(TE.left({} as CosmosErrors));
+    const processMessageHandler = getProcessMessageHandler({
+      TTL_FOR_USER_NOT_FOUND,
+      isUserEligibleForNewFeature,
+      lActivation,
+      lProfileModel,
+      lMessageModel,
+      lBlobService: {} as any,
+      lServicePreferencesModel,
+      lMessageStatusModel,
+      optOutEmailSwitchDate: aPastOptOutEmailSwitchDate,
+      pendingActivationGracePeriod: DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS as Second,
+      isOptInEmailEnabled: false,
+      telemetryClient: mockTelemetryClient,
+      retrieveProcessingMessageData: mockRetrieveProcessingMessageData
+    });
+
+    const context = createContext();
+
+    await expect(
+      processMessageHandler(context, JSON.stringify(aCreatedMessageEvent))
+    ).rejects.toThrow("Error while setting ttl");
+  });
+
+  it("it should throw an error if the set of ttl on message status fails", async () => {
+    findLastVersionByModelIdMock.mockImplementationOnce(() => {
+      return TE.of(O.none);
+    });
+    mockRetrieveProcessingMessageData.mockImplementationOnce(() =>
+      TE.of(O.some(aCommonMessageData))
+    );
+    updateTTLForAllVersionsMock.mockReturnValueOnce(
+      TE.left({} as CosmosErrors)
+    );
+    const processMessageHandler = getProcessMessageHandler({
+      TTL_FOR_USER_NOT_FOUND,
+      isUserEligibleForNewFeature,
+      lActivation,
+      lProfileModel,
+      lMessageModel,
+      lBlobService: {} as any,
+      lServicePreferencesModel,
+      lMessageStatusModel,
+      optOutEmailSwitchDate: aPastOptOutEmailSwitchDate,
+      pendingActivationGracePeriod: DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS as Second,
+      isOptInEmailEnabled: false,
+      telemetryClient: mockTelemetryClient,
+      retrieveProcessingMessageData: mockRetrieveProcessingMessageData
+    });
+
+    const context = createContext();
+
+    await expect(
+      processMessageHandler(context, JSON.stringify(aCreatedMessageEvent))
+    ).rejects.toThrow("Error while setting ttl");
   });
 });

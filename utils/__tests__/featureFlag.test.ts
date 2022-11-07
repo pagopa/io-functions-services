@@ -1,4 +1,4 @@
-import { getIsUserForFeatureFlag } from "../featureFlags";
+import { getIsUserEligibleForNewFeature } from "../featureFlags";
 import { FiscalCode } from "@pagopa/ts-commons/lib/strings";
 import { aFiscalCode, anotherFiscalCode } from "../../__mocks__/mocks";
 
@@ -7,7 +7,7 @@ const isUserBeta = (fc: FiscalCode) => betaUsers.includes(fc);
 
 describe("isUserForFeatureFlag", () => {
   it("should return true when featureFlag === all", () => {
-    const isUserForFeatureFlag = getIsUserForFeatureFlag(
+    const isUserForFeatureFlag = getIsUserEligibleForNewFeature(
       isUserBeta,
       _ => false,
       "all"
@@ -16,7 +16,7 @@ describe("isUserForFeatureFlag", () => {
   });
 
   it("should return false when featureFlag === beta and the user is not beta", () => {
-    const isUserForFeatureFlag = getIsUserForFeatureFlag(
+    const isUserForFeatureFlag = getIsUserEligibleForNewFeature(
       isUserBeta,
       _ => false,
       "beta"
@@ -25,7 +25,7 @@ describe("isUserForFeatureFlag", () => {
   });
 
   it("should return true when featureFlag === beta and the first callback return true", () => {
-    const isUserForFeatureFlag = getIsUserForFeatureFlag(
+    const isUserForFeatureFlag = getIsUserEligibleForNewFeature(
       isUserBeta,
       _ => false,
       "beta"
@@ -34,7 +34,7 @@ describe("isUserForFeatureFlag", () => {
   });
 
   it("should return false when featureFlag === canary and callbacks return false", () => {
-    const isUserForFeatureFlag = getIsUserForFeatureFlag(
+    const isUserForFeatureFlag = getIsUserEligibleForNewFeature(
       isUserBeta,
       _ => false,
       "canary"
@@ -43,7 +43,7 @@ describe("isUserForFeatureFlag", () => {
   });
 
   it("should return true when featureFlag === canary and the first callback return true", () => {
-    const isUserForFeatureFlag = getIsUserForFeatureFlag(
+    const isUserForFeatureFlag = getIsUserEligibleForNewFeature(
       isUserBeta,
       _ => false,
       "canary"
@@ -52,7 +52,7 @@ describe("isUserForFeatureFlag", () => {
   });
 
   it("should return true when featureFlag === canary and the second callback return true", () => {
-    const isUserForFeatureFlag = getIsUserForFeatureFlag(
+    const isUserForFeatureFlag = getIsUserEligibleForNewFeature(
       isUserBeta,
       _ => true,
       "canary"
@@ -61,7 +61,7 @@ describe("isUserForFeatureFlag", () => {
   });
 
   it("should return false when featureFlag === none", () => {
-    const isUserForFeatureFlag = getIsUserForFeatureFlag(
+    const isUserForFeatureFlag = getIsUserEligibleForNewFeature(
       isUserBeta,
       _ => true,
       "none"

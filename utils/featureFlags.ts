@@ -8,7 +8,7 @@ export const FeatureFlag = t.union([
 ]);
 export type FeatureFlag = t.TypeOf<typeof FeatureFlag>;
 
-export const getIsUserForFeatureFlag = <T>(
+export const getIsUserEligibleForNewFeature = <T>(
   isUserBeta: (i: T) => boolean,
   isUserCanary: (i: T) => boolean,
   featureFlag: FeatureFlag

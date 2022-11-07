@@ -28,7 +28,7 @@ import { getConfigOrThrow } from "../utils/config";
 import { initTelemetryClient } from "../utils/appinsights";
 import { CommonMessageData } from "../utils/events/message";
 import { makeRetrieveExpandedDataFromBlob } from "../utils/with-expanded-input";
-import { getIsUserForFeatureFlag } from "../utils/featureFlags";
+import { getIsUserEligibleForNewFeature } from "../utils/featureFlags";
 import { getProcessMessageHandler } from "./handler";
 
 const config = getConfigOrThrow();
@@ -73,7 +73,7 @@ const retrieveProcessingMessageData = makeRetrieveExpandedDataFromBlob(
   config.PROCESSING_MESSAGE_CONTAINER_NAME
 );
 
-const isUserForFeatureFlag = getIsUserForFeatureFlag(
+const isUserEligibleForNewFeature = getIsUserEligibleForNewFeature(
   (fc: FiscalCode) => config.BETA_USERS.includes(fc),
   (_: FiscalCode) => false,
   config.FEATURE_FLAG
@@ -82,7 +82,7 @@ const isUserForFeatureFlag = getIsUserForFeatureFlag(
 const activityFunctionHandler: AzureFunction = getProcessMessageHandler({
   TTL_FOR_USER_NOT_FOUND: config.TTL_FOR_USER_NOT_FOUND,
   isOptInEmailEnabled: config.FF_OPT_IN_EMAIL_ENABLED,
-  isUserForFeatureFlag,
+  isUserEligibleForNewFeature,
   lActivation: activationModel,
   lBlobService: blobServiceForMessageContent,
   lMessageModel: messageModel,
