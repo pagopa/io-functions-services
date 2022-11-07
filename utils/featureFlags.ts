@@ -1,11 +1,18 @@
+import { enumType } from "@pagopa/ts-commons/lib/types";
 import * as t from "io-ts";
 
-export const FeatureFlag = t.union([
-  t.literal("all"),
-  t.literal("beta"),
-  t.literal("canary"),
-  t.literal("none")
-]);
+export enum FeatureFlagEnum {
+  ALL = "ALL",
+  BETA = "BETA",
+  CANARY = "CANARY",
+  NONE = "NONE"
+}
+
+export const FeatureFlag = enumType<FeatureFlagEnum>(
+  FeatureFlagEnum,
+  "FeatureFlag"
+);
+
 export type FeatureFlag = t.TypeOf<typeof FeatureFlag>;
 
 export const getIsUserEligibleForNewFeature = <T>(
@@ -14,13 +21,13 @@ export const getIsUserEligibleForNewFeature = <T>(
   featureFlag: FeatureFlag
 ): ((i: T) => boolean) => (i): boolean => {
   switch (featureFlag) {
-    case "all":
+    case "ALL":
       return true;
-    case "beta":
+    case "BETA":
       return isUserBeta(i);
-    case "canary":
+    case "CANARY":
       return isUserCanary(i) || isUserBeta(i);
-    case "none":
+    case "NONE":
       return false;
     default:
       return false;

@@ -1,4 +1,7 @@
-import { getIsUserEligibleForNewFeature } from "../featureFlags";
+import {
+  FeatureFlagEnum,
+  getIsUserEligibleForNewFeature
+} from "../featureFlags";
 import { FiscalCode } from "@pagopa/ts-commons/lib/strings";
 import { aFiscalCode, anotherFiscalCode } from "../../__mocks__/mocks";
 
@@ -10,7 +13,7 @@ describe("isUserForFeatureFlag", () => {
     const isUserForFeatureFlag = getIsUserEligibleForNewFeature(
       isUserBeta,
       _ => false,
-      "all"
+      FeatureFlagEnum.ALL
     );
     expect(isUserForFeatureFlag(aFiscalCode)).toBeTruthy();
   });
@@ -19,7 +22,7 @@ describe("isUserForFeatureFlag", () => {
     const isUserForFeatureFlag = getIsUserEligibleForNewFeature(
       isUserBeta,
       _ => false,
-      "beta"
+      FeatureFlagEnum.BETA
     );
     expect(isUserForFeatureFlag(anotherFiscalCode)).toBeFalsy();
   });
@@ -28,7 +31,7 @@ describe("isUserForFeatureFlag", () => {
     const isUserForFeatureFlag = getIsUserEligibleForNewFeature(
       isUserBeta,
       _ => false,
-      "beta"
+      FeatureFlagEnum.BETA
     );
     expect(isUserForFeatureFlag(aFiscalCode)).toBeTruthy();
   });
@@ -37,7 +40,7 @@ describe("isUserForFeatureFlag", () => {
     const isUserForFeatureFlag = getIsUserEligibleForNewFeature(
       isUserBeta,
       _ => false,
-      "canary"
+      FeatureFlagEnum.CANARY
     );
     expect(isUserForFeatureFlag(anotherFiscalCode)).toBeFalsy();
   });
@@ -46,7 +49,7 @@ describe("isUserForFeatureFlag", () => {
     const isUserForFeatureFlag = getIsUserEligibleForNewFeature(
       isUserBeta,
       _ => false,
-      "canary"
+      FeatureFlagEnum.CANARY
     );
     expect(isUserForFeatureFlag(aFiscalCode)).toBeTruthy();
   });
@@ -55,7 +58,7 @@ describe("isUserForFeatureFlag", () => {
     const isUserForFeatureFlag = getIsUserEligibleForNewFeature(
       isUserBeta,
       _ => true,
-      "canary"
+      FeatureFlagEnum.CANARY
     );
     expect(isUserForFeatureFlag(anotherFiscalCode)).toBeTruthy();
   });
@@ -64,7 +67,7 @@ describe("isUserForFeatureFlag", () => {
     const isUserForFeatureFlag = getIsUserEligibleForNewFeature(
       isUserBeta,
       _ => true,
-      "none"
+      FeatureFlagEnum.NONE
     );
     expect(isUserForFeatureFlag(aFiscalCode)).toBeFalsy();
   });
