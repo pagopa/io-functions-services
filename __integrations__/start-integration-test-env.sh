@@ -31,11 +31,11 @@ echo "Wait fixtures"
 fixtures_exit_code=$(docker wait fixtures)
 echo "fixtures_setup ---> $fixtures_exit_code"
 
+docker logs fixtures
+
 if [ "$fixtures_exit_code" -eq "0" ]; then
 echo "Env Started"
 else
 echo "Fixtures in error."
 exit 1;
 fi
-
-docker logs fixtures
