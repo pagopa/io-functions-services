@@ -20,7 +20,7 @@ do
 done
 echo "CosmosDB Started"
 
-sleep 60
+sleep 0
 
 echo "Start Env"
 # Start other containers

@@ -22,6 +22,9 @@ services:
       - 10252:10252
       - 10253:10253
       - 10254:10254
+    expose:
+      - "8081"
+      - "10251-10255"
     environment:
       - AZURE_COSMOS_EMULATOR_PARTITION_COUNT=10
       - AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE=true
