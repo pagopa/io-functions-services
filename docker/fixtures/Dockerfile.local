@@ -1,0 +1,4 @@
+FROM node:14
+
+CMD ["sh", "./docker/fixtures/start.sh"]
+

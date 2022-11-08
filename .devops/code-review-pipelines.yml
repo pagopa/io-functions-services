@@ -99,6 +99,10 @@ stages:
 
   - stage: Integration_Tests
     dependsOn: []
+    pool:
+          # Use ubuntu-18.04 for starting azure cosmosdb emulator
+          # see issue https://github.com/microsoft/azure-pipelines-tasks/issues/15865
+          vmImage: 'ubuntu-18.04'  
     jobs:
       - job: integration_tests   
         steps:
@@ -106,13 +110,15 @@ stages:
         - script: |
             cd __integrations__
             cp environments/env.base environments/.env
-            yarn install --frozen-lockfile
-            yarn start
+            
+            ./start-integration-test-env.sh
+            
           displayName: 'Start test resources'
         - script: |
             cd __integrations__
             yarn install --frozen-lockfile
             sleep 30s
+            
             docker exec integrations___testagent_1 yarn test
             #           ^^^ FIXME: reference container using a less arbitrary name
           displayName: 'Execute tests'

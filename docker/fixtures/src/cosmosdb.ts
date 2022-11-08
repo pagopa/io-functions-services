@@ -2,6 +2,7 @@
 import { CosmosClient, Database } from "@azure/cosmos";
 import * as TE from "fp-ts/TaskEither";
 import * as RA from "fp-ts/ReadonlyArray";
+import * as E from "fp-ts/Either";
 import { flow, pipe } from "fp-ts/lib/function";
 import * as ServiceCollection from "@pagopa/io-functions-commons/dist/src/models/service";
 import * as ServicePreferenceCollection from "@pagopa/io-functions-commons/dist/src/models/service_preference";
@@ -39,7 +40,7 @@ const createServiceData = (db: Database) => {
             })
           )
         ),
-        RA.sequence(TE.ApplicativePar)
+        RA.sequence(TE.ApplicativeSeq)
       )
     ),
     TE.map(_ => log(`${_.length} Services data created`))
@@ -73,7 +74,7 @@ const createMessageData = (db: Database) => {
         NotificationStatusCollection.NOTIFICATION_STATUS_MODEL_PK_FIELD
       )
     ],
-    RA.sequence(TE.ApplicativePar),
+    RA.sequence(TE.ApplicativeSeq),
     TE.map(_ => log("Message data created"))
   );
 };
@@ -98,7 +99,7 @@ const createProfileData = (db: Database) => {
             ...aValidProfile
           })
         ),
-        RA.sequence(TE.ApplicativePar)
+        RA.sequence(TE.ApplicativeSeq)
       )
     ),
     TE.map(_ => log(`${_.profileCreated.length} Profiles data created`))
@@ -136,7 +137,7 @@ const createServicePreferencesData = (db: Database) => {
             ...sp
           })
         ),
-        RA.sequence(TE.ApplicativePar)
+        RA.sequence(TE.ApplicativeSeq)
       )
     ),
     TE.map(_ =>
@@ -146,23 +147,42 @@ const createServicePreferencesData = (db: Database) => {
 };
 
 /**
- * Fill DB
+ * Init DB
  */
-export const fillCosmosDb = async (
+export const initCosmosDb = async (
   cosmosDbUri: string,
   cosmosDbKey: string,
   cosmosDbName: string
-): Promise<void> => {
-  log("filling CosmosDB");
+): Promise<E.Either<Error, Database>> => {
+  log(`initializing CosmosDB database ${cosmosDbName}`);
 
-  await pipe(
+  return await pipe(
     new CosmosClient({
       endpoint: cosmosDbUri,
       key: cosmosDbKey
     }),
     TE.of,
-    TE.chain(documentClient => createDatabase(documentClient, cosmosDbName)),
-    TE.chain(
+    TE.chainW(
+      flow(
+        documentClient => createDatabase(documentClient, cosmosDbName),
+        TE.mapLeft(_ => Error("Db creation Error"))
+      )
+    )
+  )();
+};
+
+/**
+ * Fill DB
+ */
+export const fillCosmosDb = async (
+  db: Database
+): Promise<E.Either<Error, any>> => {
+  log("filling CosmosDB");
+
+  return await pipe(
+    db,
+    TE.of,
+    TE.chainW(
       flow(
         db => [
           createServiceData(db),
@@ -170,12 +190,16 @@ export const fillCosmosDb = async (
           createProfileData(db),
           createServicePreferencesData(db)
         ],
-        RA.sequence(TE.ApplicativePar)
+        RA.sequence(TE.ApplicativeSeq),
+        TE.mapLeft(_ => {
+          log("Setup Error", _.kind);
+          if (_.kind === "COSMOS_ERROR_RESPONSE") {
+            log("-> ", _.error);
+          }
+
+          return Error("Setup Error");
+        })
       )
-    ),
-    TE.mapLeft(_ => {
-      log("Error");
-      log(_);
-    })
+    )
   )();
 };
