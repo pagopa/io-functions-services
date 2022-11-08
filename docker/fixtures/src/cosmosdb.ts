@@ -194,7 +194,7 @@ export const fillCosmosDb = async (
         TE.mapLeft(_ => {
           log("Setup Error", _.kind);
           if (_.kind === "COSMOS_ERROR_RESPONSE") {
-            log("-> ", _.error.message);
+            log("-> ", _.error);
           }
 
           return Error("Setup Error");
