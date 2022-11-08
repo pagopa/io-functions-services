@@ -20,8 +20,6 @@ do
 done
 echo "CosmosDB Started"
 
-sleep 0
-
 echo "Start Env"
 # Start other containers
 yarn start fixtures function testagent
