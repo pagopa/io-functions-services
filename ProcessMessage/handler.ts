@@ -1,6 +1,7 @@
 /* eslint-disable max-lines-per-function */
 
 import { Context } from "@azure/functions";
+import * as t from "io-ts";
 import { BlockedInboxOrChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
 import { EUCovidCert } from "@pagopa/io-functions-commons/dist/generated/definitions/EUCovidCert";
 import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
@@ -12,7 +13,10 @@ import {
   ServicesPreferencesModeEnum
 } from "@pagopa/io-functions-commons/dist/generated/definitions/ServicesPreferencesMode";
 import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
-import { MessageModel } from "@pagopa/io-functions-commons/dist/src/models/message";
+import {
+  MessageModel,
+  MessageWithoutContent
+} from "@pagopa/io-functions-commons/dist/src/models/message";
 import {
   getMessageStatusUpdater,
   MessageStatusModel
@@ -347,7 +351,13 @@ const createMessageOrThrow = async (
   }
 };
 
+// ttl can only be a positive integer or -1
+const ttlType = t.union([NonNegativeInteger, t.literal(-1)]);
+type TtlType = t.TypeOf<typeof ttlType>;
+
 export interface IProcessMessageHandlerInput {
+  readonly TTL_FOR_USER_NOT_FOUND: TtlType;
+  readonly isUserEligibleForNewFeature: (fc: FiscalCode) => boolean;
   readonly lActivation: ActivationModel;
   readonly lProfileModel: ProfileModel;
   readonly lMessageModel: MessageModel;
@@ -367,6 +377,8 @@ type Handler = (c: Context, i: unknown) => Promise<void>;
  * Returns a function for handling ProcessMessage
  */
 export const getProcessMessageHandler = ({
+  TTL_FOR_USER_NOT_FOUND,
+  isUserEligibleForNewFeature,
   lActivation,
   lProfileModel,
   lMessageModel,
@@ -433,6 +445,62 @@ export const getProcessMessageHandler = ({
                 );
               })
             )();
+
+            if (
+              isUserEligibleForNewFeature(newMessageWithoutContent.fiscalCode)
+            ) {
+              await pipe(
+                lMessageStatusModel.updateTTLForAllVersions(
+                  [newMessageWithoutContent.id],
+                  TTL_FOR_USER_NOT_FOUND
+                ),
+                TE.mapLeft((error: CosmosErrors) => {
+                  telemetryClient.trackEvent({
+                    name: "api.messages.create.fail-status-ttl-set",
+                    properties: {
+                      errorKind: error.kind,
+                      fiscalCode: toHash(newMessageWithoutContent.fiscalCode),
+                      messageId: newMessageWithoutContent.id,
+                      senderId: newMessageWithoutContent.senderServiceId
+                    },
+                    tagOverrides: { samplingEnabled: "false" }
+                  });
+                  return error;
+                }),
+                TE.chain(() =>
+                  pipe(
+                    lMessageModel.patch(
+                      [
+                        newMessageWithoutContent.id,
+                        newMessageWithoutContent.fiscalCode
+                      ],
+                      // this cast is needed cause patch does not accept ttl
+                      { ttl: TTL_FOR_USER_NOT_FOUND } as Partial<
+                        MessageWithoutContent
+                      >
+                    ),
+                    TE.mapLeft((error: CosmosErrors) => {
+                      telemetryClient.trackEvent({
+                        name: "api.messages.create.fail-message-ttl-set",
+                        properties: {
+                          errorKind: error.kind,
+                          fiscalCode: toHash(
+                            newMessageWithoutContent.fiscalCode
+                          ),
+                          messageId: newMessageWithoutContent.id,
+                          senderId: newMessageWithoutContent.senderServiceId
+                        },
+                        tagOverrides: { samplingEnabled: "false" }
+                      });
+                      return error;
+                    })
+                  )
+                ),
+                TE.mapLeft(_ => {
+                  throw new Error("Error while setting ttl");
+                })
+              )();
+            }
 
             context.log.warn(`${logPrefix}|RESULT=PROFILE_NOT_FOUND`);
             return;

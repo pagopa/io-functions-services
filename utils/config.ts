@@ -10,14 +10,29 @@ import { MailerConfig } from "@pagopa/io-functions-commons/dist/src/mailer";
 import * as O from "fp-ts/lib/Option";
 import * as E from "fp-ts/lib/Either";
 import * as t from "io-ts";
-import { BooleanFromString, withFallback } from "io-ts-types";
+import { BooleanFromString, JsonFromString, withFallback } from "io-ts-types";
 
 import { readableReport } from "@pagopa/ts-commons/lib/reporters";
-import { NonEmptyString, Semver } from "@pagopa/ts-commons/lib/strings";
+import {
+  FiscalCode,
+  NonEmptyString,
+  Semver
+} from "@pagopa/ts-commons/lib/strings";
 import { DateFromTimestamp } from "@pagopa/ts-commons/lib/dates";
-import { NumberFromString } from "@pagopa/ts-commons/lib/numbers";
+import {
+  NonNegativeIntegerFromString,
+  NumberFromString
+} from "@pagopa/ts-commons/lib/numbers";
 import { flow, pipe } from "fp-ts/lib/function";
 import { CommaSeparatedListOf } from "./comma-separated-list";
+import { FeatureFlag, FeatureFlagEnum } from "./featureFlags";
+
+export const BetaUsers = t.readonlyArray(FiscalCode);
+export type BetaUsers = t.TypeOf<typeof BetaUsers>;
+
+export const BetaUsersFromString = withFallback(JsonFromString, []).pipe(
+  BetaUsers
+);
 
 // used for internal job dispatch, temporary files, etc...
 const InternalStorageAccount = t.interface({
@@ -52,6 +67,8 @@ export const IConfig = t.intersection([
 
     APPINSIGHTS_INSTRUMENTATIONKEY: NonEmptyString,
 
+    BETA_USERS: BetaUsersFromString,
+
     COSMOSDB_KEY: NonEmptyString,
     COSMOSDB_NAME: NonEmptyString,
     COSMOSDB_URI: NonEmptyString,
@@ -59,6 +76,8 @@ export const IConfig = t.intersection([
     DEFAULT_SUBSCRIPTION_PRODUCT_NAME: NonEmptyString,
 
     EMAIL_NOTIFICATION_SERVICE_BLACKLIST: CommaSeparatedListOf(ServiceId),
+
+    FEATURE_FLAG: withFallback(FeatureFlag, FeatureFlagEnum.NONE),
 
     WEBHOOK_NOTIFICATION_SERVICE_BLACKLIST: CommaSeparatedListOf(ServiceId),
     // eslint-disable-next-line sort-keys
@@ -83,6 +102,8 @@ export const IConfig = t.intersection([
 
     // eslint-disable-next-line sort-keys
     MIN_APP_VERSION_WITH_READ_AUTH: Semver,
+
+    TTL_FOR_USER_NOT_FOUND: NonNegativeIntegerFromString,
 
     isProduction: t.boolean
   }),

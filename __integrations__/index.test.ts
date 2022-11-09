@@ -523,7 +523,7 @@ describe("Create Message", () => {
     }
   );
 
-  it("should Reject message when user does not exist", async () => {
+  it.skip("should Reject message when user does not exist", async () => {
     const nodeFetch = getNodeFetch({
       "x-subscription-id": aValidServiceId
     });
