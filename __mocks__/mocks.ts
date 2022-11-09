@@ -161,7 +161,8 @@ export const aRetrievedProfile: RetrievedProfile = {
   reminderStatus: "UNSET",
   servicePreferencesSettings: legacyProfileServicePreferencesSettings,
   version: 0 as NonNegativeInteger,
-  lastAppVersion: "UNKNOWN"
+  lastAppVersion: "UNKNOWN",
+  pushNotificationsContentType: "UNSET"
 };
 
 export const aRetrievedMessage: RetrievedMessageWithoutContent = {
