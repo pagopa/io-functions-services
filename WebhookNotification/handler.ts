@@ -8,6 +8,7 @@
 
 import * as t from "io-ts";
 
+import * as T from "fp-ts/Task";
 import * as E from "fp-ts/lib/Either";
 import * as O from "fp-ts/lib/Option";
 
@@ -42,6 +43,8 @@ import {
 } from "@pagopa/ts-commons/lib/requests";
 import { flow, pipe } from "fp-ts/lib/function";
 import { TaskEither } from "fp-ts/lib/TaskEither";
+import { Profile } from "@pagopa/io-functions-commons/dist/src/models/profile";
+import { PushNotificationsContentTypeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/PushNotificationsContentType";
 import { Notification } from "../generated/notifications/Notification";
 import { withJsonInput } from "../utils/with-json-input";
 import { withDecodedInput } from "../utils/with-decoded-input";
@@ -50,6 +53,7 @@ import {
   NotificationCreatedEvent
 } from "../utils/events/message";
 import { DataFetcher, withExpandedInput } from "../utils/with-expanded-input";
+import { GetUserProfileReader } from "../readers/user-profile.readers";
 import { WebhookNotifyT } from "./client";
 
 export const WebhookNotificationInput = NotificationCreatedEvent;
@@ -116,6 +120,7 @@ export const sendToWebhook = (
   message: NewMessageWithoutContent,
   content: MessageContent,
   senderMetadata: CreatedMessageEventSenderMetadata,
+  userProfile: Profile,
   disableWebhookMessageContent: boolean
   // eslint-disable-next-line max-params
 ): TaskEither<RuntimeError, TypeofApiResponse<WebhookNotifyT>> =>
@@ -125,11 +130,14 @@ export const sendToWebhook = (
         notifyApiCall({
           notification: {
             // If the service requires secure channels
+            // or user did not allow to receave verbose notifications
             // or the message content is disabled for all services
             // we send an empty (generic) push notification
             // generic content is provided by `io-backend` https://github.com/pagopa/io-backend/blob/v7.16.0/src/controllers/notificationController.ts#L62
             message:
               senderMetadata.requireSecureChannels ||
+              userProfile.pushNotificationsContentType !==
+                PushNotificationsContentTypeEnum.FULL ||
               disableWebhookMessageContent
                 ? newMessageToPublic(message)
                 : newMessageToPublic(message, content),
@@ -183,6 +191,7 @@ export const getWebhookNotificationHandler = (
   lNotificationModel: NotificationModel,
   notifyApiCall: TypeofApiCall<WebhookNotifyT>,
   retrieveProcessingMessageData: DataFetcher<CommonMessageData>,
+  userProfileReader: GetUserProfileReader,
   disableWebhookMessageContent: boolean
 ) =>
   withJsonInput(
@@ -251,12 +260,26 @@ export const getWebhookNotificationHandler = (
           const webhookNotification =
             errorOrWebhookNotification.right.channels.WEBHOOK;
 
+          const userProfile = await pipe(
+            userProfileReader({
+              fiscalCode: message.fiscalCode
+            }),
+            // We are using T.map(E.getOrElseW(..)) because
+            // TE.getOrElseW is unable to infer `userProfile` type
+            T.map(
+              E.getOrElseW(err => {
+                throw Error(err.title);
+              })
+            )
+          )();
+
           const sendResult = await sendToWebhook(
             notifyApiCall,
             webhookNotification.url,
             message,
             content,
             senderMetadata,
+            userProfile,
             disableWebhookMessageContent
           )();
           if (E.isLeft(sendResult)) {
