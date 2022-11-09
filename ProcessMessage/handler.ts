@@ -474,6 +474,7 @@ export const getProcessMessageHandler = ({
                   telemetryClient.trackEvent({
                     name: "api.messages.create.fail-status-ttl-set",
                     properties: {
+                      errorAsJson: JSON.stringify(error),
                       errorKind: error.kind,
                       fiscalCode: toHash(newMessageWithoutContent.fiscalCode),
                       messageId: newMessageWithoutContent.id,
