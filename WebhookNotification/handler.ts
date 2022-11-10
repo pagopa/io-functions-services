@@ -53,7 +53,7 @@ import {
   NotificationCreatedEvent
 } from "../utils/events/message";
 import { DataFetcher, withExpandedInput } from "../utils/with-expanded-input";
-import { GetUserProfileReader } from "../readers/user-profile.readers";
+import { UserProfileReader } from "../readers/user-profile";
 import { WebhookNotifyT } from "./client";
 
 export const WebhookNotificationInput = NotificationCreatedEvent;
@@ -130,7 +130,7 @@ export const sendToWebhook = (
         notifyApiCall({
           notification: {
             // If the service requires secure channels
-            // or user did not allow to receave verbose notifications
+            // or user did not allow to receive verbose notifications
             // or the message content is disabled for all services
             // we send an empty (generic) push notification
             // generic content is provided by `io-backend` https://github.com/pagopa/io-backend/blob/v7.16.0/src/controllers/notificationController.ts#L62
@@ -191,7 +191,7 @@ export const getWebhookNotificationHandler = (
   lNotificationModel: NotificationModel,
   notifyApiCall: TypeofApiCall<WebhookNotifyT>,
   retrieveProcessingMessageData: DataFetcher<CommonMessageData>,
-  userProfileReader: GetUserProfileReader,
+  userProfileReader: UserProfileReader,
   disableWebhookMessageContent: boolean
 ) =>
   withJsonInput(

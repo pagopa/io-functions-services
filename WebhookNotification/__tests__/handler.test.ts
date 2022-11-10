@@ -40,7 +40,7 @@ import * as O from "fp-ts/lib/Option";
 import { StandardServiceCategoryEnum } from "../../generated/api-admin/StandardServiceCategory";
 
 import { toInternalError, toNotFoundError } from "../../utils/domain-errors";
-import { GetUserProfileReader } from "../../readers/user-profile.readers";
+import { UserProfileReader } from "../../readers/user-profile";
 
 import { aRetrievedProfile } from "../../__mocks__/mocks";
 
@@ -132,7 +132,7 @@ const aCommonMessageData = {
   senderMetadata: aSenderMetadata
 };
 
-const aRetrievedProfileWithVerboseNotificationEnabled = {
+const aRetrievedProfileWithFullPushNotificationsContentType = {
   ...aRetrievedProfile,
   pushNotificationsContentType: PushNotificationsContentTypeEnum.FULL
 };
@@ -142,7 +142,7 @@ const mockRetrieveProcessingMessageData = jest
   .mockImplementation(() => TE.of(O.some(aCommonMessageData)));
 
 const userProfileReaderMock = jest.fn(
-  _ => TE.of(aRetrievedProfile) as ReturnType<GetUserProfileReader>
+  _ => TE.of(aRetrievedProfile) as ReturnType<UserProfileReader>
 );
 
 beforeEach(() => {
@@ -160,7 +160,7 @@ describe("sendToWebhook", () => {
       aMessage as any,
       aMessageContent,
       aSenderMetadata,
-      aRetrievedProfileWithVerboseNotificationEnabled,
+      aRetrievedProfileWithFullPushNotificationsContentType,
       false
     )();
 
@@ -185,7 +185,7 @@ describe("sendToWebhook", () => {
         ...aSenderMetadata,
         requireSecureChannels: true
       },
-      aRetrievedProfileWithVerboseNotificationEnabled,
+      aRetrievedProfileWithFullPushNotificationsContentType,
       false
     )();
     expect(fetchApi.mock.calls[0][1]).toHaveProperty("body");
@@ -206,7 +206,7 @@ describe("sendToWebhook", () => {
       aMessage as any,
       aMessageContent,
       aSenderMetadata,
-      aRetrievedProfileWithVerboseNotificationEnabled,
+      aRetrievedProfileWithFullPushNotificationsContentType,
       true
     )();
     expect(fetchApi.mock.calls[0][1]).toHaveProperty("body");

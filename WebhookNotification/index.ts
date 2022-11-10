@@ -16,7 +16,7 @@ import {
 } from "@pagopa/ts-commons/lib/fetch";
 import { Millisecond } from "@pagopa/ts-commons/lib/units";
 import { createBlobService } from "azure-storage";
-import { getUserProfileReader } from "../readers/user-profile.readers";
+import { getUserProfileReader } from "../readers/user-profile";
 import { getConfigOrThrow } from "../utils/config";
 import { cosmosdbInstance } from "../utils/cosmosdb";
 import { CommonMessageData } from "../utils/events/message";
