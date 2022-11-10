@@ -24,7 +24,7 @@ import {
 /**
  * It returns either a valid Profile or an Error.
  */
-export type GetUserProfileReader = RTE.ReaderTaskEither<
+export type UserProfileReader = RTE.ReaderTaskEither<
   { readonly fiscalCode: FiscalCode },
   NotFoundError | InternalError,
   Profile
@@ -36,7 +36,7 @@ export type GetUserProfileReader = RTE.ReaderTaskEither<
 
 export const getUserProfileReader = (
   profileModel: ProfileModel
-): GetUserProfileReader => ({ fiscalCode }): ReturnType<GetUserProfileReader> =>
+): UserProfileReader => ({ fiscalCode }): ReturnType<UserProfileReader> =>
   pipe(
     profileModel.findLastVersionByModelId([fiscalCode]),
     TE.mapLeft(cosmosError =>
