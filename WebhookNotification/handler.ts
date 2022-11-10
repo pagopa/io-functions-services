@@ -8,7 +8,6 @@
 
 import * as t from "io-ts";
 
-import * as T from "fp-ts/Task";
 import * as E from "fp-ts/lib/Either";
 import * as O from "fp-ts/lib/Option";
 
@@ -264,13 +263,9 @@ export const getWebhookNotificationHandler = (
             userProfileReader({
               fiscalCode: message.fiscalCode
             }),
-            // We are using T.map(E.getOrElseW(..)) because
-            // TE.getOrElseW is unable to infer `userProfile` type
-            T.map(
-              E.getOrElseW(err => {
-                throw Error(err.title);
-              })
-            )
+            TE.getOrElse(err => {
+              throw new Error(err.title);
+            })
           )();
 
           const sendResult = await sendToWebhook(
