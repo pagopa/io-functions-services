@@ -9,11 +9,16 @@ export const BaseError = t.type({
   title: NonEmptyString
 });
 
+enum ErrorKind {
+  NotFound = "NotFound",
+  Internal = "Internal"
+}
+
 export type NotFoundError = t.TypeOf<typeof NotFoundError>;
 export const NotFoundError = t.intersection([
   BaseError,
   t.type({
-    kind: t.literal("NotFound"),
+    kind: t.literal(ErrorKind.NotFound),
     objectName: NonEmptyString
   })
 ]);
@@ -22,20 +27,20 @@ export const toNotFoundError = (
   title: NonEmptyString,
   detail: NonEmptyString,
   objectName: NonEmptyString
-): NotFoundError => ({ detail, kind: "NotFound", objectName, title });
+): NotFoundError => ({ detail, kind: ErrorKind.NotFound, objectName, title });
 
 export type InternalError = t.TypeOf<typeof InternalError>;
 export const InternalError = t.intersection([
   BaseError,
   t.type({
-    kind: t.literal("Internal")
+    kind: t.literal(ErrorKind.Internal)
   })
 ]);
 
 export const toInternalError = (
   title: NonEmptyString,
   detail: NonEmptyString
-): InternalError => ({ detail, kind: "Internal", title });
+): InternalError => ({ detail, kind: ErrorKind.Internal, title });
 
 /**
  * All domain errors
