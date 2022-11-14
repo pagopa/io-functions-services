@@ -6,6 +6,7 @@ import {
   FeatureLevelTypeEnum
 } from "@pagopa/io-functions-commons/dist/generated/definitions/FeatureLevelType";
 import { LegalData } from "../generated/definitions/LegalData";
+import { ThirdPartyData } from "../generated/definitions/ThirdPartyData";
 
 export type ApiNewMessageWithDefaults = t.TypeOf<
   typeof ApiNewMessageWithDefaults
@@ -15,16 +16,6 @@ export const ApiNewMessageWithDefaults = t.intersection([
   t.interface({
     feature_level_type: FeatureLevelType,
     time_to_live: TimeToLiveSeconds
-  })
-]);
-
-export type ApiNewMessageWithAdvancedFeatures = t.TypeOf<
-  typeof ApiNewMessageWithAdvancedFeatures
->;
-export const ApiNewMessageWithAdvancedFeatures = t.intersection([
-  ApiNewMessage,
-  t.interface({
-    feature_level_type: t.literal(FeatureLevelTypeEnum.ADVANCED)
   })
 ]);
 
@@ -56,3 +47,18 @@ export const ApiNewMessageWithDefaultsLegalData = t.intersection([
 export type ApiNewMessageWithDefaultsLegalData = t.TypeOf<
   typeof ApiNewMessageWithDefaultsLegalData
 >;
+
+export type ApiNewMessageWithAdvancedFeatures = t.TypeOf<
+  typeof ApiNewMessageWithAdvancedFeatures
+>;
+export const ApiNewMessageWithAdvancedFeatures = t.intersection([
+  t.union([
+    ApiNewMessageWithContentOf(
+      t.interface({ third_party_data: ThirdPartyData })
+    ),
+    ApiNewMessage
+  ]),
+  t.interface({
+    feature_level_type: t.literal(FeatureLevelTypeEnum.ADVANCED)
+  })
+]);
