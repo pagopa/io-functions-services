@@ -62,3 +62,12 @@ export const ApiNewMessageWithAdvancedFeatures = t.intersection([
     feature_level_type: t.literal(FeatureLevelTypeEnum.ADVANCED)
   })
 ]);
+
+export const ApiNewThirdPartyMessage = t.intersection([
+  ApiNewMessageWithContentOf(t.interface({ third_party_data: ThirdPartyData })),
+  t.partial({
+    feature_level_type: t.literal(FeatureLevelTypeEnum.STANDARD)
+  })
+]);
+
+export type ApiNewThirdPartyMessage = t.TypeOf<typeof ApiNewThirdPartyMessage>;

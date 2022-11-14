@@ -261,9 +261,10 @@ describe("Create Message |> Middleware errors", () => {
     });
   });
 
-  it("should return 403 when creating a no ADVANCED third party message with right permission", async () => {
+  it("should return 403 when creating a no ADVANCED third party message with wrong permission", async () => {
     const nodeFetch = getNodeFetch({
-      "x-user-groups": "ApiMessageWriteAdvanced"
+      "x-user-groups":
+        customHeaders["x-user-groups"] + ",ApiMessageWriteAdvanced"
     });
 
     const body = {
@@ -284,7 +285,7 @@ describe("Create Message |> Middleware errors", () => {
 
     expect(problemJson).toMatchObject({
       detail:
-        "You do not have enough permission to complete the operation you requested",
+        "You do not have enough permissions to send a third party message",
       title: "You are not allowed here"
     });
   });
