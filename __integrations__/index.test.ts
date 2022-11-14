@@ -284,7 +284,7 @@ describe("Create Message |> Middleware errors", () => {
 
     expect(problemJson).toMatchObject({
       detail:
-        "You do not have enough permissions to send a third party message",
+        "You do not have enough permission to complete the operation you requested",
       title: "You are not allowed here"
     });
   });
