@@ -383,6 +383,50 @@ describe("Create Message |> Middleware errors", () => {
     expect(response.status).toEqual(201);
   });
 
+  it("should return 201 when creating an ADVANCED third party message with right permission", async () => {
+    const nodeFetch = getNodeFetch({
+      "x-user-groups":
+        customHeaders["x-user-groups"] + ",ApiMessageWriteAdvanced"
+    });
+
+    const body = {
+      message: {
+        fiscal_code: anAutoFiscalCode,
+        content: {
+          ...aMessageContent,
+          third_party_data: aValidThirdPartyMessageContent
+        },
+        feature_level_type: "ADVANCED"
+      }
+    };
+
+    const response = await postCreateMessage(nodeFetch)(body);
+
+    expect(response.status).toEqual(201);
+  });
+
+  it("should return 201 when creating a third party message with right permission", async () => {
+    const nodeFetch = getNodeFetch({
+      "x-user-groups":
+        customHeaders["x-user-groups"] + ",ApiThirdPartyMessageWrite"
+    });
+
+    const body = {
+      message: {
+        fiscal_code: anAutoFiscalCode,
+        content: {
+          ...aMessageContent,
+          third_party_data: aValidThirdPartyMessageContent
+        },
+        feature_level_type: "STANDARD"
+      }
+    };
+
+    const response = await postCreateMessage(nodeFetch)(body);
+
+    expect(response.status).toEqual(201);
+  });
+
   it("should return 400 with simplified validation error when MessagePayloadMiddleware fails", async () => {
     const body = {
       message: {
