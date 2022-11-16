@@ -15,6 +15,7 @@ import {
 import { CreatedMessageEventSenderMetadata } from "@pagopa/io-functions-commons/dist/src/models/created_message_sender_metadata";
 import { Notification } from "@pagopa/io-functions-commons/dist/src/models/notification";
 import { isTransientError } from "@pagopa/io-functions-commons/dist/src/utils/errors";
+import { PushNotificationsContentTypeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/PushNotificationsContentType";
 
 import { getWebhookNotificationHandler, sendToWebhook } from "../handler";
 
@@ -37,6 +38,11 @@ import * as E from "fp-ts/lib/Either";
 import * as TE from "fp-ts/lib/TaskEither";
 import * as O from "fp-ts/lib/Option";
 import { StandardServiceCategoryEnum } from "../../generated/api-admin/StandardServiceCategory";
+
+import { toInternalError, toNotFoundError } from "../../utils/domain-errors";
+import { UserProfileReader } from "../../readers/user-profile";
+
+import { aRetrievedProfile } from "../../__mocks__/mocks";
 
 const mockAppinsights = {
   trackDependency: jest.fn(),
@@ -126,16 +132,25 @@ const aCommonMessageData = {
   senderMetadata: aSenderMetadata
 };
 
+const aRetrievedProfileWithFullPushNotificationsContentType = {
+  ...aRetrievedProfile,
+  pushNotificationsContentType: PushNotificationsContentTypeEnum.FULL
+};
+
 const mockRetrieveProcessingMessageData = jest
   .fn()
   .mockImplementation(() => TE.of(O.some(aCommonMessageData)));
+
+const userProfileReaderMock = jest.fn(
+  _ => TE.of(aRetrievedProfile) as ReturnType<UserProfileReader>
+);
 
 beforeEach(() => {
   jest.clearAllMocks();
 });
 
 describe("sendToWebhook", () => {
-  it("should succeded with right parameters", async () => {
+  it("should succeded with right parameters, with message content", async () => {
     const expectedResponse = { message: "OK" };
     const fetchApi = mockFetch(200, expectedResponse);
     const notifyApiCall = getNotifyClient(fetchApi as any);
@@ -145,8 +160,15 @@ describe("sendToWebhook", () => {
       aMessage as any,
       aMessageContent,
       aSenderMetadata,
+      aRetrievedProfileWithFullPushNotificationsContentType,
       false
     )();
+
+    expect(fetchApi.mock.calls[0][1]).toHaveProperty("body");
+    const body = JSON.parse(fetchApi.mock.calls[0][1].body);
+    expect(body).toHaveProperty("message");
+    expect(body).toHaveProperty("sender_metadata");
+    expect(body.message).toHaveProperty("content");
     expect(E.isRight(ret)).toBeTruthy();
   });
 
@@ -163,15 +185,17 @@ describe("sendToWebhook", () => {
         ...aSenderMetadata,
         requireSecureChannels: true
       },
+      aRetrievedProfileWithFullPushNotificationsContentType,
       false
     )();
     expect(fetchApi.mock.calls[0][1]).toHaveProperty("body");
     const body = JSON.parse(fetchApi.mock.calls[0][1].body);
     expect(body).toHaveProperty("message");
     expect(body).toHaveProperty("sender_metadata");
-    expect(body).not.toHaveProperty("content");
+    expect(body.message).not.toHaveProperty("content");
     expect(E.isRight(ret)).toBeTruthy();
   });
+
   it("should remove message content if webhook message content is disabled", async () => {
     const expectedResponse = { message: "OK" };
     const fetchApi = mockFetch(200, expectedResponse);
@@ -182,15 +206,38 @@ describe("sendToWebhook", () => {
       aMessage as any,
       aMessageContent,
       aSenderMetadata,
+      aRetrievedProfileWithFullPushNotificationsContentType,
       true
     )();
     expect(fetchApi.mock.calls[0][1]).toHaveProperty("body");
     const body = JSON.parse(fetchApi.mock.calls[0][1].body);
     expect(body).toHaveProperty("message");
     expect(body).toHaveProperty("sender_metadata");
-    expect(body).not.toHaveProperty("content");
+    expect(body.message).not.toHaveProperty("content");
     expect(E.isRight(ret)).toBeTruthy();
   });
+
+  it("should remove message content if user did not allow verbose notifications", async () => {
+    const expectedResponse = { message: "OK" };
+    const fetchApi = mockFetch(200, expectedResponse);
+    const notifyApiCall = getNotifyClient(fetchApi as any);
+    const ret = await sendToWebhook(
+      notifyApiCall,
+      "http://localhost/test" as HttpsUrl,
+      aMessage as any,
+      aMessageContent,
+      aSenderMetadata,
+      aRetrievedProfile,
+      false
+    )();
+    expect(fetchApi.mock.calls[0][1]).toHaveProperty("body");
+    const body = JSON.parse(fetchApi.mock.calls[0][1].body);
+    expect(body).toHaveProperty("message");
+    expect(body).toHaveProperty("sender_metadata");
+    expect(body.message).not.toHaveProperty("content");
+    expect(E.isRight(ret)).toBeTruthy();
+  });
+
   it("should return a transient error in case of timeout", async () => {
     const abortableFetch = AbortableFetch(agent.getHttpsFetch(process.env));
     const fetchWithTimeout = setFetchTimeout(1 as Millisecond, abortableFetch);
@@ -201,6 +248,7 @@ describe("sendToWebhook", () => {
       aMessage as any,
       aMessageContent,
       aSenderMetadata,
+      aRetrievedProfile,
       false
     )();
     expect(E.isLeft(ret)).toBeTruthy();
@@ -218,6 +266,7 @@ describe("sendToWebhook", () => {
       {} as any,
       {} as any,
       {} as any,
+      aRetrievedProfile,
       false
     )();
     expect(fetchApi).toHaveBeenCalledTimes(1);
@@ -236,6 +285,7 @@ describe("sendToWebhook", () => {
       {} as any,
       {} as any,
       {} as any,
+      aRetrievedProfile,
       false
     )();
     expect(fetchApi).toHaveBeenCalledTimes(1);
@@ -260,6 +310,7 @@ describe("handler", () => {
         notificationModelMock as any,
         {} as any,
         mockRetrieveProcessingMessageData,
+        userProfileReaderMock,
         false
       )(mockContext, JSON.stringify(aNotificationEvent))
     ).rejects.toThrow();
@@ -275,6 +326,76 @@ describe("handler", () => {
         notificationModelMock as any,
         {} as any,
         mockRetrieveProcessingMessageData,
+        userProfileReaderMock,
+        false
+      )(mockContext, JSON.stringify(aNotificationEvent))
+    ).rejects.toThrow();
+  });
+
+  it("should return a transient error when an error occurred retrieving user profile", async () => {
+    const notificationModelMock = {
+      find: jest.fn(() => TE.of(O.some(aNotification))),
+      update: jest.fn(() => TE.of(O.some(aNotification)))
+    };
+
+    const notifyCallApiMock = jest
+      .fn()
+      .mockReturnValue(Promise.resolve(E.right({ status: 200 })));
+
+    mockRetrieveProcessingMessageData.mockImplementationOnce(() =>
+      TE.of(O.some({ ...aCommonMessageData, content: aMessageContent }))
+    );
+
+    userProfileReaderMock.mockImplementationOnce(() =>
+      TE.left(
+        toInternalError(
+          "an Error" as NonEmptyString,
+          "an Error detail" as NonEmptyString
+        )
+      )
+    );
+
+    await expect(
+      getWebhookNotificationHandler(
+        notificationModelMock as any,
+        notifyCallApiMock as any,
+        mockRetrieveProcessingMessageData,
+        userProfileReaderMock,
+        false
+      )(mockContext, JSON.stringify(aNotificationEvent))
+    ).rejects.toThrow();
+  });
+
+  it("should return a transient error when user profile has not been found", async () => {
+    const notificationModelMock = {
+      find: jest.fn(() => TE.of(O.some(aNotification))),
+      update: jest.fn(() => TE.of(O.some(aNotification)))
+    };
+
+    const notifyCallApiMock = jest
+      .fn()
+      .mockReturnValue(Promise.resolve(E.right({ status: 200 })));
+
+    mockRetrieveProcessingMessageData.mockImplementationOnce(() =>
+      TE.of(O.some({ ...aCommonMessageData, content: aMessageContent }))
+    );
+
+    userProfileReaderMock.mockImplementationOnce(() =>
+      TE.left(
+        toNotFoundError(
+          "an Error" as NonEmptyString,
+          "an Error detail" as NonEmptyString,
+          "profile" as NonEmptyString
+        )
+      )
+    );
+
+    await expect(
+      getWebhookNotificationHandler(
+        notificationModelMock as any,
+        notifyCallApiMock as any,
+        mockRetrieveProcessingMessageData,
+        userProfileReaderMock,
         false
       )(mockContext, JSON.stringify(aNotificationEvent))
     ).rejects.toThrow();
@@ -290,6 +411,7 @@ describe("handler", () => {
         notificationModelMock as any,
         {} as any,
         mockRetrieveProcessingMessageData,
+        userProfileReaderMock,
         false
       )(mockContext, JSON.stringify(aNotificationEvent))
     ).resolves.toEqual({ kind: "FAILURE", reason: "DECODE_ERROR" });
@@ -313,6 +435,7 @@ describe("handler", () => {
       notificationModelMock as any,
       notifyCallApiMock as any,
       mockRetrieveProcessingMessageData,
+      userProfileReaderMock,
       false
     )(mockContext, JSON.stringify(aNotificationEvent));
 
@@ -347,6 +470,7 @@ describe("handler", () => {
       notificationModelMock as any,
       notifyCallApiMock,
       mockRetrieveProcessingMessageData,
+      userProfileReaderMock,
       false
     )(mockContext, JSON.stringify(aNotificationEvent));
 
@@ -375,6 +499,7 @@ describe("handler", () => {
         notificationModelMock as any,
         notifyCallApiMock,
         mockRetrieveProcessingMessageData,
+        userProfileReaderMock,
         false
       )(mockContext, JSON.stringify(aNotificationEvent))
     ).resolves.toEqual({ kind: "FAILURE", reason: "SEND_TO_WEBHOOK_FAILED" });
@@ -403,6 +528,7 @@ describe("handler", () => {
       notificationModelMock as any,
       {} as any,
       mockRetrieveProcessingMessageData,
+      userProfileReaderMock,
       false
     )(mockContext, JSON.stringify(aNotificationEvent));
 
