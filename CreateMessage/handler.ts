@@ -82,11 +82,11 @@ import {
 } from "../utils/events/message";
 import { commonCreateMessageMiddlewares } from "../utils/message_middlewares";
 import { LegalData } from "../generated/definitions/LegalData";
-import { ThirdPartyData } from "../generated/definitions/ThirdPartyData";
 import {
   ApiNewMessageWithAdvancedFeatures,
   ApiNewMessageWithContentOf,
-  ApiNewMessageWithDefaults
+  ApiNewMessageWithDefaults,
+  ApiNewThirdPartyMessage
 } from "./types";
 import { makeUpsertBlobFromObject } from "./utils";
 
@@ -520,9 +520,7 @@ export function CreateMessage(
       ),
       // Allow only users in the ApiThirdPartyMessageWrite group to send messages with ThirdPartyData
       AzureAllowBodyPayloadMiddleware(
-        ApiNewMessageWithContentOf(
-          t.interface({ third_party_data: ThirdPartyData })
-        ),
+        ApiNewThirdPartyMessage,
         new Set([UserGroup.ApiThirdPartyMessageWrite]),
         "You do not have enough permissions to send a third party message"
       )

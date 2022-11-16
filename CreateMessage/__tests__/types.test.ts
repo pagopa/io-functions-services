@@ -1,13 +1,17 @@
 import { WithinRangeString } from "@pagopa/ts-commons/lib/strings";
 import * as t from "io-ts";
 import { readableReport } from "@pagopa/ts-commons/lib/reporters";
-import { ApiNewMessageWithContentOf } from "../types";
+import {
+  ApiNewMessageWithAdvancedFeatures,
+  ApiNewMessageWithContentOf
+} from "../types";
 import { PaymentData } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentData";
 import { json } from "express";
 import { ThirdPartyData } from "../../generated/definitions/ThirdPartyData";
 
 import { pipe } from "fp-ts/lib/function";
 import * as E from "fp-ts/lib/Either";
+import { FeatureLevelTypeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/FeatureLevelType";
 
 const toString = (x: any) => JSON.stringify(x);
 
@@ -153,6 +157,96 @@ describe("ApiNewMessageWithContentOf", () => {
           expect(true).toBe(true);
         },
         e => fail(`Should have not decoded the value: ${toString(e)}`)
+      )
+    );
+  });
+});
+
+describe("ApiNewMessageWithAdvancedFeatures", () => {
+  it("should decode an Advanced Message", () => {
+    const aSubject = "my specific subject";
+    const anAdvancedMessageWithSuchSubject = {
+      content: { ...aMessageContent, subject: aSubject },
+      feature_level_type: "ADVANCED"
+    };
+    pipe(
+      anAdvancedMessageWithSuchSubject,
+      ApiNewMessageWithAdvancedFeatures.decode,
+      E.fold(
+        e => fail(`Should have decoded the value: ${readableReport(e)}`),
+        e => {
+          expect(e.feature_level_type).toBe(FeatureLevelTypeEnum.ADVANCED);
+        }
+      )
+    );
+  });
+
+  it("should decode advanced message with Third Party Data", () => {
+    const aSubject = "my specific subject";
+    const aThirdPartyData = {
+      id: "ID"
+    };
+    const aMessageWithSuchSubject = {
+      content: { ...aMessageContent, subject: aSubject }
+    };
+
+    const anAdvancedMessageWithThirdParty = {
+      ...aMessageWithSuchSubject,
+      content: {
+        ...aMessageContent,
+        subject: aSubject,
+        third_party_data: aThirdPartyData
+      },
+      feature_level_type: "ADVANCED"
+    };
+
+    // positive scenario: we expect a match
+    pipe(
+      anAdvancedMessageWithThirdParty,
+      ApiNewMessageWithAdvancedFeatures.decode,
+      E.fold(
+        e => fail(`Should have decoded the value: ${readableReport(e)}`),
+        e => {
+          expect(e.content.subject).toBe(aSubject);
+        }
+      )
+    );
+  });
+
+  it("should decode a generic advanced message", () => {
+    const aPaymentData = { amount: 2, notice_number: "011111111111111111" };
+    const anAdvancedMessageWithSuchPaymentData = {
+      content: { ...aMessageContent, payment_data: aPaymentData },
+      feature_level_type: "ADVANCED"
+    };
+    const aMessageWithNoPaymentData = {
+      content: { ...aMessageContent },
+      feature_level_type: "ADVANCED"
+    };
+
+    // positive scenario: we expect a match
+    pipe(
+      anAdvancedMessageWithSuchPaymentData,
+      ApiNewMessageWithAdvancedFeatures.decode,
+      E.fold(
+        e => fail(`Should have decoded the value: ${readableReport(e)}`),
+        e => {
+          expect(e.content.payment_data).toEqual(
+            expect.objectContaining(aPaymentData)
+          );
+        }
+      )
+    );
+
+    // positive scenario: we expect a match
+    pipe(
+      aMessageWithNoPaymentData,
+      ApiNewMessageWithAdvancedFeatures.decode,
+      E.fold(
+        e => fail(`Should have decoded the value: ${readableReport(e)}`),
+        e => {
+          expect(e.content.payment_data).toBeUndefined();
+        }
       )
     );
   });
