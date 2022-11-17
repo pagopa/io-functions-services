@@ -3,8 +3,8 @@ info:
   version: 3.20.0
   title: IO API for Public Administration Services
   contact:
-    name: Digital Transformation Team
-    url: https://forum.italia.it/c/progetto-io
+    name: PagoPA S.p.A.
+    url: https://docs.pagopa.it/io-guida-tecnica/
   x-logo:
     url: https://io.italia.it/assets/img/io-logo-blue.svg
   description: >
