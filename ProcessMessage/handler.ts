@@ -41,6 +41,7 @@ import * as T from "fp-ts/lib/Task";
 import * as TE from "fp-ts/lib/TaskEither";
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import { RejectionReasonEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/RejectionReason";
+import { Ttl } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model_ttl";
 import { SpecialServiceCategoryEnum } from "../generated/api-admin/SpecialServiceCategory";
 import { LegalData } from "../generated/definitions/LegalData";
 import { PaymentData } from "../generated/definitions/PaymentData";
@@ -429,30 +430,22 @@ export const getProcessMessageHandler = ({
 
           if (O.isNone(maybeProfile)) {
             // the recipient doesn't have any profile yet
-            await pipe(
-              messageStatusUpdater({
-                rejection_reason: RejectionReasonEnum.USER_NOT_FOUND,
-                status: RejectedMessageStatusValueEnum.REJECTED
-              }),
-              TE.getOrElse(e => {
-                context.log.error(
-                  `${logPrefix}|PROFILE_NOT_FOUND|UPSERT_STATUS=REJECTED|ERROR=${JSON.stringify(
-                    e
-                  )}`
-                );
-                throw new Error(
-                  "Error while updating message status to REJECTED|PROFILE_NOT_FOUND"
-                );
-              })
-            )();
 
+            // if the  user is enabled for feature flag we want to execute the new code
             if (
               isUserEligibleForNewFeature(newMessageWithoutContent.fiscalCode)
             ) {
               await pipe(
-                lMessageStatusModel.updateTTLForAllVersions(
-                  [newMessageWithoutContent.id],
-                  TTL_FOR_USER_NOT_FOUND
+                messageStatusUpdater({
+                  rejection_reason: RejectionReasonEnum.USER_NOT_FOUND,
+                  status: RejectedMessageStatusValueEnum.REJECTED,
+                  ttl: TTL_FOR_USER_NOT_FOUND as Ttl
+                }),
+                TE.chain(() =>
+                  lMessageStatusModel.updateTTLForAllVersions(
+                    [newMessageWithoutContent.id],
+                    TTL_FOR_USER_NOT_FOUND
+                  )
                 ),
                 TE.map(updatedCount => {
                   if (updatedCount === 0) {
@@ -513,8 +506,34 @@ export const getProcessMessageHandler = ({
                     })
                   )
                 ),
-                TE.mapLeft(_ => {
-                  throw new Error("Error while setting ttl");
+                TE.getOrElse(e => {
+                  context.log.error(
+                    `${logPrefix}|PROFILE_NOT_FOUND|UPSERT_STATUS=REJECTED|ERROR=${JSON.stringify(
+                      e
+                    )}`
+                  );
+                  throw new Error(
+                    "Error while updating message status to REJECTED|PROFILE_NOT_FOUND"
+                  );
+                })
+              )();
+              // if the user is not enabled for feature flag we just execute the messageStatusUpdater without the ttl
+            } else {
+              await pipe(
+                messageStatusUpdater({
+                  rejection_reason: RejectionReasonEnum.USER_NOT_FOUND,
+                  status: RejectedMessageStatusValueEnum.REJECTED
+                }),
+                // eslint-disable-next-line
+                TE.getOrElse(e => {
+                  context.log.error(
+                    `${logPrefix}|PROFILE_NOT_FOUND|UPSERT_STATUS=REJECTED|ERROR=${JSON.stringify(
+                      e
+                    )}`
+                  );
+                  throw new Error(
+                    "Error while updating message status to REJECTED|PROFILE_NOT_FOUND"
+                  );
                 })
               )();
             }
