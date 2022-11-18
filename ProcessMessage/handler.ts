@@ -1,7 +1,6 @@
 /* eslint-disable max-lines-per-function */
 
 import { Context } from "@azure/functions";
-import * as t from "io-ts";
 import { BlockedInboxOrChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
 import { EUCovidCert } from "@pagopa/io-functions-commons/dist/generated/definitions/EUCovidCert";
 import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
@@ -352,12 +351,8 @@ const createMessageOrThrow = async (
   }
 };
 
-// ttl can only be a positive integer or -1
-const ttlType = t.union([NonNegativeInteger, t.literal(-1)]);
-type TtlType = t.TypeOf<typeof ttlType>;
-
 export interface IProcessMessageHandlerInput {
-  readonly TTL_FOR_USER_NOT_FOUND: TtlType;
+  readonly TTL_FOR_USER_NOT_FOUND: Ttl;
   readonly isUserEligibleForNewFeature: (fc: FiscalCode) => boolean;
   readonly lActivation: ActivationModel;
   readonly lProfileModel: ProfileModel;
@@ -439,7 +434,7 @@ export const getProcessMessageHandler = ({
                 messageStatusUpdater({
                   rejection_reason: RejectionReasonEnum.USER_NOT_FOUND,
                   status: RejectedMessageStatusValueEnum.REJECTED,
-                  ttl: TTL_FOR_USER_NOT_FOUND as Ttl
+                  ttl: TTL_FOR_USER_NOT_FOUND
                 }),
                 TE.chain(() =>
                   lMessageStatusModel.updateTTLForAllVersions(

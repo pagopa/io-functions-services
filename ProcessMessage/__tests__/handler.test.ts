@@ -278,8 +278,7 @@ beforeEach(() => {
       messageId: NonEmptyString,
       fiscalCode: FiscalCode
     ) =>
-      // status type does not match anymore for some reason
-      jest.fn((status: any) =>
+      jest.fn((status: Parameters<MS.MessageStatusUpdater>[0]) =>
         TE.right({
           _etag: "a",
           _rid: "a",

@@ -751,10 +751,10 @@
   resolved "https://registry.yarnpkg.com/@pagopa/express-azure-functions/-/express-azure-functions-2.0.0.tgz#eb52a0b997d931c1509372e2a9bea22a8ca85c17"
   integrity sha512-IFZqtk0e2sfkMZIxYqPORzxcKRkbIrVJesR6eMLNwzh1rA4bl2uh9ZHk1m55LNq4ZmaxREDu+1JcGlIaZQgKNQ==
 
-"@pagopa/io-functions-commons@^26.2.0":
-  version "26.2.0"
-  resolved "https://registry.yarnpkg.com/@pagopa/io-functions-commons/-/io-functions-commons-26.2.0.tgz#f828075f78ee57b9ca73956cb35a77652835df48"
-  integrity sha512-6GMivFVaY343bA8Otx+JsCkUfK18xvF9YA4UxFNf3uxkHwvtGprZCKdIRBa4Y+pKdFZMZrcXIXHv/GcuckBQSw==
+"@pagopa/io-functions-commons@^26.2.1":
+  version "26.2.1"
+  resolved "https://registry.yarnpkg.com/@pagopa/io-functions-commons/-/io-functions-commons-26.2.1.tgz#82975563db316b12aa539a163dff7a14d8773f3e"
+  integrity sha512-k3K8Fur7gMOG1+d9ckVOjem8ARRSV8FXII2uWH96SN0gcDJuiQYhwlAUYBJhlPDm/s0TlC9r2RdZRXaiUaZFTQ==
   dependencies:
     "@azure/cosmos" "^3.17.1"
     "@pagopa/ts-commons" "^10.9.0"

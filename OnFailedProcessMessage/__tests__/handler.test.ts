@@ -45,19 +45,19 @@ const aCreatedMessageEvent: CreatedMessageEvent = {
 beforeEach(() => {
   jest.clearAllMocks();
   // Mock getMessageStatusUpdater
-  getMessageStatusUpdaterMock.mockImplementation((
-    _messageStatusModel: MS.MessageStatusModel,
-    messageId: NonEmptyString,
-    fiscalCode: FiscalCode
-    // status type does not match anymore for some reason
-  ) => (status: any) =>
-    TE.right({
-      ...aRetrievedMessageStatus,
-      id: messageId,
-      messageId,
-      ...status,
-      fiscalCode
-    })
+  getMessageStatusUpdaterMock.mockImplementation(
+    (
+      _messageStatusModel: MS.MessageStatusModel,
+      messageId: NonEmptyString,
+      fiscalCode: FiscalCode
+    ) => (status: Parameters<MS.MessageStatusUpdater>[0]) =>
+      TE.right({
+        ...aRetrievedMessageStatus,
+        id: messageId,
+        messageId,
+        ...status,
+        fiscalCode
+      })
   );
   getQueryIteratorMock.mockImplementation(() => {
     const asyncIterable = {
