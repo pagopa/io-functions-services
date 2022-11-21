@@ -436,6 +436,26 @@ export const getProcessMessageHandler = ({
                   status: RejectedMessageStatusValueEnum.REJECTED,
                   ttl: TTL_FOR_USER_NOT_FOUND
                 }),
+                TE.mapLeft((err: CosmosErrors) => {
+                  telemetryClient.trackEvent({
+                    name: "api.messages.create.create-status-fail",
+                    properties: {
+                      errorKind: "messageStatusUpdater failed",
+                      fiscalCode: toHash(newMessageWithoutContent.fiscalCode),
+                      messageId: newMessageWithoutContent.id,
+                      senderId: newMessageWithoutContent.senderServiceId
+                    },
+                    tagOverrides: { samplingEnabled: "false" }
+                  });
+                  context.log.error(
+                    `${logPrefix}|PROFILE_NOT_FOUND|UPSERT_STATUS=REJECTED|ERROR=${JSON.stringify(
+                      err
+                    )}`
+                  );
+                  throw new Error(
+                    "Error while updating message status to REJECTED|PROFILE_NOT_FOUND"
+                  );
+                }),
                 TE.chain(() =>
                   lMessageStatusModel.updateTTLForAllVersions(
                     [newMessageWithoutContent.id],
@@ -502,14 +522,8 @@ export const getProcessMessageHandler = ({
                   )
                 ),
                 TE.getOrElse(e => {
-                  context.log.error(
-                    `${logPrefix}|PROFILE_NOT_FOUND|UPSERT_STATUS=REJECTED|ERROR=${JSON.stringify(
-                      e
-                    )}`
-                  );
-                  throw new Error(
-                    "Error while updating message status to REJECTED|PROFILE_NOT_FOUND"
-                  );
+                  context.log.error(`${logPrefix}|ERROR=${JSON.stringify(e)}`);
+                  throw new Error("Error while setting the ttl");
                 })
               )();
               // if the user is not enabled for feature flag we just execute the messageStatusUpdater without the ttl

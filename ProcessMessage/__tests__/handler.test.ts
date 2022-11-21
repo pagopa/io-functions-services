@@ -882,9 +882,7 @@ describe("getprocessMessageHandler", () => {
 
     await expect(
       processMessageHandler(context, JSON.stringify(aCreatedMessageEvent))
-    ).rejects.toThrow(
-      "Error while updating message status to REJECTED|PROFILE_NOT_FOUND"
-    );
+    ).rejects.toThrow("Error while setting the ttl");
   });
 
   it("it should throw an error if the set of ttl on message status fails", async () => {
@@ -917,8 +915,6 @@ describe("getprocessMessageHandler", () => {
 
     await expect(
       processMessageHandler(context, JSON.stringify(aCreatedMessageEvent))
-    ).rejects.toThrow(
-      "Error while updating message status to REJECTED|PROFILE_NOT_FOUND"
-    );
+    ).rejects.toThrow("Error while setting the ttl");
   });
 });
