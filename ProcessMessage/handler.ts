@@ -506,7 +506,11 @@ export const getProcessMessageHandler = ({
                   )
                 ),
                 TE.getOrElse(e => {
-                  context.log.error(`${logPrefix}|ERROR=${JSON.stringify(e)}`);
+                  context.log.error(
+                    `${logPrefix}|PROFILE_NOT_FOUND|UPSERT_STATUS=REJECTED|ERROR=${JSON.stringify(
+                      e
+                    )}`
+                  );
                   throw new Error("Error while setting the ttl");
                 })
               )();
