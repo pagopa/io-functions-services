@@ -462,22 +462,6 @@ export const getProcessMessageHandler = ({
                     TTL_FOR_USER_NOT_FOUND
                   )
                 ),
-                TE.map(updatedCount => {
-                  if (updatedCount === 0) {
-                    telemetryClient.trackEvent({
-                      name: "api.messages.create.update-status-ttl-count-zero",
-                      properties: {
-                        errorKind:
-                          "updateTTLForAllVersions updated zero documents",
-                        fiscalCode: toHash(newMessageWithoutContent.fiscalCode),
-                        messageId: newMessageWithoutContent.id,
-                        senderId: newMessageWithoutContent.senderServiceId
-                      },
-                      tagOverrides: { samplingEnabled: "false" }
-                    });
-                  }
-                  return updatedCount;
-                }),
                 TE.mapLeft((error: CosmosErrors) => {
                   telemetryClient.trackEvent({
                     name: "api.messages.create.fail-status-ttl-set",
