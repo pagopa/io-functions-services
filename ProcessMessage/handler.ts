@@ -456,26 +456,31 @@ export const getProcessMessageHandler = ({
                     "Error while updating message status to REJECTED|PROFILE_NOT_FOUND"
                   );
                 }),
-                TE.chain(() =>
-                  lMessageStatusModel.updateTTLForAllVersions(
-                    [newMessageWithoutContent.id],
-                    TTL_FOR_USER_NOT_FOUND
+                TE.chain(
+                  flow(
+                    () =>
+                      lMessageStatusModel.updateTTLForAllVersions(
+                        [newMessageWithoutContent.id],
+                        TTL_FOR_USER_NOT_FOUND
+                      ),
+                    TE.mapLeft((error: CosmosErrors) => {
+                      telemetryClient.trackEvent({
+                        name: "api.messages.create.fail-status-ttl-set",
+                        properties: {
+                          errorAsJson: JSON.stringify(error),
+                          errorKind: error.kind,
+                          fiscalCode: toHash(
+                            newMessageWithoutContent.fiscalCode
+                          ),
+                          messageId: newMessageWithoutContent.id,
+                          senderId: newMessageWithoutContent.senderServiceId
+                        },
+                        tagOverrides: { samplingEnabled: "false" }
+                      });
+                      return error;
+                    })
                   )
                 ),
-                TE.mapLeft((error: CosmosErrors) => {
-                  telemetryClient.trackEvent({
-                    name: "api.messages.create.fail-status-ttl-set",
-                    properties: {
-                      errorAsJson: JSON.stringify(error),
-                      errorKind: error.kind,
-                      fiscalCode: toHash(newMessageWithoutContent.fiscalCode),
-                      messageId: newMessageWithoutContent.id,
-                      senderId: newMessageWithoutContent.senderServiceId
-                    },
-                    tagOverrides: { samplingEnabled: "false" }
-                  });
-                  return error;
-                }),
                 TE.chain(() =>
                   pipe(
                     lMessageModel.patch(
