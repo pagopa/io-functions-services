@@ -124,7 +124,7 @@ const createServiceTask = (
   apiClient: APIClient,
   servicePayload: ServicePayload,
   subscriptionId: NonEmptyString,
-  sandboxFiscalCode: FiscalCode,
+  authorizedRecipients: ReadonlyArray<FiscalCode>,
   adb2cTokenName: NonEmptyString
   // eslint-disable-next-line max-params
 ): TaskEither<ErrorResponses, Service> =>
@@ -134,7 +134,7 @@ const createServiceTask = (
       apiClient.createService({
         body: {
           ...servicePayload,
-          authorized_recipients: [sandboxFiscalCode],
+          authorized_recipients: authorizedRecipients,
           service_id: subscriptionId,
           service_metadata: {
             ...servicePayload.service_metadata,
@@ -156,7 +156,7 @@ export function CreateServiceHandler(
   apiClient: APIClient,
   generateObjectId: ObjectIdGenerator,
   productName: NonEmptyString,
-  sandboxFiscalCode: NonEmptyString
+  authorizedRecipients: NonEmptyString | ReadonlyArray<FiscalCode>
 ): ICreateServiceHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   return (context, __, ___, userAttributes, servicePayload) => {
@@ -185,7 +185,10 @@ export function CreateServiceHandler(
           apiClient,
           servicePayload,
           subscriptionId,
-          (sandboxFiscalCode as unknown) as FiscalCode,
+          // (sandboxFiscalCode as unknown) as FiscalCode,
+          Array.isArray(authorizedRecipients)
+            ? authorizedRecipients
+            : [authorizedRecipients],
           user.token_name
         )
       ),
