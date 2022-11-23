@@ -12,6 +12,7 @@ import { IAzureUserAttributes } from "@pagopa/io-functions-commons/dist/src/util
 import { NonNegativeInteger } from "@pagopa/ts-commons/lib/numbers";
 import {
   EmailString,
+  FiscalCode,
   NonEmptyString,
   OrganizationFiscalCode
 } from "@pagopa/ts-commons/lib/strings";
@@ -20,7 +21,10 @@ import { MaxAllowedPaymentAmount } from "@pagopa/io-functions-commons/dist/gener
 
 import { left, right } from "fp-ts/lib/Either";
 import { ServiceScopeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceScope";
-import { ServiceMetadata } from "@pagopa/io-functions-commons/dist/src/models/service";
+import {
+  Service,
+  ServiceMetadata
+} from "@pagopa/io-functions-commons/dist/src/models/service";
 import * as reporters from "@pagopa/ts-commons/lib/reporters";
 import { Subscription } from "../../generated/api-admin/Subscription";
 import { UserInfo } from "../../generated/api-admin/UserInfo";
@@ -75,6 +79,8 @@ const aService = {
   serviceMetadata: someServicesMetadata,
   serviceName: "Test" as NonEmptyString,
   version: 1 as NonNegativeInteger
+} as Service & {
+  readonly version: NonNegativeInteger;
 };
 
 const someSubscriptionKeys = {
@@ -113,6 +119,15 @@ const mockUlidGenerator = jest.fn(() => aServiceId);
 
 const productName = "IO_API_SERVICES" as NonEmptyString;
 const sandboxFiscalCode = "BBBCCC00A11B123X" as NonEmptyString;
+const authorizedRecipients = [
+  "BBBCCC00A11B123X" as FiscalCode,
+  "BBBCCC00A11B321X" as FiscalCode
+] as ReadonlyArray<FiscalCode>;
+
+const aServiceWithFiscalCodeArray = {
+  ...aService,
+  authorizedRecipients: new Set(authorizedRecipients)
+};
 
 const mockAppinsights = {
   trackEvent: jest.fn()
@@ -205,6 +220,43 @@ describe("CreateServiceHandler", () => {
     if (result.kind === "IResponseSuccessJson") {
       expect(result.value).toEqual({
         ...aService,
+        ...someSubscriptionKeys
+      });
+    }
+  });
+
+  it("should create a service with authorized recipients fiscal code", async () => {
+    createServiceMock.mockImplementationOnce(async () =>
+      E.right({ status: 200, value: aServiceWithFiscalCodeArray })
+    );
+    const createServiceHandler = CreateServiceHandler(
+      mockAppinsights as any,
+      apiClientMock as any,
+      mockUlidGenerator as any,
+      productName,
+      authorizedRecipients
+    );
+    const result = await createServiceHandler(
+      mockContext,
+      aUserAuthenticationDeveloper,
+      undefined as any, // not used
+      someUserAttributes,
+      {
+        ...aServicePayload,
+        service_metadata: {
+          ...someServicesMetadata
+        }
+      } as ServicePayload
+    );
+
+    expect(apiClientMock.createSubscription).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.createService).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+    expect(result.kind).toBe("IResponseSuccessJson");
+
+    if (result.kind === "IResponseSuccessJson") {
+      expect(result.value).toEqual({
+        ...aServiceWithFiscalCodeArray,
         ...someSubscriptionKeys
       });
     }
