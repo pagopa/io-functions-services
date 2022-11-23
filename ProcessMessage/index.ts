@@ -22,13 +22,11 @@ import {
   ACTIVATION_COLLECTION_NAME
 } from "@pagopa/io-functions-commons/dist/src/models/activation";
 import { Second } from "@pagopa/ts-commons/lib/units";
-import { FiscalCode } from "@pagopa/ts-commons/lib/strings";
 import { cosmosdbInstance } from "../utils/cosmosdb";
 import { getConfigOrThrow } from "../utils/config";
 import { initTelemetryClient } from "../utils/appinsights";
 import { CommonMessageData } from "../utils/events/message";
 import { makeRetrieveExpandedDataFromBlob } from "../utils/with-expanded-input";
-import { getIsUserEligibleForNewFeature } from "../utils/featureFlags";
 import { getProcessMessageHandler } from "./handler";
 
 const config = getConfigOrThrow();
@@ -73,16 +71,9 @@ const retrieveProcessingMessageData = makeRetrieveExpandedDataFromBlob(
   config.PROCESSING_MESSAGE_CONTAINER_NAME
 );
 
-const isUserEligibleForNewFeature = getIsUserEligibleForNewFeature(
-  (fc: FiscalCode) => config.BETA_USERS.includes(fc),
-  (_: FiscalCode) => false,
-  config.FEATURE_FLAG
-);
-
 const activityFunctionHandler: AzureFunction = getProcessMessageHandler({
   TTL_FOR_USER_NOT_FOUND: config.TTL_FOR_USER_NOT_FOUND,
   isOptInEmailEnabled: config.FF_OPT_IN_EMAIL_ENABLED,
-  isUserEligibleForNewFeature,
   lActivation: activationModel,
   lBlobService: blobServiceForMessageContent,
   lMessageModel: messageModel,

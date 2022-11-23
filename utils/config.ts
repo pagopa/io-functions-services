@@ -25,7 +25,6 @@ import {
 } from "@pagopa/ts-commons/lib/numbers";
 import { flow, pipe } from "fp-ts/lib/function";
 import { CommaSeparatedListOf } from "./comma-separated-list";
-import { FeatureFlag, FeatureFlagEnum } from "./featureFlags";
 
 export const BetaUsers = t.readonlyArray(FiscalCode);
 export type BetaUsers = t.TypeOf<typeof BetaUsers>;
@@ -76,8 +75,6 @@ export const IConfig = t.intersection([
     DEFAULT_SUBSCRIPTION_PRODUCT_NAME: NonEmptyString,
 
     EMAIL_NOTIFICATION_SERVICE_BLACKLIST: CommaSeparatedListOf(ServiceId),
-
-    FEATURE_FLAG: withFallback(FeatureFlag, FeatureFlagEnum.NONE),
 
     WEBHOOK_NOTIFICATION_SERVICE_BLACKLIST: CommaSeparatedListOf(ServiceId),
     // eslint-disable-next-line sort-keys

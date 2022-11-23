@@ -66,7 +66,6 @@ import { RejectionReasonEnum } from "@pagopa/io-functions-commons/dist/generated
 import { CosmosErrors } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
 
 const TTL_FOR_USER_NOT_FOUND = 94670856 as NonNegativeInteger;
-const isUserEligibleForNewFeature = (_: FiscalCode) => true;
 
 const createContext = (functionName: string = "funcname"): Context =>
   (({
@@ -364,7 +363,6 @@ describe("getprocessMessageHandler", () => {
 
       const processMessageHandler = getProcessMessageHandler({
         TTL_FOR_USER_NOT_FOUND,
-        isUserEligibleForNewFeature,
         lActivation,
         lProfileModel,
         lMessageModel,
@@ -463,7 +461,6 @@ describe("getprocessMessageHandler", () => {
 
       const processMessageHandler = getProcessMessageHandler({
         TTL_FOR_USER_NOT_FOUND,
-        isUserEligibleForNewFeature,
         lActivation,
         lProfileModel,
         lMessageModel,
@@ -559,7 +556,6 @@ describe("getprocessMessageHandler", () => {
       );
       const processMessageHandler = getProcessMessageHandler({
         TTL_FOR_USER_NOT_FOUND,
-        isUserEligibleForNewFeature: _ => false,
         lActivation,
         lProfileModel,
         lMessageModel,
@@ -590,6 +586,7 @@ describe("getprocessMessageHandler", () => {
 
       expect(messageStatusUpdaterParam).toEqual({
         status: RejectedMessageStatusValueEnum.REJECTED,
+        ttl: O.isNone(profileResult) ? 94670856 : undefined, // we want ttl setted only in case the user does not exist
         rejection_reason:
           failureReason === "PROFILE_NOT_FOUND"
             ? RejectionReasonEnum.USER_NOT_FOUND
@@ -663,7 +660,6 @@ describe("getprocessMessageHandler", () => {
       );
       const processMessageHandler = getProcessMessageHandler({
         TTL_FOR_USER_NOT_FOUND,
-        isUserEligibleForNewFeature,
         lActivation,
         lProfileModel,
         lMessageModel,
@@ -749,7 +745,6 @@ describe("getprocessMessageHandler", () => {
       );
       const processMessageHandler = getProcessMessageHandler({
         TTL_FOR_USER_NOT_FOUND,
-        isUserEligibleForNewFeature,
         lActivation,
         lProfileModel,
         lMessageModel,
@@ -798,7 +793,6 @@ describe("getprocessMessageHandler", () => {
     );
     const processMessageHandler = getProcessMessageHandler({
       TTL_FOR_USER_NOT_FOUND,
-      isUserEligibleForNewFeature,
       lActivation,
       lProfileModel,
       lMessageModel,
@@ -863,7 +857,6 @@ describe("getprocessMessageHandler", () => {
     patchMessageMock.mockReturnValueOnce(TE.left({} as CosmosErrors));
     const processMessageHandler = getProcessMessageHandler({
       TTL_FOR_USER_NOT_FOUND,
-      isUserEligibleForNewFeature,
       lActivation,
       lProfileModel,
       lMessageModel,
@@ -896,7 +889,6 @@ describe("getprocessMessageHandler", () => {
     );
     const processMessageHandler = getProcessMessageHandler({
       TTL_FOR_USER_NOT_FOUND,
-      isUserEligibleForNewFeature,
       lActivation,
       lProfileModel,
       lMessageModel,
