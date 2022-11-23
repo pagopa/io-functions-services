@@ -156,10 +156,12 @@ export function CreateServiceHandler(
   apiClient: APIClient,
   generateObjectId: ObjectIdGenerator,
   productName: NonEmptyString,
-  authorizedRecipients: NonEmptyString | ReadonlyArray<FiscalCode>
+  sandboxFiscalCode: NonEmptyString
 ): ICreateServiceHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   return (context, __, ___, userAttributes, servicePayload) => {
+    const authorizedRecipients = (servicePayload as Service)
+      .authorized_recipients;
     const subscriptionId = generateObjectId();
     context.log.info(
       `${logPrefix}| Creating new service with subscriptionId=${subscriptionId}`
@@ -185,10 +187,12 @@ export function CreateServiceHandler(
           apiClient,
           servicePayload,
           subscriptionId,
-          // (sandboxFiscalCode as unknown) as FiscalCode,
-          Array.isArray(authorizedRecipients)
-            ? authorizedRecipients
-            : [authorizedRecipients],
+          authorizedRecipients
+            ? [
+                (sandboxFiscalCode as unknown) as FiscalCode,
+                ...authorizedRecipients
+              ]
+            : [(sandboxFiscalCode as unknown) as FiscalCode],
           user.token_name
         )
       ),

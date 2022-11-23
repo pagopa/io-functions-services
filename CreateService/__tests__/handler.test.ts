@@ -234,7 +234,7 @@ describe("CreateServiceHandler", () => {
       apiClientMock as any,
       mockUlidGenerator as any,
       productName,
-      authorizedRecipients
+      sandboxFiscalCode
     );
     const result = await createServiceHandler(
       mockContext,
