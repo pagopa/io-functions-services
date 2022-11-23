@@ -66,6 +66,7 @@ import { RejectionReasonEnum } from "@pagopa/io-functions-commons/dist/generated
 import { CosmosErrors } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
 
 const TTL_FOR_USER_NOT_FOUND = 94670856 as NonNegativeInteger;
+const isUserEligibleForNewFeature = (_: FiscalCode) => true;
 
 const createContext = (functionName: string = "funcname"): Context =>
   (({
@@ -363,6 +364,7 @@ describe("getprocessMessageHandler", () => {
 
       const processMessageHandler = getProcessMessageHandler({
         TTL_FOR_USER_NOT_FOUND,
+        isUserEligibleForNewFeature,
         lActivation,
         lProfileModel,
         lMessageModel,
@@ -461,6 +463,7 @@ describe("getprocessMessageHandler", () => {
 
       const processMessageHandler = getProcessMessageHandler({
         TTL_FOR_USER_NOT_FOUND,
+        isUserEligibleForNewFeature,
         lActivation,
         lProfileModel,
         lMessageModel,
@@ -556,6 +559,7 @@ describe("getprocessMessageHandler", () => {
       );
       const processMessageHandler = getProcessMessageHandler({
         TTL_FOR_USER_NOT_FOUND,
+        isUserEligibleForNewFeature: _ => false,
         lActivation,
         lProfileModel,
         lMessageModel,
@@ -659,6 +663,7 @@ describe("getprocessMessageHandler", () => {
       );
       const processMessageHandler = getProcessMessageHandler({
         TTL_FOR_USER_NOT_FOUND,
+        isUserEligibleForNewFeature,
         lActivation,
         lProfileModel,
         lMessageModel,
@@ -744,6 +749,7 @@ describe("getprocessMessageHandler", () => {
       );
       const processMessageHandler = getProcessMessageHandler({
         TTL_FOR_USER_NOT_FOUND,
+        isUserEligibleForNewFeature,
         lActivation,
         lProfileModel,
         lMessageModel,
@@ -792,6 +798,7 @@ describe("getprocessMessageHandler", () => {
     );
     const processMessageHandler = getProcessMessageHandler({
       TTL_FOR_USER_NOT_FOUND,
+      isUserEligibleForNewFeature,
       lActivation,
       lProfileModel,
       lMessageModel,
@@ -817,11 +824,17 @@ describe("getprocessMessageHandler", () => {
     const messageStatusUpdaterMock = getMessageStatusUpdaterMock.mock.results[0]
       .value as jest.Mock;
     expect(messageStatusUpdaterMock).toHaveBeenCalledTimes(1);
+    expect(messageStatusUpdaterMock).toHaveBeenCalledWith({
+      rejection_reason: "USER_NOT_FOUND",
+      status: "REJECTED",
+      ttl: 94670856
+    });
     const messageStatusUpdaterParam = messageStatusUpdaterMock.mock.calls[0][0];
 
     expect(messageStatusUpdaterParam).toEqual({
       status: RejectedMessageStatusValueEnum.REJECTED,
-      rejection_reason: RejectionReasonEnum.USER_NOT_FOUND
+      rejection_reason: RejectionReasonEnum.USER_NOT_FOUND,
+      ttl: 94670856
     });
 
     // check if models are being used only when expected
@@ -850,6 +863,7 @@ describe("getprocessMessageHandler", () => {
     patchMessageMock.mockReturnValueOnce(TE.left({} as CosmosErrors));
     const processMessageHandler = getProcessMessageHandler({
       TTL_FOR_USER_NOT_FOUND,
+      isUserEligibleForNewFeature,
       lActivation,
       lProfileModel,
       lMessageModel,
@@ -867,9 +881,7 @@ describe("getprocessMessageHandler", () => {
 
     await expect(
       processMessageHandler(context, JSON.stringify(aCreatedMessageEvent))
-    ).rejects.toThrow(
-      "Error while updating message status to REJECTED|PROFILE_NOT_FOUND"
-    );
+    ).rejects.toThrow("Error while setting the ttl");
   });
 
   it("it should throw an error if the set of ttl on message status fails", async () => {
@@ -884,6 +896,7 @@ describe("getprocessMessageHandler", () => {
     );
     const processMessageHandler = getProcessMessageHandler({
       TTL_FOR_USER_NOT_FOUND,
+      isUserEligibleForNewFeature,
       lActivation,
       lProfileModel,
       lMessageModel,
@@ -901,8 +914,6 @@ describe("getprocessMessageHandler", () => {
 
     await expect(
       processMessageHandler(context, JSON.stringify(aCreatedMessageEvent))
-    ).rejects.toThrow(
-      "Error while updating message status to REJECTED|PROFILE_NOT_FOUND"
-    );
+    ).rejects.toThrow("Error while setting the ttl");
   });
 });

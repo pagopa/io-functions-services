@@ -105,6 +105,7 @@ describe("GetMessageHandler", () => {
   const anOrganizationFiscalCode = "01234567890" as OrganizationFiscalCode;
   const anEmail = "test@example.com" as EmailString;
 
+  const aDate = new Date();
   const someUserAttributes: IAzureUserAttributes = {
     email: anEmail,
     kind: "IAzureUserAttributes",
@@ -158,7 +159,7 @@ describe("GetMessageHandler", () => {
   const aMessageId = "A_MESSAGE_ID" as NonEmptyString;
 
   const aNewMessageWithoutContent: NewMessageWithoutContent = {
-    createdAt: new Date(),
+    createdAt: aDate,
     featureLevelType: FeatureLevelTypeEnum.STANDARD,
     fiscalCode: aFiscalCode,
     id: "A_MESSAGE_ID" as NonEmptyString,
@@ -180,7 +181,7 @@ describe("GetMessageHandler", () => {
   };
 
   const aPublicExtendedMessage: ExternalCreatedMessageWithoutContent = {
-    created_at: new Date(),
+    created_at: aDate,
     feature_level_type: FeatureLevelTypeEnum.STANDARD,
     fiscal_code: aNewMessageWithoutContent.fiscalCode,
     id: "A_MESSAGE_ID",
@@ -224,14 +225,14 @@ describe("GetMessageHandler", () => {
       "1" as NonEmptyString,
       NotificationChannelEnum.EMAIL
     ),
-    updatedAt: new Date(),
+    updatedAt: aDate,
     version: 1 as NonNegativeInteger
   };
 
   const aMessageStatus: MessageStatus = {
     messageId: aMessageId,
     status: NotRejectedMessageStatusValueEnum.ACCEPTED,
-    updatedAt: new Date(),
+    updatedAt: aDate,
     isRead: false,
     isArchived: false
   };
