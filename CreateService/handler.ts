@@ -150,7 +150,7 @@ const createServiceTask = (
 
 export const getAuthorizedRecipientsFromPayload = (
   servicePayload: ServicePayload
-): O.Option<null | ReadonlyArray<FiscalCode>> =>
+): O.Option<ReadonlyArray<FiscalCode>> =>
   pipe(
     O.fromNullable(
       // eslint-disable-next-line @typescript-eslint/dot-notation
@@ -176,9 +176,6 @@ export function CreateServiceHandler(
 ): ICreateServiceHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   return (context, __, ___, userAttributes, servicePayload) => {
-    const maybeAuthorizedRecipients = getAuthorizedRecipientsFromPayload(
-      servicePayload
-    );
     const subscriptionId = generateObjectId();
     context.log.info(
       `${logPrefix}| Creating new service with subscriptionId=${subscriptionId}`
@@ -204,12 +201,13 @@ export function CreateServiceHandler(
           apiClient,
           servicePayload,
           subscriptionId,
-          O.isSome(maybeAuthorizedRecipients)
-            ? [
-                (sandboxFiscalCode as unknown) as FiscalCode,
-                ...maybeAuthorizedRecipients.value
-              ]
-            : [(sandboxFiscalCode as unknown) as FiscalCode],
+          [
+            (sandboxFiscalCode as unknown) as FiscalCode,
+            ...pipe(
+              getAuthorizedRecipientsFromPayload(servicePayload),
+              O.getOrElse(() => [] as ReadonlyArray<FiscalCode>)
+            )
+          ],
           user.token_name
         )
       ),
