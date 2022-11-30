@@ -1,7 +1,7 @@
 import {
   FeatureFlagEnum,
   getIsUserEligibleForNewFeature
-} from "../featureFlags";
+} from "../featureFlag";
 import { FiscalCode } from "@pagopa/ts-commons/lib/strings";
 import { aFiscalCode, anotherFiscalCode } from "../../__mocks__/mocks";
 

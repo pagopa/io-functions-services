@@ -25,7 +25,7 @@ import {
 } from "@pagopa/ts-commons/lib/numbers";
 import { flow, pipe } from "fp-ts/lib/function";
 import { CommaSeparatedListOf } from "./comma-separated-list";
-import { FeatureFlag, FeatureFlagEnum } from "./featureFlags";
+import { FeatureFlag, FeatureFlagEnum } from "./featureFlag";
 
 export const BetaUsers = t.readonlyArray(FiscalCode);
 export type BetaUsers = t.TypeOf<typeof BetaUsers>;
