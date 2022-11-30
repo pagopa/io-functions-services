@@ -41,6 +41,7 @@ import {
   ulidGenerator
 } from "@pagopa/io-functions-commons/dist/src/utils/strings";
 import { TaskEither } from "fp-ts/lib/TaskEither";
+import * as O from "fp-ts/lib/Option";
 import * as TE from "fp-ts/lib/TaskEither";
 import { initAppInsights } from "@pagopa/ts-commons/lib/appinsights";
 import {
@@ -147,6 +148,21 @@ const createServiceTask = (
     200
   );
 
+export const getAuthorizedRecipientsFromPayload = (
+  servicePayload: ServicePayload
+): O.Option<ReadonlyArray<FiscalCode>> =>
+  pipe(
+    O.fromNullable(
+      // eslint-disable-next-line @typescript-eslint/dot-notation
+      servicePayload["authorized_recipients"] as ReadonlyArray<FiscalCode>
+    ),
+    O.map(items =>
+      items.map(cf =>
+        pipe(FiscalCode.decode(cf), O.fromEither, O.getOrElse(null))
+      )
+    )
+  );
+
 /**
  * Handles requests for create a service by a Service Payload.
  */
@@ -156,7 +172,7 @@ export function CreateServiceHandler(
   apiClient: APIClient,
   generateObjectId: ObjectIdGenerator,
   productName: NonEmptyString,
-  authorizedRecipients: NonEmptyString | ReadonlyArray<FiscalCode>
+  sandboxFiscalCode: NonEmptyString
 ): ICreateServiceHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   return (context, __, ___, userAttributes, servicePayload) => {
@@ -185,10 +201,13 @@ export function CreateServiceHandler(
           apiClient,
           servicePayload,
           subscriptionId,
-          // (sandboxFiscalCode as unknown) as FiscalCode,
-          Array.isArray(authorizedRecipients)
-            ? authorizedRecipients
-            : [authorizedRecipients],
+          [
+            (sandboxFiscalCode as unknown) as FiscalCode,
+            ...pipe(
+              getAuthorizedRecipientsFromPayload(servicePayload),
+              O.getOrElse(() => [] as ReadonlyArray<FiscalCode>)
+            )
+          ],
           user.token_name
         )
       ),

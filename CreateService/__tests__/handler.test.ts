@@ -29,10 +29,14 @@ import * as reporters from "@pagopa/ts-commons/lib/reporters";
 import { Subscription } from "../../generated/api-admin/Subscription";
 import { UserInfo } from "../../generated/api-admin/UserInfo";
 import { ServicePayload } from "../../generated/definitions/ServicePayload";
-import { CreateServiceHandler } from "../handler";
+import {
+  CreateServiceHandler,
+  getAuthorizedRecipientsFromPayload
+} from "../handler";
 
 import * as E from "fp-ts/lib/Either";
 import { StandardServiceCategoryEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/StandardServiceCategory";
+import { isSome } from "fp-ts/lib/Option";
 
 const mockContext = {
   // eslint-disable no-console
@@ -234,7 +238,7 @@ describe("CreateServiceHandler", () => {
       apiClientMock as any,
       mockUlidGenerator as any,
       productName,
-      authorizedRecipients
+      sandboxFiscalCode
     );
     const result = await createServiceHandler(
       mockContext,
@@ -613,6 +617,15 @@ describe("CreateServiceHandler", () => {
     expect(result.kind).toBe("IResponseErrorUnauthorized");
     if (result.kind === "IResponseErrorUnauthorized") {
       expect(result.detail).toEqual("Unauthorized: Unauthorized");
+    }
+  });
+
+  it("should retrieve valid CF from a Service Payload", () => {
+    const result = getAuthorizedRecipientsFromPayload(({
+      authorized_recipients: authorizedRecipients
+    } as unknown) as ServicePayload);
+    if (isSome(result)) {
+      expect(result.value).toHaveLength(2);
     }
   });
 });
