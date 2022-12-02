@@ -91,7 +91,7 @@ const aUserAuthenticationDeveloper: IAzureApiAuthorization = {
 describe("GetUserServicesHandler", () => {
   it("should respond with a list of serviceId if requesting user is the owner", async () => {
     const apiClientMock = {
-      getUser: jest.fn(() =>
+      getUserSubscriptions: jest.fn(() =>
         Promise.resolve(right({ status: 200, value: aUserInfo }))
       )
     };
@@ -104,7 +104,7 @@ describe("GetUserServicesHandler", () => {
       someUserAttributes
     );
 
-    expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.getUserSubscriptions).toHaveBeenCalledTimes(1);
     expect(result.kind).toBe("IResponseSuccessJson");
     if (result.kind === "IResponseSuccessJson") {
       expect(result.value).toEqual({
@@ -115,7 +115,7 @@ describe("GetUserServicesHandler", () => {
 
   it("should respond with an internal error if getUser does not respond", async () => {
     const apiClientMock = {
-      getUser: jest.fn(() => Promise.reject(new Error("Timeout")))
+      getUserSubscriptions: jest.fn(() => Promise.reject(new Error("Timeout")))
     };
 
     const getUserServicesHandler = GetUserServicesHandler(apiClientMock as any);
@@ -126,14 +126,14 @@ describe("GetUserServicesHandler", () => {
       someUserAttributes
     );
 
-    expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.getUserSubscriptions).toHaveBeenCalledTimes(1);
 
     expect(result.kind).toBe("IResponseErrorInternal");
   });
 
   it("should respond with an internal error if getService returns Errors", async () => {
     const apiClientMock = {
-      getUser: jest.fn(() => Promise.resolve(left({ err: "ValidationError" })))
+      getUserSubscriptions: jest.fn(() => Promise.resolve(left({ err: "ValidationError" })))
     };
 
     jest
@@ -147,14 +147,14 @@ describe("GetUserServicesHandler", () => {
       someUserAttributes
     );
 
-    expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.getUserSubscriptions).toHaveBeenCalledTimes(1);
 
     expect(result.kind).toBe("IResponseErrorInternal");
   });
 
   it("should respond with Not found if no user was found", async () => {
     const apiClientMock = {
-      getUser: jest.fn(() => Promise.resolve(right({ status: 404 })))
+      getUserSubscriptions: jest.fn(() => Promise.resolve(right({ status: 404 })))
     };
 
     const getUserServicesHandler = GetUserServicesHandler(apiClientMock as any);
@@ -165,7 +165,7 @@ describe("GetUserServicesHandler", () => {
       someUserAttributes
     );
 
-    expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.getUserSubscriptions).toHaveBeenCalledTimes(1);
 
     expect(result.kind).toBe("IResponseErrorNotFound");
     if (result.kind === "IResponseErrorNotFound") {
@@ -175,7 +175,7 @@ describe("GetUserServicesHandler", () => {
 
   it("should respond with an internal error if getUser returns Bad request", async () => {
     const apiClientMock = {
-      getUser: jest.fn(() => Promise.resolve(right({ status: 400 })))
+      getUserSubscriptions: jest.fn(() => Promise.resolve(right({ status: 400 })))
     };
 
     const getUserServicesHandler = GetUserServicesHandler(apiClientMock as any);
@@ -186,14 +186,14 @@ describe("GetUserServicesHandler", () => {
       someUserAttributes
     );
 
-    expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.getUserSubscriptions).toHaveBeenCalledTimes(1);
 
     expect(result.kind).toBe("IResponseErrorInternal");
   });
 
   it("should respond with forbidden if getUser returns Forbidden", async () => {
     const apiClientMock = {
-      getUser: jest.fn(() => Promise.resolve(right({ status: 403 })))
+      getUserSubscriptions: jest.fn(() => Promise.resolve(right({ status: 403 })))
     };
 
     const getUserServicesHandler = GetUserServicesHandler(apiClientMock as any);
@@ -204,7 +204,7 @@ describe("GetUserServicesHandler", () => {
       someUserAttributes
     );
 
-    expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.getUserSubscriptions).toHaveBeenCalledTimes(1);
 
     expect(result.kind).toBe("IResponseErrorForbiddenNotAuthorized");
   });

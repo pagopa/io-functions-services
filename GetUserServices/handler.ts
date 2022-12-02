@@ -65,7 +65,7 @@ const getUserTask = (
   withApiRequestWrapper(
     logger,
     () =>
-      apiClient.getUser({
+      apiClient.getUserSubscriptions({
         email: userEmail
       }),
     200
