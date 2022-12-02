@@ -2,7 +2,7 @@ import { ResponseErrorInternal } from "@pagopa/ts-commons/lib/responses";
 import { ResponseErrorNotFound } from "@pagopa/ts-commons/lib/responses";
 import * as TE from "fp-ts/lib/TaskEither";
 import { APIClient } from "../clients/admin";
-import { ImpersonatedService } from "../generated/api-admin/ImpersonatedService";
+import { ImpersonatedService } from "@pagopa/io-functions-admin-sdk/ImpersonatedService";
 import { ILogger } from "../utils/logging";
 import { ErrorResponses } from "../utils/responses";
 

@@ -51,7 +51,7 @@ import { initTelemetryClient } from "../appinsights";
 import { ServiceId } from "../../generated/definitions/ServiceId";
 import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
 import { ActivationStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ActivationStatus";
-import { SpecialServiceCategoryEnum } from "../../generated/api-admin/SpecialServiceCategory";
+import { SpecialServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/SpecialServiceCategory";
 import { ServiceScopeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceScope";
 import { toCosmosErrorResponse } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
 import { canSendMessageOnActivationWithGrace } from "../services";

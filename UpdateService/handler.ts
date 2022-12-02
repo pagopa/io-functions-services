@@ -42,19 +42,19 @@ import * as TE from "fp-ts/lib/TaskEither";
 import { initAppInsights } from "@pagopa/ts-commons/lib/appinsights";
 import { EmailString, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 import { pipe } from "fp-ts/lib/function";
+import { Service } from "@pagopa/io-functions-admin-sdk/Service";
+import { SubscriptionKeys } from "@pagopa/io-functions-admin-sdk/SubscriptionKeys";
+import { UserInfo } from "@pagopa/io-functions-admin-sdk/UserInfo";
+import { StandardServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/StandardServiceCategory";
+import { SpecialServiceMetadata } from "@pagopa/io-functions-admin-sdk/SpecialServiceMetadata";
+import { SpecialServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/SpecialServiceCategory";
 import { APIClient } from "../clients/admin";
-import { Service } from "../generated/api-admin/Service";
-import { SubscriptionKeys } from "../generated/api-admin/SubscriptionKeys";
-import { UserInfo } from "../generated/api-admin/UserInfo";
 import { ServicePayload } from "../generated/definitions/ServicePayload";
 import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWithSubscriptionKeys";
 import { withApiRequestWrapper } from "../utils/api";
 import { getLogger, ILogger } from "../utils/logging";
 import { ErrorResponses, IResponseErrorUnauthorized } from "../utils/responses";
 import { serviceOwnerCheckTask } from "../utils/subscription";
-import { StandardServiceCategoryEnum } from "../generated/api-admin/StandardServiceCategory";
-import { SpecialServiceMetadata } from "../generated/api-admin/SpecialServiceMetadata";
-import { SpecialServiceCategoryEnum } from "../generated/api-admin/SpecialServiceCategory";
 
 type ResponseTypes =
   | IResponseSuccessJson<ServiceWithSubscriptionKeys>

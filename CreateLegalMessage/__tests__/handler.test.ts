@@ -6,7 +6,7 @@ import { Context } from "@azure/functions";
 import { CreateLegalMessageHandler } from "../handler";
 import { getLogger, ILogger } from "../../utils/logging";
 import { ILegalMessageMapModel } from "../../utils/legal-message";
-import { ServiceId } from "../../generated/api-admin/ServiceId";
+import { ServiceId } from "@pagopa/io-functions-admin-sdk/ServiceId";
 import {
   EmailString,
   NonEmptyString,
@@ -14,7 +14,7 @@ import {
 } from "@pagopa/ts-commons/lib/strings";
 import { APIClient } from "../../clients/admin";
 import { UserGroup } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
-import { ImpersonatedService } from "../../generated/api-admin/ImpersonatedService";
+import { ImpersonatedService } from "@pagopa/io-functions-admin-sdk/ImpersonatedService";
 import {
   ResponseErrorInternal,
   ResponseErrorNotFound,

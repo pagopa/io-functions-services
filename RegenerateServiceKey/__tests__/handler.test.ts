@@ -22,8 +22,8 @@ import { MaxAllowedPaymentAmount } from "@pagopa/io-functions-commons/dist/gener
 
 import { left, right } from "fp-ts/lib/Either";
 import * as reporters from "@pagopa/ts-commons/lib/reporters";
-import { SubscriptionKeyTypeEnum } from "../../generated/api-admin/SubscriptionKeyType";
-import { SubscriptionKeyTypePayload } from "../../generated/api-admin/SubscriptionKeyTypePayload";
+import { SubscriptionKeyTypeEnum } from "@pagopa/io-functions-admin-sdk/SubscriptionKeyType";
+import { SubscriptionKeyTypePayload } from "@pagopa/io-functions-admin-sdk/SubscriptionKeyTypePayload";
 import { RegenerateServiceKeyHandler } from "../handler";
 
 const mockContext = {

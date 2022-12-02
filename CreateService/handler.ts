@@ -51,16 +51,16 @@ import {
 } from "@pagopa/ts-commons/lib/strings";
 import { pipe } from "fp-ts/lib/function";
 import { sequenceS } from "fp-ts/lib/Apply";
+import { Service } from "@pagopa/io-functions-admin-sdk/Service";
+import { Subscription } from "@pagopa/io-functions-admin-sdk/Subscription";
+import { UserInfo } from "@pagopa/io-functions-admin-sdk/UserInfo";
+import { StandardServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/StandardServiceCategory";
 import { APIClient } from "../clients/admin";
-import { Service } from "../generated/api-admin/Service";
-import { Subscription } from "../generated/api-admin/Subscription";
-import { UserInfo } from "../generated/api-admin/UserInfo";
 import { ServicePayload } from "../generated/definitions/ServicePayload";
 import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWithSubscriptionKeys";
 import { withApiRequestWrapper } from "../utils/api";
 import { getLogger, ILogger } from "../utils/logging";
 import { ErrorResponses, IResponseErrorUnauthorized } from "../utils/responses";
-import { StandardServiceCategoryEnum } from "../generated/api-admin/StandardServiceCategory";
 
 type ResponseTypes =
   | IResponseSuccessJson<ServiceWithSubscriptionKeys>
