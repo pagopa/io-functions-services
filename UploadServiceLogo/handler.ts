@@ -42,8 +42,8 @@ import { RequiredBodyPayloadMiddleware } from "@pagopa/io-functions-commons/dist
 import { pipe } from "fp-ts/lib/function";
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import * as TE from "fp-ts/lib/TaskEither";
+import { Logo } from "@pagopa/io-functions-admin-sdk/Logo";
 import { APIClient } from "../clients/admin";
-import { Logo } from "../generated/api-admin/Logo";
 import { withApiRequestWrapper } from "../utils/api";
 import { getLogger, ILogger } from "../utils/logging";
 import { ErrorResponses, IResponseErrorUnauthorized } from "../utils/responses";

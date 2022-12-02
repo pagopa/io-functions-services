@@ -22,7 +22,7 @@ import { MaxAllowedPaymentAmount } from "@pagopa/io-functions-commons/dist/gener
 
 import { left, right } from "fp-ts/lib/Either";
 import * as reporters from "@pagopa/ts-commons/lib/reporters";
-import { Logo } from "../../generated/api-admin/Logo";
+import { Logo } from "@pagopa/io-functions-admin-sdk/Logo";
 import { UploadServiceLogoHandler } from "../handler";
 
 const mockContext = {

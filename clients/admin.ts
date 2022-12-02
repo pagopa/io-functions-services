@@ -6,7 +6,7 @@ import {
 } from "@pagopa/ts-commons/lib/fetch";
 import { Millisecond } from "@pagopa/ts-commons/lib/units";
 import nodeFetch from "node-fetch";
-import { createClient } from "../generated/api-admin/client";
+import { createClient } from "@pagopa/io-functions-admin-sdk/client";
 
 import { getConfigOrThrow } from "../utils/config";
 

@@ -23,9 +23,9 @@ import { MaxAllowedPaymentAmount } from "@pagopa/io-functions-commons/dist/gener
 import { left, right } from "fp-ts/lib/Either";
 import { ServiceScopeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceScope";
 import * as reporters from "@pagopa/ts-commons/lib/reporters";
-import { Service } from "../../generated/api-admin/Service";
-import { Subscription } from "../../generated/api-admin/Subscription";
-import { UserInfo } from "../../generated/api-admin/UserInfo";
+import { Service } from "@pagopa/io-functions-admin-sdk/Service";
+import { Subscription } from "@pagopa/io-functions-admin-sdk/Subscription";
+import { UserInfo } from "@pagopa/io-functions-admin-sdk/UserInfo";
 import { ServicePayload } from "../../generated/definitions/ServicePayload";
 import { UpdateServiceHandler } from "../handler";
 import { StandardServiceCategoryEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/StandardServiceCategory";

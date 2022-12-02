@@ -22,8 +22,8 @@ import { MaxAllowedPaymentAmount } from "@pagopa/io-functions-commons/dist/gener
 
 import { left, right } from "fp-ts/lib/Either";
 import * as reporters from "@pagopa/ts-commons/lib/reporters";
-import { Subscription } from "../../generated/api-admin/Subscription";
-import { UserInfo } from "../../generated/api-admin/UserInfo";
+import { Subscription } from "@pagopa/io-functions-admin-sdk/Subscription";
+import { UserInfo } from "@pagopa/io-functions-admin-sdk/UserInfo";
 import { GetUserServicesHandler } from "../handler";
 
 const mockContext = {
@@ -133,7 +133,9 @@ describe("GetUserServicesHandler", () => {
 
   it("should respond with an internal error if getService returns Errors", async () => {
     const apiClientMock = {
-      getUserSubscriptions: jest.fn(() => Promise.resolve(left({ err: "ValidationError" })))
+      getUserSubscriptions: jest.fn(() =>
+        Promise.resolve(left({ err: "ValidationError" }))
+      )
     };
 
     jest
@@ -154,7 +156,9 @@ describe("GetUserServicesHandler", () => {
 
   it("should respond with Not found if no user was found", async () => {
     const apiClientMock = {
-      getUserSubscriptions: jest.fn(() => Promise.resolve(right({ status: 404 })))
+      getUserSubscriptions: jest.fn(() =>
+        Promise.resolve(right({ status: 404 }))
+      )
     };
 
     const getUserServicesHandler = GetUserServicesHandler(apiClientMock as any);
@@ -175,7 +179,9 @@ describe("GetUserServicesHandler", () => {
 
   it("should respond with an internal error if getUser returns Bad request", async () => {
     const apiClientMock = {
-      getUserSubscriptions: jest.fn(() => Promise.resolve(right({ status: 400 })))
+      getUserSubscriptions: jest.fn(() =>
+        Promise.resolve(right({ status: 400 }))
+      )
     };
 
     const getUserServicesHandler = GetUserServicesHandler(apiClientMock as any);
@@ -193,7 +199,9 @@ describe("GetUserServicesHandler", () => {
 
   it("should respond with forbidden if getUser returns Forbidden", async () => {
     const apiClientMock = {
-      getUserSubscriptions: jest.fn(() => Promise.resolve(right({ status: 403 })))
+      getUserSubscriptions: jest.fn(() =>
+        Promise.resolve(right({ status: 403 }))
+      )
     };
 
     const getUserServicesHandler = GetUserServicesHandler(apiClientMock as any);

@@ -37,7 +37,7 @@ import { Millisecond } from "@pagopa/ts-commons/lib/units";
 import * as E from "fp-ts/lib/Either";
 import * as TE from "fp-ts/lib/TaskEither";
 import * as O from "fp-ts/lib/Option";
-import { StandardServiceCategoryEnum } from "../../generated/api-admin/StandardServiceCategory";
+import { StandardServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/StandardServiceCategory";
 
 import { toInternalError, toNotFoundError } from "../../utils/domain-errors";
 import { UserProfileReader } from "../../readers/user-profile";

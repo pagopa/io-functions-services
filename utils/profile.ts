@@ -40,9 +40,9 @@ import {
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import { pipe, identity } from "fp-ts/lib/function";
 import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
+import { SpecialServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/SpecialServiceCategory";
 import { FiscalCodePayload } from "../generated/definitions/FiscalCodePayload";
 import { canWriteMessage } from "../CreateMessage/handler";
-import { SpecialServiceCategoryEnum } from "../generated/api-admin/SpecialServiceCategory";
 import { initTelemetryClient } from "./appinsights";
 import { toHash } from "./crypto";
 import { CanSendMessageOnActivation } from "./services";

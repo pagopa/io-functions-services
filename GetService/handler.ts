@@ -37,9 +37,9 @@ import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/m
 import { pipe } from "fp-ts/lib/function";
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import * as TE from "fp-ts/lib/TaskEither";
+import { Service } from "@pagopa/io-functions-admin-sdk/Service";
+import { SubscriptionKeys } from "@pagopa/io-functions-admin-sdk/SubscriptionKeys";
 import { APIClient } from "../clients/admin";
-import { Service } from "../generated/api-admin/Service";
-import { SubscriptionKeys } from "../generated/api-admin/SubscriptionKeys";
 import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWithSubscriptionKeys";
 import { withApiRequestWrapper } from "../utils/api";
 import { getLogger, ILogger } from "../utils/logging";

@@ -26,8 +26,8 @@ import {
   ServiceMetadata
 } from "@pagopa/io-functions-commons/dist/src/models/service";
 import * as reporters from "@pagopa/ts-commons/lib/reporters";
-import { Subscription } from "../../generated/api-admin/Subscription";
-import { UserInfo } from "../../generated/api-admin/UserInfo";
+import { Subscription } from "@pagopa/io-functions-admin-sdk/Subscription";
+import { UserInfo } from "@pagopa/io-functions-admin-sdk/UserInfo";
 import { ServicePayload } from "../../generated/definitions/ServicePayload";
 import {
   CreateServiceHandler,

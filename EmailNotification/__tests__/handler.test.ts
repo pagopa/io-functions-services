@@ -33,7 +33,7 @@ import {
   NotificationModel,
   RetrievedNotification
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
-import { StandardServiceCategoryEnum } from "../../generated/api-admin/StandardServiceCategory";
+import { StandardServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/StandardServiceCategory";
 
 beforeEach(() => jest.clearAllMocks());
 
