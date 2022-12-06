@@ -22,9 +22,12 @@ parameters:
     displayName: ''
     type: object
     default:
-      services:
-        appname: io-p-fn3-services
-        rg: io-p-rg-internal
+      services-fn1:
+        appname: io-p-services-fn-1
+        rg: io-p-services-rg-1
+      services-fn2:
+        appname: io-p-services-fn-2
+        rg: io-p-services-rg-2
 
 # Only manual activations are intended
 trigger: none
