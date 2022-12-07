@@ -2,6 +2,13 @@ version: "3.2"
 
 services:
 
+  functions-node-14:
+    image: functions-node-14
+    build:
+      context: ..
+      dockerfile: ./docker/functions-node-14/Dockerfile
+    command: /bin/true
+
   cosmosdb:
     image: cosmosdb
     env_file:
@@ -46,6 +53,7 @@ services:
       - cosmosdb
       - storage-account
     depends_on:
+      - functions-node-14
       - fixtures
 
   testagent:
