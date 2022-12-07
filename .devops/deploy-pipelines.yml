@@ -22,10 +22,10 @@ parameters:
     displayName: ''
     type: object
     default:
-      services-fn1:
+      servicesfn1:
         appname: io-p-services-fn-1
         rg: io-p-services-rg-1
-      services-fn2:
+      servicesfn2:
         appname: io-p-services-fn-2
         rg: io-p-services-rg-2
 
