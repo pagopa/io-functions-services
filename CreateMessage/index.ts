@@ -44,7 +44,7 @@ const serviceModel = new ServiceModel(
 );
 
 const blobService = createBlobService(
-  config.MESSAGE_CONTENT_STORAGE_CONNECTION_STRING
+  config.INTERNAL_STORAGE_CONNECTION_STRING
 );
 
 const telemetryClient = initTelemetryClient(
