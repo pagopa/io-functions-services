@@ -71,7 +71,7 @@
     "date-fns": "^2.16.1",
     "documentdb": "^1.12.2",
     "durable-functions": "^1.4.3",
-    "express": "^4.15.3",
+    "express": "^4.17.3",
     "fp-ts": "^2.11.1",
     "html-to-text": "^4.0.0",
     "io-ts": "^2.2.16",
