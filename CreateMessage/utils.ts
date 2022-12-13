@@ -3,6 +3,9 @@ import { pipe } from "fp-ts/lib/function";
 
 import * as TE from "fp-ts/lib/TaskEither";
 import * as E from "fp-ts/lib/Either";
+import { IRequestMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
+import { IResponse } from "@pagopa/ts-commons/lib/responses";
+import { Request } from "express";
 
 // just a trick to keep upsertBlobFromObject in sync with upsertBlobFromObject
 //  by extracting its left and right types
@@ -34,3 +37,11 @@ export const makeUpsertBlobFromObject = (
     ),
     TE.chain(TE.fromEither)
   );
+
+export const OriginalRequestMiddleware = (): IRequestMiddleware<
+  "IResponseErrorInternal",
+  Request
+> => (
+  request
+): Promise<E.Either<IResponse<"IResponseErrorInternal">, Request>> =>
+  Promise.resolve(E.right(request));

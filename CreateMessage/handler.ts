@@ -88,7 +88,7 @@ import {
   ApiNewMessageWithDefaults,
   ApiNewThirdPartyMessage
 } from "./types";
-import { makeUpsertBlobFromObject } from "./utils";
+import { makeUpsertBlobFromObject, OriginalRequestMiddleware } from "./utils";
 
 /**
  * Type of a CreateMessage handler.
@@ -491,6 +491,7 @@ export function CreateMessage(
     ...([
       // Common CreateMessage Middlewares
       ...commonCreateMessageMiddlewares(serviceModel),
+      OriginalRequestMiddleware(),
       AzureAllowBodyPayloadMiddleware(
         ApiNewMessageWithContentOf(t.interface({ eu_covid_cert: EUCovidCert })),
         new Set([UserGroup.ApiMessageWriteEUCovidCert]),
@@ -529,17 +530,32 @@ export function CreateMessage(
   return wrapRequestHandler(
     middlewaresWrap(
       // eslint-disable-next-line max-params
-      checkSourceIpForHandler(handler, (_, __, c, u, ___, ____, _____) => {
-        telemetryClient.trackEvent({
-          name: "api.messages.ipCheck",
-          properties: {
-            clientIp: JSON.stringify(c),
-            userAttributes: JSON.stringify(u)
-          },
-          tagOverrides: { samplingEnabled: "false" }
-        });
-        return ipTuple(c, u);
-      })
+      checkSourceIpForHandler(
+        handler,
+        (
+          context: Context,
+          __,
+          c,
+          u,
+          ___,
+          ____,
+          originalRequest: express.Request
+          // eslint-disable-next-line max-params
+        ) => {
+          telemetryClient.trackEvent({
+            name: "api.messages.ipCheck",
+            properties: {
+              clientIp: JSON.stringify(c),
+              contextReq: JSON.stringify(context.req),
+              originalReq: JSON.stringify(originalRequest),
+              originalReqHeader: JSON.stringify(originalRequest.headers),
+              userAttributes: JSON.stringify(u)
+            },
+            tagOverrides: { samplingEnabled: "false" }
+          });
+          return ipTuple(c, u);
+        }
+      )
     )
   );
 }
