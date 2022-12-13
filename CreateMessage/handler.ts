@@ -546,9 +546,8 @@ export function CreateMessage(
             name: "api.messages.ipCheck",
             properties: {
               clientIp: JSON.stringify(c),
-              contextReq: JSON.stringify(context.req),
-              originalReq: JSON.stringify(originalRequest),
-              originalReqHeader: JSON.stringify(originalRequest.headers),
+              contextReqHeaders: JSON.stringify(context.req?.headers),
+              originalReqHeaders: JSON.stringify(originalRequest.headers),
               userAttributes: JSON.stringify(u)
             },
             tagOverrides: { samplingEnabled: "false" }
