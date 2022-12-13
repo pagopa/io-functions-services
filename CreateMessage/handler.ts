@@ -88,7 +88,7 @@ import {
   ApiNewMessageWithDefaults,
   ApiNewThirdPartyMessage
 } from "./types";
-import { makeUpsertBlobFromObject, OriginalRequestMiddleware } from "./utils";
+import { makeUpsertBlobFromObject } from "./utils";
 
 /**
  * Type of a CreateMessage handler.
@@ -491,7 +491,6 @@ export function CreateMessage(
     ...([
       // Common CreateMessage Middlewares
       ...commonCreateMessageMiddlewares(serviceModel),
-      OriginalRequestMiddleware(),
       AzureAllowBodyPayloadMiddleware(
         ApiNewMessageWithContentOf(t.interface({ eu_covid_cert: EUCovidCert })),
         new Set([UserGroup.ApiMessageWriteEUCovidCert]),
@@ -539,16 +538,16 @@ export function CreateMessage(
           u,
           ___,
           ____,
-          originalRequest: express.Request
+          _____
           // eslint-disable-next-line max-params
         ) => {
           telemetryClient.trackEvent({
             name: "api.messages.ipCheck",
             properties: {
               clientIp: JSON.stringify(c),
-              contextReqHeaders: JSON.stringify(context.req?.headers),
-              originalReqHeaders: JSON.stringify(originalRequest.headers),
-              userAttributes: JSON.stringify(u)
+              userAttributes: JSON.stringify(u),
+              xClientIp: context.req?.headers["x-client-ip"],
+              xForwardedFor: context.req?.headers["x-forwarded-for"]
             },
             tagOverrides: { samplingEnabled: "false" }
           });
