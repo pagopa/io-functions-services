@@ -37,11 +37,3 @@ export const makeUpsertBlobFromObject = (
     ),
     TE.chain(TE.fromEither)
   );
-
-export const OriginalRequestMiddleware = (): IRequestMiddleware<
-  "IResponseErrorInternal",
-  Request
-> => (
-  request
-): Promise<E.Either<IResponse<"IResponseErrorInternal">, Request>> =>
-  Promise.resolve(E.right(request));
