@@ -529,30 +529,8 @@ export function CreateMessage(
   return wrapRequestHandler(
     middlewaresWrap(
       // eslint-disable-next-line max-params
-      checkSourceIpForHandler(
-        handler,
-        (
-          context: Context,
-          __,
-          c,
-          u,
-          ___,
-          ____,
-          _____
-          // eslint-disable-next-line max-params
-        ) => {
-          telemetryClient.trackEvent({
-            name: "api.messages.ipCheck",
-            properties: {
-              clientIp: JSON.stringify(c),
-              userAttributes: JSON.stringify(u),
-              xClientIp: context.req?.headers["x-client-ip"],
-              xForwardedFor: context.req?.headers["x-forwarded-for"]
-            },
-            tagOverrides: { samplingEnabled: "false" }
-          });
-          return ipTuple(c, u);
-        }
+      checkSourceIpForHandler(handler, (_, __, c, u, ___, ____, _____) =>
+        ipTuple(c, u)
       )
     )
   );
