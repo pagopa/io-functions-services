@@ -23,8 +23,8 @@ import { MaxAllowedPaymentAmount } from "@pagopa/io-functions-commons/dist/gener
 import { left, right } from "fp-ts/lib/Either";
 import * as reporters from "@pagopa/ts-commons/lib/reporters";
 import { Subscription } from "@pagopa/io-functions-admin-sdk/Subscription";
-import { UserInfo } from "@pagopa/io-functions-admin-sdk/UserInfo";
 import { GetUserServicesHandler } from "../handler";
+import { UserInfoAndSubscriptions } from "@pagopa/io-functions-admin-sdk/UserInfoAndSubscriptions";
 
 const mockContext = {
   // eslint-disable no-console
@@ -68,7 +68,7 @@ const aSubscription: Subscription = {
   scope: "NATIONAL"
 };
 
-const aUserInfo: UserInfo = {
+const aUserInfo: UserInfoAndSubscriptions = {
   subscriptions: [
     aSubscription,
     { ...aSubscription, id: "s234" as NonEmptyString }

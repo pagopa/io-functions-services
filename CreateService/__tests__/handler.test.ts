@@ -112,10 +112,6 @@ const aUserAuthenticationDeveloper: IAzureApiAuthorization = {
 };
 
 const aUserInfo: UserInfo = {
-  subscriptions: [
-    aSubscription,
-    { ...aSubscription, id: "s234" as NonEmptyString }
-  ],
   token_name: aTokenName
 };
 
