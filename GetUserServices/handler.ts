@@ -36,7 +36,7 @@ import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/m
 import { pipe } from "fp-ts/lib/function";
 import * as TE from "fp-ts/lib/TaskEither";
 import { TaskEither } from "fp-ts/lib/TaskEither";
-import { UserInfo } from "@pagopa/io-functions-admin-sdk/UserInfo";
+import { UserInfoAndSubscriptions } from "@pagopa/io-functions-admin-sdk/UserInfoAndSubscriptions";
 import { APIClient } from "../clients/admin";
 import { ServiceIdCollection } from "../generated/definitions/ServiceIdCollection";
 import { withApiRequestWrapper } from "../utils/api";
@@ -61,7 +61,7 @@ const getUserTask = (
   logger: ILogger,
   apiClient: APIClient,
   userEmail: EmailString
-): TaskEither<ErrorResponses, UserInfo> =>
+): TaskEither<ErrorResponses, UserInfoAndSubscriptions> =>
   withApiRequestWrapper(
     logger,
     () =>

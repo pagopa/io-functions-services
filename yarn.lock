@@ -751,10 +751,10 @@
   resolved "https://registry.yarnpkg.com/@pagopa/express-azure-functions/-/express-azure-functions-2.0.0.tgz#eb52a0b997d931c1509372e2a9bea22a8ca85c17"
   integrity sha512-IFZqtk0e2sfkMZIxYqPORzxcKRkbIrVJesR6eMLNwzh1rA4bl2uh9ZHk1m55LNq4ZmaxREDu+1JcGlIaZQgKNQ==
 
-"@pagopa/io-functions-admin-sdk@^0.31.0":
-  version "0.31.0"
-  resolved "https://registry.yarnpkg.com/@pagopa/io-functions-admin-sdk/-/io-functions-admin-sdk-0.31.0.tgz#88b54aa9434f14e9e7885d5890c2f8302839df01"
-  integrity sha512-PwOIHQiEoW2psNM/nDovidj+IBhV33mAUMRefeihwIW1vzDJjS872icuV5ImhGYIYZP1d8usUqLe3qZ6nw4uAg==
+"@pagopa/io-functions-admin-sdk@^0.32.1":
+  version "0.32.1"
+  resolved "https://registry.yarnpkg.com/@pagopa/io-functions-admin-sdk/-/io-functions-admin-sdk-0.32.1.tgz#f1877f65c3a48f1296f973456d10fbf7431a4237"
+  integrity sha512-aAdl6kigkHkU693qoCgVSgetSeqWIAbX3Rv3kzO3gSDK0EzuIcUuqWcR7EvGtrc3Cc+ULBnGDVdlIFY7ReCQ0g==
   dependencies:
     "@pagopa/ts-commons" "^10.0.0"
     fp-ts "^2.10.5"
