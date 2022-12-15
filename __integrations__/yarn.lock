@@ -622,6 +622,15 @@
   resolved "https://registry.yarnpkg.com/@opentelemetry/api/-/api-1.0.3.tgz#13a12ae9e05c2a782f7b5e84c3cbfda4225eaf80"
   integrity sha512-puWxACExDe9nxbBB3lOymQFrLYml2dVOrd7USiVRnSbgXE+KwBu+HxFvxrzfqsiSda9IWsXJG1ef7C1O2/GmKQ==
 
+"@pagopa/io-functions-admin-sdk@^0.32.1":
+  version "0.32.1"
+  resolved "https://registry.yarnpkg.com/@pagopa/io-functions-admin-sdk/-/io-functions-admin-sdk-0.32.1.tgz#f1877f65c3a48f1296f973456d10fbf7431a4237"
+  integrity sha512-aAdl6kigkHkU693qoCgVSgetSeqWIAbX3Rv3kzO3gSDK0EzuIcUuqWcR7EvGtrc3Cc+ULBnGDVdlIFY7ReCQ0g==
+  dependencies:
+    "@pagopa/ts-commons" "^10.0.0"
+    fp-ts "^2.10.5"
+    io-ts "^2.2.16"
+
 "@pagopa/io-functions-commons@^26.0.0":
   version "26.0.0"
   resolved "https://registry.yarnpkg.com/@pagopa/io-functions-commons/-/io-functions-commons-26.0.0.tgz#6ea9ba2f6af1022594e04626716a5603e1a592e9"

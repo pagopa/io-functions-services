@@ -22,9 +22,12 @@ parameters:
     displayName: ''
     type: object
     default:
-      services:
-        appname: io-p-fn3-services
-        rg: io-p-rg-internal
+      servicesfn1:
+        appname: io-p-services-fn-1
+        rg: io-p-services-rg-1
+      servicesfn2:
+        appname: io-p-services-fn-2
+        rg: io-p-services-rg-2
 
 # Only manual activations are intended
 trigger: none
@@ -36,7 +39,7 @@ pr: none
 # runtime, the pipeline is currently configured to use a Windows hosted image for
 # the build and deploy.
 pool:
-  vmImage: 'windows-2019'
+  vmImage: 'ubuntu-latest'
 
 resources:
   repositories:

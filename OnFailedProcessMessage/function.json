@@ -3,7 +3,7 @@
     {
       "queueName": "%MESSAGE_CREATED_QUEUE_NAME%-poison",
       "connection": "INTERNAL_STORAGE_CONNECTION_STRING",
-      "name": "createdMessage",
+      "name": "failedMessage",
       "type": "queueTrigger",
       "direction": "in"
     }
