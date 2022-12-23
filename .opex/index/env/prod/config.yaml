@@ -6,3 +6,9 @@ data_source: /subscriptions/ec285037-c673-4f58-b594-d7c480da4e8b/resourceGroups/
 action_groups:
   - /subscriptions/ec285037-c673-4f58-b594-d7c480da4e8b/resourceGroups/io-p-rg-common/providers/microsoft.insights/actionGroups/SlackPagoPA
   - /subscriptions/ec285037-c673-4f58-b594-d7c480da4e8b/resourceGroups/io-p-rg-common/providers/microsoft.insights/actionGroups/EmailPagoPA
+
+overrides:
+  hosts:
+    - api.io.pagopa.it
+    - api.io.italia.it
+    - api-mtls.io.pagopa.it
