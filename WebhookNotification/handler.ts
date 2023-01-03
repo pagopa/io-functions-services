@@ -44,7 +44,7 @@ import { flow, pipe } from "fp-ts/lib/function";
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import { Profile } from "@pagopa/io-functions-commons/dist/src/models/profile";
 import { PushNotificationsContentTypeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/PushNotificationsContentType";
-import { Notification } from "../generated/notifications/Notification";
+import { Notification } from "@pagopa/io-backend-notifications-sdk/Notification";
 import { withJsonInput } from "../utils/with-json-input";
 import { withDecodedInput } from "../utils/with-decoded-input";
 import {
