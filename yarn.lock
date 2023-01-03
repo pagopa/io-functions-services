@@ -760,7 +760,7 @@
   resolved "https://registry.yarnpkg.com/@pagopa/express-azure-functions/-/express-azure-functions-2.0.0.tgz#eb52a0b997d931c1509372e2a9bea22a8ca85c17"
   integrity sha512-IFZqtk0e2sfkMZIxYqPORzxcKRkbIrVJesR6eMLNwzh1rA4bl2uh9ZHk1m55LNq4ZmaxREDu+1JcGlIaZQgKNQ==
 
-"@pagopa/io-backend-notifications-sdk@^9.7.0":
+"@pagopa/io-backend-notifications-sdk@x":
   version "9.7.0"
   resolved "https://registry.yarnpkg.com/@pagopa/io-backend-notifications-sdk/-/io-backend-notifications-sdk-9.7.0.tgz#887069f3c717a01e22ccc4a1323ba3b6a4fc0560"
   integrity sha512-qIepFBWeoadgvQcSjgRt5SNw1xgqOjdZyUpm62keEz9W04Q+Qn6oxMCXcm1IfgWYXWn7ajMRVlfPWa4upSfdkA==
