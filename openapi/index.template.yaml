@@ -1,167 +1,121 @@
-swagger: "2.0"
+openapi: 3.0.1
 info:
-  version: 0.0.0
   title: IO API for Public Administration Services
+  description: "# Warning\n**This is an experimental API that is (most probably) going\
+    \ to change as we evolve the IO platform.**\n# Introduction\nThis is the documentation\
+    \ of the IO API for 3rd party services. This API enables Public Administration\
+    \ services to integrate with the IO platform. IO enables services to communicate\
+    \ with Italian citizens via the [IO app](https://io.italia.it/).\n# How to get\
+    \ an API key\nTo get access to this API, you'll need to register on the [IO Developer\
+    \ Portal](https://developer.io.italia.it/).\nAfter the registration step, you\
+    \ have to click on the button that says `subscribe to the digital citizenship\
+    \ api` to receive the API key that you will use to authenticate the API calls.\n\
+    You will also receive an email with further instructions, including a fake Fiscal\
+    \ Code that you will be able to use to send test messages. Messages sent to the\
+    \ fake Fiscal Code will be notified to the email address used during the registration\
+    \ process on the developer portal.\n# Messages\n## What is a message\nMessages\
+    \ are the primary form of communication enabled by the IO APIs. Messages are **personal**\
+    \ communications directed to a **specific citizen**. You will not be able to use\
+    \ this API to broadcast a message to a group of citizens, you will have to create\
+    \ and send a specific, personalized message to each citizen you want to communicate\
+    \ to.\nThe recipient of the message (i.e. a citizen) is identified trough his\
+    \ [Fiscal Code](https://it.wikipedia.org/wiki/Codice_fiscale).\n## Message format\n\
+    A message is conceptually very similar to an email and, in its simplest form,\
+    \ is composed of the following attributes:\n\n  * A required `subject`: a short\
+    \ description of the topic.\n  * A required `markdown` body: a Markdown representation\
+    \ of the body (see\n    below on what Markdown tags are allowed).\n  * An optional\
+    \ `payment_data`: in case the message is a payment request,\n    the _payment\
+    \ data_ will enable the recipient to pay the requested amount\n    via [PagoPA](https://www.agid.gov.it/it/piattaforme/pagopa).\n\
+    \  * An optional `due_date`: a _due date_ that let the recipient\n    add a reminder\
+    \ when receiving the message. The format for all\n    dates is [ISO8601](https://it.wikipedia.org/wiki/ISO_8601)\
+    \ with time\n    information and UTC timezone (ie. \"2018-10-13T00:00:00.000Z\"\
+    ).\n  * An optional `feature_level_type`: the kind of the submitted message.\n\
+    \n    It can be:\n    - `STANDARD` for normal messages;\n    - `ADVANCED` to enable\
+    \ premium features.\n    \n    Default is `STANDARD`.\n\n## Allowed Markdown formatting\n\
+    Not all Markdown formatting is currently available. Currently you can use the\
+    \ following formatting:\n\n  * Headings\n  * Text stylings (bold, italic, etc...)\n\
+    \  * Lists (bullet and numbered)\n\n## Sending a message to a citizen\nNot every\
+    \ citizen will be interested in what you have to say and not every citizen you\
+    \ want to communicate to will be registered on IO. For this reason, before sending\
+    \ a message you need to check whether the recipient is registered on the platform\
+    \ and that he has not yet opted out from receiving messages from you.\nThe process\
+    \ for sending a message is made of 3 steps:\n\n  1. Call [getProfile](#operation/getProfile):\
+    \ if the profile does not exist\n     (i.e. you get a 404 response) or if the\
+    \ recipient has opted-out from\n     your service (the response contains `sender_allowed:\
+    \ false`), you\n     cannot send the message and you must stop here.\n  1. Call\
+    \ [submitMessageforUser](#operation/submitMessageforUser) to submit\n     a new\
+    \ message.\n  1. (optional) Call [getMessage](#operation/getMessage) to check\
+    \ whether\n     the message has been notified to the recipient.\n"
   contact:
     name: PagoPA S.p.A.
     url: https://docs.pagopa.it/io-guida-tecnica/
+  version: 0.0.0
   x-logo:
     url: https://io.italia.it/assets/img/io-logo-blue.svg
-  description: >
-    # Warning
-
-    **This is an experimental API that is (most probably) going to change as we evolve the IO platform.**
-
-    # Introduction
-
-    This is the documentation of the IO API for 3rd party services.
-    This API enables Public Administration services to integrate with the
-    IO platform.
-    IO enables services to communicate with Italian citizens via
-    the [IO app](https://io.italia.it/).
-
-    # How to get an API key
-
-    To get access to this API, you'll need to register on the
-    [IO Developer Portal](https://developer.io.italia.it/).
-
-    After the registration step, you have to click on the button that says
-    `subscribe to the digital citizenship api` to receive the API key
-    that you will use to authenticate the API calls.
-
-    You will also receive an email with further instructions, including a fake
-    Fiscal Code that you will be able to use to send test messages. Messages
-    sent to the fake Fiscal Code will be notified to the email address used
-    during the registration process on the developer portal.
-
-    # Messages
-
-    ## What is a message
-
-    Messages are the primary form of communication enabled by the IO
-    APIs. Messages are **personal** communications directed to a
-    **specific citizen**. You will not be able to use this API to broadcast a
-    message to a group of citizens, you will have to create and send a specific,
-    personalized message to each citizen you want to communicate to.
-
-    The recipient of the message (i.e. a citizen) is identified trough his
-    [Fiscal Code](https://it.wikipedia.org/wiki/Codice_fiscale).
-
-    ## Message format
-
-    A message is conceptually very similar to an email and, in its simplest form,
-    is composed of the following attributes:
-
-      * A required `subject`: a short description of the topic.
-      * A required `markdown` body: a Markdown representation of the body (see
-        below on what Markdown tags are allowed).
-      * An optional `payment_data`: in case the message is a payment request,
-        the _payment data_ will enable the recipient to pay the requested amount
-        via [PagoPA](https://www.agid.gov.it/it/piattaforme/pagopa).
-      * An optional `due_date`: a _due date_ that let the recipient
-        add a reminder when receiving the message. The format for all
-        dates is [ISO8601](https://it.wikipedia.org/wiki/ISO_8601) with time
-        information and UTC timezone (ie. "2018-10-13T00:00:00.000Z").
-      * An optional `feature_level_type`: the kind of the submitted message.
-
-        It can be:
-        - `STANDARD` for normal messages;
-        - `ADVANCED` to enable premium features.
-        
-        Default is `STANDARD`.
-
-    ## Allowed Markdown formatting
-
-    Not all Markdown formatting is currently available. Currently you can use
-    the following formatting:
-
-      * Headings
-      * Text stylings (bold, italic, etc...)
-      * Lists (bullet and numbered)
-
-    ## Sending a message to a citizen
-
-    Not every citizen will be interested in what you have to say and not every
-    citizen you want to communicate to will be registered on IO.
-    For this reason, before sending a message you need
-    to check whether the recipient is registered on the platform and
-    that he has not yet opted out from receiving messages from you.
-
-    The process for sending a message is made of 3 steps:
-
-      1. Call [getProfile](#operation/getProfile): if the profile does not exist
-         (i.e. you get a 404 response) or if the recipient has opted-out from
-         your service (the response contains `sender_allowed: false`), you
-         cannot send the message and you must stop here.
-      1. Call [submitMessageforUser](#operation/submitMessageforUser) to submit
-         a new message.
-      1. (optional) Call [getMessage](#operation/getMessage) to check whether
-         the message has been notified to the recipient.
-
-host: api.io.pagopa.it
-basePath: "/api/v1"
-schemes:
-  - https
+servers:
+- url: https://api.io.pagopa.it/api/v1
 security:
-  - SubscriptionKey: []
+- SubscriptionKey: []
 paths:
-  "/legal-messages/{legalmail}":
+  /legal-messages/{legalmail}:
     post:
-      operationId: submitLegalMessageforUserWithFiscalCodeInBodyOnBehalfOfService
-      summary: Submit a Legal Message passing the user fiscal_code in the request body
+      summary: Submit a Legal Message passing the user fiscal_code in the request
+        body
       description: |-
         Submits a legal message to a user on behalf of a service identitfied by legalMail
         On error, the reason is returned in the response payload.
+      operationId: submitLegalMessageforUserWithFiscalCodeInBodyOnBehalfOfService
       parameters:
-        - $ref: "#/parameters/LegalMail"
-        - name: message
-          in: body
-          schema:
-            $ref: "#/definitions/NewMessage"
-          x-examples:
-            application/json:
-              time_to_live: 3600
-              content:
-                subject: ipsum labore deserunt fugiat
-                markdown: |-
-                  Nullam dapibus metus sed elementum efficitur. Curabitur facilisis sagittis risus nec sodales.
-                  Vestibulum in eros sapien. Donec ac odio sit amet dui semper ornare eget nec odio. Pellentesque habitant
-                  morbi tristique senectus et netus et malesuada fames ac turpis egestas. Praesent nibh ex, mattis sit amet
-                  felis id, sodales euismod velit. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+      - $ref: '#/components/parameters/LegalMail'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewMessage'
+        required: false
       responses:
-        "201":
+        201:
           description: Message created.
-          schema:
-            $ref: '#/definitions/CreatedMessage'
           headers:
             Location:
-              type: string
               description: |-
                 Location (URL) of created message resource.
                 A GET request to this URL returns the message status and details.
-          examples:
+              schema:
+                type: string
+          content:
             application/json:
-              id: 01BX9NSMKVXXS5PSP2FATZMYYY
-        "400":
+              schema:
+                $ref: '#/components/schemas/CreatedMessage'
+              example:
+                id: 01BX9NSMKVXXS5PSP2FATZMYYY
+        400:
           description: Invalid payload.
-          schema:
-            $ref: "#/definitions/ProblemJson"
-          examples: {}
-        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        401:
           description: Unauthorized
-        '403':
+          content: {}
+        403:
           description: Forbidden.
-        '404':
+          content: {}
+        404:
           description: Not Found.
-        "429":
+          content: {}
+        429:
           description: Too many requests
-        "500":
+          content: {}
+        500:
           description: The message cannot be delivered.
-          schema:
-            $ref: "#/definitions/ProblemJson"
-  "/messages":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+      x-codegen-request-body-name: message
+  /messages:
     post:
-      operationId: submitMessageforUserWithFiscalCodeInBody
       summary: Submit a Message passing the user fiscal_code in the request body
       description: |-
         Submits a message to a user with STANDARD or ADVANCED features based on `feature_level_type` value.
@@ -170,53 +124,53 @@ paths:
         the sender MUST call `getProfile` and check that the profile exists
         (for the specified fiscal code) and that the `sender_allowed` field
         of the user's profile it set to `true`.
-      parameters:
-        - name: message
-          in: body
-          schema:
-            $ref: "#/definitions/NewMessage"
-          x-examples:
-            application/json:
-              time_to_live: 3600
-              content:
-                subject: ipsum labore deserunt fugiat
-                markdown: |-
-                  Nullam dapibus metus sed elementum efficitur. Curabitur facilisis sagittis risus nec sodales.
-                  Vestibulum in eros sapien. Donec ac odio sit amet dui semper ornare eget nec odio. Pellentesque habitant
-                  morbi tristique senectus et netus et malesuada fames ac turpis egestas. Praesent nibh ex, mattis sit amet
-                  felis id, sodales euismod velit. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+      operationId: submitMessageforUserWithFiscalCodeInBody
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewMessage'
+        required: false
       responses:
-        "201":
+        201:
           description: Message created.
-          schema:
-            $ref: '#/definitions/CreatedMessage'
           headers:
             Location:
-              type: string
               description: |-
                 Location (URL) of created message resource.
                 A GET request to this URL returns the message status and details.
-          examples:
+              schema:
+                type: string
+          content:
             application/json:
-              id: 01BX9NSMKVXXS5PSP2FATZMYYY
-        "400":
+              schema:
+                $ref: '#/components/schemas/CreatedMessage'
+              example:
+                id: 01BX9NSMKVXXS5PSP2FATZMYYY
+        400:
           description: Invalid payload.
-          schema:
-            $ref: "#/definitions/ProblemJson"
-          examples: {}
-        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        401:
           description: Unauthorized
-        '403':
+          content: {}
+        403:
           description: Forbidden.
-        "429":
+          content: {}
+        429:
           description: Too many requests
-        "500":
+          content: {}
+        500:
           description: The message cannot be delivered.
-          schema:
-            $ref: "#/definitions/ProblemJson"
-  "/messages/{fiscal_code}":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+      x-codegen-request-body-name: message
+  /messages/{fiscal_code}:
     post:
-      operationId: submitMessageforUser
       summary: Submit a Message passing the user fiscal_code as path parameter
       description: |-
         Submits a message to a user.
@@ -225,168 +179,190 @@ paths:
         the sender MUST call `getProfile` and check that the profile exists
         (for the specified fiscal code) and that the `sender_allowed` field
         of the user's profile it set to `true`.
+      operationId: submitMessageforUser
       parameters:
-        - $ref: "#/parameters/FiscalCode"
-        - name: message
-          in: body
-          schema:
-            $ref: "#/definitions/NewMessage"
-          x-examples:
-            application/json:
-              time_to_live: 3600
-              content:
-                subject: ipsum labore deserunt fugiat
-                markdown: |-
-                  Nullam dapibus metus sed elementum efficitur. Curabitur facilisis sagittis risus nec sodales.
-                  Vestibulum in eros sapien. Donec ac odio sit amet dui semper ornare eget nec odio. Pellentesque habitant
-                  morbi tristique senectus et netus et malesuada fames ac turpis egestas. Praesent nibh ex, mattis sit amet
-                  felis id, sodales euismod velit. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+      - $ref: '#/components/parameters/FiscalCode'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewMessage'
+        required: false
       responses:
-        "201":
+        201:
           description: Message created.
-          schema:
-            type: object
-            properties:
-              id:
-                type: string
-                description: The identifier of the created message.
           headers:
             Location:
-              type: string
               description: |-
                 Location (URL) of created message resource.
                 A GET request to this URL returns the message status and details.
-          examples:
+              schema:
+                type: string
+          content:
             application/json:
-              id: 01BX9NSMKVXXS5PSP2FATZMYYY
-        "400":
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: The identifier of the created message.
+              example:
+                id: 01BX9NSMKVXXS5PSP2FATZMYYY
+        400:
           description: Invalid payload.
-          schema:
-            $ref: "#/definitions/ProblemJson"
-          examples: {}
-        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        401:
           description: Unauthorized
-        '403':
+          content: {}
+        403:
           description: Forbidden.
-        "429":
+          content: {}
+        429:
           description: Too many requests
-        "500":
+          content: {}
+        500:
           description: The message cannot be delivered.
-          schema:
-            $ref: "#/definitions/ProblemJson"
-  "/messages/{fiscal_code}/{id}":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+      x-codegen-request-body-name: message
+  /messages/{fiscal_code}/{id}:
     get:
-      operationId: getMessage
       summary: Get Message
       description: |-
         The previously created message with the provided message ID is
         returned. With right permission and `ADVANCED` feature level type
         related to the previously submitted message, also read and payment
         status infos (when applicable) are returned.
+      operationId: getMessage
       parameters:
-        - $ref: "#/parameters/FiscalCode"
-        - name: id
-          in: path
+      - $ref: '#/components/parameters/FiscalCode'
+      - name: id
+        in: path
+        description: The ID of the message.
+        required: true
+        schema:
           type: string
-          required: true
-          description: The ID of the message.
       responses:
-        "200":
+        200:
           description: Message found.
-          schema:
-            $ref: "#/definitions/ExternalMessageResponseWithContent"
-          examples:
+          content:
             application/json:
-              status: PROCESSED
-              message:
-                id: 01BX9NSMKAAAS5PSP2FATZM6BQ
-                fiscal_code: QXJNTX9RCRVD6V4O
-                time_to_live: 3600
-                content:
-                  subject: message subject, aliquip sint nulla in estinut
-                  markdown: |-
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas et mollis felis.
-                    Vivamus orci nisl, commodo ut sodales ut, eleifend a libero. Donec dapibus, turpis in mattis tempor,
-                    risus nunc malesuada ex, non aliquet metus nunc a lacus. Aenean in arcu vitae nisl porta
-                    fermentum nec non nibh. Phasellus tortor tellus, semper in metus eget, eleifend
-                    laoreet nibh. Aenean feugiat lectus ut nisl eleifend gravida.
-                sender_service_id: 01BX9NSMKVXXS5PSP2FATZM6QX
-              notification:
-                email: QUEUED
-        "401":
+              schema:
+                $ref: '#/components/schemas/ExternalMessageResponseWithContent'
+              example:
+                status: PROCESSED
+                message:
+                  id: 01BX9NSMKAAAS5PSP2FATZM6BQ
+                  fiscal_code: QXJNTX9RCRVD6V4O
+                  time_to_live: 3600
+                  content:
+                    subject: message subject, aliquip sint nulla in estinut
+                    markdown: |-
+                      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas et mollis felis.
+                      Vivamus orci nisl, commodo ut sodales ut, eleifend a libero. Donec dapibus, turpis in mattis tempor,
+                      risus nunc malesuada ex, non aliquet metus nunc a lacus. Aenean in arcu vitae nisl porta
+                      fermentum nec non nibh. Phasellus tortor tellus, semper in metus eget, eleifend
+                      laoreet nibh. Aenean feugiat lectus ut nisl eleifend gravida.
+                  sender_service_id: 01BX9NSMKVXXS5PSP2FATZM6QX
+                notification:
+                  email: QUEUED
+        401:
           description: Unauthorized
-        '403':
+          content: {}
+        403:
           description: Forbidden.
-        "404":
+          content: {}
+        404:
           description: No message found for the provided ID.
-          schema:
-            $ref: "#/definitions/ProblemJson"
-        "429":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        429:
           description: Too many requests
-  "/profiles":
+          content: {}
+  /profiles:
     post:
-      operationId: getProfileByPOST
       summary: Get a User Profile using POST
       description: |-
         Returns the preferences for the user identified by the
         fiscal code provided in the request body. The field `sender_allowed` is set fo `false` in case
         the service which is calling the API has been disabled by the user.
+      operationId: getProfileByPOST
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FiscalCodePayload'
+        required: false
       responses:
-        "200":
+        200:
           description: Found.
-          schema:
-            $ref: "#/definitions/LimitedProfile"
-          examples:
+          content:
             application/json:
-              email: foobar@example.com
-              version: 1
-        "401":
+              schema:
+                $ref: '#/components/schemas/LimitedProfile'
+              example:
+                email: foobar@example.com
+                version: 1
+        401:
           description: Unauthorized
-        '403':
+          content: {}
+        403:
           description: Forbidden.
-        "404":
+          content: {}
+        404:
           description: No user found for the provided fiscal code.
-          schema:
-            $ref: "#/definitions/ProblemJson"
-        "429":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        429:
           description: Too many requests
-      parameters:
-        - name: payload
-          in: body
-          schema:
-            $ref: "#/definitions/FiscalCodePayload"
-  "/profiles/{fiscal_code}":
+          content: {}
+      x-codegen-request-body-name: payload
+  /profiles/{fiscal_code}:
     get:
-      operationId: getProfile
       summary: Get a User Profile
       description: |-
         Returns the preferences for the user identified by the provided
         fiscal code. The field `sender_allowed` is set fo `false` in case
         the service which is calling the API has been disabled by the user.
-      responses:
-        "200":
-          description: Found.
-          schema:
-            $ref: "#/definitions/LimitedProfile"
-          examples:
-            application/json:
-              email: foobar@example.com
-              version: 1
-        "401":
-          description: Unauthorized
-        '403':
-          description: Forbidden.
-        "404":
-          description: No user found for the provided fiscal code.
-          schema:
-            $ref: "#/definitions/ProblemJson"
-        "429":
-          description: Too many requests
+      operationId: getProfile
       parameters:
-        - $ref: "#/parameters/FiscalCode"
-  "/subscriptions-feed/{date}":
+      - $ref: '#/components/parameters/FiscalCode'
+      responses:
+        200:
+          description: Found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LimitedProfile'
+              example:
+                email: foobar@example.com
+                version: 1
+        401:
+          description: Unauthorized
+          content: {}
+        403:
+          description: Forbidden.
+          content: {}
+        404:
+          description: No user found for the provided fiscal code.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        429:
+          description: Too many requests
+          content: {}
+  /subscriptions-feed/{date}:
     get:
-      operationId: getSubscriptionsFeedForDate
       summary: Get Subscriptions Feed
       description: |-
         Returns the **hashed fiscal codes** of users that **subscribed to** or
@@ -413,145 +389,176 @@ paths:
         This feed serves the purpose of minimizing data processing activities
         while preserving optimization of API calls and data accuracy.
         Organizations allowed are required to query this feed everyday.
+      operationId: getSubscriptionsFeedForDate
+      parameters:
+      - $ref: '#/components/parameters/DateUTC'
       responses:
-        "200":
+        200:
           description: Found.
-          schema:
-            $ref: "#/definitions/SubscriptionsFeed"
-          examples:
+          content:
             application/json:
-              dateUTC: "2019-09-03"
-              subscriptions:
-                [
-                  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-                ]
-              unsubscriptions: []
-        "401":
+              schema:
+                $ref: '#/components/schemas/SubscriptionsFeed'
+              example:
+                dateUTC: 2019-09-03
+                subscriptions:
+                - e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+                unsubscriptions: []
+        401:
           description: Unauthorized
-        '403':
+          content: {}
+        403:
           description: Forbidden.
-        "404":
+          content: {}
+        404:
           description: Subscriptions feed not available yet.
-          schema:
-            $ref: "#/definitions/ProblemJson"
-        "429":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        429:
           description: Too many requests
-      parameters:
-        - $ref: "#/parameters/DateUTC"
-  "/services":
-    post:
-      operationId: createService
-      summary: Create Service
-      description: |
-        Create a new Service with the attributes provided in the request payload.
-      parameters:
-        - in: body
-          name: body
-          description: |-
-            A service can invoke the IO API by providing the relative API key
-            (every service has an associated primary and secondary API key).
-            Through the API a service can send messages to the IO users
-            that haven't opted out from it. Service metadata are used
-            to qualify the sender of these messages to the recipient.
-          schema:
-            "$ref": "#/definitions/ServicePayload"
-      responses:
-        "200":
-          description: Service created.
-          schema:
-            "$ref": "#/definitions/ServiceWithSubscriptionKeys"
-        "400":
-          description: Invalid payload.
-          schema:
-            $ref: "#/definitions/ProblemJson"
-        "401":
-          description: Unauthorized.
-        '403':
-          description: Forbidden.
-        "429":
-          description: Too many requests.
-        "500":
-          description: The service cannot be created.
-          schema:
-            $ref: "#/definitions/ProblemJson"
+          content: {}
+  /services:
     get:
-      operationId: getUserServices
       summary: Get User Services
       description: |
         Retrieve the identifiers of the services owned by the calling user
+      operationId: getUserServices
       responses:
-        "200":
+        200:
           description: The list of service ids.
-          schema:
-            "$ref": "#/definitions/ServiceIdCollection"
-        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceIdCollection'
+        401:
           description: Unauthorized.
-        "429":
+          content: {}
+        429:
           description: Too many requests.
-  "/services/{service_id}":
-    parameters:
-      - name: service_id
-        in: path
-        type: string
-        required: true
-        description: The ID of an existing Service.
+          content: {}
+    post:
+      summary: Create Service
+      description: |
+        Create a new Service with the attributes provided in the request payload.
+      operationId: createService
+      requestBody:
+        description: |-
+          A service can invoke the IO API by providing the relative API key
+          (every service has an associated primary and secondary API key).
+          Through the API a service can send messages to the IO users
+          that haven't opted out from it. Service metadata are used
+          to qualify the sender of these messages to the recipient.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServicePayload'
+        required: false
+      responses:
+        200:
+          description: Service created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceWithSubscriptionKeys'
+        400:
+          description: Invalid payload.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        401:
+          description: Unauthorized.
+          content: {}
+        403:
+          description: Forbidden.
+          content: {}
+        429:
+          description: Too many requests.
+          content: {}
+        500:
+          description: The service cannot be created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+      x-codegen-request-body-name: body
+  /services/{service_id}:
     get:
-      operationId: getService
       summary: Get Service
       description: |
         Retrieve a previously created service with the provided service ID.
         This API operation needs the same API key of the service being retrieved
         otherwise 403 forbidden will be returned to the caller.
+      operationId: getService
       responses:
-        "200":
+        200:
           description: Service found.
-          schema:
-            "$ref": "#/definitions/ServiceWithSubscriptionKeys"
-        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceWithSubscriptionKeys'
+        401:
           description: Unauthorized.
-        "403":
+          content: {}
+        403:
           description: Forbidden.
-        "404":
+          content: {}
+        404:
           description: No service found for the provided ID.
-        "429":
+          content: {}
+        429:
           description: Too many requests.
+          content: {}
     put:
-      operationId: updateService
       summary: Update Service
       description: |-
         Update a previously created service with the provided service ID
         This API operation needs the same API key of the service being retrieved
         otherwise 403 forbidden will be returned to the caller.
-      parameters:
-        - in: body
-          name: body
-          description: The updated service payload.
-          schema:
-            "$ref": "#/definitions/ServicePayload"
+      operationId: updateService
+      requestBody:
+        description: The updated service payload.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServicePayload'
+        required: false
       responses:
-        "200":
+        200:
           description: Service updated.
-          schema:
-            "$ref": "#/definitions/ServiceWithSubscriptionKeys"
-        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceWithSubscriptionKeys'
+        401:
           description: Unauthorized.
-        "403":
+          content: {}
+        403:
           description: Forbidden.
-        "404":
+          content: {}
+        404:
           description: No service found for the provided ID.
-        "429":
+          content: {}
+        429:
           description: Too many requests.
-        "500":
+          content: {}
+        500:
           description: The service cannot be updated.
-          schema:
-            $ref: "#/definitions/ProblemJson"
-  "/services/{service_id}/logo":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+      x-codegen-request-body-name: body
     parameters:
-      - name: service_id
-        in: path
+    - name: service_id
+      in: path
+      description: The ID of an existing Service.
+      required: true
+      schema:
         type: string
-        required: true
-        description: The ID of an existing Service.
+  /services/{service_id}/logo:
     put:
       summary: Upload service logo.
       description: |
@@ -559,32 +566,48 @@ paths:
         This API operation needs the same API key of the service being retrieved
         otherwise 403 forbidden will be returned to the caller.
       operationId: uploadServiceLogo
-      parameters:
-        - name: body
-          in: body
-          required: true
-          schema:
-            $ref: "#/definitions/Logo"
-          description: A base64 string representation of the service logo PNG image.
-            It can be the service own logo or the organization logo.
+      requestBody:
+        description: A base64 string representation of the service logo PNG image.
+          It can be the service own logo or the organization logo.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Logo'
+        required: true
       responses:
-        "200":
+        200:
           description: Logo uploaded.
-        "400":
+          content: {}
+        400:
           description: Invalid payload.
-          schema:
-            $ref: "#/definitions/ProblemJson"
-        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        401:
           description: Unauthorized.
-        "403":
+          content: {}
+        403:
           description: Forbidden.
-        "404":
+          content: {}
+        404:
           description: No service found for the provided ID.
-        "500":
+          content: {}
+        500:
           description: The service logo cannot be uploaded.
-          schema:
-            $ref: "#/definitions/ProblemJson"
-  "/services/{service_id}/keys":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+      x-codegen-request-body-name: body
+    parameters:
+    - name: service_id
+      in: path
+      description: The ID of an existing Service.
+      required: true
+      schema:
+        type: string
+  /services/{service_id}/keys:
     put:
       summary: Regenerate Service Key
       description: |-
@@ -593,378 +616,420 @@ paths:
         otherwise 403 forbidden will be returned to the caller.
       operationId: regenerateServiceKey
       parameters:
-        - name: service_id
-          in: path
+      - name: service_id
+        in: path
+        description: The ID of an existing Service.
+        required: true
+        schema:
           type: string
-          required: true
-          description: The ID of an existing Service.
-        - name: body
-          in: body
-          required: true
-          schema:
-            $ref: "#/definitions/SubscriptionKeyTypePayload"
-          description: The type of the key to be regenerated (PRIMARY_KEY or SECONDARY_KEY).
+      requestBody:
+        description: The type of the key to be regenerated (PRIMARY_KEY or SECONDARY_KEY).
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriptionKeyTypePayload'
+        required: true
       responses:
-        "200":
+        200:
           description: The subscription keys for the service.
-          schema:
-            $ref: "#/definitions/SubscriptionKeys"
-        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionKeys'
+        400:
           description: Invalid payload.
-          schema:
-            $ref: "#/definitions/ProblemJson"
-        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        403:
           description: Forbidden.
-        "404":
+          content: {}
+        404:
           description: Service not found.
-        "500":
+          content: {}
+        500:
           description: Cannot regenerate service key.
-          schema:
-            $ref: "#/definitions/ProblemJson"
-  "/organizations/{organization_fiscal_code}/logo":
-    parameters:
-      - $ref: "#/parameters/OrganizationFiscalCode"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+      x-codegen-request-body-name: body
+  /organizations/{organization_fiscal_code}/logo:
     put:
       summary: Upload organization logo.
       description: |
         Upsert a logo for an Organization.
       operationId: uploadOrganizationLogo
-      parameters:
-        - name: body
-          in: body
-          required: true
-          schema:
-            $ref: "#/definitions/Logo"
-          description: A base64 string representation of the organization logo PNG image.
+      requestBody:
+        description: A base64 string representation of the organization logo PNG image.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Logo'
+        required: true
       responses:
-        "202":
+        202:
           description: Logo uploaded.
-        "400":
+          content: {}
+        400:
           description: Invalid payload.
-          schema:
-            $ref: "#/definitions/ProblemJson"
-        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        401:
           description: Unauthorized.
-        "403":
+          content: {}
+        403:
           description: Forbidden.
-        "429":
+          content: {}
+        429:
           description: Too many requests.
-        "500":
+          content: {}
+        500:
           description: The organization logo cannot be uploaded.
-          schema:
-            $ref: "#/definitions/ProblemJson"
-  "/activations/":
-    post:
-      operationId: getServiceActivationByPOST
-      summary: Get a Service Activation for a User
-      description: |-
-        Returns the current Activation for a couple Service/User
-      responses:
-        "200":
-          description: Found.
-          schema:
-            $ref: "#/definitions/Activation"
-          examples:
+          content:
             application/json:
-              serviceId: AAAAAAAAAAAAAAA
-              fiscalCode: AAAAAA00B00C000D
-              status: ACTIVE
-              version: 1
-        "401":
-          description: Unauthorized
-        '403':
-          description: Forbidden.
-        "404":
-          description: No user activation found for the provided fiscal code.
-          schema:
-            $ref: "#/definitions/ProblemJson"
-        "429":
-          description: Too many requests
-        "500":
-          description: Internal server error retrieving the Activation
-          schema:
-            $ref: "#/definitions/ProblemJson"
-      parameters:
-        - name: payload
-          in: body
-          schema:
-            $ref: "#/definitions/FiscalCodePayload"
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+      x-codegen-request-body-name: body
+    parameters:
+    - $ref: '#/components/parameters/OrganizationFiscalCode'
+  /activations/:
     put:
-      operationId: upsertServiceActivation
       summary: Upsert a Service Activation for a User
-      description: |-
-        Create or update an Activation for a couple Service/User
+      description: Create or update an Activation for a couple Service/User
+      operationId: upsertServiceActivation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActivationPayload'
+        required: false
       responses:
-        "200":
+        200:
           description: Found.
-          schema:
-            $ref: "#/definitions/Activation"
-          examples:
+          content:
             application/json:
-              serviceId: AAAAAAAAAAAAAAA
-              fiscalCode: AAAAAA00B00C000D
-              status: ACTIVE
-              version: 1
-        "401":
+              schema:
+                $ref: '#/components/schemas/Activation'
+              example:
+                serviceId: AAAAAAAAAAAAAAA
+                fiscalCode: AAAAAA00B00C000D
+                status: ACTIVE
+                version: 1
+        401:
           description: Unauthorized
-        '403':
+          content: {}
+        403:
           description: Forbidden.
-        "404":
+          content: {}
+        404:
           description: No user activation found for the provided fiscal code.
-          schema:
-            $ref: "#/definitions/ProblemJson"
-        "429":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        429:
           description: Too many requests
-        "500":
+          content: {}
+        500:
           description: The activation cannot be created or updated
-          schema:
-            $ref: "#/definitions/ProblemJson"
-      parameters:
-        - name: payload
-          in: body
-          schema:
-            $ref: "#/definitions/ActivationPayload"
-definitions:
-  ActivationStatus:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ActivationStatus"
-  Activation:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/Activation"
-  ActivationPayload:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ActivationPayload"
-  FiscalCodePayload:
-    type: object
-    properties:
-      fiscal_code:
-        $ref: "#/definitions/FiscalCode"
-    required:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+      x-codegen-request-body-name: payload
+    post:
+      summary: Get a Service Activation for a User
+      description: Returns the current Activation for a couple Service/User
+      operationId: getServiceActivationByPOST
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FiscalCodePayload'
+        required: false
+      responses:
+        200:
+          description: Found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activation'
+              example:
+                serviceId: AAAAAAAAAAAAAAA
+                fiscalCode: AAAAAA00B00C000D
+                status: ACTIVE
+                version: 1
+        401:
+          description: Unauthorized
+          content: {}
+        403:
+          description: Forbidden.
+          content: {}
+        404:
+          description: No user activation found for the provided fiscal code.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+        429:
+          description: Too many requests
+          content: {}
+        500:
+          description: Internal server error retrieving the Activation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemJson'
+      x-codegen-request-body-name: payload
+components:
+  schemas:
+    ActivationStatus:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ActivationStatus
+    Activation:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/Activation
+    ActivationPayload:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ActivationPayload
+    FiscalCodePayload:
+      required:
       - fiscal_code
-  SubscriptionsFeed:
-    type: object
-    properties:
-      dateUTC:
-        $ref: "#/definitions/DateUTC"
-      subscriptions:
-        $ref: "#/definitions/SubscriptionsList"
-      unsubscriptions:
-        $ref: "#/definitions/SubscriptionsList"
-    required:
+      type: object
+      properties:
+        fiscal_code:
+          $ref: '#/components/schemas/FiscalCode'
+    SubscriptionsFeed:
+      required:
       - dateUTC
       - subscriptions
       - unsubscriptions
-  SubscriptionsList:
-    type: array
-    items:
-      $ref: "#/definitions/FiscalCodeHash"
-  FiscalCodeHash:
-    type: string
-    maxLength: 16
-    minLength: 16
-    description: |-
-      To avoid sharing the citizens fiscal codes, the API will
-      provide the hex encoding of the SHA256 hash of the upper case fiscal code.
-    pattern: "[0-9a-f]{64}"
-    x-example: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-  DateUTC:
-    type: string
-    maxLength: 10
-    minLength: 10
-    description: A date in the format YYYY-MM-DD.
-    pattern: "[0-9]{4}-[0-9]{2}-[0-9]{2}"
-    x-example: "2019-09-15"
-  ProblemJson:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ProblemJson"
-  NotificationChannelStatusValue:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/NotificationChannelStatusValue"
-  MessageResponseWithContent:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/MessageResponseWithContent"
-  ExternalMessageResponseWithContent:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ExternalMessageResponseWithContent"
-  MessageResponseNotificationStatus:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/MessageResponseNotificationStatus"
-  RejectedMessageStatusValue:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/RejectedMessageStatusValue"
-  NotRejectedMessageStatusValue:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/NotRejectedMessageStatusValue"
-  MessageStatusValue:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/MessageStatusValue"
-  ExternalCreatedMessageWithContent:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ExternalCreatedMessageWithContent"
-  CreatedMessageWithContent:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/CreatedMessageWithContent"
-  EUCovidCert:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/EUCovidCert"
-  ThirdPartyData: 
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ThirdPartyData"
-  OrganizationFiscalCode:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/OrganizationFiscalCode"
-  FiscalCode:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/FiscalCode"
-  LimitedProfile:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/LimitedProfile"
-  Timestamp:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/Timestamp"
-  TimeToLiveSeconds:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/TimeToLiveSeconds"
-  PrescriptionData:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PrescriptionData"
-  PrescriptionNRE:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PrescriptionNRE"
-  PrescriptionIUP:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PrescriptionIUP"
-  PrescriberFiscalCode:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PrescriberFiscalCode"
-  MessageContentBase:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/MessageContentBase"
-  MessageContent:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/MessageContent"
-  NewMessageContent:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/NewMessageContent"
-  NewMessage:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/NewMessage"
-  FeatureLevelType:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/FeatureLevelType"
-  ReadStatus:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ReadStatus"
-  PaymentStatus:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PaymentStatus"
-  CIDR:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/CIDR"
-  ServicePayload:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ServicePayload"
-  HiddenServicePayload:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/HiddenServicePayload"
-  VisibleServicePayload:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/VisibleServicePayload"
-  ExtendedServicePayload:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ExtendedServicePayload"
-  CommonServicePayload:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/CommonServicePayload"
-  Service:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/Service"
-  ServiceMetadata:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ServiceMetadata"
-  StandardServiceMetadata:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/StandardServiceMetadata"
-  SpecialServiceMetadata:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/SpecialServiceMetadata"
-  CommonServiceMetadata:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/CommonServiceMetadata"
-  ServiceScope:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ServiceScope"
-  ServiceId:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ServiceId"
-  ServiceName:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ServiceName"
-  OrganizationName:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/OrganizationName"
-  DepartmentName:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/DepartmentName"
-  PaymentDataBase:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PaymentDataBase"
-  PaymentData:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PaymentData"
-  Payee:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/Payee"
-  PaymentDataWithRequiredPayee:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PaymentDataWithRequiredPayee"
-  LegalData:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/LegalData"
-  SubscriptionKeys:
-    type: object
-    properties:
-      primary_key:
-        type: string
-      secondary_key:
-        type: string
-    required:
+      type: object
+      properties:
+        dateUTC:
+          $ref: '#/components/schemas/DateUTC'
+        subscriptions:
+          $ref: '#/components/schemas/SubscriptionsList'
+        unsubscriptions:
+          $ref: '#/components/schemas/SubscriptionsList'
+    SubscriptionsList:
+      type: array
+      items:
+        $ref: '#/components/schemas/FiscalCodeHash'
+    FiscalCodeHash:
+      maxLength: 16
+      minLength: 16
+      pattern: '[0-9a-f]{64}'
+      type: string
+      description: |-
+        To avoid sharing the citizens fiscal codes, the API will
+        provide the hex encoding of the SHA256 hash of the upper case fiscal code.
+      x-example: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    DateUTC:
+      maxLength: 10
+      minLength: 10
+      pattern: '[0-9]{4}-[0-9]{2}-[0-9]{2}'
+      type: string
+      description: A date in the format YYYY-MM-DD.
+      x-example: 2019-09-15
+    ProblemJson:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ProblemJson
+    NotificationChannelStatusValue:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/NotificationChannelStatusValue
+    MessageResponseWithContent:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/MessageResponseWithContent
+    ExternalMessageResponseWithContent:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ExternalMessageResponseWithContent
+    MessageResponseNotificationStatus:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/MessageResponseNotificationStatus
+    RejectedMessageStatusValue:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/RejectedMessageStatusValue
+    NotRejectedMessageStatusValue:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/NotRejectedMessageStatusValue
+    MessageStatusValue:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/MessageStatusValue
+    ExternalCreatedMessageWithContent:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ExternalCreatedMessageWithContent
+    CreatedMessageWithContent:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/CreatedMessageWithContent
+    EUCovidCert:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/EUCovidCert
+    ThirdPartyData:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ThirdPartyData
+    OrganizationFiscalCode:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/OrganizationFiscalCode
+    FiscalCode:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/FiscalCode
+    LimitedProfile:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/LimitedProfile
+    Timestamp:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/Timestamp
+    TimeToLiveSeconds:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/TimeToLiveSeconds
+    PrescriptionData:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PrescriptionData
+    PrescriptionNRE:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PrescriptionNRE
+    PrescriptionIUP:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PrescriptionIUP
+    PrescriberFiscalCode:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PrescriberFiscalCode
+    MessageContentBase:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/MessageContentBase
+    MessageContent:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/MessageContent
+    NewMessageContent:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/NewMessageContent
+    NewMessage:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/NewMessage
+    FeatureLevelType:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/FeatureLevelType
+    ReadStatus:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ReadStatus
+    PaymentStatus:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PaymentStatus
+    CIDR:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/CIDR
+    ServicePayload:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ServicePayload
+    HiddenServicePayload:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/HiddenServicePayload
+    VisibleServicePayload:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/VisibleServicePayload
+    ExtendedServicePayload:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ExtendedServicePayload
+    CommonServicePayload:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/CommonServicePayload
+    Service:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/Service
+    ServiceMetadata:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ServiceMetadata
+    StandardServiceMetadata:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/StandardServiceMetadata
+    SpecialServiceMetadata:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/SpecialServiceMetadata
+    CommonServiceMetadata:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/CommonServiceMetadata
+    ServiceScope:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ServiceScope
+    ServiceId:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ServiceId
+    ServiceName:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ServiceName
+    OrganizationName:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/OrganizationName
+    DepartmentName:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/DepartmentName
+    PaymentDataBase:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PaymentDataBase
+    PaymentData:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PaymentData
+    Payee:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/Payee
+    PaymentDataWithRequiredPayee:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PaymentDataWithRequiredPayee
+    LegalData:
+      $ref: ../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/LegalData
+    SubscriptionKeys:
+      required:
       - primary_key
       - secondary_key
-  ServiceWithSubscriptionKeys:
-    allOf:
-      - $ref: "#/definitions/Service"
-      - $ref: "#/definitions/SubscriptionKeys"
-  ServiceIdCollection:
-    type: object
-    properties:
-      items:
-        type: array
-        items:
-          $ref: "#/definitions/ServiceId"
-    required:
+      type: object
+      properties:
+        primary_key:
+          type: string
+        secondary_key:
+          type: string
+    ServiceWithSubscriptionKeys:
+      allOf:
+      - $ref: '#/components/schemas/Service'
+      - $ref: '#/components/schemas/SubscriptionKeys'
+    ServiceIdCollection:
+      required:
       - items
-  Logo:
-    type: object
-    properties:
-      logo:
-        type: string
-        format: byte
-        minLength: 1
-    required:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceId'
+    Logo:
+      required:
       - logo
-  SubscriptionKeyTypePayload:
-    type: object
-    properties:
-      key_type:
-        $ref: "#/definitions/SubscriptionKeyType"
-    required:
+      type: object
+      properties:
+        logo:
+          minLength: 1
+          pattern: ^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$
+          type: string
+          format: byte
+    SubscriptionKeyTypePayload:
+      required:
       - key_type
-  SubscriptionKeyType:
-    type: string
-    x-extensible-enum:
+      type: object
+      properties:
+        key_type:
+          $ref: '#/components/schemas/SubscriptionKeyType'
+    SubscriptionKeyType:
+      type: string
+      x-extensible-enum:
       - PRIMARY_KEY
       - SECONDARY_KEY
-  CreatedMessage:
-    type: object
-    properties:
-      id:
+    CreatedMessage:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The identifier of the created message.
+  parameters:
+    LegalMail:
+      name: legalmail
+      in: path
+      description: The legal mail related to a legal message' s sender.
+      required: true
+      schema:
         type: string
-        description: The identifier of the created message.
-responses: {}
-parameters:
-  LegalMail:
-    name: legalmail
-    in: path
-    type: string
-    required: true
-    description: The legal mail related to a legal message' s sender.
-    format: EmailString
-    x-example: demo@pec.it
-    x-import: italia-ts-commons/lib/strings
-  FiscalCode:
-    name: fiscal_code
-    in: path
-    type: string
-    maxLength: 16
-    minLength: 16
-    required: true
-    description: The fiscal code of the user, all upper case.
-    pattern: "[A-Z]{6}[0-9LMNPQRSTUV]{2}[ABCDEHLMPRST][0-9LMNPQRSTUV]{2}[A-Z][0-9LMNPQRSTUV]{3}[A-Z]"
-    x-example: SPNDNL80R13C555X
-  DateUTC:
-    name: date
-    in: path
-    type: string
-    maxLength: 10
-    minLength: 10
-    required: true
-    description: A date in the format YYYY-MM-DD.
-    pattern: "[0-9]{4}-[0-9]{2}-[0-9]{2}"
-    x-example: "2019-09-15"
-  OrganizationFiscalCode:
-    name: organization_fiscal_code
-    in: path
-    type: string
-    required: true
-    description: Organization fiscal code.
-    format: OrganizationFiscalCode
-    x-import: italia-ts-commons/lib/strings
-consumes:
-  - application/json
-produces:
-  - application/json
-securityDefinitions:
-  SubscriptionKey:
-    type: apiKey
-    name: Ocp-Apim-Subscription-Key
-    in: header
-    description: The API key obtained through the developer portal or the getService operation.
+        format: EmailString
+        x-import: italia-ts-commons/lib/strings
+      example: demo@pec.it
+      x-import: italia-ts-commons/lib/strings
+    FiscalCode:
+      name: fiscal_code
+      in: path
+      description: The fiscal code of the user, all upper case.
+      required: true
+      schema:
+        maxLength: 16
+        minLength: 16
+        pattern: '[A-Z]{6}[0-9LMNPQRSTUV]{2}[ABCDEHLMPRST][0-9LMNPQRSTUV]{2}[A-Z][0-9LMNPQRSTUV]{3}[A-Z]'
+        type: string
+      example: SPNDNL80R13C555X
+    DateUTC:
+      name: date
+      in: path
+      description: A date in the format YYYY-MM-DD.
+      required: true
+      schema:
+        maxLength: 10
+        minLength: 10
+        pattern: '[0-9]{4}-[0-9]{2}-[0-9]{2}'
+        type: string
+      example: 2019-09-15
+    OrganizationFiscalCode:
+      name: organization_fiscal_code
+      in: path
+      description: Organization fiscal code.
+      required: true
+      schema:
+        type: string
+        format: OrganizationFiscalCode
+        x-import: italia-ts-commons/lib/strings
+      x-import: italia-ts-commons/lib/strings
+  securitySchemes:
+    SubscriptionKey:
+      type: apiKey
+      description: The API key obtained through the developer portal or the getService
+        operation.
+      name: Ocp-Apim-Subscription-Key
+      in: header
