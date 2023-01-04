@@ -769,10 +769,10 @@
     fp-ts "^2.10.5"
     io-ts "^2.2.16"
 
-"@pagopa/io-functions-admin-sdk@^0.32.1":
-  version "0.32.1"
-  resolved "https://registry.yarnpkg.com/@pagopa/io-functions-admin-sdk/-/io-functions-admin-sdk-0.32.1.tgz#f1877f65c3a48f1296f973456d10fbf7431a4237"
-  integrity sha512-aAdl6kigkHkU693qoCgVSgetSeqWIAbX3Rv3kzO3gSDK0EzuIcUuqWcR7EvGtrc3Cc+ULBnGDVdlIFY7ReCQ0g==
+"@pagopa/io-functions-admin-sdk@x":
+  version "0.32.4"
+  resolved "https://registry.yarnpkg.com/@pagopa/io-functions-admin-sdk/-/io-functions-admin-sdk-0.32.4.tgz#c009e534247bf785d7a22d40c2c4e996420d4062"
+  integrity sha512-txkOlcdGZ7puJlxbRMg3XYNTyuN+wJfL+t1Xaw2HkbvM0xGaFvK6wjDyfJr6x5THytfZz4SQlUMD5accPnjxnw==
   dependencies:
     "@pagopa/ts-commons" "^10.0.0"
     fp-ts "^2.10.5"
