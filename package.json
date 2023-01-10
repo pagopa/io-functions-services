@@ -21,7 +21,7 @@
     "generate:definitions": "rimraf ./generated/definitions && shx mkdir -p ./generated/definitions && gen-api-models --api-spec ./openapi/index.yaml --no-strict --out-dir ./generated/definitions",
     "generate:payment-updater": "rimraf generated/payment-updater && shx mkdir -p generated/payment-updater && gen-api-models --api-spec ./openapi/payment-updater.yaml --no-strict --out-dir ./generated/payment-updater --request-types --response-decoders --client",
     "openapi:bundle": "bundle-api-spec -i openapi/index.template.yaml -o openapi/index.yaml -V $npm_package_version",
-    "openapi:validate": "swagger-cli validate openapi/index.yaml",
+    "openapi:validate": "swagger-cli validate openapi/index.yaml && swagger-cli validate openapi/payment-updater.yaml",
     "dist:modules": "modclean -r -n default:safe && yarn install --production",
     "predeploy": "npm-run-all build dist:modules",
     "preversion": "auto-changelog  --config .auto-changelog.json --unreleased --commit-limit false --stdout --template preview.hbs",
