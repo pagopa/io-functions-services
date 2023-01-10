@@ -94,7 +94,7 @@ info:
   contact:
     name: PagoPA S.p.A.
     url: https://docs.pagopa.it/io-guida-tecnica/
-  version: 3.25.2
+  version: 3.25.3
   x-logo:
     url: https://io.italia.it/assets/img/io-logo-blue.svg
 servers:
