@@ -1,55 +1,82 @@
-swagger: '2.0'
+openapi: 3.0.1
 info:
-  description: Microservice JAVA API
   title: Microservice JAVA API
+  description: Microservice JAVA API
   version: 1.0.1
-host: 'localhost:9090'
-basePath: /api/v1/payment
-schemes:
-  - http
+servers:
+- url: http://localhost:9090/api/v1/payment
+security:
+- SubscriptionKey: []
+tags:
+- name: API  Payment
+  description: API  Payment
 paths:
-  '/check/messages/{messageId}':
+  /check/messages/{messageId}:
     get:
-      produces:
-        - application/json
-        - application/problem+json
+      tags:
+      - API  Payment
+      summary: Check Payment Message Update By MessageId
+      operationId: getMessagePayment
       parameters:
-        - description: payment's messageId
-          in: path
-          name: messageId
-          required: true
+      - name: messageId
+        in: path
+        description: payment's messageId
+        required: true
+        schema:
           type: string
       responses:
-        '200':
+        200:
           description: check if the message has been paid
-          schema:
-            $ref: '#/definitions/ApiPaymentMessage'
-        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiPaymentMessage'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiPaymentMessage'
+        400:
           description: Bad Request
-          schema:
-            $ref: '#/definitions/Problem'
-        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        401:
           description: Unauthorized
-          schema:
-            $ref: '#/definitions/Problem'
-        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        404:
           description: Not Found
-        '503':
+          content: {}
+        503:
           description: Service Unavailable
-          schema:
-            $ref: '#/definitions/Problem'
-      tags:
-        - API  Payment
-      operationId: getMessagePayment
-      summary: Check Payment Message Update By MessageId
-
-definitions:
-  ApiPaymentMessage:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+components:
+  schemas:
+    ApiPaymentMessage:
+      required:
+      - fiscalCode
+      - messageId
+      - noticeNumber
+      - paid
       type: object
       properties:
         messageId:
-          type: string
           minLength: 1
+          type: string
         paid:
           type: boolean
           default: false
@@ -60,47 +87,34 @@ definitions:
           type: number
           format: double
         fiscalCode:
-          type: string
           minLength: 1
+          type: string
         noticeNumber:
-          type: string
           minLength: 1
-      required:
-        - messageId
-        - paid
-        - fiscalCode
-        - noticeNumber
-  Problem:
-    properties:
-      error:
-        description: |
-          error description.
-        format: uri
-        type: string
-      path:
-        description: >
-          An absolute URI that identifies the specific occurrence of the
-          problem.
-          It may or may not yield further information if dereferenced.
-        type: string
-      status:
-        description: |
-          Status code description.
-        type: string
-      timestamp:
-        description: |
-          timestamp of the error
-        type: number
-    type: object
-
-securityDefinitions:
-  SubscriptionKey:
-    description: The API key to access this function app.
-    in: header
-    name: Ocp-Apim-Subscription-Key
-    type: apiKey
-security:
-  - SubscriptionKey: []
-tags:
-  - description: API  Payment
-    name: API  Payment
+          type: string
+    Problem:
+      type: object
+      properties:
+        error:
+          type: string
+          description: |
+            error description.
+          format: uri
+        path:
+          type: string
+          description: |
+            An absolute URI that identifies the specific occurrence of the problem. It may or may not yield further information if dereferenced.
+        status:
+          type: string
+          description: |
+            Status code description.
+        timestamp:
+          type: number
+          description: |
+            timestamp of the error
+  securitySchemes:
+    SubscriptionKey:
+      type: apiKey
+      description: The API key to access this function app.
+      name: Ocp-Apim-Subscription-Key
+      in: header
