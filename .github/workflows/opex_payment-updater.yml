@@ -1,10 +1,10 @@
-name: Opex Dashboard payment-updater
+name: Opex Dashboard function services payment-updater
 
 # Controls when the workflow will run
 on:
   push:
     branches:
-      - master
+      - opex-demo
     paths:
       - 'payment-updater.yaml'
       - '.github/workflows/opex_payment-updater.yml'

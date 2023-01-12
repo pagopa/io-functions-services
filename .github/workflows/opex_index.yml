@@ -1,10 +1,10 @@
-name: Opex Dashboard index
+name: Opex Dashboard function services index
 
 # Controls when the workflow will run
 on:
   push:
     branches:
-      - master
+      - opex-demo
     paths:
       - 'index.yaml'
       - '.github/workflows/opex_index.yml'
