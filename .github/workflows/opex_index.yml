@@ -4,7 +4,7 @@ name: Opex Dashboard function services index
 on:
   push:
     branches:
-      - opex-demo
+      - master
     paths:
       - 'index.yaml'
       - '.github/workflows/opex_index.yml'
