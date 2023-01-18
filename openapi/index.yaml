@@ -354,8 +354,6 @@ paths:
                     laoreet nibh. Aenean feugiat lectus ut nisl eleifend
                     gravida.
                 sender_service_id: 01BX9NSMKVXXS5PSP2FATZM6QX
-              notification:
-                email: QUEUED
         '401':
           description: Unauthorized
         '403':
@@ -382,10 +380,6 @@ paths:
           description: Found.
           schema:
             $ref: '#/definitions/LimitedProfile'
-          examples:
-            application/json:
-              email: foobar@example.com
-              version: 1
         '401':
           description: Unauthorized
         '403':
