@@ -1,4 +1,4 @@
-FROM functions-node-14
+FROM functions-node-18
 
 COPY . /usr/src/app
 COPY ./__integrations__/__mocks__/ /usr/src/app

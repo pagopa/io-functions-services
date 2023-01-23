@@ -572,8 +572,6 @@ describe("Create Message", () => {
           expect(O.isSome(status)).toBeTruthy();
           expect(O.isSome(content)).toBeFalsy();
 
-          console.log("status", status);
-
           expect(status).toEqual(
             O.some(
               expect.objectContaining({
@@ -643,8 +641,6 @@ describe("Create Message", () => {
         expect(O.isSome(message)).toBeTruthy();
         expect(O.isSome(status)).toBeTruthy();
         expect(O.isSome(content)).toBeFalsy();
-
-        console.log("status", status);
 
         expect(status).toEqual(
           O.some(
