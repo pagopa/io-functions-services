@@ -25,15 +25,14 @@ info:
     To get access to this API, you'll need to register on the [IO Developer
     Portal](https://developer.io.italia.it/).
 
-    After the registration step, you have to create a first service and and after
-    that you will be able to see both Primary and Secondary Key to be used on your
-    API calls authentication. Both keys can be used for the same purpose, there's
-    not difference between each other.
+    After the registration step, you have to click on the button that says
+    `subscribe to the digital citizenship api` to receive the API key that you
+    will use to authenticate the API calls.
 
-    A new service including a fake Fiscal Code that you will be able to use to
-    send test messages. Messages sent to the fake Fiscal Code will be notified
-    to the email address used during the registration process on the developer
-    portal.
+    You will also receive an email with further instructions, including a fake
+    Fiscal Code that you will be able to use to send test messages. Messages
+    sent to the fake Fiscal Code will be notified to the email address used
+    during the registration process on the developer portal.
 
     # Messages
 
@@ -68,7 +67,6 @@ info:
         It can be:
         - `STANDARD` for normal messages;
         - `ADVANCED` to enable premium features.
-
         Default is `STANDARD`.
 
     ## Allowed Markdown formatting
