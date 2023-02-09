@@ -25,6 +25,7 @@ import {
   IResponseErrorNotFound,
   IResponseErrorTooManyRequests,
   IResponseSuccessJson,
+  ResponseErrorForbiddenNotAuthorized,
   ResponseSuccessJson
 } from "@pagopa/ts-commons/lib/responses";
 
@@ -48,13 +49,18 @@ import { UserInfo } from "@pagopa/io-functions-admin-sdk/UserInfo";
 import { StandardServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/StandardServiceCategory";
 import { SpecialServiceMetadata } from "@pagopa/io-functions-admin-sdk/SpecialServiceMetadata";
 import { SpecialServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/SpecialServiceCategory";
+import { SequenceMiddleware } from "@pagopa/ts-commons/lib/sequence_middleware";
+import { AzureUserAttributesManageMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes_manage";
 import { APIClient } from "../clients/admin";
 import { ServicePayload } from "../generated/definitions/ServicePayload";
 import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWithSubscriptionKeys";
 import { withApiRequestWrapper } from "../utils/api";
 import { getLogger, ILogger } from "../utils/logging";
 import { ErrorResponses, IResponseErrorUnauthorized } from "../utils/responses";
-import { serviceOwnerCheckTask } from "../utils/subscription";
+import {
+  serviceOwnerCheckManageTask,
+  serviceOwnerCheckTask
+} from "../utils/subscription";
 
 type ResponseTypes =
   | IResponseSuccessJson<ServiceWithSubscriptionKeys>
@@ -176,6 +182,17 @@ export function UpdateServiceHandler(
     pipe(
       pipe(
         serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId),
+        TE.fold(
+          __ =>
+            serviceOwnerCheckManageTask(
+              getLogger(_, logPrefix, "GetSubscription"),
+              apiClient,
+              serviceId,
+              apiAuth.subscriptionId,
+              apiAuth.userId
+            ),
+          sid => TE.of(sid)
+        ),
         TE.chain(() =>
           pipe(
             getServiceTask(
@@ -248,7 +265,10 @@ export function UpdateService(
     ContextMiddleware(),
     AzureApiAuthMiddleware(new Set([UserGroup.ApiServiceWrite])),
     ClientIpMiddleware,
-    AzureUserAttributesMiddleware(serviceModel),
+    SequenceMiddleware(ResponseErrorForbiddenNotAuthorized)(
+      AzureUserAttributesMiddleware(serviceModel),
+      AzureUserAttributesManageMiddleware()
+    ),
     RequiredParamMiddleware("service_id", NonEmptyString),
     RequiredBodyPayloadMiddleware(ServicePayload)
   );
