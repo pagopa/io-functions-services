@@ -26,6 +26,7 @@ import {
   IResponseErrorNotFound,
   IResponseErrorTooManyRequests,
   IResponseSuccessJson,
+  ResponseErrorForbiddenNotAuthorized,
   ResponseSuccessJson
 } from "@pagopa/ts-commons/lib/responses";
 import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
@@ -43,11 +44,16 @@ import { pipe } from "fp-ts/lib/function";
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import * as TE from "fp-ts/lib/TaskEither";
 import { Logo } from "@pagopa/io-functions-admin-sdk/Logo";
+import { SequenceMiddleware } from "@pagopa/ts-commons/lib/sequence_middleware";
+import { AzureUserAttributesManageMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes_manage";
 import { APIClient } from "../clients/admin";
 import { withApiRequestWrapper } from "../utils/api";
 import { getLogger, ILogger } from "../utils/logging";
 import { ErrorResponses, IResponseErrorUnauthorized } from "../utils/responses";
-import { serviceOwnerCheckTask } from "../utils/subscription";
+import {
+  serviceOwnerCheckManageTask,
+  serviceOwnerCheckTask
+} from "../utils/subscription";
 
 type ResponseTypes =
   | IResponseSuccessJson<undefined>
@@ -104,6 +110,17 @@ export function UploadServiceLogoHandler(
   return (_, apiAuth, ___, ____, serviceId, logoPayload) =>
     pipe(
       serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId),
+      TE.fold(
+        __ =>
+          serviceOwnerCheckManageTask(
+            getLogger(_, logPrefix, "GetSubscription"),
+            apiClient,
+            serviceId,
+            apiAuth.subscriptionId,
+            apiAuth.userId
+          ),
+        sid => TE.of(sid)
+      ),
       TE.chain(() =>
         uploadServiceLogoTask(
           getLogger(_, logPrefix, "UploadServiceLogo"),
@@ -129,7 +146,10 @@ export function UploadServiceLogo(
     ContextMiddleware(),
     AzureApiAuthMiddleware(new Set([UserGroup.ApiServiceWrite])),
     ClientIpMiddleware,
-    AzureUserAttributesMiddleware(serviceModel),
+    SequenceMiddleware(ResponseErrorForbiddenNotAuthorized)(
+      AzureUserAttributesMiddleware(serviceModel),
+      AzureUserAttributesManageMiddleware()
+    ),
     RequiredParamMiddleware("service_id", NonEmptyString),
     RequiredBodyPayloadMiddleware(Logo)
   );
