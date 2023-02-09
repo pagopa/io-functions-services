@@ -8,7 +8,7 @@ import * as HtmlToText from "html-to-text";
 import * as NodeMailer from "nodemailer";
 
 import { readableReport } from "@pagopa/ts-commons/lib/reporters";
-import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
+import { FiscalCode, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 
 import { ActiveMessage } from "@pagopa/io-functions-commons/dist/src/models/message";
 import {
@@ -17,6 +17,10 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
 
 import { sendMail } from "@pagopa/io-functions-commons/dist/src/mailer";
+import * as B from "fp-ts/boolean";
+import { markdownToHtml } from "@pagopa/io-functions-commons/dist/src/utils/markdown";
+import { CreatedMessageEventSenderMetadata } from "@pagopa/io-functions-commons/dist/src/models/created_message_sender_metadata";
+import { OrganizationFiscalCode } from "@pagopa/io-functions-admin-sdk/OrganizationFiscalCode";
 import { withJsonInput } from "../utils/with-json-input";
 import { withDecodedInput } from "../utils/with-decoded-input";
 import {
@@ -24,7 +28,19 @@ import {
   NotificationCreatedEvent
 } from "../utils/events/message";
 import { DataFetcher, withExpandedInput } from "../utils/with-expanded-input";
+import { BetaUsers } from "../utils/config";
+import {
+  FeatureFlag,
+  getIsUserEligibleForNewFeature
+} from "../utils/featureFlag";
+import * as messagetemplate from "../generated/templates/servicemessage/index";
 import { generateDocumentHtml } from "./utils";
+
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+export type FfTemplateEmail = {
+  readonly BETA_USERS: BetaUsers;
+  readonly FF_TEMPLATE_EMAIL: FeatureFlag;
+};
 
 export interface INotificationDefaults {
   readonly HTML_TO_TEXT_OPTIONS: HtmlToTextOptions;
@@ -57,7 +73,8 @@ export const getEmailNotificationHandler = (
   lMailerTransporter: NodeMailer.Transporter,
   lNotificationModel: NotificationModel,
   retrieveProcessingMessageData: DataFetcher<CommonMessageData>,
-  notificationDefaultParams: INotificationDefaults
+  notificationDefaultParams: INotificationDefaults,
+  { BETA_USERS, FF_TEMPLATE_EMAIL }: FfTemplateEmail
 ) =>
   withJsonInput(
     withDecodedInput(
@@ -126,11 +143,41 @@ export const getEmailNotificationHandler = (
           const emailNotification =
             errorOrEmailNotification.right.channels.EMAIL;
 
-          const documentHtml = await generateDocumentHtml(
-            content.subject,
-            content.markdown,
-            senderMetadata
+          const useTemplate = pipe(
+            errorOrActiveMessage.right.fiscalCode,
+            getIsUserEligibleForNewFeature(
+              cf => BETA_USERS.includes(cf),
+              () => false, // NO canary implemented yet
+              FF_TEMPLATE_EMAIL
+            )
           );
+
+          // eslint-disable-next-line functional/no-let
+          let documentHtml: string;
+          if (useTemplate) {
+            const bodyHtml = (
+              await markdownToHtml.process(content.markdown)
+            ).toString();
+            // strip leading zeroes
+            const strippedSenderMetadata: CreatedMessageEventSenderMetadata = {
+              ...senderMetadata,
+              organizationFiscalCode: senderMetadata.organizationFiscalCode.replace(
+                /^0+/,
+                ""
+              ) as OrganizationFiscalCode
+            };
+            documentHtml = messagetemplate.apply(
+              content.subject,
+              bodyHtml,
+              strippedSenderMetadata
+            );
+          } else {
+            documentHtml = await generateDocumentHtml(
+              content.subject,
+              content.markdown,
+              senderMetadata
+            );
+          }
 
           // converts the HTML to pure text to generate the text version of the message
           const bodyText = HtmlToText.fromString(
