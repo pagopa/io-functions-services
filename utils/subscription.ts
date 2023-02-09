@@ -30,6 +30,20 @@ export const getSubscription = (
     200
   );
 
+/**
+ * Using the **API Manage key** as 'Ocp-Apim-Subscription-Key', the Subscription relating to this key will have a name starting with "MANAGE-"
+ * and accordingly no longer equal to the serviceId.
+ *
+ * Therefore, since it is no longer possible to verify the equality *subscriptionId == serviceId*,
+ * it is necessary to verify that the owner of the subscription of the API Key is the same owner of the Subscription to which the ServiceId belongs
+ *
+ * @param logger
+ * @param apiClient
+ * @param serviceId
+ * @param ownerSubscriptionId subscriptionId related to 'Ocp-Apim-Subscription-Key'
+ * @param userId APIM userId
+ * @returns
+ */
 export const serviceOwnerCheckManageTask = (
   logger: ILogger,
   apiClient: APIClient,
