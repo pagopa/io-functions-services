@@ -271,7 +271,7 @@ describe("UploadServiceLogoHandler", () => {
     expect(result.kind).toBe("IResponseErrorForbiddenNotAuthorized");
   });
 
-  // MANAGE Flow Tests
+  // MANAGE Flow Tests -->
   it("should respond with 200 if logo upload was successfull, using a MANAGE API Key", async () => {
     const apiClientMock = {
       uploadServiceLogo: jest.fn(() => Promise.resolve(right({ status: 201 }))),
