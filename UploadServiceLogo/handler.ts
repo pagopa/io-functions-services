@@ -45,7 +45,10 @@ import { TaskEither } from "fp-ts/lib/TaskEither";
 import * as TE from "fp-ts/lib/TaskEither";
 import { Logo } from "@pagopa/io-functions-admin-sdk/Logo";
 import { SequenceMiddleware } from "@pagopa/ts-commons/lib/sequence_middleware";
-import { AzureUserAttributesManageMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes_manage";
+import {
+  AzureUserAttributesManageMiddleware,
+  IAzureUserAttributesManage
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes_manage";
 import { APIClient } from "../clients/admin";
 import { withApiRequestWrapper } from "../utils/api";
 import { getLogger, ILogger } from "../utils/logging";
@@ -75,7 +78,7 @@ type IUploadServiceLogoHandler = (
   context: Context,
   auth: IAzureApiAuthorization,
   clientIp: ClientIp,
-  attrs: IAzureUserAttributes,
+  attrs: IAzureUserAttributes | IAzureUserAttributesManage,
   serviceId: NonEmptyString,
   logoPayload: Logo
 ) => Promise<ResponseTypes>;
@@ -156,9 +159,11 @@ export function UploadServiceLogo(
   return wrapRequestHandler(
     middlewaresWrap(
       // eslint-disable-next-line max-params
-      checkSourceIpForHandler(handler, (_, __, c, u, ___, ____) =>
-        ipTuple(c, u)
-      )
+      checkSourceIpForHandler(handler, (_, __, c, u, ___, ____) => {
+        if (u.kind === "IAzureUserAttributes") {
+          return ipTuple(c, u);
+        }
+      })
     )
   );
 }
