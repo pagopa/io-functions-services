@@ -646,21 +646,21 @@
     io-ts "^2.2.16"
 
 "@pagopa/io-functions-admin-sdk@x":
-  version "0.32.4"
-  resolved "https://registry.yarnpkg.com/@pagopa/io-functions-admin-sdk/-/io-functions-admin-sdk-0.32.4.tgz#c009e534247bf785d7a22d40c2c4e996420d4062"
-  integrity sha512-txkOlcdGZ7puJlxbRMg3XYNTyuN+wJfL+t1Xaw2HkbvM0xGaFvK6wjDyfJr6x5THytfZz4SQlUMD5accPnjxnw==
+  version "0.33.0"
+  resolved "https://registry.yarnpkg.com/@pagopa/io-functions-admin-sdk/-/io-functions-admin-sdk-0.33.0.tgz#a91a01f87448809cc6d42292c9f09c130adda8a5"
+  integrity sha512-seJDwdoVq96mSRT1dKiFYM+EdtIvDc1OpyXdtqS6u/pl1LptXwhSXbyjsWTUao2ejfWmFvQRGlwcLcuTjslVyw==
   dependencies:
     "@pagopa/ts-commons" "^10.0.0"
     fp-ts "^2.10.5"
     io-ts "^2.2.16"
 
-"@pagopa/io-functions-commons@^26.3.0":
-  version "26.3.0"
-  resolved "https://registry.yarnpkg.com/@pagopa/io-functions-commons/-/io-functions-commons-26.3.0.tgz#6ac816adb0778bbec8a237f4bfa90a6ecbb3a9f4"
-  integrity sha512-Ngbv19s+HJmdY8hCKxZi0AfHsFVFM8Q6gE+CXMoE3LfxTSlqRmVf0bWsZEpZmjrC/BpIEpX9Ot5k30FXN0UzGw==
+"@pagopa/io-functions-commons@^26.5.0":
+  version "26.5.0"
+  resolved "https://registry.yarnpkg.com/@pagopa/io-functions-commons/-/io-functions-commons-26.5.0.tgz#f1056df20875a658a615a6a848f237bbbd4658c5"
+  integrity sha512-ptnQWfOgNPx2gY2XpvrPBTffK/Qn2FBPYWtzjOTd77RH6VTVCaPok5hVglyD4Y3hM+h944+BIJB0LJUGL/duyQ==
   dependencies:
     "@azure/cosmos" "^3.17.1"
-    "@pagopa/ts-commons" "^10.9.0"
+    "@pagopa/ts-commons" "^10.13.0"
     applicationinsights "^1.8.10"
     azure-storage "^2.10.5"
     cidr-matcher "^2.1.1"
@@ -695,7 +695,7 @@
     write-yaml-file "^4.1.3"
     yargs "^15.0.1"
 
-"@pagopa/ts-commons@^10.0.0", "@pagopa/ts-commons@^10.9.0":
+"@pagopa/ts-commons@^10.0.0", "@pagopa/ts-commons@^10.13.0", "@pagopa/ts-commons@^10.9.0":
   version "10.9.0"
   resolved "https://registry.yarnpkg.com/@pagopa/ts-commons/-/ts-commons-10.9.0.tgz#ca50f8f9b09499667b6f3532c897453918ed7c76"
   integrity sha512-hnWpA8Le8ylxKGGj+IALFBhOQDgLDl8vb3opKr3MHVdkcvm4GONZkotGnnSQ3Bh/tasgmPbeOa4wAHJSLTRmXQ==
@@ -709,18 +709,20 @@
     node-fetch "^2.6.0"
     validator "^13.7.0"
 
-"@pagopa/ts-commons@^10.10.0":
-  version "10.10.0"
-  resolved "https://registry.yarnpkg.com/@pagopa/ts-commons/-/ts-commons-10.10.0.tgz#9eae84003956ac44aad710b91abd7614bb09665e"
-  integrity sha512-/bIEHIvswrp9mi+NdBOJftPAP9YeI5Z1+mK1WV/RDTvy6nb5Zd7C9kwdBJbXjl4zW/eiQsb5PqLHEC6odQKlWg==
+"@pagopa/ts-commons@^10.14.0":
+  version "10.14.0"
+  resolved "https://registry.yarnpkg.com/@pagopa/ts-commons/-/ts-commons-10.14.0.tgz#4991358014cd11e95cca4f8c728dc67d8c0d5519"
+  integrity sha512-mZqd7nK8QN7YfJSECGw30pwsIj2/+wo7yELY7naxhwL4Yi4UfvrSX7un1DFH1B3/3kEnEy7tFAse8Ca5Lxj3lQ==
   dependencies:
     abort-controller "^3.0.0"
     agentkeepalive "^4.1.4"
     applicationinsights "^1.8.10"
     fp-ts "^2.11.0"
     io-ts "^2.2.16"
+    jose "^4.11.2"
     json-set-map "^1.1.2"
     node-fetch "^2.6.0"
+    semver "^7.3.7"
     validator "^13.7.0"
 
 "@sendgrid/client@^6.5.5":
@@ -4407,6 +4409,11 @@ jest@^24.8.0:
   dependencies:
     import-local "^2.0.0"
     jest-cli "^24.9.0"
+
+jose@^4.11.2:
+  version "4.11.4"
+  resolved "https://registry.yarnpkg.com/jose/-/jose-4.11.4.tgz#e04d4a393ac017d0450fa0a38e2f2382cd73f71e"
+  integrity sha512-94FdcR8felat4vaTJyL/WVdtlWLlsnLMZP8v+A0Vru18K3bQ22vn7TtpVh3JlgBFNIlYOUlGqwp/MjRPOnIyCQ==
 
 js-base64@^2.4.5:
   version "2.6.4"
