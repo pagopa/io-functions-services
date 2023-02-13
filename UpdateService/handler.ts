@@ -182,16 +182,14 @@ export function UpdateServiceHandler(
     pipe(
       pipe(
         serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId),
-        TE.fold(
-          __ =>
-            serviceOwnerCheckManageTask(
-              getLogger(_, logPrefix, "GetSubscription"),
-              apiClient,
-              serviceId,
-              apiAuth.subscriptionId,
-              apiAuth.userId
-            ),
-          sid => TE.of(sid)
+        TE.orElse(__ =>
+          serviceOwnerCheckManageTask(
+            getLogger(_, logPrefix, "GetSubscription"),
+            apiClient,
+            serviceId,
+            apiAuth.subscriptionId,
+            apiAuth.userId
+          )
         ),
         TE.chain(() =>
           pipe(
