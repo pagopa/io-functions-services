@@ -276,11 +276,9 @@ export function UpdateService(
   return wrapRequestHandler(
     middlewaresWrap(
       // eslint-disable-next-line max-params
-      checkSourceIpForHandler(handler, (_, __, c, u, ___, ____) => {
-        if (u.kind === "IAzureUserAttributes") {
-          return ipTuple(c, u);
-        }
-      })
+      checkSourceIpForHandler(handler, (_, __, c, u, ___, ____) =>
+        ipTuple(c, u)
+      )
     )
   );
 }
