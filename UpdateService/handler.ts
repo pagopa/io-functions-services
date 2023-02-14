@@ -50,7 +50,10 @@ import { StandardServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/Stan
 import { SpecialServiceMetadata } from "@pagopa/io-functions-admin-sdk/SpecialServiceMetadata";
 import { SpecialServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/SpecialServiceCategory";
 import { SequenceMiddleware } from "@pagopa/ts-commons/lib/sequence_middleware";
-import { AzureUserAttributesManageMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes_manage";
+import {
+  AzureUserAttributesManageMiddleware,
+  IAzureUserAttributesManage
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes_manage";
 import { APIClient } from "../clients/admin";
 import { ServicePayload } from "../generated/definitions/ServicePayload";
 import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWithSubscriptionKeys";
@@ -80,7 +83,7 @@ type IUpdateServiceHandler = (
   context: Context,
   auth: IAzureApiAuthorization,
   clientIp: ClientIp,
-  attrs: IAzureUserAttributes,
+  attrs: IAzureUserAttributes | IAzureUserAttributesManage,
   serviceId: NonEmptyString,
   servicePayload: ServicePayload
 ) => Promise<ResponseTypes>;

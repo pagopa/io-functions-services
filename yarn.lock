@@ -654,10 +654,10 @@
     fp-ts "^2.10.5"
     io-ts "^2.2.16"
 
-"@pagopa/io-functions-commons@^26.5.0":
-  version "26.5.0"
-  resolved "https://registry.yarnpkg.com/@pagopa/io-functions-commons/-/io-functions-commons-26.5.0.tgz#f1056df20875a658a615a6a848f237bbbd4658c5"
-  integrity sha512-ptnQWfOgNPx2gY2XpvrPBTffK/Qn2FBPYWtzjOTd77RH6VTVCaPok5hVglyD4Y3hM+h944+BIJB0LJUGL/duyQ==
+"@pagopa/io-functions-commons@^26.6.0":
+  version "26.6.0"
+  resolved "https://registry.yarnpkg.com/@pagopa/io-functions-commons/-/io-functions-commons-26.6.0.tgz#a51b16708393d86104dc980ca05c4bbcb3c59f67"
+  integrity sha512-U40ckW7+Re6slOMY0u9rpwzTjZeYRkDn54bc2/Pl4eDFgOmKjUMlPvd8qergfeq+MsBVfY5tIS6cQ4H4OqfWcw==
   dependencies:
     "@azure/cosmos" "^3.17.1"
     "@pagopa/ts-commons" "^10.13.0"
