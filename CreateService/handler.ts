@@ -24,6 +24,7 @@ import {
   IResponseErrorNotFound,
   IResponseErrorTooManyRequests,
   IResponseSuccessJson,
+  ResponseErrorForbiddenNotAuthorized,
   ResponseSuccessJson
 } from "@pagopa/ts-commons/lib/responses";
 
@@ -55,6 +56,11 @@ import { Service } from "@pagopa/io-functions-admin-sdk/Service";
 import { Subscription } from "@pagopa/io-functions-admin-sdk/Subscription";
 import { UserInfo } from "@pagopa/io-functions-admin-sdk/UserInfo";
 import { StandardServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/StandardServiceCategory";
+import { SequenceMiddleware } from "@pagopa/ts-commons/lib/sequence_middleware";
+import {
+  AzureUserAttributesManageMiddleware,
+  IAzureUserAttributesManage
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes_manage";
 import { APIClient } from "../clients/admin";
 import { ServicePayload } from "../generated/definitions/ServicePayload";
 import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWithSubscriptionKeys";
@@ -82,7 +88,7 @@ type ICreateServiceHandler = (
   context: Context,
   auth: IAzureApiAuthorization,
   clientIp: ClientIp,
-  attrs: IAzureUserAttributes,
+  attrs: IAzureUserAttributes | IAzureUserAttributesManage,
   servicePayload: ServicePayload
 ) => Promise<ResponseTypes>;
 
@@ -255,7 +261,10 @@ export function CreateService(
     ContextMiddleware(),
     AzureApiAuthMiddleware(new Set([UserGroup.ApiServiceWrite])),
     ClientIpMiddleware,
-    AzureUserAttributesMiddleware(serviceModel),
+    SequenceMiddleware(ResponseErrorForbiddenNotAuthorized)(
+      AzureUserAttributesMiddleware(serviceModel),
+      AzureUserAttributesManageMiddleware()
+    ),
     RequiredBodyPayloadMiddleware(ServicePayload)
   );
   return wrapRequestHandler(
