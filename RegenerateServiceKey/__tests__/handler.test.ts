@@ -25,6 +25,8 @@ import * as reporters from "@pagopa/ts-commons/lib/reporters";
 import { SubscriptionKeyTypeEnum } from "@pagopa/io-functions-admin-sdk/SubscriptionKeyType";
 import { SubscriptionKeyTypePayload } from "@pagopa/io-functions-admin-sdk/SubscriptionKeyTypePayload";
 import { RegenerateServiceKeyHandler } from "../handler";
+import { SubscriptionWithoutKeys } from "@pagopa/io-functions-admin-sdk/SubscriptionWithoutKeys";
+import { Subscription } from "@pagopa/io-functions-admin-sdk/Subscription";
 
 const mockContext = {
   // eslint-disable no-console
@@ -42,6 +44,10 @@ const anOrganizationFiscalCode = "01234567890" as OrganizationFiscalCode;
 const anEmail = "test@example.com" as EmailString;
 
 const aServiceId = "s123" as NonEmptyString;
+const aManageSubscriptionId = "MANAGE-123" as NonEmptyString;
+const aUserId = "u123" as NonEmptyString;
+const aDifferentUserId = "u456" as NonEmptyString;
+
 const someSubscriptionKeys = {
   primary_key: "primary_key",
   secondary_key: "secondary_key"
@@ -86,7 +92,27 @@ const aUserAuthenticationDeveloper: IAzureApiAuthorization = {
   groups: new Set([UserGroup.ApiServiceRead, UserGroup.ApiServiceWrite]),
   kind: "IAzureApiAuthorization",
   subscriptionId: aServiceId,
-  userId: "u123" as NonEmptyString
+  userId: aUserId
+};
+const aUserAuthenticationDeveloperWithManageKey: IAzureApiAuthorization = {
+  ...aUserAuthenticationDeveloper,
+  subscriptionId: aManageSubscriptionId
+};
+
+const aDifferentUserAuthenticationDeveloperWithManageKey: IAzureApiAuthorization = {
+  ...aUserAuthenticationDeveloperWithManageKey,
+  userId: aDifferentUserId
+};
+
+const aRetrievedServiceSubscription: SubscriptionWithoutKeys = {
+  id: aServiceId,
+  owner_id: aUserId,
+  scope: "aScope"
+};
+
+const aRetrievedServiceSubscriptionWithoutOwnerId: SubscriptionWithoutKeys = {
+  id: aServiceId,
+  scope: "aScope"
 };
 
 describe("RegenerateServiceKeyHandler", () => {
@@ -148,6 +174,11 @@ describe("RegenerateServiceKeyHandler", () => {
 
   it("should respond with an Unauthorized error if service is no owned by current user", async () => {
     const apiClientMock = {
+      getSubscription: jest.fn(() =>
+        Promise.resolve(
+          right({ status: 200, value: aRetrievedServiceSubscription })
+        )
+      ),
       RegenerateSubscriptionKeys: jest.fn(() =>
         Promise.resolve(
           right({ status: 200, value: regeneratedPrimarySubscriptionKeys })
@@ -295,5 +326,168 @@ describe("RegenerateServiceKeyHandler", () => {
     expect(apiClientMock.RegenerateSubscriptionKeys).toHaveBeenCalledTimes(1);
 
     expect(result.kind).toBe("IResponseErrorForbiddenNotAuthorized");
+  });
+
+  // MANAGE Flow Tests
+  it("should respond with a regenerated subscription primary key, using a MANAGE API Key", async () => {
+    const apiClientMock = {
+      getSubscription: jest.fn(() =>
+        Promise.resolve(
+          right({ status: 200, value: aRetrievedServiceSubscription })
+        )
+      ),
+      RegenerateSubscriptionKeys: jest.fn(() =>
+        Promise.resolve(
+          right({ status: 200, value: regeneratedPrimarySubscriptionKeys })
+        )
+      )
+    };
+
+    const regenerateServiceKeyHandler = RegenerateServiceKeyHandler(
+      apiClientMock as any
+    );
+    const result = await regenerateServiceKeyHandler(
+      mockContext,
+      aUserAuthenticationDeveloperWithManageKey,
+      undefined as any, // not used
+      someUserAttributes,
+      aServiceId,
+      aSubscriptionKeyTypePayload
+    );
+
+    expect(apiClientMock.getSubscription).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.RegenerateSubscriptionKeys).toHaveBeenCalledTimes(1);
+    expect(result.kind).toBe("IResponseSuccessJson");
+    if (result.kind === "IResponseSuccessJson") {
+      expect(result.value).toEqual(regeneratedPrimarySubscriptionKeys);
+    }
+  });
+
+  it("should respond with a regenerated subscription secondary key, using a MANAGE API Key", async () => {
+    const apiClientMock = {
+      getSubscription: jest.fn(() =>
+        Promise.resolve(
+          right({ status: 200, value: aRetrievedServiceSubscription })
+        )
+      ),
+      RegenerateSubscriptionKeys: jest.fn(() =>
+        Promise.resolve(
+          right({ status: 200, value: regeneratedSecondarySubscriptionKeys })
+        )
+      )
+    };
+
+    const regenerateServiceKeyHandler = RegenerateServiceKeyHandler(
+      apiClientMock as any
+    );
+    const result = await regenerateServiceKeyHandler(
+      mockContext,
+      aUserAuthenticationDeveloperWithManageKey,
+      undefined as any, // not used
+      someUserAttributes,
+      aServiceId,
+      { key_type: SubscriptionKeyTypeEnum.SECONDARY_KEY }
+    );
+
+    expect(apiClientMock.getSubscription).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.RegenerateSubscriptionKeys).toHaveBeenCalledTimes(1);
+    expect(result.kind).toBe("IResponseSuccessJson");
+    if (result.kind === "IResponseSuccessJson") {
+      expect(result.value).toEqual(regeneratedSecondarySubscriptionKeys);
+    }
+  });
+
+  it("should respond with an Unauthorized error if MANAGE API Key has a different ownerId", async () => {
+    const apiClientMock = {
+      getSubscription: jest.fn(() =>
+        Promise.resolve(
+          right({ status: 200, value: aRetrievedServiceSubscription })
+        )
+      ),
+      RegenerateSubscriptionKeys: jest.fn(() =>
+        Promise.resolve(
+          right({ status: 200, value: regeneratedPrimarySubscriptionKeys })
+        )
+      )
+    };
+
+    const regenerateServiceKeyHandler = RegenerateServiceKeyHandler(
+      apiClientMock as any
+    );
+    const result = await regenerateServiceKeyHandler(
+      mockContext,
+      aDifferentUserAuthenticationDeveloperWithManageKey,
+      undefined as any, // not used
+      someUserAttributes,
+      aServiceId,
+      { key_type: SubscriptionKeyTypeEnum.PRIMARY_KEY }
+    );
+
+    expect(apiClientMock.getSubscription).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.RegenerateSubscriptionKeys).not.toHaveBeenCalled();
+    expect(result.kind).toBe("IResponseErrorForbiddenNotAuthorized");
+  });
+
+  it("should respond with an Unauthorized error if getSubscription of a serviceId doesn't return an ownerId", async () => {
+    const apiClientMock = {
+      getSubscription: jest.fn(() =>
+        Promise.resolve(
+          right({
+            status: 200,
+            value: aRetrievedServiceSubscriptionWithoutOwnerId
+          })
+        )
+      ),
+      RegenerateSubscriptionKeys: jest.fn(() =>
+        Promise.resolve(
+          right({ status: 200, value: regeneratedPrimarySubscriptionKeys })
+        )
+      )
+    };
+
+    const regenerateServiceKeyHandler = RegenerateServiceKeyHandler(
+      apiClientMock as any
+    );
+    const result = await regenerateServiceKeyHandler(
+      mockContext,
+      aDifferentUserAuthenticationDeveloperWithManageKey,
+      undefined as any, // not used
+      someUserAttributes,
+      aServiceId,
+      { key_type: SubscriptionKeyTypeEnum.PRIMARY_KEY }
+    );
+
+    expect(apiClientMock.getSubscription).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.RegenerateSubscriptionKeys).not.toHaveBeenCalled();
+    expect(result.kind).toBe("IResponseErrorForbiddenNotAuthorized");
+  });
+
+  it("should respond with an Error if getSubscription returns an error", async () => {
+    const apiClientMock = {
+      getSubscription: jest.fn(() =>
+        Promise.reject(new Error("Internal Server Error"))
+      ),
+      RegenerateSubscriptionKeys: jest.fn(() =>
+        Promise.resolve(
+          right({ status: 200, value: regeneratedPrimarySubscriptionKeys })
+        )
+      )
+    };
+
+    const regenerateServiceKeyHandler = RegenerateServiceKeyHandler(
+      apiClientMock as any
+    );
+    const result = await regenerateServiceKeyHandler(
+      mockContext,
+      aUserAuthenticationDeveloperWithManageKey,
+      undefined as any, // not used
+      someUserAttributes,
+      aServiceId,
+      { key_type: SubscriptionKeyTypeEnum.PRIMARY_KEY }
+    );
+
+    expect(apiClientMock.getSubscription).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.RegenerateSubscriptionKeys).not.toHaveBeenCalled();
+    expect(result.kind).toBe("IResponseErrorInternal");
   });
 });
