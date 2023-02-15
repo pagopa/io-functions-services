@@ -94,7 +94,6 @@ const aUserAuthenticationDeveloper: IAzureApiAuthorization = {
   subscriptionId: aServiceId,
   userId: aUserId
 };
-/**** */
 const aUserAuthenticationDeveloperWithManageKey: IAzureApiAuthorization = {
   ...aUserAuthenticationDeveloper,
   subscriptionId: aManageSubscriptionId
