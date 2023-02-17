@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - master
+      - opex-demo
     paths:
       - 'index.yaml'
       - '.github/workflows/opex_index.yml'
