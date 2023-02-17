@@ -10,3 +10,15 @@ overrides:
     - api.io.pagopa.it
     - api.io.italia.it
     - api-mtls.io.pagopa.it
+  endpoints:
+    /api/v1/services:
+      response_time_threshold: 6
+      availability_threshold: 0.95
+    /api/v1/services/{service_id}:
+      response_time_threshold: 6
+      availability_threshold: 0.95
+    /api/v1/services/{service_id}/logo:
+      response_time_threshold: 6
+      availability_threshold: 0.95
+    /api/v1/subscriptions-feed/{date}:
+      response_time_threshold: 3
