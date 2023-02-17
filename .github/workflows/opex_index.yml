@@ -47,8 +47,8 @@ jobs:
           environment: ${{ matrix.environment }}
           api-name: ${{ env.API_NAME }}
           config: .opex/${{ env.API_NAME }}/env/${{ matrix.environment }}/config.yaml
-          client-id: ${{ env.CLIENT_ID }}
-          tenant-id: ${{ env.TENANT_ID }}
-          subscription-id: ${{ env.SUBSCRIPTION_ID }}
+          client-id: 6e4bde28-ef8b-489d-bd1d-ce22d4aabfe6 # ${{ env.CLIENT_ID }}
+          tenant-id: 7788edaf-0346-4068-9d79-c868aed15b3d # ${{ env.TENANT_ID }}
+          subscription-id: ec285037-c673-4f58-b594-d7c480da4e8b # ${{ env.SUBSCRIPTION_ID }}
           # from https://github.com/pagopa/opex-dashboard-azure-action/pkgs/container/opex-dashboard-azure-action
           docker-version: sha256:d9465f04e469c8f65bb1fb21cb9688508c64fda75495f552e858fb5a9580be90
