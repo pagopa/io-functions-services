@@ -49,6 +49,7 @@ import {
   AzureUserAttributesManageMiddleware,
   IAzureUserAttributesManage
 } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes_manage";
+import { SubscriptionCIDRsModel } from "@pagopa/io-functions-commons/dist/src/models/subscription_cidrs";
 import { APIClient } from "../clients/admin";
 import { withApiRequestWrapper } from "../utils/api";
 import { getLogger, ILogger } from "../utils/logging";
@@ -142,7 +143,8 @@ export function UploadServiceLogoHandler(
 // eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function UploadServiceLogo(
   serviceModel: ServiceModel,
-  client: APIClient
+  client: APIClient,
+  subscriptionCIDRsModel: SubscriptionCIDRsModel
 ): express.RequestHandler {
   const handler = UploadServiceLogoHandler(client);
   const middlewaresWrap = withRequestMiddlewares(
@@ -151,7 +153,7 @@ export function UploadServiceLogo(
     ClientIpMiddleware,
     SequenceMiddleware(ResponseErrorForbiddenNotAuthorized)(
       AzureUserAttributesMiddleware(serviceModel),
-      AzureUserAttributesManageMiddleware()
+      AzureUserAttributesManageMiddleware(subscriptionCIDRsModel)
     ),
     RequiredParamMiddleware("service_id", NonEmptyString),
     RequiredBodyPayloadMiddleware(Logo)
