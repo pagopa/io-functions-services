@@ -54,13 +54,11 @@ import {
   IResponseErrorForbiddenAnonymousUser,
   IResponseErrorForbiddenNoAuthorizationGroups,
   IResponseErrorForbiddenNotAuthorized,
-  IResponseErrorForbiddenNotAuthorizedForDefaultAddresses,
   IResponseErrorForbiddenNotAuthorizedForProduction,
   IResponseErrorForbiddenNotAuthorizedForRecipient,
   IResponseErrorInternal,
   IResponseErrorValidation,
   IResponseSuccessRedirectToResource,
-  ResponseErrorForbiddenNotAuthorizedForDefaultAddresses,
   ResponseErrorForbiddenNotAuthorizedForProduction,
   ResponseErrorForbiddenNotAuthorizedForRecipient,
   ResponseErrorInternal,
@@ -116,7 +114,6 @@ type ICreateMessageHandler = (
   | IResponseErrorForbiddenNotAuthorized
   | IResponseErrorForbiddenNotAuthorizedForRecipient
   | IResponseErrorForbiddenNotAuthorizedForProduction
-  | IResponseErrorForbiddenNotAuthorizedForDefaultAddresses
 >;
 
 export type CreateMessageHandlerResponse = PromiseType<
@@ -148,24 +145,6 @@ export const canWriteMessage = (
     return E.left(ResponseErrorForbiddenNotAuthorizedForProduction);
   }
 
-  return E.right(true);
-};
-
-/**
- * Checks whether the client service can provide default email addresses.
- *
- * Note that this feature is deprecated and the handler will always respond with
- * a Forbidden response if default addresses are provided.
- */
-export const canDefaultAddresses = (
-  messagePayload: ApiNewMessage
-): Either<IResponseErrorForbiddenNotAuthorizedForDefaultAddresses, true> => {
-  // check whether the user is authorized to provide default addresses
-  if (messagePayload.default_addresses) {
-    // sending messages with default addresses is deprecated, always
-    // respond with a forbidden status
-    return E.left(ResponseErrorForbiddenNotAuthorizedForDefaultAddresses);
-  }
   return E.right(true);
 };
 
@@ -324,11 +303,6 @@ export function CreateMessageHandler(
         name: "api.messages.create",
         properties: {
           error: isSuccess ? undefined : r.kind,
-          hasDefaultEmail: Boolean(
-            // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
-            messagePayload.default_addresses &&
-              messagePayload.default_addresses.email
-          ).toString(),
           messageId,
           sandbox: isSandbox ? "true" : "false",
           senderServiceId: serviceId,
@@ -370,10 +344,6 @@ export function CreateMessageHandler(
               )
             )
           : TE.right(true)
-      ),
-      TE.chainW(_ =>
-        // check whether the client can provide default addresses
-        TE.fromEither(canDefaultAddresses(messagePayload))
       ),
       TE.chainW(_ =>
         // check whether the client can ask for payment

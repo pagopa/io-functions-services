@@ -106,15 +106,6 @@ export const newMessageArb = fc
   )
   .filter(_ => _ !== undefined);
 
-export const newMessageWithDefaultEmailArb = fc
-  .tuple(newMessageArb, fc.emailAddress())
-  .map(([m, email]) => ({
-    ...m,
-    default_addresses: {
-      email: email as EmailString
-    }
-  }));
-
 export const messageTimeToLiveArb = fc
   .integer(3600, 604800)
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
