@@ -48,6 +48,7 @@ import {
   AzureUserAttributesManageMiddleware,
   IAzureUserAttributesManage
 } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes_manage";
+import { SubscriptionCIDRsModel } from "@pagopa/io-functions-commons/dist/src/models/subscription_cidrs";
 import { APIClient } from "../clients/admin";
 import { SubscriptionKeys } from "../generated/definitions/SubscriptionKeys";
 import { SubscriptionKeyTypePayload } from "../generated/definitions/SubscriptionKeyTypePayload";
@@ -141,7 +142,8 @@ export function RegenerateServiceKeyHandler(
 // eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function RegenerateServiceKey(
   serviceModel: ServiceModel,
-  client: APIClient
+  client: APIClient,
+  subscriptionCIDRsModel: SubscriptionCIDRsModel
 ): express.RequestHandler {
   const handler = RegenerateServiceKeyHandler(client);
   const middlewaresWrap = withRequestMiddlewares(
@@ -150,7 +152,7 @@ export function RegenerateServiceKey(
     ClientIpMiddleware,
     SequenceMiddleware(ResponseErrorForbiddenNotAuthorized)(
       AzureUserAttributesMiddleware(serviceModel),
-      AzureUserAttributesManageMiddleware()
+      AzureUserAttributesManageMiddleware(subscriptionCIDRsModel)
     ),
     RequiredParamMiddleware("service_id", NonEmptyString),
     RequiredBodyPayloadMiddleware(SubscriptionKeyTypePayload)

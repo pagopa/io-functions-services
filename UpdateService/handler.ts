@@ -54,6 +54,7 @@ import {
   AzureUserAttributesManageMiddleware,
   IAzureUserAttributesManage
 } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes_manage";
+import { SubscriptionCIDRsModel } from "@pagopa/io-functions-commons/dist/src/models/subscription_cidrs";
 import { APIClient } from "../clients/admin";
 import { ServicePayload } from "../generated/definitions/ServicePayload";
 import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWithSubscriptionKeys";
@@ -259,7 +260,8 @@ export function UpdateServiceHandler(
 export function UpdateService(
   telemetryClient: ReturnType<typeof initAppInsights>,
   serviceModel: ServiceModel,
-  client: APIClient
+  client: APIClient,
+  subscriptionCIDRsModel: SubscriptionCIDRsModel
 ): express.RequestHandler {
   const handler = UpdateServiceHandler(telemetryClient, client);
   const middlewaresWrap = withRequestMiddlewares(
@@ -268,7 +270,7 @@ export function UpdateService(
     ClientIpMiddleware,
     SequenceMiddleware(ResponseErrorForbiddenNotAuthorized)(
       AzureUserAttributesMiddleware(serviceModel),
-      AzureUserAttributesManageMiddleware()
+      AzureUserAttributesManageMiddleware(subscriptionCIDRsModel)
     ),
     RequiredParamMiddleware("service_id", NonEmptyString),
     RequiredBodyPayloadMiddleware(ServicePayload)

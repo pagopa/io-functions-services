@@ -10,6 +10,10 @@ import { secureExpressApp } from "@pagopa/io-functions-commons/dist/src/utils/ex
 import { setAppContext } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 
 import createAzureFunctionHandler from "@pagopa/express-azure-functions/dist/src/createAzureFunctionsHandler";
+import {
+  SubscriptionCIDRsModel,
+  SUBSCRIPTION_CIDRS_COLLECTION_NAME
+} from "@pagopa/io-functions-commons/dist/src/models/subscription_cidrs";
 import { cosmosdbInstance } from "../utils/cosmosdb";
 
 import { apiClient } from "../clients/admin";
@@ -31,18 +35,21 @@ const serviceModel = new ServiceModel(
   cosmosdbInstance.container(SERVICE_COLLECTION_NAME)
 );
 
+const subscriptionCIDRsModel = new SubscriptionCIDRsModel(
+  cosmosdbInstance.container(SUBSCRIPTION_CIDRS_COLLECTION_NAME)
+);
+
 const telemetryClient = initTelemetryClient(
   config.APPINSIGHTS_INSTRUMENTATIONKEY
 );
 
 app.post(
   "/api/v1/services",
-  CreateService(
-    telemetryClient,
-    serviceModel,
-    apiClient,
+  CreateService(telemetryClient, apiClient)(
     config.DEFAULT_SUBSCRIPTION_PRODUCT_NAME,
-    config.SANDBOX_FISCAL_CODE
+    config.SANDBOX_FISCAL_CODE,
+    serviceModel,
+    subscriptionCIDRsModel
   )
 );
 
