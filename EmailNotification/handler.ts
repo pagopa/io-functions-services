@@ -8,7 +8,7 @@ import * as HtmlToText from "html-to-text";
 import * as NodeMailer from "nodemailer";
 
 import { readableReport } from "@pagopa/ts-commons/lib/reporters";
-import { FiscalCode, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
+import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 
 import { ActiveMessage } from "@pagopa/io-functions-commons/dist/src/models/message";
 import {
@@ -17,7 +17,6 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
 
 import { sendMail } from "@pagopa/io-functions-commons/dist/src/mailer";
-import * as B from "fp-ts/boolean";
 import { markdownToHtml } from "@pagopa/io-functions-commons/dist/src/utils/markdown";
 import { CreatedMessageEventSenderMetadata } from "@pagopa/io-functions-commons/dist/src/models/created_message_sender_metadata";
 import { OrganizationFiscalCode } from "@pagopa/io-functions-admin-sdk/OrganizationFiscalCode";
