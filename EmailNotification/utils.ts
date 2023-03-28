@@ -7,6 +7,13 @@ import { CreatedMessageEventSenderMetadata } from "@pagopa/io-functions-commons/
 import { markdownToHtml } from "@pagopa/io-functions-commons/dist/src/utils/markdown";
 
 import defaultEmailTemplate from "@pagopa/io-functions-commons/dist/src/templates/html/default";
+import { flow, pipe } from "fp-ts/lib/function";
+import * as TE from "fp-ts/TaskEither";
+import * as E from "fp-ts/Either";
+import { OrganizationFiscalCode } from "@pagopa/ts-commons/lib/strings";
+import * as S from "fp-ts/string";
+import { MessageContent } from "../generated/definitions/MessageContent";
+import * as messagetemplate from "../generated/templates/servicemessage/index";
 
 const defaultEmailFooterMarkdown = `**Non rispondere a questa email. Questa casella di posta è utilizzata solo per l'invio della presente mail e, non essendo monitorata, non riceveresti risposta.**
 
@@ -17,6 +24,8 @@ Puoi anche disattivare l’inoltro dei messaggi via email per tutti i servizi, s
 
 /**
  * Generates the HTML for the email from the Markdown content and the subject
+ *
+ * @deprecated use messageToHtml instead
  */
 export const generateDocumentHtml = async (
   subject: MessageSubject,
@@ -71,3 +80,48 @@ export async function sendMail(
     });
   });
 }
+
+type Processor = (
+  input: string
+) => Promise<{ readonly toString: () => string }>;
+
+export const contentToHtml: (
+  processor?: Processor
+) => (markdown: string) => TE.TaskEither<Error, string> = (
+  processor = markdownToHtml.process
+) =>
+  flow(
+    TE.tryCatchK(m => processor(m), E.toError),
+    TE.map(htmlAsFile => htmlAsFile.toString()),
+    TE.map(S.replace(/\n|\r\n/g, "</p><p>"))
+  );
+
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+type MessageToHtmlInput = {
+  readonly content: MessageContent;
+  readonly senderMetadata: CreatedMessageEventSenderMetadata;
+};
+
+export const messageToHtml = (
+  processor?: Processor
+): (({
+  content,
+  senderMetadata
+}: MessageToHtmlInput) => TE.TaskEither<Error, string>) => ({
+  content,
+  senderMetadata
+}): TE.TaskEither<Error, string> =>
+  pipe(
+    content.markdown,
+    contentToHtml(processor),
+    // strip leading zeroes
+    TE.map(bodyHtml =>
+      messagetemplate.apply(content.subject, bodyHtml, {
+        ...senderMetadata,
+        organizationFiscalCode: senderMetadata.organizationFiscalCode.replace(
+          /^0+/,
+          ""
+        ) as OrganizationFiscalCode
+      })
+    )
+  );

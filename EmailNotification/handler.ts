@@ -17,9 +17,6 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
 
 import { sendMail } from "@pagopa/io-functions-commons/dist/src/mailer";
-import { markdownToHtml } from "@pagopa/io-functions-commons/dist/src/utils/markdown";
-import { CreatedMessageEventSenderMetadata } from "@pagopa/io-functions-commons/dist/src/models/created_message_sender_metadata";
-import { OrganizationFiscalCode } from "@pagopa/io-functions-admin-sdk/OrganizationFiscalCode";
 import { withJsonInput } from "../utils/with-json-input";
 import { withDecodedInput } from "../utils/with-decoded-input";
 import {
@@ -32,8 +29,8 @@ import {
   FeatureFlag,
   getIsUserEligibleForNewFeature
 } from "../utils/featureFlag";
-import * as messagetemplate from "../generated/templates/servicemessage/index";
-import { generateDocumentHtml } from "./utils";
+
+import { generateDocumentHtml, messageToHtml } from "./utils";
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type FfTemplateEmail = {
@@ -151,32 +148,20 @@ export const getEmailNotificationHandler = (
             )
           );
 
-          // eslint-disable-next-line functional/no-let
-          let documentHtml: string;
-          if (useTemplate) {
-            const bodyHtml = (
-              await markdownToHtml.process(content.markdown)
-            ).toString();
-            // strip leading zeroes
-            const strippedSenderMetadata: CreatedMessageEventSenderMetadata = {
-              ...senderMetadata,
-              organizationFiscalCode: senderMetadata.organizationFiscalCode.replace(
-                /^0+/,
-                ""
-              ) as OrganizationFiscalCode
-            };
-            documentHtml = messagetemplate.apply(
-              content.subject,
-              bodyHtml,
-              strippedSenderMetadata
-            );
-          } else {
-            documentHtml = await generateDocumentHtml(
-              content.subject,
-              content.markdown,
-              senderMetadata
-            );
-          }
+          const documentHtml = await (useTemplate
+            ? pipe(
+                { content, senderMetadata },
+                messageToHtml(),
+                TE.mapLeft(err => {
+                  throw err;
+                }),
+                TE.toUnion
+              )()
+            : generateDocumentHtml(
+                content.subject,
+                content.markdown,
+                senderMetadata
+              ));
 
           // converts the HTML to pure text to generate the text version of the message
           const bodyText = HtmlToText.fromString(
