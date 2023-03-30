@@ -320,7 +320,7 @@ Object {
                                       <tbody>
                                         <tr>
                                           <td style=\\"width:36px;\\">
-                                            <img height=\\"auto\\" src=\\"https://raw.githubusercontent.com/pagopa/io-messages-email-templates/ICC-293--update-servicemessage-temaplte-with-placeholder/assets/logo_app_io.png\\" style=\\"border:0;display:block;outline:none;text-decoration:none;height:auto;width:100%;font-size:13px;\\" width=\\"36\\" />
+                                            <img height=\\"auto\\" src=\\"https://raw.githubusercontent.com/pagopa/io-messages-email-templates/v1.0.1/assets/logo_app_io.png\\" style=\\"border:0;display:block;outline:none;text-decoration:none;height:auto;width:100%;font-size:13px;\\" width=\\"36\\" />
                                           </td>
                                         </tr>
                                       </tbody>
@@ -328,7 +328,7 @@ Object {
                                   </td>
                                 </tr>
                                 <div class=\\"dark-img\\" style=\\"mso-hide: all; display: none; padding: 10px 0px\\" align=\\"right\\">
-                                  <img src=\\"https://raw.githubusercontent.com/pagopa/io-messages-email-templates/ICC-293--update-servicemessage-temaplte-with-placeholder/assets/logo_app_io_white.png\\" width=\\"36px\\" class=\\"dark-img\\" style=\\"display: none\\" />
+                                  <img src=\\"https://raw.githubusercontent.com/pagopa/io-messages-email-templates/v1.0.1/assets/logo_app_io_white.png\\" width=\\"36px\\" class=\\"dark-img\\" style=\\"display: none\\" />
                                 </div>
                               </tbody>
                             </table>
