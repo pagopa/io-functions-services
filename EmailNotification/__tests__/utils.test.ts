@@ -32,7 +32,7 @@ describe("contentToHtml", () => {
 });
 
 describe("messageToHtml", () => {
-  test("GIVEN a simple message WHEN is converted to an html using the default processor THEN return an either contianing the email template with the simple content", async () => {
+  test("GIVEN a simple message WHEN is converted to an html using the default processor THEN return an either containing the email template with the simple content", async () => {
     const simpleMessage = {
       content: aMessageContent,
       senderMetadata: aCreatedMessageEventSenderMetadata
@@ -41,7 +41,7 @@ describe("messageToHtml", () => {
     expect(result).toMatchSnapshot();
   });
 
-  test("GIVEN a sender with a leading zero WHEN is converted to an html using the default processor THEN return an either contianing the email template with the simple content", async () => {
+  test("GIVEN a sender with a leading zero WHEN is converted to an html using the default processor THEN return an either containingthe email template with the simple content", async () => {
     const strippedOrganizationalFiscalCode = "19871987";
     const messageWithSenderWithLeadingZero = {
       content: aMessageContent,
