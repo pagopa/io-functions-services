@@ -2,10 +2,6 @@
   "name": "@pagopa/io-functions-services",
   "version": "3.25.3",
   "license": "MIT",
-  "config": {
-    "template_servicemessage_path": "generated/templates/servicemessage/index",
-    "template_servicemessage_version": "v1.0.1"
-  },
   "scripts": {
     "prebuild": "shx rm -rf dist && yarn generate",
     "build": "tsc",
@@ -24,7 +20,7 @@
     "generate": "npm-run-all generate:* generate:templates:*",
     "generate:definitions": "rimraf ./generated/definitions && shx mkdir -p ./generated/definitions && gen-api-models --api-spec ./openapi/index.yaml --no-strict --out-dir ./generated/definitions",
     "generate:payment-updater": "rimraf generated/payment-updater && shx mkdir -p generated/payment-updater && gen-api-models --api-spec ./openapi/payment-updater.yaml --no-strict --out-dir ./generated/payment-updater --request-types --response-decoders --client",
-    "generate:templates:servicemessage": "shx rm -rf generated/templates/servicemessage && shx mkdir -p generated/templates/servicemessage && ts-node template_script.ts $npm_package_config_template_servicemessage_version $npm_package_config_template_servicemessage_path",
+    "generate:templates:servicemessage": "shx rm -rf generated/templates/servicemessage && shx mkdir -p generated/templates/servicemessage && ts-node template_script.ts v1.0.1 \"generated/templates/servicemessage/index\"",
     "openapi:bundle": "bundle-api-spec -i openapi/index.yaml.template -o openapi/index.yaml -V $npm_package_version",
     "openapi:validate": "oval validate -p openapi/index.yaml",
     "dist:modules": "modclean -r -n default:safe && yarn install --production",
