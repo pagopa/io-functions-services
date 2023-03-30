@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`messageToHtml GIVEN a simple message WHEN is converted to an html using the default processor THEN return an either contianing the email template with the simple content 1`] = `
+exports[`messageToHtml GIVEN a simple message WHEN is converted to an html using the default processor THEN return an either containing the email template with the simple content 1`] = `
 Object {
   "_tag": "Right",
   "right": "

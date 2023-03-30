@@ -17,6 +17,7 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
 
 import { sendMail } from "@pagopa/io-functions-commons/dist/src/mailer";
+import * as B from "fp-ts/boolean";
 import { withJsonInput } from "../utils/with-json-input";
 import { withDecodedInput } from "../utils/with-decoded-input";
 import {
@@ -29,7 +30,6 @@ import {
   FeatureFlag,
   getIsUserEligibleForNewFeature
 } from "../utils/featureFlag";
-
 import { generateDocumentHtml, messageToHtml } from "./utils";
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
@@ -139,29 +139,31 @@ export const getEmailNotificationHandler = (
           const emailNotification =
             errorOrEmailNotification.right.channels.EMAIL;
 
-          const useTemplate = pipe(
+          const documentHtml = await pipe(
             errorOrActiveMessage.right.fiscalCode,
             getIsUserEligibleForNewFeature(
               cf => BETA_USERS.includes(cf),
               () => false, // NO canary implemented yet
               FF_TEMPLATE_EMAIL
-            )
-          );
-
-          const documentHtml = await (useTemplate
-            ? pipe(
-                { content, senderMetadata },
-                messageToHtml(),
-                TE.mapLeft(err => {
-                  throw err;
-                }),
-                TE.toUnion
-              )()
-            : generateDocumentHtml(
-                content.subject,
-                content.markdown,
-                senderMetadata
-              ));
+            ),
+            B.fold(
+              () =>
+                TE.tryCatch(
+                  () =>
+                    generateDocumentHtml(
+                      content.subject,
+                      content.markdown,
+                      senderMetadata
+                    ),
+                  E.toError
+                ),
+              () => pipe({ content, senderMetadata }, messageToHtml())
+            ),
+            TE.mapLeft(err => {
+              throw err;
+            }),
+            TE.toUnion
+          )();
 
           // converts the HTML to pure text to generate the text version of the message
           const bodyText = HtmlToText.fromString(
