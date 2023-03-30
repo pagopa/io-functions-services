@@ -4,7 +4,7 @@ exports[`messageToHtml GIVEN a simple message WHEN is converted to an html using
 Object {
   "_tag": "Right",
   "right": "
-<!doctype html>
+  <!doctype html>
 <html lang=\\"it\\" xmlns=\\"http://www.w3.org/1999/xhtml\\" xmlns:v=\\"urn:schemas-microsoft-com:vml\\" xmlns:o=\\"urn:schemas-microsoft-com:office:office\\">
 
 <head>
@@ -457,6 +457,7 @@ Object {
 </body>
 
 </html>
-",
+
+  ",
 }
 `;
