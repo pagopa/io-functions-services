@@ -9,6 +9,10 @@ export const generateTemplateForMessage = async (): Promise<void> => {
   const templateSourceVersion = process.argv[2];
   const templateTargetPath = process.argv[3];
 
+  console.log(
+    `generating template for message using version ${templateSourceVersion} and target output ${templateTargetPath}`
+  );
+
   const templateResponse: Response = await fetch(
     `https://raw.githubusercontent.com/pagopa/io-messages-email-templates/${templateSourceVersion}/Service_Message_WithOrgLogo/index.html`
   );
@@ -29,3 +33,4 @@ export const generateTemplateForMessage = async (): Promise<void> => {
 };
 
 void generateTemplateForMessage();
+console.log("done");
