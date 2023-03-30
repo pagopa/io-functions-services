@@ -160,6 +160,15 @@ Object {
       color: #0073E6 !important;
     }
 
+    .divider p {
+      border-color: #E3E7EB !important;
+    }
+
+    /* Message Preview Block */
+    .message-preview {
+      background-color: #FAFAFA;
+    }
+
     @media (prefers-color-scheme: light) {
 
       .dark-img,
@@ -199,6 +208,14 @@ Object {
 
       .section {
         background-color: #323232;
+      }
+
+      .message-preview {
+        background-color: #424242;
+      }
+
+      .divider p {
+        border-color: #757575 !important;
       }
 
       .title div {
@@ -262,23 +279,23 @@ Object {
       <table align=\\"center\\" border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\" role=\\"presentation\\" style=\\"width:100%;\\">
         <tbody>
           <tr>
-            <td style=\\"direction:ltr;font-size:0px;padding:20px 0;text-align:center;\\">
+            <td style=\\"direction:ltr;font-size:0px;padding:20px 0;padding-left:20px;padding-right:20px;text-align:center;\\">
               <!--[if mso | IE]><table role=\\"presentation\\" border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\"><![endif]-->
               <!-- Entity Logo + App IO Logo -->
-              <!--[if mso | IE]><tr><td class=\\"header-outlook\\" width=\\"600px\\" ><table align=\\"center\\" border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\" class=\\"header-outlook\\" role=\\"presentation\\" style=\\"width:600px;\\" width=\\"600\\" ><tr><td style=\\"line-height:0px;font-size:0px;mso-line-height-rule:exactly;\\"><![endif]-->
-              <div class=\\"header\\" style=\\"margin:0px auto;max-width:600px;\\">
+              <!--[if mso | IE]><tr><td class=\\"header-outlook\\" width=\\"600px\\" ><table align=\\"center\\" border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\" class=\\"header-outlook\\" role=\\"presentation\\" style=\\"width:560px;\\" width=\\"560\\" ><tr><td style=\\"line-height:0px;font-size:0px;mso-line-height-rule:exactly;\\"><![endif]-->
+              <div class=\\"header\\" style=\\"margin:0px auto;max-width:560px;\\">
                 <table align=\\"center\\" border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\" role=\\"presentation\\" style=\\"width:100%;\\">
                   <tbody>
                     <tr>
                       <td style=\\"direction:ltr;font-size:0px;padding:20px 0;padding-bottom:0px;padding-top:0px;text-align:center;\\">
-                        <!--[if mso | IE]><table role=\\"presentation\\" border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\"><tr><td class=\\"\\" style=\\"width:600px;\\" ><![endif]-->
+                        <!--[if mso | IE]><table role=\\"presentation\\" border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\"><tr><td class=\\"\\" style=\\"width:560px;\\" ><![endif]-->
                         <div class=\\"mj-column-per-100 mj-outlook-group-fix\\" style=\\"font-size:0;line-height:0;text-align:left;display:inline-block;width:100%;direction:ltr;\\">
-                          <!--[if mso | IE]><table border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\" role=\\"presentation\\" ><tr><td style=\\"vertical-align:middle;width:300px;\\" ><![endif]-->
+                          <!--[if mso | IE]><table border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\" role=\\"presentation\\" ><tr><td style=\\"vertical-align:middle;width:280px;\\" ><![endif]-->
                           <div class=\\"mj-column-per-50 mj-outlook-group-fix\\" style=\\"font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:middle;width:50%;\\">
                             <table border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\" role=\\"presentation\\" style=\\"vertical-align:middle;\\" width=\\"100%\\">
                               <tbody>
                                 <tr>
-                                  <td align=\\"left\\" style=\\"font-size:0px;padding:10px 25px;word-break:break-word;\\">
+                                  <td align=\\"left\\" style=\\"font-size:0px;padding:10px 25px;padding-left:0px;word-break:break-word;\\">
                                     <table border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\" role=\\"presentation\\" style=\\"border-collapse:collapse;border-spacing:0px;\\">
                                       <tbody>
                                         <tr>
@@ -293,12 +310,12 @@ Object {
                               </tbody>
                             </table>
                           </div>
-                          <!--[if mso | IE]></td><td style=\\"vertical-align:middle;width:300px;\\" ><![endif]-->
+                          <!--[if mso | IE]></td><td style=\\"vertical-align:middle;width:280px;\\" ><![endif]-->
                           <div class=\\"mj-column-per-50 mj-outlook-group-fix\\" style=\\"font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:middle;width:50%;\\">
                             <table border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\" role=\\"presentation\\" style=\\"vertical-align:middle;\\" width=\\"100%\\">
                               <tbody>
                                 <tr>
-                                  <td align=\\"right\\" class=\\"light-img\\" style=\\"font-size:0px;padding:10px 25px;word-break:break-word;\\">
+                                  <td align=\\"right\\" class=\\"light-img\\" style=\\"font-size:0px;padding:10px 25px;padding-right:0px;word-break:break-word;\\">
                                     <table border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\" role=\\"presentation\\" style=\\"border-collapse:collapse;border-spacing:0px;\\">
                                       <tbody>
                                         <tr>
@@ -310,7 +327,7 @@ Object {
                                     </table>
                                   </td>
                                 </tr>
-                                <div class=\\"dark-img\\" style=\\"mso-hide: all; display: none; padding: 10px 25px\\" align=\\"right\\">
+                                <div class=\\"dark-img\\" style=\\"mso-hide: all; display: none; padding: 10px 0px\\" align=\\"right\\">
                                   <img src=\\"https://raw.githubusercontent.com/pagopa/io-messages-email-templates/ICC-293--update-servicemessage-temaplte-with-placeholder/assets/logo_app_io_white.png\\" width=\\"36px\\" class=\\"dark-img\\" style=\\"display: none\\" />
                                 </div>
                               </tbody>
@@ -324,38 +341,38 @@ Object {
                   </tbody>
                 </table>
               </div>
-              <!--[if mso | IE]></td></tr></table></td></tr><tr><td class=\\"section-outlook\\" width=\\"600px\\" ><table align=\\"center\\" border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\" class=\\"section-outlook\\" role=\\"presentation\\" style=\\"width:600px;\\" width=\\"600\\" ><tr><td style=\\"line-height:0px;font-size:0px;mso-line-height-rule:exactly;\\"><![endif]-->
-              <div class=\\"section\\" style=\\"margin:0px auto;max-width:600px;\\">
+              <!--[if mso | IE]></td></tr></table></td></tr><tr><td class=\\"section-outlook\\" width=\\"600px\\" ><table align=\\"center\\" border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\" class=\\"section-outlook\\" role=\\"presentation\\" style=\\"width:560px;\\" width=\\"560\\" ><tr><td style=\\"line-height:0px;font-size:0px;mso-line-height-rule:exactly;\\"><![endif]-->
+              <div class=\\"section\\" style=\\"margin:0px auto;max-width:560px;\\">
                 <table align=\\"center\\" border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\" role=\\"presentation\\" style=\\"width:100%;\\">
                   <tbody>
                     <tr>
                       <td style=\\"direction:ltr;font-size:0px;padding:20px 0;padding-bottom:0px;padding-top:0px;text-align:center;\\">
-                        <!--[if mso | IE]><table role=\\"presentation\\" border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\"><tr><td class=\\"\\" style=\\"vertical-align:top;width:600px;\\" ><![endif]-->
+                        <!--[if mso | IE]><table role=\\"presentation\\" border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\"><tr><td class=\\"\\" style=\\"vertical-align:top;width:560px;\\" ><![endif]-->
                         <div class=\\"mj-column-per-100 mj-outlook-group-fix\\" style=\\"font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:100%;\\">
                           <table border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\" role=\\"presentation\\" style=\\"vertical-align:top;\\" width=\\"100%\\">
                             <tbody>
                               <!-- Service Organization Name + Service Name --><!-- H6 Mobile (from MUI Italia) -->
                               <tr>
-                                <td align=\\"left\\" class=\\"text\\" style=\\"font-size:0px;padding:10px 25px;padding-top:16px;padding-bottom:0px;word-break:break-word;\\">
+                                <td align=\\"left\\" class=\\"text\\" style=\\"font-size:0px;padding:10px 25px;padding-top:16px;padding-right:0px;padding-bottom:0px;padding-left:0px;word-break:break-word;\\">
                                   <div style=\\"font-family:Titillium Web, system-ui, sans-serif;font-size:18px;font-weight:600;line-height:24px;text-align:left;color:#17324D;\\">An Organization Name</div>
                                 </td>
                               </tr>
                               <!-- Body 1 Desktop (from MUI Italia) -->
                               <tr>
-                                <td align=\\"left\\" class=\\"text-secondary\\" style=\\"font-size:0px;padding:10px 25px;padding-top:0px;word-break:break-word;\\">
+                                <td align=\\"left\\" class=\\"text-secondary\\" style=\\"font-size:0px;padding:10px 25px;padding-top:0px;padding-right:0px;padding-left:0px;word-break:break-word;\\">
                                   <div style=\\"font-family:Titillium Web, system-ui, sans-serif;font-size:16px;font-weight:400;line-height:24px;text-align:left;color:#5C6F82;\\">aDepartmentName<br /> A_SERVICE_NAME</div>
                                 </td>
                               </tr>
                               <!-- Title & Main Message -->
                               <tr>
-                                <td align=\\"left\\" class=\\"title\\" style=\\"font-size:0px;padding:10px 25px;padding-top:24px;padding-bottom:0px;word-break:break-word;\\">
+                                <td align=\\"left\\" class=\\"title\\" style=\\"font-size:0px;padding:10px 25px;padding-top:24px;padding-right:0px;padding-bottom:0px;padding-left:0px;word-break:break-word;\\">
                                   <div style=\\"font-family:Titillium Web, system-ui, sans-serif;font-size:13px;font-weight:bold;line-height:1;text-align:left;color:#17324D;\\"><!-- H4 Desktop (from MUI Italia)-->
                                     <h1 style=\\"font-size: 32px; line-height: 40px; margin: 0\\"> testtesttesttesttesttesttesttesttesttest </h1>
                                   </div>
                                 </td>
                               </tr>
                               <tr>
-                                <td align=\\"left\\" class=\\"text\\" style=\\"font-size:0px;padding:10px 25px;padding-top:4px;word-break:break-word;\\">
+                                <td align=\\"left\\" class=\\"text\\" style=\\"font-size:0px;padding:10px 25px;padding-top:4px;padding-right:0px;padding-left:0px;word-break:break-word;\\">
                                   <div style=\\"font-family:Titillium Web, system-ui, sans-serif;font-size:16px;font-weight:regular;line-height:24px;text-align:left;color:#17324D;\\"><!-- Body 1 Desktop (from MUI Italia)--> <p>testtesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttest</p></div>
                                 </td>
                               </tr>
@@ -370,21 +387,21 @@ Object {
               </div>
               <!--[if mso | IE]></td></tr></table></td></tr><![endif]-->
               <!-- Divider -->
-              <!--[if mso | IE]><tr><td class=\\"section-outlook\\" width=\\"600px\\" ><table align=\\"center\\" border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\" class=\\"section-outlook\\" role=\\"presentation\\" style=\\"width:600px;\\" width=\\"600\\" ><tr><td style=\\"line-height:0px;font-size:0px;mso-line-height-rule:exactly;\\"><![endif]-->
-              <div class=\\"section\\" style=\\"margin:0px auto;max-width:600px;\\">
+              <!--[if mso | IE]><tr><td class=\\"section-outlook\\" width=\\"600px\\" ><table align=\\"center\\" border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\" class=\\"section-outlook\\" role=\\"presentation\\" style=\\"width:560px;\\" width=\\"560\\" ><tr><td style=\\"line-height:0px;font-size:0px;mso-line-height-rule:exactly;\\"><![endif]-->
+              <div class=\\"section\\" style=\\"margin:0px auto;max-width:560px;\\">
                 <table align=\\"center\\" border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\" role=\\"presentation\\" style=\\"width:100%;\\">
                   <tbody>
                     <tr>
                       <td style=\\"direction:ltr;font-size:0px;padding:20px 0;padding-bottom:0px;padding-top:0px;text-align:center;\\">
-                        <!--[if mso | IE]><table role=\\"presentation\\" border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\"><tr><td class=\\"\\" style=\\"vertical-align:top;width:600px;\\" ><![endif]-->
+                        <!--[if mso | IE]><table role=\\"presentation\\" border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\"><tr><td class=\\"\\" style=\\"vertical-align:top;width:560px;\\" ><![endif]-->
                         <div class=\\"mj-column-per-100 mj-outlook-group-fix\\" style=\\"font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:100%;\\">
                           <table border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\" role=\\"presentation\\" style=\\"vertical-align:top;\\" width=\\"100%\\">
                             <tbody>
                               <tr>
-                                <td align=\\"center\\" style=\\"font-size:0px;padding:10px 25px;padding-top:16px;padding-bottom:16px;word-break:break-word;\\">
-                                  <p style=\\"border-top:solid 1px lightgrey;font-size:1px;margin:0px auto;width:100%;\\">
+                                <td align=\\"center\\" class=\\"divider\\" style=\\"font-size:0px;padding:0px;padding-top:16px;padding-bottom:16px;word-break:break-word;\\">
+                                  <p style=\\"border-top:solid 1px #E3E7EB;font-size:1px;margin:0px auto;width:100%;\\">
                                   </p>
-                                  <!--[if mso | IE]><table align=\\"center\\" border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\" style=\\"border-top:solid 1px lightgrey;font-size:1px;margin:0px auto;width:550px;\\" role=\\"presentation\\" width=\\"550px\\" ><tr><td style=\\"height:0;line-height:0;\\"> &nbsp;
+                                  <!--[if mso | IE]><table align=\\"center\\" border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\" style=\\"border-top:solid 1px #E3E7EB;font-size:1px;margin:0px auto;width:560px;\\" role=\\"presentation\\" width=\\"560px\\" ><tr><td style=\\"height:0;line-height:0;\\"> &nbsp;
 </td></tr></table><![endif]-->
                                 </td>
                               </tr>
@@ -399,18 +416,18 @@ Object {
               </div>
               <!--[if mso | IE]></td></tr></table></td></tr><![endif]-->
               <!-- Footer -->
-              <!--[if mso | IE]><tr><td class=\\"section-outlook\\" width=\\"600px\\" ><table align=\\"center\\" border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\" class=\\"section-outlook\\" role=\\"presentation\\" style=\\"width:600px;\\" width=\\"600\\" ><tr><td style=\\"line-height:0px;font-size:0px;mso-line-height-rule:exactly;\\"><![endif]-->
-              <div class=\\"section\\" style=\\"margin:0px auto;max-width:600px;\\">
+              <!--[if mso | IE]><tr><td class=\\"section-outlook\\" width=\\"600px\\" ><table align=\\"center\\" border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\" class=\\"section-outlook\\" role=\\"presentation\\" style=\\"width:560px;\\" width=\\"560\\" ><tr><td style=\\"line-height:0px;font-size:0px;mso-line-height-rule:exactly;\\"><![endif]-->
+              <div class=\\"section\\" style=\\"margin:0px auto;max-width:560px;\\">
                 <table align=\\"center\\" border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\" role=\\"presentation\\" style=\\"width:100%;\\">
                   <tbody>
                     <tr>
                       <td style=\\"direction:ltr;font-size:0px;padding:20px 0;padding-top:0px;text-align:center;\\">
-                        <!--[if mso | IE]><table role=\\"presentation\\" border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\"><tr><td class=\\"\\" style=\\"vertical-align:top;width:600px;\\" ><![endif]-->
+                        <!--[if mso | IE]><table role=\\"presentation\\" border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\"><tr><td class=\\"\\" style=\\"vertical-align:top;width:560px;\\" ><![endif]-->
                         <div class=\\"mj-column-per-100 mj-outlook-group-fix\\" style=\\"font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:100%;\\">
                           <table border=\\"0\\" cellpadding=\\"0\\" cellspacing=\\"0\\" role=\\"presentation\\" style=\\"vertical-align:top;\\" width=\\"100%\\">
                             <tbody>
                               <tr>
-                                <td align=\\"left\\" class=\\"text-secondary\\" style=\\"font-size:0px;padding:10px 25px;word-break:break-word;\\">
+                                <td align=\\"left\\" class=\\"text-secondary\\" style=\\"font-size:0px;padding:0px;word-break:break-word;\\">
                                   <div style=\\"font-family:Titillium Web, system-ui, sans-serif;font-size:14px;font-weight:regular;line-height:20px;text-align:left;color:#5C6F82;\\">
                                     <p>
                                       <strong> Non rispondere a questo indirizzo email: è utilizzato solo per l'invio di questa comunicazione e, non essendo monitorato, non riceveresti risposta. </strong>
