@@ -13,8 +13,6 @@ import {
   getEmailNotificationHandler
 } from "../handler";
 
-import { pipe } from "fp-ts/lib/function";
-import * as E from "fp-ts/lib/Either";
 import * as TE from "fp-ts/lib/TaskEither";
 import * as O from "fp-ts/lib/Option";
 
@@ -34,6 +32,11 @@ import {
   RetrievedNotification
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
 import { StandardServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/StandardServiceCategory";
+import { FeatureFlagEnum } from "../../utils/featureFlag";
+import * as messagetemplate from "../../generated/templates/servicemessage/index";
+import { markdownToHtml } from "@pagopa/io-functions-commons/dist/src/utils/markdown";
+import { aFiscalCode, anotherFiscalCode } from "../../__mocks__/mocks";
+import { generateDocumentHtml } from "../utils";
 
 beforeEach(() => jest.clearAllMocks());
 
@@ -80,7 +83,7 @@ const notificationModelMock = ({
 } as unknown) as NotificationModel;
 
 const aNotificationId = "A_NOTIFICATION_ID" as NonEmptyString;
-const anOrganizationFiscalCode = "00000000000" as OrganizationFiscalCode;
+const anOrganizationFiscalCode = "10000000000" as OrganizationFiscalCode;
 
 const aMessageBodyMarkdown = "test".repeat(80) as MessageBodyMarkdown;
 
@@ -91,7 +94,7 @@ const aMessageContent: MessageContent = {
 
 const aMessage = {
   createdAt: new Date(),
-  fiscalCode: "FRLFRC74E04B157I" as any,
+  fiscalCode: aFiscalCode,
   id: aMessageId,
   indexedId: aMessageId,
   kind: "INewMessageWithoutContent" as "INewMessageWithoutContent",
@@ -139,6 +142,73 @@ const mockRetrieveProcessingMessageData = jest.fn().mockImplementation(() =>
 );
 
 describe("getEmailNotificationActivityHandler", () => {
+  test.each([
+    {
+      betaList: [],
+      ff: FeatureFlagEnum.NONE,
+      expectedHtmlFormTemplate: false
+    },
+    {
+      betaList: [aFiscalCode],
+      ff: FeatureFlagEnum.NONE,
+      expectedHtmlFormTemplate: false
+    },
+    {
+      betaList: [aFiscalCode],
+      ff: FeatureFlagEnum.BETA,
+      expectedHtmlFormTemplate: true
+    },
+    {
+      betaList: [anotherFiscalCode],
+      ff: FeatureFlagEnum.BETA,
+      expectedHtmlFormTemplate: false
+    },
+    {
+      betaList: [],
+      ff: FeatureFlagEnum.ALL,
+      expectedHtmlFormTemplate: true
+    }
+  ])(
+    "GIVEN an EmailNotification.handeler with FF: $ff and beta_list: $betaList WHEN the handler run with input $input THEN should return SUCCESS with the right html email body",
+    async ({ betaList, ff, expectedHtmlFormTemplate }) => {
+      const mockSendMail = jest
+        .spyOn(mail, "sendMail")
+        .mockReturnValueOnce(TE.of("SUCCESS"));
+
+      const GetEmailNotificationActivityHandler = getEmailNotificationHandler(
+        lMailerTransporterMock,
+        notificationModelMock,
+        mockRetrieveProcessingMessageData,
+        defaultNotificationParams,
+        { BETA_USERS: betaList, FF_TEMPLATE_EMAIL: ff }
+      );
+
+      const result = await GetEmailNotificationActivityHandler(
+        mockContext,
+        JSON.stringify(input)
+      );
+
+      const expectedHtml = expectedHtmlFormTemplate
+        ? messagetemplate.apply(
+            aMessageContent.subject,
+            (await markdownToHtml.process(aMessageContent.markdown)).toString(),
+            aSenderMetadata
+          )
+        : await generateDocumentHtml(
+            aMessageContent.subject,
+            aMessageContent.markdown,
+            aSenderMetadata
+          );
+
+      expect(mockSendMail).toBeCalledWith(
+        expect.anything(),
+        expect.objectContaining({ html: expectedHtml })
+      );
+
+      expect(result.kind).toBe("SUCCESS");
+    }
+  );
+
   it("should respond with 'SUCCESS' if the mail is sent", async () => {
     jest.spyOn(mail, "sendMail").mockReturnValueOnce(TE.of("SUCCESS"));
 
@@ -146,7 +216,8 @@ describe("getEmailNotificationActivityHandler", () => {
       lMailerTransporterMock,
       notificationModelMock,
       mockRetrieveProcessingMessageData,
-      defaultNotificationParams
+      defaultNotificationParams,
+      { BETA_USERS: [], FF_TEMPLATE_EMAIL: FeatureFlagEnum.NONE }
     );
 
     const result = await GetEmailNotificationActivityHandler(
@@ -168,7 +239,8 @@ describe("getEmailNotificationActivityHandler", () => {
       lMailerTransporterMock,
       notificationModelMock,
       mockRetrieveProcessingMessageData,
-      defaultNotificationParams
+      defaultNotificationParams,
+      { BETA_USERS: [], FF_TEMPLATE_EMAIL: FeatureFlagEnum.NONE }
     );
 
     try {
