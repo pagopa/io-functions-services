@@ -58,6 +58,8 @@ export const cosmosErrorsToString = (errs: CosmosErrors): NonEmptyString =>
       ? "Empty response"
       : errs.kind === "COSMOS_DECODING_ERROR"
       ? "Decoding error: " + errorsToReadableMessages(errs.error).join("/")
+      : errs.kind === "COSMOS_CONFLICT_RESPONSE"
+      ? "Conflict error, a document with the same ID already exist"
       : "Generic error: " + JSON.stringify(errs.error),
 
     errorString => errorString as NonEmptyString
