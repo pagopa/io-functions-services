@@ -1,7 +1,7 @@
 oa3_spec: openapi/index.yaml
 name: opex_fnservices_index
 location: West Europe
-timespan: 10m
+timespan: 5m
 evaluation_frequency: 5
 evaluation_time_window: 30
 event_occurrences: 3
