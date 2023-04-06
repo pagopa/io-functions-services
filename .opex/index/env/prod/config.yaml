@@ -2,6 +2,9 @@ oa3_spec: openapi/index.yaml
 name: opex_fnservices_index
 location: West Europe
 timespan: 10m
+evaluation_frequency: 5
+evaluation_time_window: 30
+event_occurrences: 3
 data_source: /subscriptions/ec285037-c673-4f58-b594-d7c480da4e8b/resourceGroups/io-p-rg-external/providers/Microsoft.Network/applicationGateways/io-p-appgateway
 action_groups:
   - /subscriptions/ec285037-c673-4f58-b594-d7c480da4e8b/resourceGroups/io-p-rg-common/providers/Microsoft.Insights/actiongroups/iopquarantineerror
