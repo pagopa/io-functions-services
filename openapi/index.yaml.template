@@ -22,12 +22,12 @@ info:
 
     # How to get an API key
 
-    To get access to this API, you'll need to register on the
-    [IO Developer Portal](https://developer.io.italia.it/).
+    To get access to this API, you'll need to register on the [IO Developer
+    Portal](https://developer.io.italia.it/).
 
     After the registration step, you have to click on the button that says
-    `subscribe to the digital citizenship api` to receive the API key
-    that you will use to authenticate the API calls.
+    `subscribe to the digital citizenship api` to receive the API key that you
+    will use to authenticate the API calls.
 
     You will also receive an email with further instructions, including a fake
     Fiscal Code that you will be able to use to send test messages. Messages
@@ -67,7 +67,7 @@ info:
         It can be:
         - `STANDARD` for normal messages;
         - `ADVANCED` to enable premium features.
-        
+
         Default is `STANDARD`.
 
     ## Allowed Markdown formatting
@@ -793,7 +793,7 @@ definitions:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/CreatedMessageWithContent"
   EUCovidCert:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/EUCovidCert"
-  ThirdPartyData: 
+  ThirdPartyData:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ThirdPartyData"
   OrganizationFiscalCode:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/OrganizationFiscalCode"

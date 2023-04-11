@@ -67,7 +67,7 @@ info:
         It can be:
         - `STANDARD` for normal messages;
         - `ADVANCED` to enable premium features.
-        
+
         Default is `STANDARD`.
 
     ## Allowed Markdown formatting
