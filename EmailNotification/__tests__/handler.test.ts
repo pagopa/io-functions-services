@@ -264,7 +264,8 @@ describe("html generation", () => {
       lMailerTransporterMock,
       notificationModelMock,
       mockRetrieveProcessingMessageData,
-      defaultNotificationParams
+      defaultNotificationParams,
+      { BETA_USERS: [], FF_TEMPLATE_EMAIL: FeatureFlagEnum.NONE }
     );
 
     const result = await GetEmailNotificationActivityHandler(
@@ -296,7 +297,8 @@ describe("html generation", () => {
       lMailerTransporterMock,
       notificationModelMock,
       mockRetrieveProcessingMessageData,
-      defaultNotificationParams
+      defaultNotificationParams,
+      { BETA_USERS: [], FF_TEMPLATE_EMAIL: FeatureFlagEnum.NONE }
     );
 
     const result = await GetEmailNotificationActivityHandler(
