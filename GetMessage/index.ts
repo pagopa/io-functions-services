@@ -28,9 +28,20 @@ import {
   NOTIFICATION_STATUS_COLLECTION_NAME,
   NotificationStatusModel
 } from "@pagopa/io-functions-commons/dist/src/models/notification_status";
-import { cosmosdbInstance } from "../utils/cosmosdb";
+import {
+  ProfileModel,
+  PROFILE_COLLECTION_NAME
+} from "@pagopa/io-functions-commons/dist/src/models/profile";
+import {
+  ServicesPreferencesModel,
+  SERVICE_PREFERENCES_COLLECTION_NAME
+} from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 
+import { cosmosdbInstance } from "../utils/cosmosdb";
 import { getConfigOrThrow } from "../utils/config";
+import { paymentUpdaterClient } from "../clients/payment-updater";
+import { canAccessMessageReadStatus } from "./userPreferenceChecker/messageReadStatusAuth";
+
 import { GetMessage } from "./handler";
 
 const config = getConfigOrThrow();
@@ -63,19 +74,35 @@ const notificationStatusModel = new NotificationStatusModel(
   cosmosdbInstance.container(NOTIFICATION_STATUS_COLLECTION_NAME)
 );
 
+const profileModel = new ProfileModel(
+  cosmosdbInstance.container(PROFILE_COLLECTION_NAME)
+);
+
+const servicePreferencesModel = new ServicesPreferencesModel(
+  cosmosdbInstance.container(SERVICE_PREFERENCES_COLLECTION_NAME),
+  SERVICE_PREFERENCES_COLLECTION_NAME
+);
+
 const blobService = createBlobService(
   config.MESSAGE_CONTENT_STORAGE_CONNECTION_STRING
 );
 
 app.get(
-  "/api/v1/messages/:fiscalcode/:id",
+  "/api/v1/messages/:fiscalcode/:id/:senderEmail?",
   GetMessage(
+    config,
     serviceModel,
     messageModel,
     messageStatusModel,
     notificationModel,
     notificationStatusModel,
-    blobService
+    blobService,
+    canAccessMessageReadStatus(
+      profileModel,
+      servicePreferencesModel,
+      config.MIN_APP_VERSION_WITH_READ_AUTH
+    ),
+    paymentUpdaterClient
   )
 );
 

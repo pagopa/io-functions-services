@@ -23,6 +23,10 @@ import {
   PatternString
 } from "@pagopa/ts-commons/lib/strings";
 import { legacyProfileServicePreferencesSettings } from "../../__mocks__/mocks";
+import {
+  FeatureLevelType,
+  FeatureLevelTypeEnum
+} from "@pagopa/io-functions-commons/dist/generated/definitions/FeatureLevelType";
 
 //
 // custom fastcheck arbitraries
@@ -78,6 +82,14 @@ export const clientIpArb = fc.ipV4().map(_ => O.some(_) as ClientIp);
 
 const messageContentSubject = fc.string(10, 120);
 const messageContentMarkdown = fc.string(80, 10000);
+
+export const featureLevelTypeArb = fc
+  .subarray(
+    [FeatureLevelTypeEnum.STANDARD, FeatureLevelTypeEnum.ADVANCED],
+    1,
+    1
+  )
+  .map(arr => headA(arr) as FeatureLevelType);
 
 export const newMessageArb = fc
   .tuple(messageContentSubject, messageContentMarkdown)
@@ -165,6 +177,7 @@ export const newMessageWithoutContentArb = fc
       messageId
     ]) =>
       ({
+        featureLevelType: FeatureLevelTypeEnum.STANDARD,
         createdAt: new Date(createdAtEpoc),
         fiscalCode,
         id: messageId,

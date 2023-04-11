@@ -23,11 +23,13 @@ import { MaxAllowedPaymentAmount } from "@pagopa/io-functions-commons/dist/gener
 import { left, right } from "fp-ts/lib/Either";
 import { ServiceScopeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceScope";
 import * as reporters from "@pagopa/ts-commons/lib/reporters";
-import { Service } from "../../generated/api-admin/Service";
-import { Subscription } from "../../generated/api-admin/Subscription";
-import { UserInfo } from "../../generated/api-admin/UserInfo";
+import { Service } from "@pagopa/io-functions-admin-sdk/Service";
+import { Subscription } from "@pagopa/io-functions-admin-sdk/Subscription";
+import { UserInfo } from "@pagopa/io-functions-admin-sdk/UserInfo";
 import { ServicePayload } from "../../generated/definitions/ServicePayload";
 import { UpdateServiceHandler } from "../handler";
+import { StandardServiceCategoryEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/StandardServiceCategory";
+import { SubscriptionWithoutKeys } from "@pagopa/io-functions-admin-sdk/SubscriptionWithoutKeys";
 
 const mockContext = {
   // eslint-disable no-console
@@ -45,10 +47,15 @@ const anOrganizationFiscalCode = "01234567890" as OrganizationFiscalCode;
 const anEmail = "test@example.com" as EmailString;
 
 const aServiceId = "s123" as NonEmptyString;
+const aManageSubscriptionId = "MANAGE-123" as NonEmptyString;
+const aUserId = "u123" as NonEmptyString;
+const aDifferentUserId = "u456" as NonEmptyString;
 
 const aTokenName = "TOKEN_NAME" as NonEmptyString;
 const someServicesMetadata: ServiceMetadata = {
   scope: ServiceScopeEnum.NATIONAL,
+  category: StandardServiceCategoryEnum.STANDARD,
+  customSpecialFlow: undefined,
   tokenName: aTokenName
 };
 
@@ -145,7 +152,28 @@ const aUserAuthenticationDeveloper: IAzureApiAuthorization = {
   groups: new Set([UserGroup.ApiServiceRead, UserGroup.ApiServiceWrite]),
   kind: "IAzureApiAuthorization",
   subscriptionId: aServiceId,
-  userId: "u123" as NonEmptyString
+  userId: aUserId
+};
+
+const aUserAuthenticationDeveloperWithManageKey: IAzureApiAuthorization = {
+  ...aUserAuthenticationDeveloper,
+  subscriptionId: aManageSubscriptionId
+};
+
+const aDifferentUserAuthenticationDeveloperWithManageKey: IAzureApiAuthorization = {
+  ...aUserAuthenticationDeveloperWithManageKey,
+  userId: aDifferentUserId
+};
+
+const aRetrievedServiceSubscription: SubscriptionWithoutKeys = {
+  id: aServiceId,
+  owner_id: aUserId,
+  scope: "aScope"
+};
+
+const aRetrievedServiceSubscriptionWithoutOwnerId: SubscriptionWithoutKeys = {
+  id: aServiceId,
+  scope: "aScope"
 };
 
 const aSubscription: Subscription = {
@@ -155,10 +183,6 @@ const aSubscription: Subscription = {
 };
 
 const aUserInfo: UserInfo = {
-  subscriptions: [
-    aSubscription,
-    { ...aSubscription, id: "s234" as NonEmptyString }
-  ],
   token_name: aTokenName
 };
 
@@ -212,6 +236,11 @@ describe("UpdateServiceHandler", () => {
 
   it("should respond with an Unauthorized error if service is not owned by current user", async () => {
     const apiClientMock = {
+      getSubscription: jest.fn(() =>
+        Promise.resolve(
+          right({ status: 200, value: aRetrievedServiceSubscription })
+        )
+      ),
       getService: jest.fn(() =>
         Promise.resolve(right({ status: 200, value: aRetrievedService }))
       ),
@@ -239,6 +268,7 @@ describe("UpdateServiceHandler", () => {
       aServicePayload
     );
 
+    expect(apiClientMock.getSubscription).toHaveBeenCalledTimes(1);
     expect(apiClientMock.updateService).not.toHaveBeenCalled();
     expect(apiClientMock.getSubscriptionKeys).not.toHaveBeenCalled();
     expect(apiClientMock.getService).not.toHaveBeenCalled();
@@ -916,5 +946,236 @@ describe("UpdateServiceHandler", () => {
     expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
     expect(mockAppinsights.trackEvent).toHaveBeenCalledTimes(1);
     expect(result.kind).toBe("IResponseErrorNotFound");
+  });
+
+  // MANAGE Flow Tests
+  it("should respond with an updated service, using a MANAGE API Key", async () => {
+    const apiClientMock = {
+      getSubscription: jest.fn(() =>
+        Promise.resolve(
+          right({ status: 200, value: aRetrievedServiceSubscription })
+        )
+      ),
+      getService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aRetrievedService }))
+      ),
+      getSubscriptionKeys: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: someSubscriptionKeys }))
+      ),
+      getUser: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aUserInfo }))
+      ),
+      updateService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aService }))
+      )
+    };
+
+    const updateServiceHandler = UpdateServiceHandler(
+      mockAppinsights as any,
+      apiClientMock as any
+    );
+    const result = await updateServiceHandler(
+      mockContext,
+      aUserAuthenticationDeveloperWithManageKey,
+      undefined as any, // not used
+      someUserAttributes,
+      aServiceId,
+      aServicePayload
+    );
+
+    expect(apiClientMock.getSubscription).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.updateService).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.getSubscriptionKeys).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.getService).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+    expect(mockAppinsights.trackEvent).toHaveBeenCalledTimes(1);
+    expect(result.kind).toBe("IResponseSuccessJson");
+    if (result.kind === "IResponseSuccessJson") {
+      expect(result.value).toEqual({
+        ...aService,
+        ...someSubscriptionKeys
+      });
+    }
+  });
+
+  it("should respond with an Unauthorized error if MANAGE API Key has a different ownerId", async () => {
+    const apiClientMock = {
+      getSubscription: jest.fn(() =>
+        Promise.resolve(
+          right({ status: 200, value: aRetrievedServiceSubscription })
+        )
+      ),
+      getService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aRetrievedService }))
+      ),
+      getSubscriptionKeys: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: someSubscriptionKeys }))
+      ),
+      getUser: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aUserInfo }))
+      ),
+      updateService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aService }))
+      )
+    };
+    const updateServiceHandler = UpdateServiceHandler(
+      mockAppinsights as any,
+      apiClientMock as any
+    );
+    const result = await updateServiceHandler(
+      mockContext,
+      aDifferentUserAuthenticationDeveloperWithManageKey,
+      undefined as any, // not used
+      someUserAttributes,
+      "aServiceId" as NonEmptyString,
+      aServicePayload
+    );
+
+    expect(apiClientMock.getSubscription).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.updateService).not.toHaveBeenCalled();
+    expect(apiClientMock.getSubscriptionKeys).not.toHaveBeenCalled();
+    expect(apiClientMock.getService).not.toHaveBeenCalled();
+    expect(apiClientMock.getUser).not.toHaveBeenCalled();
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
+    expect(result.kind).toBe("IResponseErrorForbiddenNotAuthorized");
+  });
+
+  it("should respond with an Unauthorized error if GetSubscription of a serviceId doesn't return an ownerId", async () => {
+    const apiClientMock = {
+      getSubscription: jest.fn(() =>
+        Promise.resolve(
+          right({
+            status: 200,
+            value: aRetrievedServiceSubscriptionWithoutOwnerId
+          })
+        )
+      ),
+      getService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aRetrievedService }))
+      ),
+      getSubscriptionKeys: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: someSubscriptionKeys }))
+      ),
+      getUser: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aUserInfo }))
+      ),
+      updateService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aService }))
+      )
+    };
+
+    const updateServiceHandler = UpdateServiceHandler(
+      mockAppinsights as any,
+      apiClientMock as any
+    );
+    const result = await updateServiceHandler(
+      mockContext,
+      aDifferentUserAuthenticationDeveloperWithManageKey,
+      undefined as any, // not used
+      someUserAttributes,
+      "aServiceId" as NonEmptyString,
+      aServicePayload
+    );
+
+    expect(apiClientMock.getSubscription).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.updateService).not.toHaveBeenCalled();
+    expect(apiClientMock.getSubscriptionKeys).not.toHaveBeenCalled();
+    expect(apiClientMock.getService).not.toHaveBeenCalled();
+    expect(apiClientMock.getUser).not.toHaveBeenCalled();
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
+    expect(result.kind).toBe("IResponseErrorForbiddenNotAuthorized");
+  });
+
+  it("should respond with an NotFound error if execute a GetSubscription of a not existing serviceId", async () => {
+    const apiClientMock = {
+      getSubscription: jest.fn(() =>
+        Promise.resolve(
+          right({
+            status: 404,
+            value: {
+              error: {
+                code: "ResourceNotFound",
+                message: "Subscription not found.",
+                details: null
+              }
+            }
+          })
+        )
+      ),
+      getService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aRetrievedService }))
+      ),
+      getSubscriptionKeys: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: someSubscriptionKeys }))
+      ),
+      getUser: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aUserInfo }))
+      ),
+      updateService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aService }))
+      )
+    };
+
+    const updateServiceHandler = UpdateServiceHandler(
+      mockAppinsights as any,
+      apiClientMock as any
+    );
+    const result = await updateServiceHandler(
+      mockContext,
+      aUserAuthenticationDeveloperWithManageKey,
+      undefined as any, // not used
+      someUserAttributes,
+      "aServiceId" as NonEmptyString,
+      aServicePayload
+    );
+
+    expect(apiClientMock.getSubscription).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.updateService).not.toHaveBeenCalled();
+    expect(apiClientMock.getSubscriptionKeys).not.toHaveBeenCalled();
+    expect(apiClientMock.getService).not.toHaveBeenCalled();
+    expect(apiClientMock.getUser).not.toHaveBeenCalled();
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
+    expect(result.kind).toBe("IResponseErrorNotFound");
+  });
+
+  it("should respond with an Error GetSubscription returns an error", async () => {
+    const apiClientMock = {
+      getSubscription: jest.fn(() =>
+        Promise.reject(new Error("Internal Server Error"))
+      ),
+      getService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aRetrievedService }))
+      ),
+      getSubscriptionKeys: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: someSubscriptionKeys }))
+      ),
+      getUser: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aUserInfo }))
+      ),
+      updateService: jest.fn(() =>
+        Promise.resolve(right({ status: 200, value: aService }))
+      )
+    };
+
+    const updateServiceHandler = UpdateServiceHandler(
+      mockAppinsights as any,
+      apiClientMock as any
+    );
+    const result = await updateServiceHandler(
+      mockContext,
+      aUserAuthenticationDeveloperWithManageKey,
+      undefined as any, // not used
+      someUserAttributes,
+      "aServiceId" as NonEmptyString,
+      aServicePayload
+    );
+
+    expect(apiClientMock.getSubscription).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.updateService).not.toHaveBeenCalled();
+    expect(apiClientMock.getSubscriptionKeys).not.toHaveBeenCalled();
+    expect(apiClientMock.getService).not.toHaveBeenCalled();
+    expect(apiClientMock.getUser).not.toHaveBeenCalled();
+    expect(mockAppinsights.trackEvent).not.toHaveBeenCalled();
+    expect(result.kind).toBe("IResponseErrorInternal");
   });
 });

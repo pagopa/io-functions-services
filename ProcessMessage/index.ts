@@ -17,6 +17,11 @@ import {
   MESSAGE_STATUS_COLLECTION_NAME,
   MessageStatusModel
 } from "@pagopa/io-functions-commons/dist/src/models/message_status";
+import {
+  ActivationModel,
+  ACTIVATION_COLLECTION_NAME
+} from "@pagopa/io-functions-commons/dist/src/models/activation";
+import { Second } from "@pagopa/ts-commons/lib/units";
 import { cosmosdbInstance } from "../utils/cosmosdb";
 import { getConfigOrThrow } from "../utils/config";
 import { initTelemetryClient } from "../utils/appinsights";
@@ -52,6 +57,10 @@ const messageStatusModel = new MessageStatusModel(
   cosmosdbInstance.container(MESSAGE_STATUS_COLLECTION_NAME)
 );
 
+const activationModel = new ActivationModel(
+  cosmosdbInstance.container(ACTIVATION_COLLECTION_NAME)
+);
+
 const telemetryClient = initTelemetryClient(
   config.APPINSIGHTS_INSTRUMENTATIONKEY
 );
@@ -63,13 +72,16 @@ const retrieveProcessingMessageData = makeRetrieveExpandedDataFromBlob(
 );
 
 const activityFunctionHandler: AzureFunction = getProcessMessageHandler({
+  TTL_FOR_USER_NOT_FOUND: config.TTL_FOR_USER_NOT_FOUND,
   isOptInEmailEnabled: config.FF_OPT_IN_EMAIL_ENABLED,
+  lActivation: activationModel,
   lBlobService: blobServiceForMessageContent,
   lMessageModel: messageModel,
   lMessageStatusModel: messageStatusModel,
   lProfileModel: profileModel,
   lServicePreferencesModel: servicePreferencesModel,
   optOutEmailSwitchDate: config.OPT_OUT_EMAIL_SWITCH_DATE,
+  pendingActivationGracePeriod: config.PENDING_ACTIVATION_GRACE_PERIOD_SECONDS as Second,
   retrieveProcessingMessageData,
   telemetryClient
 });

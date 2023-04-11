@@ -25,6 +25,7 @@ import {
 
 import {
   alphaStringArb,
+  featureLevelTypeArb,
   fiscalCodeArb,
   fiscalCodeArrayArb,
   fiscalCodeSetArb,
@@ -51,6 +52,8 @@ const createContext = (): Context =>
     // eslint-disable no-console
     log: { ...console, verbose: console.log }
   } as unknown) as Context);
+
+const aSandboxFiscalCode = "AAAAAA12A12A111A" as NonEmptyString;
 
 //
 // tests
@@ -183,8 +186,16 @@ describe("createMessageDocument", () => {
         senderUserIdArb,
         fiscalCodeArb,
         messageTimeToLiveArb,
+        featureLevelTypeArb,
         serviceIdArb,
-        async (messageId, senderUserId, fiscalCode, ttl, senderServiceId) => {
+        async (
+          messageId,
+          senderUserId,
+          fiscalCode,
+          ttl,
+          featureLevelType,
+          senderServiceId
+        ) => {
           const mockMessageModel = ({
             create: jest.fn(() => TE.of({}))
           } as unknown) as MessageModel;
@@ -194,6 +205,7 @@ describe("createMessageDocument", () => {
             senderUserId,
             fiscalCode,
             ttl,
+            featureLevelType,
             senderServiceId
           );
 
@@ -202,6 +214,7 @@ describe("createMessageDocument", () => {
           expect(mockMessageModel.create).toHaveBeenCalledTimes(1);
           expect(E.isRight(response)).toBeTruthy();
           expect(pipe(response, E.getOrElse(undefined))).toMatchObject({
+            featureLevelType,
             fiscalCode,
             id: messageId,
             indexedId: messageId,
@@ -227,7 +240,8 @@ describe("CreateMessageHandler", () => {
           undefined as any,
           undefined as any,
           true,
-          []
+          [],
+          aSandboxFiscalCode
         );
 
         const response = await createMessageHandler(
@@ -253,7 +267,8 @@ describe("CreateMessageHandler", () => {
       undefined as any,
       undefined as any,
       true,
-      []
+      [],
+      aSandboxFiscalCode
     );
 
     const response = await createMessageHandler(
@@ -300,7 +315,8 @@ describe("CreateMessageHandler", () => {
       mockGenerateObjId,
       mockSaveBlob,
       true,
-      []
+      [],
+      aSandboxFiscalCode
     );
 
     const response = await createMessageHandler(

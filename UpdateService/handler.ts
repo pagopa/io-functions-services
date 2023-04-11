@@ -25,6 +25,7 @@ import {
   IResponseErrorNotFound,
   IResponseErrorTooManyRequests,
   IResponseSuccessJson,
+  ResponseErrorForbiddenNotAuthorized,
   ResponseSuccessJson
 } from "@pagopa/ts-commons/lib/responses";
 
@@ -42,16 +43,28 @@ import * as TE from "fp-ts/lib/TaskEither";
 import { initAppInsights } from "@pagopa/ts-commons/lib/appinsights";
 import { EmailString, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 import { pipe } from "fp-ts/lib/function";
+import { Service } from "@pagopa/io-functions-admin-sdk/Service";
+import { SubscriptionKeys } from "@pagopa/io-functions-admin-sdk/SubscriptionKeys";
+import { UserInfo } from "@pagopa/io-functions-admin-sdk/UserInfo";
+import { StandardServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/StandardServiceCategory";
+import { SpecialServiceMetadata } from "@pagopa/io-functions-admin-sdk/SpecialServiceMetadata";
+import { SpecialServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/SpecialServiceCategory";
+import { SequenceMiddleware } from "@pagopa/ts-commons/lib/sequence_middleware";
+import {
+  AzureUserAttributesManageMiddleware,
+  IAzureUserAttributesManage
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes_manage";
+import { SubscriptionCIDRsModel } from "@pagopa/io-functions-commons/dist/src/models/subscription_cidrs";
 import { APIClient } from "../clients/admin";
-import { Service } from "../generated/api-admin/Service";
-import { SubscriptionKeys } from "../generated/api-admin/SubscriptionKeys";
-import { UserInfo } from "../generated/api-admin/UserInfo";
 import { ServicePayload } from "../generated/definitions/ServicePayload";
 import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWithSubscriptionKeys";
 import { withApiRequestWrapper } from "../utils/api";
 import { getLogger, ILogger } from "../utils/logging";
 import { ErrorResponses, IResponseErrorUnauthorized } from "../utils/responses";
-import { serviceOwnerCheckTask } from "../utils/subscription";
+import {
+  serviceOwnerCheckManageTask,
+  serviceOwnerCheckTask
+} from "../utils/subscription";
 
 type ResponseTypes =
   | IResponseSuccessJson<ServiceWithSubscriptionKeys>
@@ -71,7 +84,7 @@ type IUpdateServiceHandler = (
   context: Context,
   auth: IAzureApiAuthorization,
   clientIp: ClientIp,
-  attrs: IAzureUserAttributes,
+  attrs: IAzureUserAttributes | IAzureUserAttributesManage,
   serviceId: NonEmptyString,
   servicePayload: ServicePayload
 ) => Promise<ResponseTypes>;
@@ -137,10 +150,23 @@ const updateServiceTask = (
           ...retrievedService,
           ...servicePayload,
           service_id: serviceId,
-          service_metadata: {
-            ...servicePayload.service_metadata,
-            token_name: adb2cTokenName
-          }
+          // Only Admins can change service category and custom_special_flow name
+          // calling directly the `io-functions-admin` functions.
+          service_metadata: SpecialServiceMetadata.is(
+            retrievedService.service_metadata
+          )
+            ? {
+                ...servicePayload.service_metadata,
+                category: SpecialServiceCategoryEnum.SPECIAL,
+                custom_special_flow:
+                  retrievedService.service_metadata.custom_special_flow,
+                token_name: adb2cTokenName
+              }
+            : {
+                ...servicePayload.service_metadata,
+                category: StandardServiceCategoryEnum.STANDARD,
+                token_name: adb2cTokenName
+              }
         },
         service_id: serviceId
       }),
@@ -160,6 +186,15 @@ export function UpdateServiceHandler(
     pipe(
       pipe(
         serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId),
+        TE.orElse(__ =>
+          serviceOwnerCheckManageTask(
+            getLogger(_, logPrefix, "GetSubscription"),
+            apiClient,
+            serviceId,
+            apiAuth.subscriptionId,
+            apiAuth.userId
+          )
+        ),
         TE.chain(() =>
           pipe(
             getServiceTask(
@@ -225,14 +260,18 @@ export function UpdateServiceHandler(
 export function UpdateService(
   telemetryClient: ReturnType<typeof initAppInsights>,
   serviceModel: ServiceModel,
-  client: APIClient
+  client: APIClient,
+  subscriptionCIDRsModel: SubscriptionCIDRsModel
 ): express.RequestHandler {
   const handler = UpdateServiceHandler(telemetryClient, client);
   const middlewaresWrap = withRequestMiddlewares(
     ContextMiddleware(),
     AzureApiAuthMiddleware(new Set([UserGroup.ApiServiceWrite])),
     ClientIpMiddleware,
-    AzureUserAttributesMiddleware(serviceModel),
+    SequenceMiddleware(ResponseErrorForbiddenNotAuthorized)(
+      AzureUserAttributesMiddleware(serviceModel),
+      AzureUserAttributesManageMiddleware(subscriptionCIDRsModel)
+    ),
     RequiredParamMiddleware("service_id", NonEmptyString),
     RequiredBodyPayloadMiddleware(ServicePayload)
   );

@@ -10,12 +10,29 @@ import { MailerConfig } from "@pagopa/io-functions-commons/dist/src/mailer";
 import * as O from "fp-ts/lib/Option";
 import * as E from "fp-ts/lib/Either";
 import * as t from "io-ts";
+import { BooleanFromString, JsonFromString, withFallback } from "io-ts-types";
+
 import { readableReport } from "@pagopa/ts-commons/lib/reporters";
-import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
+import {
+  FiscalCode,
+  NonEmptyString,
+  Semver
+} from "@pagopa/ts-commons/lib/strings";
 import { DateFromTimestamp } from "@pagopa/ts-commons/lib/dates";
-import { NumberFromString } from "@pagopa/ts-commons/lib/numbers";
-import { pipe } from "fp-ts/lib/function";
+import {
+  NonNegativeIntegerFromString,
+  NumberFromString
+} from "@pagopa/ts-commons/lib/numbers";
+import { flow, pipe } from "fp-ts/lib/function";
 import { CommaSeparatedListOf } from "./comma-separated-list";
+import { FeatureFlag, FeatureFlagEnum } from "./featureFlag";
+
+export const BetaUsers = t.readonlyArray(FiscalCode);
+export type BetaUsers = t.TypeOf<typeof BetaUsers>;
+
+export const BetaUsersFromString = withFallback(JsonFromString, []).pipe(
+  BetaUsers
+);
 
 // used for internal job dispatch, temporary files, etc...
 const InternalStorageAccount = t.interface({
@@ -45,7 +62,12 @@ const SubscriptionFeedStorageAccount = t.interface({
 export type IConfig = t.TypeOf<typeof IConfig>;
 export const IConfig = t.intersection([
   t.interface({
+    APIM_BASE_URL: NonEmptyString,
+    APIM_SUBSCRIPTION_KEY: NonEmptyString,
+
     APPINSIGHTS_INSTRUMENTATIONKEY: NonEmptyString,
+
+    BETA_USERS: BetaUsersFromString,
 
     COSMOSDB_KEY: NonEmptyString,
     COSMOSDB_NAME: NonEmptyString,
@@ -54,6 +76,8 @@ export const IConfig = t.intersection([
     DEFAULT_SUBSCRIPTION_PRODUCT_NAME: NonEmptyString,
 
     EMAIL_NOTIFICATION_SERVICE_BLACKLIST: CommaSeparatedListOf(ServiceId),
+
+    FEATURE_FLAG: withFallback(FeatureFlag, FeatureFlagEnum.NONE),
 
     WEBHOOK_NOTIFICATION_SERVICE_BLACKLIST: CommaSeparatedListOf(ServiceId),
     // eslint-disable-next-line sort-keys
@@ -71,6 +95,15 @@ export const IConfig = t.intersection([
     FF_DISABLE_WEBHOOK_MESSAGE_CONTENT: t.boolean,
     FF_INCOMPLETE_SERVICE_WHITELIST: CommaSeparatedListOf(ServiceId),
     FF_OPT_IN_EMAIL_ENABLED: t.boolean,
+    FF_PAYMENT_STATUS_ENABLED: withFallback(BooleanFromString, false),
+    FF_TEMPLATE_EMAIL: withFallback(FeatureFlag, FeatureFlagEnum.NONE),
+
+    PENDING_ACTIVATION_GRACE_PERIOD_SECONDS: t.number,
+
+    // eslint-disable-next-line sort-keys
+    MIN_APP_VERSION_WITH_READ_AUTH: Semver,
+
+    TTL_FOR_USER_NOT_FOUND: NonNegativeIntegerFromString,
 
     isProduction: t.boolean
   }),
@@ -83,6 +116,9 @@ export const IConfig = t.intersection([
 // Default value is expressed as a Unix timestamp so it can be safely compared with Cosmos timestamp
 // This means that Date representation is in the past compared to the effectively switch Date we want to set
 const DEFAULT_OPT_OUT_EMAIL_SWITCH_DATE = 1625781600;
+
+// Default Special Service PENDING grace period is 1 day
+export const DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS = 24 * 60 * 60;
 
 export const envConfig = {
   ...process.env,
@@ -106,10 +142,22 @@ export const envConfig = {
     E.fromNullable(DEFAULT_OPT_OUT_EMAIL_SWITCH_DATE)(
       process.env.OPT_OUT_EMAIL_SWITCH_DATE
     ),
-    E.chain(_ =>
-      pipe(
-        NumberFromString.decode(_),
+    E.chain(
+      flow(
+        NumberFromString.decode,
         E.mapLeft(() => DEFAULT_OPT_OUT_EMAIL_SWITCH_DATE)
+      )
+    ),
+    E.toUnion
+  ),
+  PENDING_ACTIVATION_GRACE_PERIOD_SECONDS: pipe(
+    E.fromNullable(DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS)(
+      process.env.PENDING_ACTIVATION_GRACE_PERIOD_SECONDS
+    ),
+    E.chain(
+      flow(
+        NumberFromString.decode,
+        E.mapLeft(() => DEFAULT_PENDING_ACTIVATION_GRACE_PERIOD_SECONDS)
       )
     ),
     E.toUnion

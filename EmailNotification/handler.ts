@@ -17,6 +17,7 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
 
 import { sendMail } from "@pagopa/io-functions-commons/dist/src/mailer";
+import * as B from "fp-ts/boolean";
 import { withJsonInput } from "../utils/with-json-input";
 import { withDecodedInput } from "../utils/with-decoded-input";
 import {
@@ -24,7 +25,18 @@ import {
   NotificationCreatedEvent
 } from "../utils/events/message";
 import { DataFetcher, withExpandedInput } from "../utils/with-expanded-input";
-import { generateDocumentHtml } from "./utils";
+import { BetaUsers } from "../utils/config";
+import {
+  FeatureFlag,
+  getIsUserEligibleForNewFeature
+} from "../utils/featureFlag";
+import { generateDocumentHtml, messageToHtml } from "./utils";
+
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+export type FfTemplateEmail = {
+  readonly BETA_USERS: BetaUsers;
+  readonly FF_TEMPLATE_EMAIL: FeatureFlag;
+};
 
 export interface INotificationDefaults {
   readonly HTML_TO_TEXT_OPTIONS: HtmlToText.HtmlToTextOptions;
@@ -57,7 +69,8 @@ export const getEmailNotificationHandler = (
   lMailerTransporter: NodeMailer.Transporter,
   lNotificationModel: NotificationModel,
   retrieveProcessingMessageData: DataFetcher<CommonMessageData>,
-  notificationDefaultParams: INotificationDefaults
+  notificationDefaultParams: INotificationDefaults,
+  { BETA_USERS, FF_TEMPLATE_EMAIL }: FfTemplateEmail
 ) =>
   withJsonInput(
     withDecodedInput(
@@ -126,11 +139,31 @@ export const getEmailNotificationHandler = (
           const emailNotification =
             errorOrEmailNotification.right.channels.EMAIL;
 
-          const documentHtml = await generateDocumentHtml(
-            content.subject,
-            content.markdown,
-            senderMetadata
-          );
+          const documentHtml = await pipe(
+            errorOrActiveMessage.right.fiscalCode,
+            getIsUserEligibleForNewFeature(
+              cf => BETA_USERS.includes(cf),
+              () => false, // NO canary implemented yet
+              FF_TEMPLATE_EMAIL
+            ),
+            B.fold(
+              () =>
+                TE.tryCatch(
+                  () =>
+                    generateDocumentHtml(
+                      content.subject,
+                      content.markdown,
+                      senderMetadata
+                    ),
+                  E.toError
+                ),
+              () => pipe({ content, senderMetadata }, messageToHtml())
+            ),
+            TE.mapLeft(err => {
+              throw err;
+            }),
+            TE.toUnion
+          )();
 
           // converts the HTML to pure text to generate the text version of the message
           const bodyText = HtmlToText.htmlToText(

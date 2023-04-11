@@ -26,22 +26,12 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/models/service";
 import {
   AzureAllowBodyPayloadMiddleware,
-  AzureApiAuthMiddleware,
   IAzureApiAuthorization,
   UserGroup
 } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
+import { IAzureUserAttributes } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
+import { ClientIp } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
 import {
-  AzureUserAttributesMiddleware,
-  IAzureUserAttributes
-} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
-import {
-  ClientIp,
-  ClientIpMiddleware
-} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
-import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
-import { OptionalFiscalCodeMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/fiscalcode";
-import {
-  IRequestMiddleware,
   withRequestMiddlewares,
   wrapRequestHandler
 } from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
@@ -59,8 +49,10 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/utils/strings";
 
 import { initAppInsights } from "@pagopa/ts-commons/lib/appinsights";
-import { readableReport } from "@pagopa/ts-commons/lib/reporters";
+import { readableReportSimplified } from "@pagopa/ts-commons/lib/reporters";
 import {
+  IResponseErrorForbiddenAnonymousUser,
+  IResponseErrorForbiddenNoAuthorizationGroups,
   IResponseErrorForbiddenNotAuthorized,
   IResponseErrorForbiddenNotAuthorizedForDefaultAddresses,
   IResponseErrorForbiddenNotAuthorizedForProduction,
@@ -71,7 +63,6 @@ import {
   ResponseErrorForbiddenNotAuthorizedForDefaultAddresses,
   ResponseErrorForbiddenNotAuthorizedForProduction,
   ResponseErrorForbiddenNotAuthorizedForRecipient,
-  ResponseErrorFromValidationErrors,
   ResponseErrorInternal,
   ResponseErrorValidation,
   ResponseSuccessRedirectToResource
@@ -84,26 +75,20 @@ import { Either } from "fp-ts/lib/Either";
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import { PaymentDataWithRequiredPayee } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentDataWithRequiredPayee";
 import { NewMessage as ApiNewMessage } from "@pagopa/io-functions-commons/dist/generated/definitions/NewMessage";
+import { StandardServiceCategoryEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/StandardServiceCategory";
 import {
   CommonMessageData,
   CreatedMessageEvent
 } from "../utils/events/message";
-import { ApiNewMessageWithContentOf, ApiNewMessageWithDefaults } from "./types";
+import { commonCreateMessageMiddlewares } from "../utils/message_middlewares";
+import { LegalData } from "../generated/definitions/LegalData";
+import {
+  ApiNewMessageWithAdvancedFeatures,
+  ApiNewMessageWithContentOf,
+  ApiNewMessageWithDefaults,
+  ApiNewThirdPartyMessage
+} from "./types";
 import { makeUpsertBlobFromObject } from "./utils";
-
-/**
- * A request middleware that validates the Message payload.
- */
-export const MessagePayloadMiddleware: IRequestMiddleware<
-  "IResponseErrorValidation",
-  ApiNewMessageWithDefaults
-> = request =>
-  pipe(
-    request.body,
-    ApiNewMessageWithDefaults.decode,
-    TE.fromEither,
-    TE.mapLeft(ResponseErrorFromValidationErrors(ApiNewMessageWithDefaults))
-  )();
 
 /**
  * Type of a CreateMessage handler.
@@ -126,13 +111,15 @@ type ICreateMessageHandler = (
   | IResponseErrorInternal
   | IResponseErrorQuery
   | IResponseErrorValidation
+  | IResponseErrorForbiddenNoAuthorizationGroups
+  | IResponseErrorForbiddenAnonymousUser
   | IResponseErrorForbiddenNotAuthorized
   | IResponseErrorForbiddenNotAuthorizedForRecipient
   | IResponseErrorForbiddenNotAuthorizedForProduction
   | IResponseErrorForbiddenNotAuthorizedForDefaultAddresses
 >;
 
-type CreateMessageHandlerResponse = PromiseType<
+export type CreateMessageHandlerResponse = PromiseType<
   ReturnType<ICreateMessageHandler>
 >;
 
@@ -221,6 +208,7 @@ export const createMessageDocument = (
   senderUserId: IAzureApiAuthorization["userId"],
   recipientFiscalCode: FiscalCode,
   timeToLiveSeconds: ApiNewMessageWithDefaults["time_to_live"],
+  featureLevelType: ApiNewMessageWithDefaults["feature_level_type"],
   serviceId: IAzureUserAttributes["service"]["serviceId"]
 ): TaskEither<
   IResponseErrorInternal | IResponseErrorQuery,
@@ -232,6 +220,7 @@ export const createMessageDocument = (
   // message is handled separately (see below).
   const newMessageWithoutContent: NewMessageWithoutContent = {
     createdAt: new Date(),
+    featureLevelType,
     fiscalCode: recipientFiscalCode,
     id: messageId,
     indexedId: messageId,
@@ -281,7 +270,8 @@ export function CreateMessageHandler(
   generateObjectId: ObjectIdGenerator,
   saveProcessingMessage: ReturnType<typeof makeUpsertBlobFromObject>,
   disableIncompleteServices: boolean,
-  incompleteServiceWhitelist: ReadonlyArray<ServiceId>
+  incompleteServiceWhitelist: ReadonlyArray<ServiceId>,
+  sandboxFiscalCode: NonEmptyString
 ): ICreateMessageHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   return async (
@@ -327,7 +317,8 @@ export function CreateMessageHandler(
     // insights
     const trackResponse = (
       r: CreateMessageHandlerResponse,
-      isSuccess: boolean
+      isSuccess: boolean,
+      isSandbox: boolean
     ): void =>
       telemetryClient.trackEvent({
         name: "api.messages.create",
@@ -339,6 +330,7 @@ export function CreateMessageHandler(
               messagePayload.default_addresses.email
           ).toString(),
           messageId,
+          sandbox: isSandbox ? "true" : "false",
           senderServiceId: serviceId,
           senderUserId: auth.userId,
           success: isSuccess ? "true" : "false"
@@ -400,6 +392,7 @@ export function CreateMessageHandler(
           auth.userId,
           fiscalCode,
           messagePayload.time_to_live,
+          messagePayload.feature_level_type,
           serviceId
         )
       ),
@@ -416,6 +409,10 @@ export function CreateMessageHandler(
                 organizationFiscalCode: service.organizationFiscalCode,
                 organizationName: service.organizationName,
                 requireSecureChannels: service.requireSecureChannels,
+                serviceCategory: pipe(
+                  O.fromNullable(service.serviceMetadata?.category),
+                  O.getOrElse(() => StandardServiceCategoryEnum.STANDARD)
+                ),
                 serviceName: service.serviceName,
                 serviceUserEmail
               }
@@ -443,7 +440,7 @@ export function CreateMessageHandler(
           TE.mapLeft(err =>
             ResponseErrorValidation(
               "Unable to decode CreatedMessageEvent",
-              readableReport(err)
+              readableReportSimplified(err)
             )
           ),
           TE.map(createdMessage => {
@@ -459,7 +456,8 @@ export function CreateMessageHandler(
       T.map(r => {
         // before returning the response to the client we log the result
         const isSuccess = r.kind === "IResponseSuccessRedirectToResource";
-        trackResponse(r, isSuccess);
+        const isSandbox = fiscalCode.toString() === sandboxFiscalCode;
+        trackResponse(r, isSuccess, isSandbox);
         logResponse(r, isSuccess);
         return r;
       })
@@ -470,14 +468,15 @@ export function CreateMessageHandler(
 /**
  * Wraps a CreateMessage handler inside an Express request handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions,max-params
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, max-params
 export function CreateMessage(
   telemetryClient: ReturnType<typeof initAppInsights>,
   serviceModel: ServiceModel,
   messageModel: MessageModel,
   saveProcessingMessage: ReturnType<typeof makeUpsertBlobFromObject>,
   disableIncompleteServices: boolean,
-  incompleteServiceWhitelist: ReadonlyArray<ServiceId>
+  incompleteServiceWhitelist: ReadonlyArray<ServiceId>,
+  sandboxFiscalCode: NonEmptyString
 ): express.RequestHandler {
   const handler = CreateMessageHandler(
     telemetryClient,
@@ -485,40 +484,52 @@ export function CreateMessage(
     ulidGenerator,
     saveProcessingMessage,
     disableIncompleteServices,
-    incompleteServiceWhitelist
+    incompleteServiceWhitelist,
+    sandboxFiscalCode
   );
   const middlewaresWrap = withRequestMiddlewares(
-    // extract Azure Functions bindings
-    ContextMiddleware(),
-    // allow only users in the ApiMessageWrite and ApiMessageWriteLimited groups
-    AzureApiAuthMiddleware(
-      new Set([UserGroup.ApiMessageWrite, UserGroup.ApiLimitedMessageWrite])
-    ),
-    // extracts the client IP from the request
-    ClientIpMiddleware,
-    // extracts custom user attributes from the request
-    AzureUserAttributesMiddleware(serviceModel),
-    // extracts the create message payload from the request body
-    MessagePayloadMiddleware,
-    // extracts the optional fiscal code from the request params
-    OptionalFiscalCodeMiddleware,
-    // Ensures only users in ApiMessageWriteEUCovidCert group can send messages with EUCovidCert payload
-    AzureAllowBodyPayloadMiddleware(
-      ApiNewMessageWithContentOf(t.interface({ eu_covid_cert: EUCovidCert })),
-      new Set([UserGroup.ApiMessageWriteEUCovidCert])
-    ),
-    // Ensures only users in ApiMessageWriteWithPayee group can send payment messages with payee payload
-    AzureAllowBodyPayloadMiddleware(
-      ApiNewMessageWithContentOf(
-        t.interface({ payment_data: PaymentDataWithRequiredPayee })
+    ...([
+      // Common CreateMessage Middlewares
+      ...commonCreateMessageMiddlewares(serviceModel),
+      AzureAllowBodyPayloadMiddleware(
+        ApiNewMessageWithContentOf(t.interface({ eu_covid_cert: EUCovidCert })),
+        new Set([UserGroup.ApiMessageWriteEUCovidCert]),
+        "You do not have enough permissions to send an EUCovidCert message"
       ),
-      new Set([UserGroup.ApiMessageWriteWithPayee])
-    )
+      // Ensures only users in ApiMessageWriteWithPayee group can send payment messages with payee payload
+      AzureAllowBodyPayloadMiddleware(
+        ApiNewMessageWithContentOf(
+          t.interface({ payment_data: PaymentDataWithRequiredPayee })
+        ),
+        new Set([UserGroup.ApiMessageWriteWithPayee]),
+        "You do not have enough permissions to send a payment message with payee"
+      ),
+      // Ensures only users in ApiMessageWriteWithLegalDataWithoutImpersonification group can send legal messages
+      AzureAllowBodyPayloadMiddleware(
+        ApiNewMessageWithContentOf(t.interface({ legal_data: LegalData })),
+        new Set([
+          UserGroup.ApiMessageWriteWithLegalDataWithoutImpersonification
+        ]),
+        "You do not have enough permissions to send a legal message"
+      ),
+      // Allow only users in the ApiMessageWriteAdvanced group to send messages with "ADVANCED" feature_type
+      AzureAllowBodyPayloadMiddleware(
+        ApiNewMessageWithAdvancedFeatures,
+        new Set([UserGroup.ApiMessageWriteAdvanced]),
+        "You do not have enough permissions to send a Premium message"
+      ),
+      // Allow only users in the ApiThirdPartyMessageWrite group to send messages with ThirdPartyData
+      AzureAllowBodyPayloadMiddleware(
+        ApiNewThirdPartyMessage,
+        new Set([UserGroup.ApiThirdPartyMessageWrite]),
+        "You do not have enough permissions to send a third party message"
+      )
+    ] as const)
   );
   return wrapRequestHandler(
     middlewaresWrap(
       // eslint-disable-next-line max-params
-      checkSourceIpForHandler(handler, (_, __, c, u, ___, ____) =>
+      checkSourceIpForHandler(handler, (_, __, c, u, ___, ____, _____) =>
         ipTuple(c, u)
       )
     )

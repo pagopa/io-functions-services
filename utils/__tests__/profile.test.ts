@@ -24,8 +24,10 @@ import {
   aRetrievedServicePreference,
   autoProfileServicePreferencesSettings,
   legacyProfileServicePreferencesSettings,
-  manualProfileServicePreferencesSettings
+  manualProfileServicePreferencesSettings,
+  anActivation
 } from "../../__mocks__/mocks";
+import * as O from "fp-ts/Option";
 
 import MockResponse from "../../__mocks__/response";
 
@@ -33,16 +35,29 @@ const mockTelemetryClient = ({
   trackEvent: jest.fn()
 } as unknown) as ReturnType<typeof initTelemetryClient>;
 
-import { ServicesPreferencesModel } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
+import {
+  makeServicesPreferencesDocumentId,
+  RetrievedServicePreference,
+  ServicesPreferencesModel
+} from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 
 import { some, none } from "fp-ts/lib/Option";
 import { pipe } from "fp-ts/lib/function";
 import * as E from "fp-ts/lib/Either";
 import * as TE from "fp-ts/lib/TaskEither";
-import * as O from "fp-ts/lib/Option";
 
 import { UserGroup } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
 import { initTelemetryClient } from "../appinsights";
+import { ServiceId } from "../../generated/definitions/ServiceId";
+import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
+import { ActivationStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ActivationStatus";
+import { SpecialServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/SpecialServiceCategory";
+import { ServiceScopeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceScope";
+import { toCosmosErrorResponse } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
+import { canSendMessageOnActivationWithGrace } from "../services";
+import { Second } from "@pagopa/ts-commons/lib/units";
+import { subSeconds } from "date-fns";
+import { NonNegativeInteger } from "@pagopa/ts-commons/lib/numbers";
 
 describe("isSenderAllowed", () => {
   it("should return false if the service is not allowed to send notifications to the user", async () => {
@@ -130,12 +145,19 @@ const mockProfileModel = ({
 } as unknown) as ProfileModel;
 
 const mockServicePreferenceFind = jest.fn();
+const mockServiceActivationFind = jest.fn();
 const mockServicePreferenceModel = ({
   find: mockServicePreferenceFind
 } as unknown) as ServicesPreferencesModel;
+const mockServiceActivationModel = ({
+  findLastVersionByModelId: mockServiceActivationFind
+} as unknown) as ActivationModel;
 
 // utility that adds a given set of serviceIds to the profile's inbox blacklist
-const withBlacklist = (profile: RetrievedProfile, services = []) => ({
+const withBlacklist = (
+  profile: RetrievedProfile,
+  services: ServiceId[] = []
+) => ({
   ...profile,
   blockedInboxOrChannels: services.reduce(
     (obj, serviceId) => ({
@@ -146,27 +168,41 @@ const withBlacklist = (profile: RetrievedProfile, services = []) => ({
   )
 });
 describe("getLimitedProfileTask", () => {
-  const mockExpresseResponse = MockResponse();
+  const mockExpressResponse = MockResponse();
+  const mockGracePeriod = 100 as Second;
+  const canSendMessageOnActivation = canSendMessageOnActivationWithGrace(
+    mockGracePeriod
+  );
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it.each`
-    preferencesConfiguration                           | allowOrNot     | mode        | maybeProfile                                                                                              | maybePreference                                                    | expected
-    ${"the inbox is enabled in the preferences"}       | ${"allow"}     | ${"MANUAL"} | ${some(aRetrievedProfileWithManualPreferences)}                                                           | ${some({ ...aRetrievedServicePreference, isInboxEnabled: true })}  | ${true}
-    ${"the inbox is enabled in the preferences"}       | ${"allow"}     | ${"AUTO"}   | ${some(aRetrievedProfileWithAutoPreferences)}                                                             | ${some({ ...aRetrievedServicePreference, isInboxEnabled: true })}  | ${true}
-    ${"the inbox is NOT enabled in the preferences"}   | ${"not allow"} | ${"MANUAL"} | ${some(aRetrievedProfileWithManualPreferences)}                                                           | ${some({ ...aRetrievedServicePreference, isInboxEnabled: false })} | ${false}
-    ${"the inbox is NOT enabled in the preferences"}   | ${"not allow"} | ${"AUTO"}   | ${some(aRetrievedProfileWithAutoPreferences)}                                                             | ${some({ ...aRetrievedServicePreference, isInboxEnabled: false })} | ${false}
-    ${"there are not preferences set for the service"} | ${"not allow"} | ${"MANUAL"} | ${some(aRetrievedProfileWithManualPreferences)}                                                           | ${none}                                                            | ${false}
-    ${"there are not preferences set for the service"} | ${"allow"}     | ${"AUTO"}   | ${some(aRetrievedProfileWithAutoPreferences)}                                                             | ${none}                                                            | ${true}
-    ${"the service is NOT in the blacklist"}           | ${"allow"}     | ${"LEGACY"} | ${some(withBlacklist(aRetrievedProfileWithLegacyPreferences, ["any-service-id"]))}                        | ${none}                                                            | ${true}
-    ${"has empty blacklist"}                           | ${"allow"}     | ${"LEGACY"} | ${some(withBlacklist(aRetrievedProfileWithLegacyPreferences, []))}                                        | ${none}                                                            | ${true}
-    ${"the service is in the blacklist"}               | ${"not allow"} | ${"LEGACY"} | ${some(withBlacklist(aRetrievedProfileWithLegacyPreferences, [anAzureUserAttributes.service.serviceId]))} | ${none}                                                            | ${false}
+    preferencesConfiguration                           | allowOrNot     | mode        | profile                                                                                             | maybePreference                                                    | expected
+    ${"the inbox is enabled in the preferences"}       | ${"allow"}     | ${"MANUAL"} | ${aRetrievedProfileWithManualPreferences}                                                           | ${some({ ...aRetrievedServicePreference, isInboxEnabled: true })}  | ${true}
+    ${"the inbox is enabled in the preferences"}       | ${"allow"}     | ${"AUTO"}   | ${aRetrievedProfileWithAutoPreferences}                                                             | ${some({ ...aRetrievedServicePreference, isInboxEnabled: true })}  | ${true}
+    ${"the inbox is NOT enabled in the preferences"}   | ${"not allow"} | ${"MANUAL"} | ${aRetrievedProfileWithManualPreferences}                                                           | ${some({ ...aRetrievedServicePreference, isInboxEnabled: false })} | ${false}
+    ${"the inbox is NOT enabled in the preferences"}   | ${"not allow"} | ${"AUTO"}   | ${aRetrievedProfileWithAutoPreferences}                                                             | ${some({ ...aRetrievedServicePreference, isInboxEnabled: false })} | ${false}
+    ${"there are not preferences set for the service"} | ${"not allow"} | ${"MANUAL"} | ${aRetrievedProfileWithManualPreferences}                                                           | ${none}                                                            | ${false}
+    ${"there are not preferences set for the service"} | ${"allow"}     | ${"AUTO"}   | ${aRetrievedProfileWithAutoPreferences}                                                             | ${none}                                                            | ${true}
+    ${"the service is NOT in the blacklist"}           | ${"allow"}     | ${"LEGACY"} | ${withBlacklist(aRetrievedProfileWithLegacyPreferences, ["any-service-id" as ServiceId])}           | ${none}                                                            | ${true}
+    ${"has empty blacklist"}                           | ${"allow"}     | ${"LEGACY"} | ${withBlacklist(aRetrievedProfileWithLegacyPreferences, [])}                                        | ${none}                                                            | ${true}
+    ${"the service is in the blacklist"}               | ${"not allow"} | ${"LEGACY"} | ${withBlacklist(aRetrievedProfileWithLegacyPreferences, [anAzureUserAttributes.service.serviceId])} | ${none}                                                            | ${false}
   `(
     "should $allowOrNot a sender if the user uses $mode subscription mode and $preferencesConfiguration",
-    async ({ maybeProfile, maybePreference, expected }) => {
-      mockProfileFindLast.mockImplementationOnce(() => TE.of(maybeProfile));
+    async ({
+      mode,
+      profile,
+      maybePreference,
+      expected
+    }: {
+      mode: "AUTO" | "MANUAL" | "LEGACY";
+      profile: RetrievedProfile;
+      maybePreference: O.Option<RetrievedServicePreference>;
+      expected: any;
+    }) => {
+      mockProfileFindLast.mockImplementationOnce(() => TE.of(some(profile)));
       mockServicePreferenceFind.mockImplementationOnce(() =>
         TE.of(maybePreference)
       );
@@ -179,13 +215,32 @@ describe("getLimitedProfileTask", () => {
         false,
         [],
         mockServicePreferenceModel,
+        mockServiceActivationModel,
+        canSendMessageOnActivation,
         mockTelemetryClient
       )();
-      result.apply(mockExpresseResponse);
+      result.apply(mockExpressResponse);
+
+      expect(
+        mockServiceActivationModel.findLastVersionByModelId
+      ).not.toHaveBeenCalled();
+      if (mode !== "LEGACY") {
+        expect(mockServicePreferenceModel.find).toBeCalledWith([
+          makeServicesPreferencesDocumentId(
+            aFiscalCode,
+            anAzureUserAttributes.service.serviceId,
+            profile.servicePreferencesSettings.version as NonNegativeInteger
+          ),
+          aFiscalCode
+        ]);
+      } else {
+        // LEGACY mode will use blacklist in profile instead of ServicePreference
+        expect(mockServicePreferenceModel.find).not.toBeCalled();
+      }
 
       expect(result.kind).toBe("IResponseSuccessJson");
 
-      expect(mockExpresseResponse.json).toHaveBeenCalledWith(
+      expect(mockExpressResponse.json).toHaveBeenCalledWith(
         expect.objectContaining({ sender_allowed: expected })
       );
     }
@@ -213,6 +268,8 @@ describe("getLimitedProfileTask", () => {
         true,
         [],
         mockServicePreferenceModel,
+        mockServiceActivationModel,
+        canSendMessageOnActivation,
         mockTelemetryClient
       )();
 
@@ -222,6 +279,9 @@ describe("getLimitedProfileTask", () => {
       expect(mockProfileModel.findLastVersionByModelId).toBeCalledWith([
         aFiscalCode
       ]);
+      expect(
+        mockServiceActivationModel.findLastVersionByModelId
+      ).not.toHaveBeenCalled();
       expect(response.kind).toBe(responseKind);
     }
   );
@@ -254,14 +314,109 @@ describe("getLimitedProfileTask", () => {
         true,
         [],
         mockServicePreferenceModel,
+        mockServiceActivationModel,
+        canSendMessageOnActivation,
         mockTelemetryClient
       )();
 
       expect(mockProfileModel.findLastVersionByModelId).not.toHaveBeenCalled();
+      expect(
+        mockServiceActivationModel.findLastVersionByModelId
+      ).not.toHaveBeenCalled();
 
       expect(response.kind).toBe(
         "IResponseErrorForbiddenNotAuthorizedForRecipient"
       );
     }
   );
+
+  it.each`
+    preferencesConfiguration                                             | allowOrNot     | mode        | maybeProfile                                    | maybeActivation                                                                                                  | expected
+    ${"the SPECIAL service has ACTIVE activation"}                       | ${"allow"}     | ${"MANUAL"} | ${some(aRetrievedProfileWithManualPreferences)} | ${some(anActivation)}                                                                                            | ${true}
+    ${"the SPECIAL service has ACTIVE activation"}                       | ${"allow"}     | ${"AUTO"}   | ${some(aRetrievedProfileWithAutoPreferences)}   | ${some(anActivation)}                                                                                            | ${true}
+    ${"the SPECIAL service has INACTIVE activation"}                     | ${"not allow"} | ${"MANUAL"} | ${some(aRetrievedProfileWithManualPreferences)} | ${some({ ...anActivation, status: ActivationStatusEnum.INACTIVE })}                                              | ${false}
+    ${"the SPECIAL service has INACTIVE activation"}                     | ${"not allow"} | ${"AUTO"}   | ${some(aRetrievedProfileWithAutoPreferences)}   | ${some({ ...anActivation, status: ActivationStatusEnum.INACTIVE })}                                              | ${false}
+    ${"the SPECIAL service has PENDING activation in grace period"}      | ${"allow"}     | ${"AUTO"}   | ${some(aRetrievedProfileWithAutoPreferences)}   | ${some({ ...anActivation, status: ActivationStatusEnum.PENDING, _ts: Date.now() })}                              | ${true}
+    ${"the SPECIAL service has PENDING activation outside grace period"} | ${"not allow"} | ${"AUTO"}   | ${some(aRetrievedProfileWithAutoPreferences)}   | ${some({ ...anActivation, status: ActivationStatusEnum.PENDING, _ts: subSeconds(Date.now(), mockGracePeriod) })} | ${false}
+    ${"the SPECIAL service has not an activation"}                       | ${"not allow"} | ${"MANUAL"} | ${some(aRetrievedProfileWithManualPreferences)} | ${none}                                                                                                          | ${false}
+    ${"the SPECIAL service has not an activation"}                       | ${"not allow"} | ${"AUTO"}   | ${some(aRetrievedProfileWithAutoPreferences)}   | ${none}                                                                                                          | ${false}
+  `(
+    "should $allowOrNot a sender if the user uses $mode subscription mode and $preferencesConfiguration",
+    async ({ maybeProfile, maybeActivation, expected }) => {
+      mockProfileFindLast.mockImplementationOnce(() => TE.of(maybeProfile));
+      mockServiceActivationFind.mockImplementationOnce(() =>
+        TE.of(maybeActivation)
+      );
+
+      const result = await getLimitedProfileTask(
+        anAzureApiAuthorization,
+        {
+          ...anAzureUserAttributes,
+          service: {
+            ...anAzureUserAttributes.service,
+            serviceMetadata: {
+              ...anAzureUserAttributes.service.serviceMetadata,
+              scope: ServiceScopeEnum.NATIONAL,
+              category: SpecialServiceCategoryEnum.SPECIAL
+            }
+          }
+        },
+        aFiscalCode,
+        mockProfileModel,
+        false,
+        [],
+        mockServicePreferenceModel,
+        mockServiceActivationModel,
+        canSendMessageOnActivation,
+        mockTelemetryClient
+      )();
+      result.apply(mockExpressResponse);
+
+      expect(mockServicePreferenceModel.find).not.toHaveBeenCalled();
+
+      expect(result.kind).toBe("IResponseSuccessJson");
+
+      expect(mockExpressResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({ sender_allowed: expected })
+      );
+    }
+  );
+
+  it("should responde with an ResponseErrorInternal if an error occurs accessing the activation", async () => {
+    mockProfileFindLast.mockImplementationOnce(() =>
+      TE.of(some(aRetrievedProfileWithManualPreferences))
+    );
+    mockServiceActivationFind.mockImplementationOnce(() =>
+      TE.left(toCosmosErrorResponse(new Error("Cosmos error")))
+    );
+
+    const result = await getLimitedProfileTask(
+      anAzureApiAuthorization,
+      {
+        ...anAzureUserAttributes,
+        service: {
+          ...anAzureUserAttributes.service,
+          serviceMetadata: {
+            ...anAzureUserAttributes.service.serviceMetadata,
+            scope: ServiceScopeEnum.NATIONAL,
+            category: SpecialServiceCategoryEnum.SPECIAL
+          }
+        }
+      },
+      aFiscalCode,
+      mockProfileModel,
+      false,
+      [],
+      mockServicePreferenceModel,
+      mockServiceActivationModel,
+      canSendMessageOnActivation,
+      mockTelemetryClient
+    )();
+    result.apply(mockExpressResponse);
+
+    expect(mockServicePreferenceModel.find).not.toHaveBeenCalled();
+    expect(mockServiceActivationFind).toBeCalledTimes(1);
+
+    expect(result.kind).toBe("IResponseErrorInternal");
+  });
 });

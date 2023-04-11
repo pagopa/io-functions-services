@@ -12,6 +12,7 @@ import { IAzureUserAttributes } from "@pagopa/io-functions-commons/dist/src/util
 import { NonNegativeInteger } from "@pagopa/ts-commons/lib/numbers";
 import {
   EmailString,
+  FiscalCode,
   NonEmptyString,
   OrganizationFiscalCode
 } from "@pagopa/ts-commons/lib/strings";
@@ -20,14 +21,22 @@ import { MaxAllowedPaymentAmount } from "@pagopa/io-functions-commons/dist/gener
 
 import { left, right } from "fp-ts/lib/Either";
 import { ServiceScopeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceScope";
-import { ServiceMetadata } from "@pagopa/io-functions-commons/dist/src/models/service";
+import {
+  Service,
+  ServiceMetadata
+} from "@pagopa/io-functions-commons/dist/src/models/service";
 import * as reporters from "@pagopa/ts-commons/lib/reporters";
-import { Subscription } from "../../generated/api-admin/Subscription";
-import { UserInfo } from "../../generated/api-admin/UserInfo";
+import { Subscription } from "@pagopa/io-functions-admin-sdk/Subscription";
+import { UserInfo } from "@pagopa/io-functions-admin-sdk/UserInfo";
 import { ServicePayload } from "../../generated/definitions/ServicePayload";
-import { CreateServiceHandler } from "../handler";
+import {
+  CreateServiceHandler,
+  getAuthorizedRecipientsFromPayload
+} from "../handler";
 
 import * as E from "fp-ts/lib/Either";
+import { StandardServiceCategoryEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/StandardServiceCategory";
+import { isSome } from "fp-ts/lib/Option";
 
 const mockContext = {
   // eslint-disable no-console
@@ -41,11 +50,13 @@ const anOrganizationFiscalCode = "01234567890" as OrganizationFiscalCode;
 const anEmail = "test@example.com" as EmailString;
 
 const aServiceId = "s123" as NonEmptyString;
-
+const aManageSubscriptionId = "MANAGE-123" as NonEmptyString;
 const aTokenName = "TOKEN_NAME" as NonEmptyString;
 
 const someServicesMetadata: ServiceMetadata = {
   scope: ServiceScopeEnum.NATIONAL,
+  category: StandardServiceCategoryEnum.STANDARD,
+  customSpecialFlow: undefined,
   tokenName: aTokenName
 };
 
@@ -72,6 +83,8 @@ const aService = {
   serviceMetadata: someServicesMetadata,
   serviceName: "Test" as NonEmptyString,
   version: 1 as NonNegativeInteger
+} as Service & {
+  readonly version: NonNegativeInteger;
 };
 
 const someSubscriptionKeys = {
@@ -98,11 +111,12 @@ const aUserAuthenticationDeveloper: IAzureApiAuthorization = {
   userId: "u123" as NonEmptyString
 };
 
+const aUserAuthenticationDeveloperWithManageKey: IAzureApiAuthorization = {
+  ...aUserAuthenticationDeveloper,
+  subscriptionId: aManageSubscriptionId
+};
+
 const aUserInfo: UserInfo = {
-  subscriptions: [
-    aSubscription,
-    { ...aSubscription, id: "s234" as NonEmptyString }
-  ],
   token_name: aTokenName
 };
 
@@ -110,6 +124,15 @@ const mockUlidGenerator = jest.fn(() => aServiceId);
 
 const productName = "IO_API_SERVICES" as NonEmptyString;
 const sandboxFiscalCode = "BBBCCC00A11B123X" as NonEmptyString;
+const authorizedRecipients = [
+  "BBBCCC00A11B123X" as FiscalCode,
+  "BBBCCC00A11B321X" as FiscalCode
+] as ReadonlyArray<FiscalCode>;
+
+const aServiceWithFiscalCodeArray = {
+  ...aService,
+  authorizedRecipients: new Set(authorizedRecipients)
+};
 
 const mockAppinsights = {
   trackEvent: jest.fn()
@@ -202,6 +225,43 @@ describe("CreateServiceHandler", () => {
     if (result.kind === "IResponseSuccessJson") {
       expect(result.value).toEqual({
         ...aService,
+        ...someSubscriptionKeys
+      });
+    }
+  });
+
+  it("should create a service with authorized recipients fiscal code", async () => {
+    createServiceMock.mockImplementationOnce(async () =>
+      E.right({ status: 200, value: aServiceWithFiscalCodeArray })
+    );
+    const createServiceHandler = CreateServiceHandler(
+      mockAppinsights as any,
+      apiClientMock as any,
+      mockUlidGenerator as any,
+      productName,
+      sandboxFiscalCode
+    );
+    const result = await createServiceHandler(
+      mockContext,
+      aUserAuthenticationDeveloper,
+      undefined as any, // not used
+      someUserAttributes,
+      {
+        ...aServicePayload,
+        service_metadata: {
+          ...someServicesMetadata
+        }
+      } as ServicePayload
+    );
+
+    expect(apiClientMock.createSubscription).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.createService).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+    expect(result.kind).toBe("IResponseSuccessJson");
+
+    if (result.kind === "IResponseSuccessJson") {
+      expect(result.value).toEqual({
+        ...aServiceWithFiscalCodeArray,
         ...someSubscriptionKeys
       });
     }
@@ -558,6 +618,46 @@ describe("CreateServiceHandler", () => {
     expect(result.kind).toBe("IResponseErrorUnauthorized");
     if (result.kind === "IResponseErrorUnauthorized") {
       expect(result.detail).toEqual("Unauthorized: Unauthorized");
+    }
+  });
+
+  it("should retrieve valid CF from a Service Payload", () => {
+    const result = getAuthorizedRecipientsFromPayload(({
+      authorized_recipients: authorizedRecipients
+    } as unknown) as ServicePayload);
+    if (isSome(result)) {
+      expect(result.value).toHaveLength(2);
+    }
+  });
+
+  //MANAGE FLOW
+
+  it("should respond with a created service with subscriptionKeys using a Manage Key", async () => {
+    const createServiceHandler = CreateServiceHandler(
+      mockAppinsights as any,
+      apiClientMock as any,
+      mockUlidGenerator as any,
+      productName,
+      sandboxFiscalCode
+    );
+    const result = await createServiceHandler(
+      mockContext,
+      aUserAuthenticationDeveloperWithManageKey,
+      undefined as any, // not used
+      someUserAttributes,
+      aServicePayload
+    );
+
+    expect(apiClientMock.createSubscription).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.createService).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+    expect(mockAppinsights.trackEvent).toHaveBeenCalledTimes(1);
+    expect(result.kind).toBe("IResponseSuccessJson");
+    if (result.kind === "IResponseSuccessJson") {
+      expect(result.value).toEqual({
+        ...aService,
+        ...someSubscriptionKeys
+      });
     }
   });
 });

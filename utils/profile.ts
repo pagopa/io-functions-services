@@ -38,11 +38,14 @@ import {
   IResponseErrorInternal
 } from "@pagopa/ts-commons/lib/responses";
 import { TaskEither } from "fp-ts/lib/TaskEither";
-import { pipe } from "fp-ts/lib/function";
-import { GetLimitedProfileByPOSTPayload } from "../generated/definitions/GetLimitedProfileByPOSTPayload";
+import { pipe, identity } from "fp-ts/lib/function";
+import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
+import { SpecialServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/SpecialServiceCategory";
+import { FiscalCodePayload } from "../generated/definitions/FiscalCodePayload";
 import { canWriteMessage } from "../CreateMessage/handler";
 import { initTelemetryClient } from "./appinsights";
 import { toHash } from "./crypto";
+import { CanSendMessageOnActivation } from "./services";
 
 // Map an error when an unexpected value is passed
 interface IUnexpectedValue {
@@ -140,17 +143,15 @@ export function retrievedProfileToLimitedProfile(
 /**
  * A middleware that extracts a GetLimitedProfileByPOSTPayload from a request.
  */
-export const GetLimitedProfileByPOSTPayloadMiddleware: IRequestMiddleware<
+export const FiscalCodePayloadMiddleware: IRequestMiddleware<
   "IResponseErrorValidation",
-  GetLimitedProfileByPOSTPayload
+  FiscalCodePayload
 > = request =>
   Promise.resolve(
     pipe(
       request.body,
-      GetLimitedProfileByPOSTPayload.decode,
-      E.mapLeft(
-        ResponseErrorFromValidationErrors(GetLimitedProfileByPOSTPayload)
-      )
+      FiscalCodePayload.decode,
+      E.mapLeft(ResponseErrorFromValidationErrors(FiscalCodePayload))
     )
   );
 
@@ -171,9 +172,11 @@ export const getLimitedProfileTask = (
   disableIncompleteServices: boolean,
   incompleteServiceWhitelist: ReadonlyArray<ServiceId>,
   servicesPreferencesModel: ServicesPreferencesModel,
+  serviceActivationModel: ActivationModel,
+  canSendMessageOnActivation: CanSendMessageOnActivation,
   telemetryClient: ReturnType<typeof initTelemetryClient>
-): // eslint-disable-next-line max-params
-Task<IGetLimitedProfileResponses> =>
+  // eslint-disable-next-line max-params
+): Task<IGetLimitedProfileResponses> =>
   pipe(
     TE.of(void 0),
     TE.chain(() =>
@@ -237,52 +240,81 @@ Task<IGetLimitedProfileResponses> =>
         );
       })
     ),
-    TE.chainW(profile => {
-      // To determine allowance, use a different algorithm depending in subscription mode
-      const isSenderAllowedTask =
-        profile.servicePreferencesSettings.mode ===
-        ServicesPreferencesModeEnum.LEGACY
-          ? isSenderAllowedLegacy(
-              profile.blockedInboxOrChannels,
-              userAttributes.service.serviceId
-            )
-          : isSenderAllowed(
-              servicesPreferencesModel,
-              userAttributes.service.serviceId,
-              profile.fiscalCode,
-              profile.servicePreferencesSettings
-            );
-
-      return pipe(
-        isSenderAllowedTask,
-        TE.bimap(
-          error =>
-            error.kind === "UNEXPECTED_VALUE"
-              ? ResponseErrorInternal(`Unexpected mode: ${error.value}`)
-              : ResponseErrorQuery(
-                  "Failed to read preference for the given service",
-                  error
-                ),
-          isAllowed => ({
-            isAllowed,
-            profile
-          })
+    TE.chain(profile =>
+      pipe(
+        TE.of(void 0),
+        TE.fromPredicate(
+          () =>
+            userAttributes.service.serviceMetadata?.category ===
+            SpecialServiceCategoryEnum.SPECIAL,
+          identity
         ),
-        TE.map(_ => {
-          telemetryClient.trackEvent({
-            name: "api.limitedprofile.sender-allowed",
-            properties: {
-              fiscalCode: toHash(profile.fiscalCode),
-              isAllowed: String(_.isAllowed),
-              mode: profile.servicePreferencesSettings.mode,
-              serviceId: userAttributes.service.serviceId
-            },
-            tagOverrides: { samplingEnabled: "false" }
-          });
-          return _;
-        })
-      );
-    }),
+        TE.fold(
+          // Non SPECIAL Service
+          () => {
+            // To determine allowance, use a different algorithm depending in subscription mode
+            const isSenderAllowedTask =
+              profile.servicePreferencesSettings.mode ===
+              ServicesPreferencesModeEnum.LEGACY
+                ? isSenderAllowedLegacy(
+                    profile.blockedInboxOrChannels,
+                    userAttributes.service.serviceId
+                  )
+                : isSenderAllowed(
+                    servicesPreferencesModel,
+                    userAttributes.service.serviceId,
+                    profile.fiscalCode,
+                    profile.servicePreferencesSettings
+                  );
+
+            return pipe(
+              isSenderAllowedTask,
+              TE.bimap(
+                error =>
+                  error.kind === "UNEXPECTED_VALUE"
+                    ? ResponseErrorInternal(`Unexpected mode: ${error.value}`)
+                    : ResponseErrorQuery(
+                        "Failed to read preference for the given service",
+                        error
+                      ),
+                isAllowed => ({
+                  isAllowed,
+                  profile
+                })
+              ),
+              TE.map(_ => {
+                telemetryClient.trackEvent({
+                  name: "api.limitedprofile.sender-allowed",
+                  properties: {
+                    fiscalCode: toHash(profile.fiscalCode),
+                    isAllowed: String(_.isAllowed),
+                    mode: profile.servicePreferencesSettings.mode,
+                    serviceId: userAttributes.service.serviceId
+                  },
+                  tagOverrides: { samplingEnabled: "false" }
+                });
+                return _;
+              })
+            );
+          },
+          // SPECIAL service
+          () =>
+            pipe(
+              serviceActivationModel.findLastVersionByModelId([
+                userAttributes.service.serviceId,
+                profile.fiscalCode
+              ]),
+              TE.map(canSendMessageOnActivation),
+              TE.map(isAllowed => ({ isAllowed, profile })),
+              TE.mapLeft(_ =>
+                ResponseErrorInternal(
+                  "Error while retrieving the user service activation"
+                )
+              )
+            )
+        )
+      )
+    ),
     TE.map(({ isAllowed, profile }) =>
       ResponseSuccessJson(retrievedProfileToLimitedProfile(profile, isAllowed))
     ),

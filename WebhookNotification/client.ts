@@ -6,9 +6,9 @@ import {
 } from "@pagopa/ts-commons/lib/requests";
 import * as r from "@pagopa/ts-commons/lib/requests";
 import { ProblemJson } from "@pagopa/ts-commons/lib/responses";
-import { Notification } from "../generated/notifications/Notification";
-import { notifyDefaultDecoder } from "../generated/notifications/requestTypes";
-import { SuccessResponse } from "../generated/notifications/SuccessResponse";
+import { Notification } from "@pagopa/io-backend-notifications-sdk/Notification";
+import { notifyDefaultDecoder } from "@pagopa/io-backend-notifications-sdk/requestTypes";
+import { SuccessResponse } from "@pagopa/io-backend-notifications-sdk/SuccessResponse";
 
 export type WebhookNotifyT = r.IPostApiRequestType<
   { readonly notification: Notification; readonly webhookEndpoint: HttpsUrl },

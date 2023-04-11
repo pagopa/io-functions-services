@@ -56,7 +56,8 @@ const activityFunction: AzureFunction = getEmailNotificationHandler(
   {
     HTML_TO_TEXT_OPTIONS,
     MAIL_FROM
-  }
+  },
+  config
 );
 
 export default activityFunction;

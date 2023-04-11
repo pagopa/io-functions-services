@@ -24,6 +24,7 @@ import {
   IResponseErrorNotFound,
   IResponseErrorTooManyRequests,
   IResponseSuccessJson,
+  ResponseErrorForbiddenNotAuthorized,
   ResponseSuccessJson
 } from "@pagopa/ts-commons/lib/responses";
 
@@ -41,6 +42,7 @@ import {
   ulidGenerator
 } from "@pagopa/io-functions-commons/dist/src/utils/strings";
 import { TaskEither } from "fp-ts/lib/TaskEither";
+import * as O from "fp-ts/lib/Option";
 import * as TE from "fp-ts/lib/TaskEither";
 import { initAppInsights } from "@pagopa/ts-commons/lib/appinsights";
 import {
@@ -50,10 +52,17 @@ import {
 } from "@pagopa/ts-commons/lib/strings";
 import { pipe } from "fp-ts/lib/function";
 import { sequenceS } from "fp-ts/lib/Apply";
+import { Service } from "@pagopa/io-functions-admin-sdk/Service";
+import { Subscription } from "@pagopa/io-functions-admin-sdk/Subscription";
+import { UserInfo } from "@pagopa/io-functions-admin-sdk/UserInfo";
+import { StandardServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/StandardServiceCategory";
+import { SequenceMiddleware } from "@pagopa/ts-commons/lib/sequence_middleware";
+import {
+  AzureUserAttributesManageMiddleware,
+  IAzureUserAttributesManage
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes_manage";
+import { SubscriptionCIDRsModel } from "@pagopa/io-functions-commons/dist/src/models/subscription_cidrs";
 import { APIClient } from "../clients/admin";
-import { Service } from "../generated/api-admin/Service";
-import { Subscription } from "../generated/api-admin/Subscription";
-import { UserInfo } from "../generated/api-admin/UserInfo";
 import { ServicePayload } from "../generated/definitions/ServicePayload";
 import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWithSubscriptionKeys";
 import { withApiRequestWrapper } from "../utils/api";
@@ -80,7 +89,7 @@ type ICreateServiceHandler = (
   context: Context,
   auth: IAzureApiAuthorization,
   clientIp: ClientIp,
-  attrs: IAzureUserAttributes,
+  attrs: IAzureUserAttributes | IAzureUserAttributesManage,
   servicePayload: ServicePayload
 ) => Promise<ResponseTypes>;
 
@@ -123,7 +132,7 @@ const createServiceTask = (
   apiClient: APIClient,
   servicePayload: ServicePayload,
   subscriptionId: NonEmptyString,
-  sandboxFiscalCode: FiscalCode,
+  authorizedRecipients: ReadonlyArray<FiscalCode>,
   adb2cTokenName: NonEmptyString
   // eslint-disable-next-line max-params
 ): TaskEither<ErrorResponses, Service> =>
@@ -133,15 +142,32 @@ const createServiceTask = (
       apiClient.createService({
         body: {
           ...servicePayload,
-          authorized_recipients: [sandboxFiscalCode],
+          authorized_recipients: authorizedRecipients,
           service_id: subscriptionId,
           service_metadata: {
             ...servicePayload.service_metadata,
+            // Only Admins can create SPECIAL Services
+            category: StandardServiceCategoryEnum.STANDARD,
             token_name: adb2cTokenName
           }
         }
       }),
     200
+  );
+
+export const getAuthorizedRecipientsFromPayload = (
+  servicePayload: ServicePayload
+): O.Option<ReadonlyArray<FiscalCode>> =>
+  pipe(
+    O.fromNullable(
+      // eslint-disable-next-line @typescript-eslint/dot-notation
+      servicePayload["authorized_recipients"] as ReadonlyArray<FiscalCode>
+    ),
+    O.map(items =>
+      items.map(cf =>
+        pipe(FiscalCode.decode(cf), O.fromEither, O.getOrElse(null))
+      )
+    )
   );
 
 /**
@@ -182,7 +208,13 @@ export function CreateServiceHandler(
           apiClient,
           servicePayload,
           subscriptionId,
-          (sandboxFiscalCode as unknown) as FiscalCode,
+          [
+            (sandboxFiscalCode as unknown) as FiscalCode,
+            ...pipe(
+              getAuthorizedRecipientsFromPayload(servicePayload),
+              O.getOrElse(() => [] as ReadonlyArray<FiscalCode>)
+            )
+          ],
           user.token_name
         )
       ),
@@ -190,6 +222,8 @@ export function CreateServiceHandler(
         telemetryClient.trackEvent({
           name: "api.services.create",
           properties: {
+            has_primary_key: Boolean(subscription.primary_key),
+            has_secondary_key: Boolean(subscription.secondary_key),
             isVisible: String(service.is_visible),
             requesterUserEmail: userAttributes.email,
             subscriptionId
@@ -210,13 +244,15 @@ export function CreateServiceHandler(
  * Wraps a CreateService handler inside an Express request handler.
  */
 // eslint-disable-next-line prefer-arrow/prefer-arrow-functions
-export function CreateService(
+export const CreateService = (
   telemetryClient: ReturnType<typeof initAppInsights>,
-  serviceModel: ServiceModel,
-  client: APIClient,
+  client: APIClient
+) => (
   productName: NonEmptyString,
-  sandboxFiscalCode: NonEmptyString
-): express.RequestHandler {
+  sandboxFiscalCode: NonEmptyString,
+  serviceModel: ServiceModel,
+  subscriptionCIDRsModel: SubscriptionCIDRsModel
+): express.RequestHandler => {
   const handler = CreateServiceHandler(
     telemetryClient,
     client,
@@ -228,7 +264,10 @@ export function CreateService(
     ContextMiddleware(),
     AzureApiAuthMiddleware(new Set([UserGroup.ApiServiceWrite])),
     ClientIpMiddleware,
-    AzureUserAttributesMiddleware(serviceModel),
+    SequenceMiddleware(ResponseErrorForbiddenNotAuthorized)(
+      AzureUserAttributesMiddleware(serviceModel),
+      AzureUserAttributesManageMiddleware(subscriptionCIDRsModel)
+    ),
     RequiredBodyPayloadMiddleware(ServicePayload)
   );
   return wrapRequestHandler(
@@ -236,4 +275,4 @@ export function CreateService(
       checkSourceIpForHandler(handler, (_, __, c, u, ___) => ipTuple(c, u))
     )
   );
-}
+};

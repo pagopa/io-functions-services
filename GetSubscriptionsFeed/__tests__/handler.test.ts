@@ -255,10 +255,7 @@ describe("GetSubscriptionsFeedHandler", () => {
     );
     // service subscriptions
     queryEntities.mockImplementationOnce(
-      queryEntitiesServiceSubscriptionMock(
-        [anHashedFiscalCode],
-        "S"
-      )
+      queryEntitiesServiceSubscriptionMock([anHashedFiscalCode], "S")
     );
     queryEntities.mockImplementation(emptyQueryEntities);
     const tableServiceMock = ({

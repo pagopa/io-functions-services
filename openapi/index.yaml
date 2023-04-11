@@ -1,10 +1,10 @@
 swagger: '2.0'
 info:
-  version: 3.0.5
+  version: 3.30.0
   title: IO API for Public Administration Services
   contact:
-    name: Digital Transformation Team
-    url: https://forum.italia.it/c/progetto-io
+    name: PagoPA S.p.A.
+    url: https://docs.pagopa.it/io-guida-tecnica/
   x-logo:
     url: https://io.italia.it/assets/img/io-logo-blue.svg
   description: >
@@ -62,6 +62,13 @@ info:
         add a reminder when receiving the message. The format for all
         dates is [ISO8601](https://it.wikipedia.org/wiki/ISO_8601) with time
         information and UTC timezone (ie. "2018-10-13T00:00:00.000Z").
+      * An optional `feature_level_type`: the kind of the submitted message.
+
+        It can be:
+        - `STANDARD` for normal messages;
+        - `ADVANCED` to enable premium features.
+
+        Default is `STANDARD`.
 
     ## Allowed Markdown formatting
 
@@ -90,23 +97,94 @@ info:
          a new message.
       1. (optional) Call [getMessage](#operation/getMessage) to check whether
          the message has been notified to the recipient.
-host: api.io.italia.it
+host: api.io.pagopa.it
 basePath: /api/v1
 schemes:
   - https
 security:
   - SubscriptionKey: []
 paths:
+  /legal-messages/{legalmail}:
+    post:
+      operationId: submitLegalMessageforUserWithFiscalCodeInBodyOnBehalfOfService
+      summary: Submit a Legal Message passing the user fiscal_code in the request body
+      description: >-
+        Submits a legal message to a user on behalf of a service identitfied by
+        legalMail
+
+        On error, the reason is returned in the response payload.
+      parameters:
+        - $ref: '#/parameters/LegalMail'
+        - name: message
+          in: body
+          schema:
+            $ref: '#/definitions/NewMessage'
+          x-examples:
+            application/json:
+              time_to_live: 3600
+              content:
+                subject: ipsum labore deserunt fugiat
+                markdown: >-
+                  Nullam dapibus metus sed elementum efficitur. Curabitur
+                  facilisis sagittis risus nec sodales.
+
+                  Vestibulum in eros sapien. Donec ac odio sit amet dui semper
+                  ornare eget nec odio. Pellentesque habitant
+
+                  morbi tristique senectus et netus et malesuada fames ac turpis
+                  egestas. Praesent nibh ex, mattis sit amet
+
+                  felis id, sodales euismod velit. Lorem ipsum dolor sit amet,
+                  consectetur adipiscing elit.
+      responses:
+        '201':
+          description: Message created.
+          schema:
+            $ref: '#/definitions/CreatedMessage'
+          headers:
+            Location:
+              type: string
+              description: >-
+                Location (URL) of created message resource.
+
+                A GET request to this URL returns the message status and
+                details.
+          examples:
+            application/json:
+              id: 01BX9NSMKVXXS5PSP2FATZMYYY
+        '400':
+          description: Invalid payload.
+          schema:
+            $ref: '#/definitions/ProblemJson'
+          examples: {}
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden.
+        '404':
+          description: Not Found.
+        '429':
+          description: Too many requests
+        '500':
+          description: The message cannot be delivered.
+          schema:
+            $ref: '#/definitions/ProblemJson'
   /messages:
     post:
       operationId: submitMessageforUserWithFiscalCodeInBody
       summary: Submit a Message passing the user fiscal_code in the request body
-      description: |-
-        Submits a message to a user.
+      description: >-
+        Submits a message to a user with STANDARD or ADVANCED features based on
+        `feature_level_type` value.
+
         On error, the reason is returned in the response payload.
+
         In order to call `submitMessageforUser`, before sending any message,
+
         the sender MUST call `getProfile` and check that the profile exists
+
         (for the specified fiscal code) and that the `sender_allowed` field
+
         of the user's profile it set to `true`.
       parameters:
         - name: message
@@ -236,7 +314,9 @@ paths:
       summary: Get Message
       description: |-
         The previously created message with the provided message ID is
-        returned.
+        returned. With right permission and `ADVANCED` feature level type
+        related to the previously submitted message, also read and payment
+        status infos (when applicable) are returned.
       parameters:
         - $ref: '#/parameters/FiscalCode'
         - name: id
@@ -248,9 +328,10 @@ paths:
         '200':
           description: Message found.
           schema:
-            $ref: '#/definitions/MessageResponseWithContent'
+            $ref: '#/definitions/ExternalMessageResponseWithContent'
           examples:
             application/json:
+              status: PROCESSED
               message:
                 id: 01BX9NSMKAAAS5PSP2FATZM6BQ
                 fiscal_code: QXJNTX9RCRVD6V4O
@@ -319,7 +400,7 @@ paths:
         - name: payload
           in: body
           schema:
-            $ref: '#/definitions/GetLimitedProfileByPOSTPayload'
+            $ref: '#/definitions/FiscalCodePayload'
   /profiles/{fiscal_code}:
     get:
       operationId: getProfile
@@ -359,15 +440,16 @@ paths:
         **unsubscribed from** your service **on the provided date** (UTC).
 
 
-        By querying this feed on each day, you will be able to retrieve the
+        By querying this feed everyday, you will be able to retrieve the
 
-        "delta" of users that subscribed and unsubscribed fom your service.
+        "delta" of users that subscribed and unsubscribed from your service.
 
         You will have to keep a list of users somewhere in your infrastructure
 
-        that you will update each day by adding the subscribed users and
+        that you will keep updated at all times by adding the subscribed users
+        and
 
-        removing the unsunbscribed users.
+        removing the unsubscribed users.
 
 
         You will then be able to query this local list to know which users you
@@ -384,11 +466,21 @@ paths:
         In pseudo code `CF_HASH = LOWERCASE(HEX(SHA256(UPPERCASE(CF))))`.
 
 
-        Note that this is an optimization for those services that need to send
-        very high
+        Access to this feed is subject to case-by-case authorization, and it is
 
-        volumes of messages per day, to avoid having to make two API calls for
-        each message.
+        primarily intended for large-scale services, such as those pertaining
+
+        to organizations that have an extensive user base (including
+        geographically),
+
+        and/or need to send very high volumes of messages per day.
+
+
+        This feed serves the purpose of minimizing data processing activities
+
+        while preserving optimization of API calls and data accuracy.
+
+        Organizations allowed are required to query this feed everyday.
       responses:
         '200':
           description: Found.
@@ -635,8 +727,110 @@ paths:
           description: The organization logo cannot be uploaded.
           schema:
             $ref: '#/definitions/ProblemJson'
+  /activations/:
+    post:
+      operationId: getServiceActivationByPOST
+      summary: Get a Service Activation for a User
+      description: Returns the current Activation for a couple Service/User
+      responses:
+        '200':
+          description: Found.
+          schema:
+            $ref: '#/definitions/Activation'
+          examples:
+            application/json:
+              serviceId: AAAAAAAAAAAAAAA
+              fiscalCode: AAAAAA00B00C000D
+              status: ACTIVE
+              version: 1
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden.
+        '404':
+          description: No user activation found for the provided fiscal code.
+          schema:
+            $ref: '#/definitions/ProblemJson'
+        '429':
+          description: Too many requests
+        '500':
+          description: Internal server error retrieving the Activation
+          schema:
+            $ref: '#/definitions/ProblemJson'
+      parameters:
+        - name: payload
+          in: body
+          schema:
+            $ref: '#/definitions/FiscalCodePayload'
+    put:
+      operationId: upsertServiceActivation
+      summary: Upsert a Service Activation for a User
+      description: Create or update an Activation for a couple Service/User
+      responses:
+        '200':
+          description: Found.
+          schema:
+            $ref: '#/definitions/Activation'
+          examples:
+            application/json:
+              serviceId: AAAAAAAAAAAAAAA
+              fiscalCode: AAAAAA00B00C000D
+              status: ACTIVE
+              version: 1
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden.
+        '404':
+          description: No user activation found for the provided fiscal code.
+          schema:
+            $ref: '#/definitions/ProblemJson'
+        '429':
+          description: Too many requests
+        '500':
+          description: The activation cannot be created or updated
+          schema:
+            $ref: '#/definitions/ProblemJson'
+      parameters:
+        - name: payload
+          in: body
+          schema:
+            $ref: '#/definitions/ActivationPayload'
 definitions:
-  GetLimitedProfileByPOSTPayload:
+  ActivationStatus:
+    type: string
+    x-extensible-enum:
+      - ACTIVE
+      - INACTIVE
+      - PENDING
+  Activation:
+    type: object
+    properties:
+      service_id:
+        $ref: '#/definitions/ServiceId'
+      fiscal_code:
+        $ref: '#/definitions/FiscalCode'
+      status:
+        $ref: '#/definitions/ActivationStatus'
+      version:
+        type: integer
+        minimum: 0
+    required:
+      - service_id
+      - fiscal_code
+      - status
+      - version
+  ActivationPayload:
+    type: object
+    properties:
+      fiscal_code:
+        $ref: '#/definitions/FiscalCode'
+      status:
+        $ref: '#/definitions/ActivationStatus'
+    required:
+      - fiscal_code
+      - status
+  FiscalCodePayload:
     type: object
     properties:
       fiscal_code:
@@ -745,61 +939,108 @@ definitions:
     type: object
     properties:
       message:
-        type: object
-        properties:
-          id:
-            type: string
-          fiscal_code:
-            $ref: '#/definitions/FiscalCode'
-          time_to_live:
-            $ref: '#/definitions/TimeToLiveSeconds'
-          created_at:
-            $ref: '#/definitions/Timestamp'
-          content:
-            $ref: '#/definitions/MessageContent'
-          sender_service_id:
-            $ref: '#/definitions/ServiceId'
-        required:
-          - id
-          - fiscal_code
-          - created_at
-          - content
-          - sender_service_id
+        $ref: '#/definitions/CreatedMessageWithContent'
       notification:
-        type: object
-        properties:
-          email:
-            $ref: '#/definitions/NotificationChannelStatusValue'
-          webhook:
-            $ref: '#/definitions/NotificationChannelStatusValue'
+        $ref: '#/definitions/MessageResponseNotificationStatus'
       status:
-        type: string
-        description: >-
-          The processing status of a message.
-
-          "ACCEPTED": the message has been accepted and will be processed for
-          delivery;
-            we'll try to store its content in the user's inbox and notify him on his preferred channels
-          "THROTTLED": a temporary failure caused a retry during the message
-          processing;
-            any notification associated with this message will be delayed for a maximum of 7 days
-          "FAILED": a permanent failure caused the process to exit with an
-          error, no notification will be sent for this message
-
-          "PROCESSED": the message was succesfully processed and is now stored
-          in the user's inbox;
-            we'll try to send a notification for each of the selected channels
-          "REJECTED": either the recipient does not exist, or the sender has
-          been blocked
-        x-extensible-enum:
-          - ACCEPTED
-          - THROTTLED
-          - FAILED
-          - PROCESSED
-          - REJECTED
-        example: ACCEPTED
+        $ref: '#/definitions/MessageStatusValue'
     required:
       - message
+  ExternalMessageResponseWithContent:
+    type: object
+    properties:
+      message:
+        $ref: '#/definitions/ExternalCreatedMessageWithContent'
+      notification:
+        $ref: '#/definitions/MessageResponseNotificationStatus'
+      status:
+        $ref: '#/definitions/MessageStatusValue'
+      read_status:
+        $ref: '#/definitions/ReadStatus'
+        description: >-
+          Describes whether a user has read the message or not
+
+          NOTE  : This value is only available for ADVANCED messages
+
+          NOTE 2: `UNAVAILABLE` will be returned if user revoked the permission
+          to access to read status
+      payment_status:
+        $ref: '#/definitions/PaymentStatus'
+        description: |-
+          Describes the state of the related payment notice
+          NOTE: This value is only available for ADVANCED payment messages
+    required:
+      - message
+  MessageResponseNotificationStatus:
+    type: object
+    properties:
+      email:
+        $ref: '#/definitions/NotificationChannelStatusValue'
+      webhook:
+        $ref: '#/definitions/NotificationChannelStatusValue'
+  RejectedMessageStatusValue:
+    type: string
+    x-extensible-enum:
+      - REJECTED
+  NotRejectedMessageStatusValue:
+    type: string
+    x-extensible-enum:
+      - ACCEPTED
+      - THROTTLED
+      - FAILED
+      - PROCESSED
+  MessageStatusValue:
+    x-one-of: true
+    allOf:
+      - $ref: '#/definitions/RejectedMessageStatusValue'
+      - $ref: '#/definitions/NotRejectedMessageStatusValue'
+    description: >-
+      The processing status of a message.
+
+      "ACCEPTED": the message has been accepted and will be processed for
+      delivery;
+        we'll try to store its content in the user's inbox and notify him on his preferred channels
+      "THROTTLED": a temporary failure caused a retry during the message
+      processing;
+        any notification associated with this message will be delayed for a maximum of 7 days
+      "FAILED": a permanent failure caused the process to exit with an error, no
+      notification will be sent for this message
+
+      "PROCESSED": the message was succesfully processed and is now stored in
+      the user's inbox;
+        we'll try to send a notification for each of the selected channels
+      "REJECTED": either the recipient does not exist, or the sender has been
+      blocked
+  ExternalCreatedMessageWithContent:
+    allOf:
+      - $ref: '#/definitions/CreatedMessageWithContent'
+      - type: object
+        properties:
+          feature_level_type:
+            $ref: '#/definitions/FeatureLevelType'
+        required:
+          - feature_level_type
+  CreatedMessageWithContent:
+    type: object
+    properties:
+      id:
+        type: string
+      fiscal_code:
+        $ref: '#/definitions/FiscalCode'
+      time_to_live:
+        $ref: '#/definitions/TimeToLiveSeconds'
+      created_at:
+        $ref: '#/definitions/Timestamp'
+      content:
+        $ref: '#/definitions/NewMessageContent'
+      sender_service_id:
+        $ref: '#/definitions/ServiceId'
+    required:
+      - id
+      - fiscal_code
+      - created_at
+      - content
+      - sender_service_id
   EUCovidCert:
     type: object
     description: Paylod with access token to retrieve a EU Covid Certificate
@@ -808,6 +1049,32 @@ definitions:
         type: string
     required:
       - auth_code
+  ThirdPartyData:
+    type: object
+    description: >-
+      Payload containing all information needed to retrieve and visualize third
+      party message details
+    properties:
+      id:
+        type: string
+        description: >-
+          Unique id for retrieving third party enriched information about the
+          message
+        minLength: 1
+      original_sender:
+        type: string
+        description: Either a ServiceId or a simple string representing the sender name
+        minLength: 1
+      original_receipt_date:
+        $ref: '#/definitions/Timestamp'
+      has_attachments:
+        type: boolean
+        default: false
+      summary:
+        type: string
+        minLength: 1
+    required:
+      - id
   OrganizationFiscalCode:
     type: string
     description: Organization fiscal code.
@@ -949,8 +1216,12 @@ definitions:
             $ref: '#/definitions/PaymentData'
           prescription_data:
             $ref: '#/definitions/PrescriptionData'
+          legal_data:
+            $ref: '#/definitions/LegalData'
           eu_covid_cert:
             $ref: '#/definitions/EUCovidCert'
+          third_party_data:
+            $ref: '#/definitions/ThirdPartyData'
           due_date:
             $ref: '#/definitions/Timestamp'
   NewMessageContent:
@@ -966,6 +1237,10 @@ definitions:
             $ref: '#/definitions/PrescriptionData'
           eu_covid_cert:
             $ref: '#/definitions/EUCovidCert'
+          third_party_data:
+            $ref: '#/definitions/ThirdPartyData'
+          legal_data:
+            $ref: '#/definitions/LegalData'
   NewMessage:
     type: object
     properties:
@@ -985,8 +1260,32 @@ definitions:
             example: foobar@example.com
       fiscal_code:
         $ref: '#/definitions/FiscalCode'
+      feature_level_type:
+        $ref: '#/definitions/FeatureLevelType'
     required:
       - content
+  FeatureLevelType:
+    type: string
+    default: STANDARD
+    x-extensible-enum:
+      - STANDARD
+      - ADVANCED
+    example: STANDARD
+  ReadStatus:
+    type: string
+    x-extensible-enum:
+      - UNAVAILABLE
+      - UNREAD
+      - READ
+    example: UNREAD
+    description: Api definition of read status enumeration
+  PaymentStatus:
+    type: string
+    description: Payment status enumeration
+    x-extensible-enum:
+      - PAID
+      - NOT_PAID
+    example: NOT_PAID
   CIDR:
     type: string
     description: Describes a single IP or a range of IPs.
@@ -1010,7 +1309,10 @@ definitions:
               - false
             description: It indicates that service is hidden
           service_metadata:
-            $ref: '#/definitions/ServiceMetadata'
+            description: >-
+              That service can't handle some ServiceMetadata fields (es.
+              category)
+            $ref: '#/definitions/CommonServiceMetadata'
   VisibleServicePayload:
     description: >-
       A payload used to create/update a service that appears in the service
@@ -1025,10 +1327,20 @@ definitions:
               - true
             description: It indicates that service appears in the service list
           service_metadata:
-            $ref: '#/definitions/ServiceMetadata'
+            description: >-
+              That service can't handle some ServiceMetadata fields (es.
+              category)
+            $ref: '#/definitions/CommonServiceMetadata'
         required:
           - is_visible
           - service_metadata
+  ExtendedServicePayload:
+    allOf:
+      - $ref: '#/definitions/ServicePayload'
+      - type: object
+        properties:
+          service_metadata:
+            $ref: '#/definitions/ServiceMetadata'
   CommonServicePayload:
     description: Common properties for a ServicePayload
     type: object
@@ -1065,7 +1377,7 @@ definitions:
   Service:
     description: A service tied to user's subscription.
     allOf:
-      - $ref: '#/definitions/ServicePayload'
+      - $ref: '#/definitions/ExtendedServicePayload'
       - type: object
         properties:
           id:
@@ -1091,6 +1403,37 @@ definitions:
           - service_id
           - authorized_recipients
   ServiceMetadata:
+    x-one-of: true
+    allOf:
+      - $ref: '#/definitions/StandardServiceMetadata'
+      - $ref: '#/definitions/SpecialServiceMetadata'
+      - $ref: '#/definitions/CommonServiceMetadata'
+  StandardServiceMetadata:
+    allOf:
+      - $ref: '#/definitions/CommonServiceMetadata'
+      - type: object
+        properties:
+          category:
+            type: string
+            x-extensible-enum:
+              - STANDARD
+        required:
+          - category
+  SpecialServiceMetadata:
+    allOf:
+      - $ref: '#/definitions/CommonServiceMetadata'
+      - type: object
+        properties:
+          category:
+            type: string
+            x-extensible-enum:
+              - SPECIAL
+          custom_special_flow:
+            type: string
+            minLength: 1
+        required:
+          - category
+  CommonServiceMetadata:
     type: object
     description: A set of metadata properties related to this service.
     properties:
@@ -1215,6 +1558,27 @@ definitions:
             $ref: '#/definitions/Payee'
         required:
           - payee
+  LegalData:
+    type: object
+    properties:
+      sender_mail_from:
+        type: string
+        minLength: 1
+      has_attachment:
+        type: boolean
+        default: false
+      message_unique_id:
+        type: string
+        minLength: 1
+      original_message_url:
+        type: string
+        minLength: 1
+      pec_server_service_id:
+        $ref: '#/definitions/ServiceId'
+    required:
+      - sender_mail_from
+      - has_attachment
+      - message_unique_id
   SubscriptionKeys:
     type: object
     properties:
@@ -1267,6 +1631,15 @@ definitions:
         description: The identifier of the created message.
 responses: {}
 parameters:
+  LegalMail:
+    name: legalmail
+    in: path
+    type: string
+    required: true
+    description: The legal mail related to a legal message' s sender.
+    format: EmailString
+    x-example: demo@pec.it
+    x-import: italia-ts-commons/lib/strings
   FiscalCode:
     name: fiscal_code
     in: path

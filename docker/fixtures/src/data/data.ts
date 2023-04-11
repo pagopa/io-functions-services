@@ -2,7 +2,8 @@
 import {
   EmailString,
   NonEmptyString,
-  OrganizationFiscalCode
+  OrganizationFiscalCode,
+  Semver
 } from "@pagopa/ts-commons/lib/strings";
 import { CIDR } from "@pagopa/io-functions-commons/dist/generated/definitions/CIDR";
 import {
@@ -19,7 +20,10 @@ import {
   PROFILE_SERVICE_PREFERENCES_SETTINGS_LEGACY_VERSION
 } from "@pagopa/io-functions-commons/dist/src/models/profile";
 import { BlockedInboxOrChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
-import { ServicePreference } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
+import {
+  AccessReadMessageStatusEnum,
+  ServicePreference
+} from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 
 export const aLegacyInboxEnabledFiscalCode = "AAABBB01C02D345L" as FiscalCode;
 export const aLegacyInboxDisabledFiscalCode = "AAABBB01C02D345I" as FiscalCode;
@@ -29,6 +33,8 @@ export const aManualFiscalCode = "AAABBB01C02D345M" as FiscalCode;
 export const anEnabledServiceId = "anEnabledServiceId" as NonEmptyString;
 export const anEnabledServiceWithEmailId = "anEnabledServiceWithEmailId" as NonEmptyString;
 export const aDisabledServiceId = "aDisabledServiceId" as NonEmptyString;
+export const aValidServiceId = "aValidServiceId" as NonEmptyString;
+export const aValidServiceWithoutWriteMessageGroupsId = "aValidServiceWithoutWriteMessageGroupsId" as NonEmptyString;
 
 // ---------------------------------
 // Services
@@ -43,7 +49,7 @@ const anEnabledService: ValidService = {
   authorizedCIDRs: new Set((["0.0.0.0"] as unknown) as ReadonlyArray<CIDR>),
   departmentName: "department" as NonEmptyString,
   isVisible: true,
-  maxAllowedPaymentAmount: (0 as unknown) as number &
+  maxAllowedPaymentAmount: (10 as unknown) as number &
     WithinRangeInteger<0, 9999999999>,
   organizationFiscalCode: "01234567890" as OrganizationFiscalCode,
   organizationName: "Organization" as NonEmptyString,
@@ -57,6 +63,16 @@ const anEnabledService: ValidService = {
     category: StandardServiceCategoryEnum.STANDARD,
     customSpecialFlow: undefined
   }
+};
+
+const aValidService: ValidService = {
+  ...anEnabledService,
+  serviceId: aValidServiceId
+};
+
+const aValidServiceWithoutWriteMessageGroups: ValidService = {
+  ...anEnabledService,
+  serviceId: aValidServiceWithoutWriteMessageGroupsId
 };
 
 const anEnabledServiceWithEmail: ValidService = {
@@ -157,7 +173,8 @@ const autoProfile: Profile = {
   servicePreferencesSettings: {
     mode: ServicesPreferencesModeEnum.AUTO,
     version: 1 as NonNegativeInteger
-  }
+  },
+  lastAppVersion: process.env.MIN_APP_VERSION_WITH_READ_AUTH as Semver
 };
 
 const manualProfile: Profile = {
@@ -172,7 +189,8 @@ const manualProfile: Profile = {
   servicePreferencesSettings: {
     mode: ServicesPreferencesModeEnum.MANUAL,
     version: 1 as NonNegativeInteger
-  }
+  },
+  lastAppVersion: process.env.MIN_APP_VERSION_WITH_READ_AUTH as Semver
 };
 
 // ---------------------------------
@@ -183,7 +201,28 @@ const anAutoServicePreferencesDisabled: ServicePreference = {
   isInboxEnabled: false,
   isEmailEnabled: false,
   isWebhookEnabled: false,
-  settingsVersion: 1 as NonNegativeInteger
+  settingsVersion: 1 as NonNegativeInteger,
+  accessReadMessageStatus: AccessReadMessageStatusEnum.UNKNOWN
+};
+
+const anAutoServicePreferencesEnabledWithReadAuthUnknown: ServicePreference = {
+  fiscalCode: anAutoFiscalCode,
+  serviceId: anEnabledServiceId,
+  isInboxEnabled: true,
+  isEmailEnabled: true,
+  isWebhookEnabled: true,
+  settingsVersion: 1 as NonNegativeInteger,
+  accessReadMessageStatus: AccessReadMessageStatusEnum.UNKNOWN
+};
+
+const anAutoServicePreferencesEnabledWithReadAuthDeny: ServicePreference = {
+  fiscalCode: anAutoFiscalCode,
+  serviceId: aValidServiceId,
+  isInboxEnabled: true,
+  isEmailEnabled: true,
+  isWebhookEnabled: true,
+  settingsVersion: 1 as NonNegativeInteger,
+  accessReadMessageStatus: AccessReadMessageStatusEnum.DENY
 };
 
 const aManualServicePreferencesEnable: ServicePreference = {
@@ -192,7 +231,8 @@ const aManualServicePreferencesEnable: ServicePreference = {
   isInboxEnabled: true,
   isEmailEnabled: true,
   isWebhookEnabled: true,
-  settingsVersion: 1 as NonNegativeInteger
+  settingsVersion: 1 as NonNegativeInteger,
+  accessReadMessageStatus: AccessReadMessageStatusEnum.UNKNOWN
 };
 
 // ---------------------------------
@@ -201,6 +241,8 @@ const aManualServicePreferencesEnable: ServicePreference = {
 
 export const aValidServiceList = [
   anEnabledService,
+  aValidService,
+  aValidServiceWithoutWriteMessageGroups,
   anEnabledServiceWithEmail,
   aDisabledService
 ];
@@ -213,5 +255,7 @@ export const aValidProfileList = [
 
 export const aValidServicePreferenceList = [
   anAutoServicePreferencesDisabled,
-  aManualServicePreferencesEnable
+  aManualServicePreferencesEnable,
+  anAutoServicePreferencesEnabledWithReadAuthUnknown,
+  anAutoServicePreferencesEnabledWithReadAuthDeny
 ];
