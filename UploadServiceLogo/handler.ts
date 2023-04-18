@@ -26,6 +26,7 @@ import {
   IResponseErrorNotFound,
   IResponseErrorTooManyRequests,
   IResponseSuccessJson,
+  ResponseErrorForbiddenNotAuthorized,
   ResponseSuccessJson
 } from "@pagopa/ts-commons/lib/responses";
 import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
@@ -43,11 +44,20 @@ import { pipe } from "fp-ts/lib/function";
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import * as TE from "fp-ts/lib/TaskEither";
 import { Logo } from "@pagopa/io-functions-admin-sdk/Logo";
+import { SequenceMiddleware } from "@pagopa/ts-commons/lib/sequence_middleware";
+import {
+  AzureUserAttributesManageMiddleware,
+  IAzureUserAttributesManage
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes_manage";
+import { SubscriptionCIDRsModel } from "@pagopa/io-functions-commons/dist/src/models/subscription_cidrs";
 import { APIClient } from "../clients/admin";
 import { withApiRequestWrapper } from "../utils/api";
 import { getLogger, ILogger } from "../utils/logging";
 import { ErrorResponses, IResponseErrorUnauthorized } from "../utils/responses";
-import { serviceOwnerCheckTask } from "../utils/subscription";
+import {
+  serviceOwnerCheckManageTask,
+  serviceOwnerCheckTask
+} from "../utils/subscription";
 
 type ResponseTypes =
   | IResponseSuccessJson<undefined>
@@ -69,7 +79,7 @@ type IUploadServiceLogoHandler = (
   context: Context,
   auth: IAzureApiAuthorization,
   clientIp: ClientIp,
-  attrs: IAzureUserAttributes,
+  attrs: IAzureUserAttributes | IAzureUserAttributesManage,
   serviceId: NonEmptyString,
   logoPayload: Logo
 ) => Promise<ResponseTypes>;
@@ -104,6 +114,17 @@ export function UploadServiceLogoHandler(
   return (_, apiAuth, ___, ____, serviceId, logoPayload) =>
     pipe(
       serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId),
+      TE.fold(
+        __ =>
+          serviceOwnerCheckManageTask(
+            getLogger(_, logPrefix, "GetSubscription"),
+            apiClient,
+            serviceId,
+            apiAuth.subscriptionId,
+            apiAuth.userId
+          ),
+        sid => TE.of(sid)
+      ),
       TE.chain(() =>
         uploadServiceLogoTask(
           getLogger(_, logPrefix, "UploadServiceLogo"),
@@ -122,14 +143,18 @@ export function UploadServiceLogoHandler(
 // eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function UploadServiceLogo(
   serviceModel: ServiceModel,
-  client: APIClient
+  client: APIClient,
+  subscriptionCIDRsModel: SubscriptionCIDRsModel
 ): express.RequestHandler {
   const handler = UploadServiceLogoHandler(client);
   const middlewaresWrap = withRequestMiddlewares(
     ContextMiddleware(),
     AzureApiAuthMiddleware(new Set([UserGroup.ApiServiceWrite])),
     ClientIpMiddleware,
-    AzureUserAttributesMiddleware(serviceModel),
+    SequenceMiddleware(ResponseErrorForbiddenNotAuthorized)(
+      AzureUserAttributesMiddleware(serviceModel),
+      AzureUserAttributesManageMiddleware(subscriptionCIDRsModel)
+    ),
     RequiredParamMiddleware("service_id", NonEmptyString),
     RequiredBodyPayloadMiddleware(Logo)
   );

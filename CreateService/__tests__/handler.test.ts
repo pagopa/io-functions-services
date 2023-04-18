@@ -50,7 +50,7 @@ const anOrganizationFiscalCode = "01234567890" as OrganizationFiscalCode;
 const anEmail = "test@example.com" as EmailString;
 
 const aServiceId = "s123" as NonEmptyString;
-
+const aManageSubscriptionId = "MANAGE-123" as NonEmptyString;
 const aTokenName = "TOKEN_NAME" as NonEmptyString;
 
 const someServicesMetadata: ServiceMetadata = {
@@ -109,6 +109,11 @@ const aUserAuthenticationDeveloper: IAzureApiAuthorization = {
   kind: "IAzureApiAuthorization",
   subscriptionId: aServiceId,
   userId: "u123" as NonEmptyString
+};
+
+const aUserAuthenticationDeveloperWithManageKey: IAzureApiAuthorization = {
+  ...aUserAuthenticationDeveloper,
+  subscriptionId: aManageSubscriptionId
 };
 
 const aUserInfo: UserInfo = {
@@ -622,6 +627,37 @@ describe("CreateServiceHandler", () => {
     } as unknown) as ServicePayload);
     if (isSome(result)) {
       expect(result.value).toHaveLength(2);
+    }
+  });
+
+  //MANAGE FLOW
+
+  it("should respond with a created service with subscriptionKeys using a Manage Key", async () => {
+    const createServiceHandler = CreateServiceHandler(
+      mockAppinsights as any,
+      apiClientMock as any,
+      mockUlidGenerator as any,
+      productName,
+      sandboxFiscalCode
+    );
+    const result = await createServiceHandler(
+      mockContext,
+      aUserAuthenticationDeveloperWithManageKey,
+      undefined as any, // not used
+      someUserAttributes,
+      aServicePayload
+    );
+
+    expect(apiClientMock.createSubscription).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.createService).toHaveBeenCalledTimes(1);
+    expect(apiClientMock.getUser).toHaveBeenCalledTimes(1);
+    expect(mockAppinsights.trackEvent).toHaveBeenCalledTimes(1);
+    expect(result.kind).toBe("IResponseSuccessJson");
+    if (result.kind === "IResponseSuccessJson") {
+      expect(result.value).toEqual({
+        ...aService,
+        ...someSubscriptionKeys
+      });
     }
   });
 });

@@ -1,6 +1,6 @@
 swagger: '2.0'
 info:
-  version: 3.25.3
+  version: 3.30.1
   title: IO API for Public Administration Services
   contact:
     name: PagoPA S.p.A.
@@ -67,7 +67,7 @@ info:
         It can be:
         - `STANDARD` for normal messages;
         - `ADVANCED` to enable premium features.
-        
+
         Default is `STANDARD`.
 
     ## Allowed Markdown formatting

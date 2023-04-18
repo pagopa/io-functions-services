@@ -16,7 +16,6 @@ import * as TE from "fp-ts/lib/TaskEither";
 import * as O from "fp-ts/lib/Option";
 
 import {
-  canDefaultAddresses,
   canPaymentAmount,
   canWriteMessage,
   createMessageDocument,
@@ -31,7 +30,6 @@ import {
   fiscalCodeSetArb,
   maxAmountArb,
   messageTimeToLiveArb,
-  newMessageWithDefaultEmailArb,
   newMessageWithPaymentDataArb
 } from "../../utils/__tests__/arbitraries";
 import { EmailString, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
@@ -138,17 +136,6 @@ describe("canWriteMessage", () => {
           expect(E.isRight(response)).toBeTruthy();
         }
       )
-    );
-  });
-});
-
-describe("canDefaultAddresses", () => {
-  it("should always respond with ResponseErrorForbiddenNotAuthorizedForDefaultAddresses when default addresses are provided", () => {
-    fc.assert(
-      fc.property(newMessageWithDefaultEmailArb, m => {
-        const response = canDefaultAddresses(m);
-        expect(E.isLeft(response)).toBeTruthy();
-      })
     );
   });
 });

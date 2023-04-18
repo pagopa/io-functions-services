@@ -95,8 +95,8 @@ export const IConfig = t.intersection([
     FF_DISABLE_WEBHOOK_MESSAGE_CONTENT: t.boolean,
     FF_INCOMPLETE_SERVICE_WHITELIST: CommaSeparatedListOf(ServiceId),
     FF_OPT_IN_EMAIL_ENABLED: t.boolean,
-
     FF_PAYMENT_STATUS_ENABLED: withFallback(BooleanFromString, false),
+    FF_TEMPLATE_EMAIL: withFallback(FeatureFlag, FeatureFlagEnum.NONE),
 
     PENDING_ACTIVATION_GRACE_PERIOD_SECONDS: t.number,
 

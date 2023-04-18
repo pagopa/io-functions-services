@@ -60,6 +60,8 @@ import { Payee } from "@pagopa/io-functions-commons/dist/generated/definitions/P
 import { pipe } from "fp-ts/lib/function";
 import { errorsToError } from "../utils/responses";
 
+export const anError = new Error("an error");
+
 export const aFiscalCode = "AAABBB01C02D345D" as FiscalCode;
 export const anotherFiscalCode = "AAABBB01C02D345W" as FiscalCode;
 export const anOrganizationFiscalCode = "01234567890" as OrganizationFiscalCode;

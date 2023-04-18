@@ -55,9 +55,9 @@ console.log("ENV: ", COSMOSDB_URI, WAIT_MS, SHOW_LOGS);
 const blobService = createBlobService(QueueStorageConnection);
 
 const cosmosDB = new CosmosClient({
-  endpoint: COSMOSDB_URI,
+  endpoint: COSMOSDB_URI as string,
   key: COSMOSDB_KEY
-}).database(COSMOSDB_NAME);
+}).database(COSMOSDB_NAME as string);
 
 const messageContainer = cosmosDB.container(MESSAGE_COLLECTION_NAME);
 const messageModel = new MessageModel(

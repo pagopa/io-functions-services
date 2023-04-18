@@ -12,7 +12,8 @@ export const getLogger = (
   logCosmosErrors: (errs: CosmosErrors): void =>
     context.log.error(
       `${logPrefix}|${name}|COSMOS_ERROR|ERROR_DETAILS=${
-        errs.kind === "COSMOS_EMPTY_RESPONSE"
+        errs.kind === "COSMOS_EMPTY_RESPONSE" ||
+        errs.kind === "COSMOS_CONFLICT_RESPONSE"
           ? errs.kind
           : errs.kind === "COSMOS_DECODING_ERROR"
           ? errorsToReadableMessages(errs.error).join("/")
