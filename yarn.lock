@@ -1104,10 +1104,10 @@
     eslint-plugin-sonarjs "^0.5.0"
     prettier "^2.1.2"
 
-"@pagopa/express-azure-functions@^2.0.0":
-  version "2.1.1"
-  resolved "https://registry.yarnpkg.com/@pagopa/express-azure-functions/-/express-azure-functions-2.1.1.tgz#ac6aa6d8c8d82b64e0db19ccadd2e89cc35ea725"
-  integrity sha512-x2kBGS6JKYqVp7PS9QiBc2AWIOPBObHwlaheJmxZJacnxmLdXHobomTzN2UJMxu55fxMd7xIxqM8VGMQxSzqiw==
+"@pagopa/express-azure-functions@^4.0.1":
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/@pagopa/express-azure-functions/-/express-azure-functions-4.0.1.tgz#0c584ab57773f2bcfda511b996f5e6ccdb89defb"
+  integrity sha512-2gSMQ6nCz5z5RdSgE0P5uoVBoxQqUeZr8bUUVyXjEqA/Z1PVDofbDbYJG6aPnDhfHO8aEXLDJOG8eUqjYB4Qsg==
 
 "@pagopa/io-backend-notifications-sdk@x":
   version "9.7.0"
