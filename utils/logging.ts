@@ -17,8 +17,6 @@ export const getLogger = (
           ? errs.kind
           : errs.kind === "COSMOS_DECODING_ERROR"
           ? errorsToReadableMessages(errs.error).join("/")
-          : errs.kind === "COSMOS_CONFLICT_RESPONSE"
-          ? "Conflict error, a document with the same ID already exist"
           : JSON.stringify(errs.error)
       }`
     ),
