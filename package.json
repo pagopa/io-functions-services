@@ -85,7 +85,6 @@
     "ts-pattern": "^4.0.3"
   },
   "resolutions": {
-    "handlebars": "~4.5.3",
-    "@pagopa/ts-commons": "^10.9.0"
+    "handlebars": "~4.5.3"
   }
 }
