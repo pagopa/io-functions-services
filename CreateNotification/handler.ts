@@ -280,8 +280,6 @@ export const getCreateNotificationHandler = (
 
           context.log.verbose(`${logPrefix}|RESULT=SUCCESS`);
 
-          context.log.verbose(util.inspect(createdNotification));
-
           if (O.isSome(maybeEmailNotificationAddress)) {
             // eslint-disable-next-line functional/immutable-data
             context.bindings.notificationCreatedEmail = NotificationCreatedEvent.encode(

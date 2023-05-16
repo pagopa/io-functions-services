@@ -318,8 +318,8 @@ export function CreateMessageHandler(
       isSuccess: boolean
     ): void =>
       context.log.verbose(
-        `CreateMessageHandler|SERVICE_ID=${serviceId}|RESPONSE=${r.kind}|${
-          r.detail
+        `CreateMessageHandler|SERVICE_ID=${serviceId}|RESPONSE=${
+          r.kind
         }|RESULT=${isSuccess ? "SUCCESS" : "FAILURE"}`
       );
 
