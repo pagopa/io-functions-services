@@ -1,5 +1,3 @@
-import * as util from "util";
-
 import * as t from "io-ts";
 
 import * as E from "fp-ts/lib/Either";
