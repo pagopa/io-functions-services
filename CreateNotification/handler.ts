@@ -1,5 +1,3 @@
-import * as util from "util";
-
 import * as t from "io-ts";
 
 import * as E from "fp-ts/lib/Either";
@@ -279,8 +277,6 @@ export const getCreateNotificationHandler = (
           );
 
           context.log.verbose(`${logPrefix}|RESULT=SUCCESS`);
-
-          context.log.verbose(util.inspect(createdNotification));
 
           if (O.isSome(maybeEmailNotificationAddress)) {
             // eslint-disable-next-line functional/immutable-data
