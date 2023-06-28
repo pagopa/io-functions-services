@@ -100,6 +100,8 @@ export const IConfig = t.intersection([
 
     PENDING_ACTIVATION_GRACE_PERIOD_SECONDS: t.number,
 
+    PN_SERVICE_ID: NonEmptyString,
+
     // eslint-disable-next-line sort-keys
     MIN_APP_VERSION_WITH_READ_AUTH: Semver,
 

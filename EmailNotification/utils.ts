@@ -14,6 +14,7 @@ import { OrganizationFiscalCode } from "@pagopa/ts-commons/lib/strings";
 import * as S from "fp-ts/string";
 import { MessageContent } from "../generated/definitions/MessageContent";
 import * as messagetemplate from "../generated/templates/servicemessage/index";
+import * as message_reduced_template from "../generated/templates/messagepreview/index";
 
 const defaultEmailFooterMarkdown = `**Non rispondere a questa email. Questa casella di posta è utilizzata solo per l'invio della presente mail e, non essendo monitorata, non riceveresti risposta.**
 
@@ -117,6 +118,30 @@ export const messageToHtml = (
     // strip leading zeroes
     TE.map(bodyHtml =>
       messagetemplate.apply(content.subject, bodyHtml, {
+        ...senderMetadata,
+        organizationFiscalCode: senderMetadata.organizationFiscalCode.replace(
+          /^0+/,
+          ""
+        ) as OrganizationFiscalCode
+      })
+    )
+  );
+
+export const messageReducedToHtml = (
+  processor?: Processor
+): (({
+  content,
+  senderMetadata
+}: MessageToHtmlInput) => TE.TaskEither<Error, string>) => ({
+  content,
+  senderMetadata
+}): TE.TaskEither<Error, string> =>
+  pipe(
+    content.markdown,
+    contentToHtml(processor),
+    // strip leading zeroes
+    TE.map(bodyHtml =>
+      message_reduced_template.apply(content.subject, bodyHtml, {
         ...senderMetadata,
         organizationFiscalCode: senderMetadata.organizationFiscalCode.replace(
           /^0+/,

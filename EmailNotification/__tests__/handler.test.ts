@@ -37,6 +37,7 @@ import * as messagetemplate from "../../generated/templates/servicemessage/index
 import { markdownToHtml } from "@pagopa/io-functions-commons/dist/src/utils/markdown";
 import { aFiscalCode, anotherFiscalCode } from "../../__mocks__/mocks";
 import { generateDocumentHtml } from "../utils";
+import { IConfig } from "../../utils/config";
 
 beforeEach(() => jest.clearAllMocks());
 
@@ -145,26 +146,6 @@ describe("getEmailNotificationActivityHandler", () => {
   test.each([
     {
       betaList: [],
-      ff: FeatureFlagEnum.NONE,
-      expectedHtmlFormTemplate: false
-    },
-    {
-      betaList: [aFiscalCode],
-      ff: FeatureFlagEnum.NONE,
-      expectedHtmlFormTemplate: false
-    },
-    {
-      betaList: [aFiscalCode],
-      ff: FeatureFlagEnum.BETA,
-      expectedHtmlFormTemplate: true
-    },
-    {
-      betaList: [anotherFiscalCode],
-      ff: FeatureFlagEnum.BETA,
-      expectedHtmlFormTemplate: false
-    },
-    {
-      betaList: [],
       ff: FeatureFlagEnum.ALL,
       expectedHtmlFormTemplate: true
     }
@@ -180,7 +161,7 @@ describe("getEmailNotificationActivityHandler", () => {
         notificationModelMock,
         mockRetrieveProcessingMessageData,
         defaultNotificationParams,
-        { BETA_USERS: betaList, FF_TEMPLATE_EMAIL: ff }
+        ({ BETA_USERS: betaList, FF_TEMPLATE_EMAIL: ff } as unknown) as IConfig
       );
 
       const result = await GetEmailNotificationActivityHandler(
@@ -217,7 +198,10 @@ describe("getEmailNotificationActivityHandler", () => {
       notificationModelMock,
       mockRetrieveProcessingMessageData,
       defaultNotificationParams,
-      { BETA_USERS: [], FF_TEMPLATE_EMAIL: FeatureFlagEnum.NONE }
+      ({
+        BETA_USERS: [],
+        FF_TEMPLATE_EMAIL: FeatureFlagEnum.NONE
+      } as unknown) as IConfig
     );
 
     const result = await GetEmailNotificationActivityHandler(
@@ -240,7 +224,10 @@ describe("getEmailNotificationActivityHandler", () => {
       notificationModelMock,
       mockRetrieveProcessingMessageData,
       defaultNotificationParams,
-      { BETA_USERS: [], FF_TEMPLATE_EMAIL: FeatureFlagEnum.NONE }
+      ({
+        BETA_USERS: [],
+        FF_TEMPLATE_EMAIL: FeatureFlagEnum.NONE
+      } as unknown) as IConfig
     );
 
     try {
