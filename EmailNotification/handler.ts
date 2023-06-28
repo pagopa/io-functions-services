@@ -30,7 +30,7 @@ import {
   FeatureFlag,
   getIsUserEligibleForNewFeature
 } from "../utils/featureFlag";
-import { messageToHtml } from "./utils";
+import { messageToHtml, messageReducedToHtml } from "./utils";
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type FfTemplateEmail = {
@@ -148,8 +148,7 @@ export const getEmailNotificationHandler = (
             ),
             B.fold(
               () => pipe({ content, senderMetadata }, messageToHtml()),
-              () => pipe({ content, senderMetadata }, messageToHtml())
-              // () => pipe({ content, senderMetadata }, messageReducedToHtml())
+              () => pipe({ content, senderMetadata }, messageReducedToHtml())
             ),
             TE.mapLeft(err => {
               throw err;
