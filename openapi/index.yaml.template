@@ -1373,7 +1373,7 @@ definitions:
             type: integer
           last_update:
             $ref: '#/definitions/Timestamp'
-      - $ref: '#/definitions/CmsServiceData'
+      - $ref: '#/definitions/CmsServicePayload'
     required:
       - id
       - status
@@ -1391,16 +1391,12 @@ definitions:
             type: integer
           last_update:
             $ref: '#/definitions/Timestamp'
-      - $ref: '#/definitions/CmsServiceData'
+      - $ref: '#/definitions/CmsServicePayload'
     required:
       - id
       - status
       - last_update
   CmsServicePayload:
-    description: A payload used to create or update a service.
-    allOf:
-      - $ref: '#/definitions/CmsServiceData'
-  CmsServiceData:
     type: object
     description: Service basic data
     properties:
