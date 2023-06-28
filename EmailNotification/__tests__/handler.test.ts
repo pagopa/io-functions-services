@@ -33,7 +33,7 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
 import { StandardServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/StandardServiceCategory";
 import { FeatureFlagEnum } from "../../utils/featureFlag";
-import * as messagetemplate from "../../generated/templates/servicemessage/index";
+import * as messagetemplate from "../../generated/templates/messagepreview/index";
 import { markdownToHtml } from "@pagopa/io-functions-commons/dist/src/utils/markdown";
 import { aFiscalCode, anotherFiscalCode } from "../../__mocks__/mocks";
 import { generateDocumentHtml } from "../utils";
