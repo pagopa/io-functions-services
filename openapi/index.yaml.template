@@ -768,7 +768,7 @@ paths:
         - manage
       summary: Retrieve all services
       description: Retrieve all services owned by the calling user
-      operationId: getServices
+      operationId: cmsGetServices
       parameters:
         - name: limit
           in: query
