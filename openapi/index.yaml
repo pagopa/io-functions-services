@@ -1,6 +1,6 @@
 swagger: '2.0'
 info:
-  version: 3.30.4
+  version: 3.30.5
   title: IO API for Public Administration Services
   contact:
     name: PagoPA S.p.A.
