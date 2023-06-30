@@ -4,6 +4,7 @@ csx
 .vs
 edge
 Publish
+**/.DS_Store
 
 *.user
 *.suo
