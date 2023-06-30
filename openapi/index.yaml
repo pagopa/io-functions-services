@@ -2361,11 +2361,10 @@ securityDefinitions:
     name: Ocp-Apim-Subscription-Key
     in: header
     description: >-
-      The API key obtained through the Backoffice IO or both getService
-      or cmsGetServiceKeys operation.
+      The API key obtained through the Backoffice IO or both getService or
+      cmsGetServiceKeys operation.
   ManageSubscriptionKey:
     type: apiKey
     name: Ocp-Apim-Subscription-Key
     in: header
-    description: >-
-      The `manage` API key obtained through the Backoffice IO.
+    description: The `manage` API key obtained through the Backoffice IO.
