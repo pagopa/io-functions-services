@@ -509,6 +509,9 @@ paths:
     post:
       deprecated: true
       operationId: createService
+      security:
+        - ManageSubscriptionKey: []
+        - SubscriptionKey: []
       summary: Create Service
       description: >
         Create a new Service with the attributes provided in the request
@@ -546,6 +549,9 @@ paths:
     get:
       deprecated: true
       operationId: getUserServices
+      security:
+        - ManageSubscriptionKey: []
+        - SubscriptionKey: []
       summary: Get User Services
       description: |
         Retrieve the identifiers of the services owned by the calling user
@@ -568,6 +574,9 @@ paths:
     get:
       deprecated: true
       operationId: getService
+      security:
+        - ManageSubscriptionKey: []
+        - SubscriptionKey: []
       summary: Get Service
       description: |
         Retrieve a previously created service with the provided service ID.
@@ -589,6 +598,9 @@ paths:
     put:
       deprecated: true
       operationId: updateService
+      security:
+        - ManageSubscriptionKey: []
+        - SubscriptionKey: []
       summary: Update Service
       description: |-
         Update a previously created service with the provided service ID
@@ -632,6 +644,9 @@ paths:
         This API operation needs the same API key of the service being retrieved
         otherwise 403 forbidden will be returned to the caller.
       operationId: uploadServiceLogo
+      security:
+        - ManageSubscriptionKey: []
+        - SubscriptionKey: []
       parameters:
         - name: body
           in: body
@@ -670,6 +685,9 @@ paths:
 
         otherwise 403 forbidden will be returned to the caller.
       operationId: regenerateServiceKey
+      security:
+        - ManageSubscriptionKey: []
+        - SubscriptionKey: []
       parameters:
         - name: service_id
           in: path
@@ -809,6 +827,8 @@ paths:
       summary: Create a new service
       description: Create a new Service with the attributes provided in the request payload
       operationId: cmsCreateService
+      security:
+        - ManageSubscriptionKey: []
       parameters:
         - in: body
           name: body
@@ -841,6 +861,8 @@ paths:
       summary: Retrieve all services
       description: Retrieve all services owned by the calling user
       operationId: cmsGetServices
+      security:
+        - ManageSubscriptionKey: []
       parameters:
         - name: limit
           in: query
@@ -881,6 +903,9 @@ paths:
       summary: Retrieve service
       description: Retrieve a service by ID
       operationId: cmsGetService
+      security:
+        - ManageSubscriptionKey: []
+        - SubscriptionKey: []
       parameters:
         - name: serviceId
           in: path
@@ -910,6 +935,8 @@ paths:
       summary: Update service
       description: Update an existing service by ID
       operationId: cmsUpdateService
+      security:
+        - ManageSubscriptionKey: []
       parameters:
         - name: serviceId
           in: path
@@ -949,6 +976,8 @@ paths:
       summary: Delete service
       description: Delete a service by ID
       operationId: cmsDeleteService
+      security:
+        - ManageSubscriptionKey: []
       parameters:
         - name: serviceId
           in: path
@@ -977,6 +1006,8 @@ paths:
       summary: Upload service logo
       description: Upload service logo by service ID
       operationId: cmsUpdateServiceLogo
+      security:
+        - ManageSubscriptionKey: []
       parameters:
         - name: serviceId
           in: path
@@ -1019,6 +1050,8 @@ paths:
       summary: Retrieve service keys
       description: Retrieve service keys by service ID
       operationId: cmsGetServiceKeys
+      security:
+        - ManageSubscriptionKey: []
       parameters:
         - name: serviceId
           in: path
@@ -1049,6 +1082,8 @@ paths:
       summary: Regenerate service key
       description: Regenerate service key by service ID and key type
       operationId: cmsRegenerateServiceKey
+      security:
+        - ManageSubscriptionKey: []
       parameters:
         - name: serviceId
           in: path
@@ -1084,6 +1119,8 @@ paths:
       summary: Send service to review
       description: Send service to review by service ID
       operationId: cmsReviewService
+      security:
+        - ManageSubscriptionKey: []
       parameters:
         - name: serviceId
           in: path
@@ -1111,43 +1148,6 @@ paths:
           description: Internal server error
           schema:
             $ref: '#/definitions/ProblemJson'
-    patch:
-      tags:
-        - manage-review
-      summary: Explain service review
-      description: Explain service review by service ID
-      operationId: cmsExplainService
-      parameters:
-        - name: serviceId
-          in: path
-          description: ID of the service
-          required: true
-          type: string
-        - in: body
-          name: body
-          schema:
-            $ref: '#/definitions/CmsComment'
-      responses:
-        '204':
-          description: Service explained successfully
-        '400':
-          description: Invalid payload.
-          schema:
-            $ref: '#/definitions/ProblemJson'
-        '401':
-          description: Unauthorized
-        '403':
-          description: Forbidden
-        '404':
-          description: Not found
-        '409':
-          description: Service status is incompatible with explain action request
-        '429':
-          description: Too many requests
-        '500':
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/ProblemJson'
   /manage/services/{serviceId}/release:
     post:
       tags:
@@ -1155,6 +1155,8 @@ paths:
       summary: Publish service on IO
       description: Publish service by ID on __IO Platform__
       operationId: cmsReleaseService
+      security:
+        - ManageSubscriptionKey: []
       parameters:
         - name: serviceId
           in: path
@@ -1184,6 +1186,8 @@ paths:
       summary: Retrieve last published version of service
       description: Retrieve last version of service published on __IO Platform__
       operationId: cmsGetPublishedService
+      security:
+        - ManageSubscriptionKey: []
       parameters:
         - name: serviceId
           in: path
@@ -1213,6 +1217,8 @@ paths:
       summary: Unpublish service from IO
       description: Unpublish service by ID from __IO Platform__
       operationId: cmsUnpublishService
+      security:
+        - ManageSubscriptionKey: []
       parameters:
         - name: serviceId
           in: path
@@ -2287,12 +2293,6 @@ definitions:
     required:
       - primary_key
       - secondary_key
-  CmsComment:
-    type: object
-    properties:
-      comment:
-        type: string
-        example: This is an explanation comment
   CmsReviewRequest:
     type: object
     properties:
@@ -2361,5 +2361,10 @@ securityDefinitions:
     name: Ocp-Apim-Subscription-Key
     in: header
     description: >-
-      The API key obtained through the developer portal or the getService
-      operation.
+      The API key obtained through the Backoffice IO or both getService or
+      cmsGetServiceKeys operation.
+  ManageSubscriptionKey:
+    type: apiKey
+    name: Ocp-Apim-Subscription-Key
+    in: header
+    description: The `manage` API key obtained through the Backoffice IO.
