@@ -1055,11 +1055,7 @@ paths:
           description: ID of the service
           required: true
           type: string
-        - name: keyType
-          in: path
-          description: Key type
-          required: true
-          type: string
+        - $ref: '#/parameters/CmsSubscriptionKeyType'
       responses:
         '200':
           description: Service key regenerated successfully
@@ -2291,11 +2287,6 @@ definitions:
     required:
       - primary_key
       - secondary_key
-  CmsSubscriptionKeyType:
-    type: string
-    enum:
-      - primary
-      - secondary
   CmsComment:
     type: object
     properties:
@@ -2351,6 +2342,15 @@ parameters:
     description: Organization fiscal code.
     format: OrganizationFiscalCode
     x-import: italia-ts-commons/lib/strings
+  CmsSubscriptionKeyType:
+    name: keyType
+    in: path
+    description: Key type
+    required: true
+    type: string
+    enum:
+      - primary
+      - secondary
 consumes:
   - application/json
 produces:
