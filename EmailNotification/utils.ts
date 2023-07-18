@@ -102,34 +102,10 @@ export const contentToHtml: (
   );
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
-type MessageToHtmlInput = {
+type MessageReducedToHtmlInput = {
   readonly content: MessageContent;
   readonly senderMetadata: CreatedMessageEventSenderMetadata;
 };
-
-export const messageToHtml = (
-  processor?: Processor
-): (({
-  content,
-  senderMetadata
-}: MessageToHtmlInput) => TE.TaskEither<Error, string>) => ({
-  content,
-  senderMetadata
-}): TE.TaskEither<Error, string> =>
-  pipe(
-    content.markdown,
-    contentToHtml(processor),
-    // strip leading zeroes
-    TE.map(bodyHtml =>
-      messagetemplate.apply(content.subject, bodyHtml, {
-        ...senderMetadata,
-        organizationFiscalCode: senderMetadata.organizationFiscalCode.replace(
-          /^0+/,
-          ""
-        ) as OrganizationFiscalCode
-      })
-    )
-  );
 
 export const truncateMarkdown = (plainText: string): string =>
   plainText.substring(0, MAX_CHARACTER_FOR_BODY_MAIL);
@@ -142,7 +118,7 @@ export const messageReducedToHtml = (
 ): (({
   content,
   senderMetadata
-}: MessageToHtmlInput) => TE.TaskEither<Error, string>) => ({
+}: MessageReducedToHtmlInput) => TE.TaskEither<Error, string>) => ({
   content,
   senderMetadata
 }): TE.TaskEither<Error, string> =>

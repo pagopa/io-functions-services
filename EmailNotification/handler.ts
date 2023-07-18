@@ -30,7 +30,7 @@ import {
   FeatureFlag,
   getIsUserEligibleForNewFeature
 } from "../utils/featureFlag";
-import { messageToHtml, messageReducedToHtml } from "./utils";
+import { messageReducedToHtml } from "./utils";
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type FfTemplateEmail = {
