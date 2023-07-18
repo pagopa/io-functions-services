@@ -17,7 +17,6 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
 
 import { sendMail } from "@pagopa/io-functions-commons/dist/src/mailer";
-import * as B from "fp-ts/boolean";
 import { withJsonInput } from "../utils/with-json-input";
 import { withDecodedInput } from "../utils/with-decoded-input";
 import {
@@ -25,11 +24,8 @@ import {
   NotificationCreatedEvent
 } from "../utils/events/message";
 import { DataFetcher, withExpandedInput } from "../utils/with-expanded-input";
-import { BetaUsers, IConfig } from "../utils/config";
-import {
-  FeatureFlag,
-  getIsUserEligibleForNewFeature
-} from "../utils/featureFlag";
+import { BetaUsers } from "../utils/config";
+import { FeatureFlag } from "../utils/featureFlag";
 import { messageReducedToHtml } from "./utils";
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions

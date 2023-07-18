@@ -13,9 +13,9 @@ import * as E from "fp-ts/Either";
 import { OrganizationFiscalCode } from "@pagopa/ts-commons/lib/strings";
 import * as S from "fp-ts/string";
 import { MessageContent } from "../generated/definitions/MessageContent";
-import * as messagetemplate from "../generated/templates/servicemessage/index";
 import * as message_reduced_template from "../generated/templates/messagepreview/index";
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const removeMd = require("remove-markdown");
 
 const defaultEmailFooterMarkdown = `**Non rispondere a questa email. Questa casella di posta è utilizzata solo per l'invio della presente mail e, non essendo monitorata, non riceveresti risposta.**

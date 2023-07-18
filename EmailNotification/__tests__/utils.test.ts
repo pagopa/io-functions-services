@@ -1,11 +1,10 @@
-import { contentToHtml, messageReducedToHtml, messageToHtml } from "../utils";
+import { contentToHtml, messageReducedToHtml } from "../utils";
 import * as E from "fp-ts/Either";
 import {
   aCreatedMessageEventSenderMetadata,
   aMessageContent,
   anError
 } from "../../__mocks__/mocks";
-import { OrganizationFiscalCode } from "@pagopa/io-functions-admin-sdk/OrganizationFiscalCode";
 
 describe("contentToHtml", () => {
   test("GIVEN a simple content WHEN is converterd to html using the default processor THEN return an either containing the simple content", async () => {
