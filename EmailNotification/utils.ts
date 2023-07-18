@@ -16,12 +16,16 @@ import { MessageContent } from "../generated/definitions/MessageContent";
 import * as messagetemplate from "../generated/templates/servicemessage/index";
 import * as message_reduced_template from "../generated/templates/messagepreview/index";
 
+const removeMd = require("remove-markdown");
+
 const defaultEmailFooterMarkdown = `**Non rispondere a questa email. Questa casella di posta è utilizzata solo per l'invio della presente mail e, non essendo monitorata, non riceveresti risposta.**
 
 Hai ricevuto questa comunicazione perché le tue preferenze nell’[App IO](https://io.italia.it/) indicano che hai abilitato l’inoltro via email dei messaggi relativi al servizio in oggetto.  
 Se non vuoi più ricevere le comunicazioni relative a questo servizio, puoi modificare le tue preferenze nella relativa scheda servizio all’interno dell’App IO.  
 Puoi anche disattivare l’inoltro dei messaggi via email per tutti i servizi, selezionando l'opzione “Disabilita per tutti i servizi” che trovi in "Profilo" > "Preferenze" > "Inoltro dei messaggi via email".
 `;
+
+const MAX_CHARACTER_FOR_BODY_MAIL = 134;
 
 /**
  * Generates the HTML for the email from the Markdown content and the subject
@@ -127,6 +131,12 @@ export const messageToHtml = (
     )
   );
 
+export const truncateMarkdown = (plainText: string): string =>
+  plainText.substring(0, MAX_CHARACTER_FOR_BODY_MAIL);
+
+export const prepareBody = (markdown: string): string =>
+  pipe(markdown, removeMd, truncateMarkdown);
+
 export const messageReducedToHtml = (
   processor?: Processor
 ): (({
@@ -138,6 +148,7 @@ export const messageReducedToHtml = (
 }): TE.TaskEither<Error, string> =>
   pipe(
     content.markdown,
+    prepareBody,
     contentToHtml(processor),
     // strip leading zeroes
     TE.map(bodyHtml =>

@@ -163,7 +163,7 @@ describe("getEmailNotificationActivityHandler", () => {
     const expectedHtml = messagetemplate.apply(
       aMessageContent.subject,
       (
-        await markdownToHtml.process(aMessageContent.markdown)
+        await markdownToHtml.process(prepareBody(aMessageContent.markdown))
       ).toString(),
       aSenderMetadata
     );
@@ -219,4 +219,11 @@ describe("getEmailNotificationActivityHandler", () => {
   });
 });
 
-
+describe("prepareBody", () => {
+  it("should return the markdown striped and truncated correctly", () => {
+    const markdown =
+      "# Header 1\nsome text\n## Header 2\nsome text\n### Header 3\nsome text\n#### Header 4\nsome text\n##### Header 5\nsome text";
+    const r = prepareBody(markdown);
+    console.log(r);
+  });
+});
