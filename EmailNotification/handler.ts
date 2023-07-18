@@ -69,8 +69,7 @@ export const getEmailNotificationHandler = (
   lMailerTransporter: NodeMailer.Transporter,
   lNotificationModel: NotificationModel,
   retrieveProcessingMessageData: DataFetcher<CommonMessageData>,
-  notificationDefaultParams: INotificationDefaults,
-  { BETA_USERS, FF_TEMPLATE_EMAIL, PN_SERVICE_ID }: IConfig
+  notificationDefaultParams: INotificationDefaults
 ) =>
   withJsonInput(
     withDecodedInput(
@@ -140,16 +139,8 @@ export const getEmailNotificationHandler = (
             errorOrEmailNotification.right.channels.EMAIL;
 
           const documentHtml = await pipe(
-            errorOrActiveMessage.right.fiscalCode,
-            getIsUserEligibleForNewFeature(
-              cf => BETA_USERS.includes(cf),
-              () => PN_SERVICE_ID === message.senderServiceId, // We want to use the new template only for PN messages
-              FF_TEMPLATE_EMAIL
-            ),
-            B.fold(
-              () => pipe({ content, senderMetadata }, messageToHtml()),
-              () => pipe({ content, senderMetadata }, messageReducedToHtml())
-            ),
+            { content, senderMetadata },
+            messageReducedToHtml(),
             TE.mapLeft(err => {
               throw err;
             }),
