@@ -1,4 +1,4 @@
-import { contentToHtml, messageToHtml } from "../utils";
+import { contentToHtml, messageReducedToHtml, messageToHtml } from "../utils";
 import * as E from "fp-ts/Either";
 import {
   aCreatedMessageEventSenderMetadata,
@@ -31,33 +31,14 @@ describe("contentToHtml", () => {
   });
 });
 
-describe("messageToHtml", () => {
+describe("messageReducedToHtml", () => {
   test("GIVEN a simple message WHEN is converted to an html using the default processor THEN return an either containing the email template with the simple content", async () => {
     const simpleMessage = {
       content: aMessageContent,
       senderMetadata: aCreatedMessageEventSenderMetadata
     };
-    const result = await messageToHtml()(simpleMessage)();
+    const result = await messageReducedToHtml()(simpleMessage)();
     expect(result).toMatchSnapshot();
-  });
-
-  test("GIVEN a sender with a leading zero WHEN is converted to an html using the default processor THEN return an either containingthe email template with the simple content", async () => {
-    const strippedOrganizationalFiscalCode = "19871987";
-    const messageWithSenderWithLeadingZero = {
-      content: aMessageContent,
-      senderMetadata: {
-        ...aCreatedMessageEventSenderMetadata,
-        organizationFiscalCode: `000${strippedOrganizationalFiscalCode}` as OrganizationFiscalCode
-      }
-    };
-    const result = await messageToHtml()(messageWithSenderWithLeadingZero)();
-    expect(result).toEqual(
-      expect.objectContaining({
-        right: expect.stringContaining(
-          `organizations/${strippedOrganizationalFiscalCode}.png`
-        )
-      })
-    );
   });
 
   test("GIVEN any message WHEN is converted to an html using a not working processor THEN return an either containing an error", async () => {
@@ -68,7 +49,7 @@ describe("messageToHtml", () => {
       content: aMessageContent,
       senderMetadata: aCreatedMessageEventSenderMetadata
     };
-    const result = await messageToHtml(mockProcessor)(simpleMessage)();
+    const result = await messageReducedToHtml(mockProcessor)(simpleMessage)();
     expect(result).toEqual(E.left(anError));
   });
 });
