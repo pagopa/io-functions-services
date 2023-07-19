@@ -222,8 +222,9 @@ describe("getEmailNotificationActivityHandler", () => {
 describe("prepareBody", () => {
   it("should return the markdown striped and truncated correctly", () => {
     const markdown =
-      "# Header 1\nsome text\n## Header 2\nsome text\n### Header 3\nsome text\n#### Header 4\nsome text\n##### Header 5\nsome text";
+      "# Header 1\nsome text\n## Header 2\nsome text\n### Header 3\nsome text\n#### Header 4\nsome text\n##### Header 5\nsome text\ntestesttesttesttestesttesttesttestesttesttesttestesttesttesttestesttesttesttestesttesttest";
     const r = prepareBody(markdown);
-    console.log(r);
+    expect(r).toHaveLength(134);
+    expect(r).not.toContain("#");
   });
 });
