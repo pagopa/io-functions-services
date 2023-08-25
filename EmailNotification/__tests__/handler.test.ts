@@ -169,7 +169,7 @@ describe("getEmailNotificationActivityHandler", () => {
     );
 
     expect(mockSendMail).toBeCalledWith(
-      expect.anything(),
+      lMailerTransporterMock,
       expect.objectContaining({ html: expectedHtml })
     );
 
