@@ -143,7 +143,7 @@ const mockRetrieveProcessingMessageData = jest.fn().mockImplementation(() =>
 );
 
 describe("getEmailNotificationActivityHandler", () => {
-  test("GIVEN an EmailNotification.handeler WHEN the handler run  THEN should return SUCCESS with the right html email body", async () => {
+  test("GIVEN an EmailNotification.handler WHEN the handler run  THEN should return SUCCESS with the right html email body", async () => {
     const mockSendMail = jest
       .spyOn(mail, "sendMail")
       .mockReturnValueOnce(TE.of("SUCCESS"));
