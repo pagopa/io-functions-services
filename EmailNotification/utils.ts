@@ -113,12 +113,14 @@ export const truncateMarkdown = (plainText: string): string =>
 export const prepareBody = (markdown: string): string =>
   pipe(markdown, removeMd, truncateMarkdown);
 
-export const messageReducedToHtml = (
-  processor?: Processor
-): (({
+type MessageReducedToHtmlOutput = ({
   content,
   senderMetadata
-}: MessageReducedToHtmlInput) => TE.TaskEither<Error, string>) => ({
+}: MessageReducedToHtmlInput) => TE.TaskEither<Error, string>;
+
+export const messageReducedToHtml = (
+  processor?: Processor
+): MessageReducedToHtmlOutput => ({
   content,
   senderMetadata
 }): TE.TaskEither<Error, string> =>
