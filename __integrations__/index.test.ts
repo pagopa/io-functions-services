@@ -32,7 +32,6 @@ import { MessageContent } from "./generated/fn-services/MessageContent";
 import { pipe } from "fp-ts/lib/function";
 import { sequenceS } from "fp-ts/lib/Apply";
 import { createBlobService } from "azure-storage";
-import { EmailString } from "@pagopa/ts-commons/lib/strings";
 import { FeatureLevelTypeEnum } from "./generated/fn-services/FeatureLevelType";
 import { RejectedMessageStatusValueEnum } from "./generated/fn-services/RejectedMessageStatusValue";
 import { NotRejectedMessageStatusValueEnum } from "./generated/fn-services/NotRejectedMessageStatusValue";
@@ -78,11 +77,6 @@ const anEnabledServiceId = "anEnabledServiceId" as NonEmptyString;
 const aDisabledServiceId = "aDisabledServiceId" as NonEmptyString;
 const aNonExistingServiceId = "aNonExistingServiceId" as NonEmptyString;
 const aValidServiceId = "aValidServiceId" as NonEmptyString;
-const aValidServiceWithoutWriteMessageGroupsEmail = "validServiceWithoutWriteMessageGroups@legal.it" as EmailString;
-const aValidSenderEmail = "test@legal.it" as EmailString;
-const aNotExistingSenderEmail = "notExistingEmail@legal.it" as EmailString;
-const aNotExistingSenderServiceEmail = "notExistingService@legal.it" as EmailString;
-const aRaiseErrorSenderServiceEmail = "aRaiseImpersonateError@legal.it" as EmailString;
 
 // ----------------
 
@@ -1059,103 +1053,6 @@ describe("Create Advanced Message", () => {
   });
 });
 
-describe("Create Legal Message |> Middleware errors", () => {
-  it("should return 403 when creating a legal message from a non existing Service", async () => {
-    const nodeFetch = getNodeFetch({
-      "x-subscription-id": aNonExistingServiceId
-    });
-
-    const body = {
-      message: {
-        fiscal_code: aLegacyInboxEnabledFiscalCode,
-        content: aMessageContent
-      }
-    };
-
-    const response = await postCreateLegalMessage(nodeFetch)(
-      "pec@demo.it",
-      body
-    );
-
-    expect(response.status).toEqual(403);
-  });
-
-  it("should return 400 if wrong mail param is passed", async () => {
-    const body = {
-      message: {
-        fiscal_code: aLegacyInboxEnabledFiscalCode,
-        content: aMessageContent
-      }
-    };
-
-    const response = await postCreateLegalMessage(getNodeFetch())("aaa", body);
-
-    expect(response.status).toEqual(400);
-  });
-
-  it("should return 400 given a payload without legal data", async () => {
-    const body = {
-      message: {
-        fiscal_code: aLegacyInboxEnabledFiscalCode,
-        content: aMessageContent
-      }
-    };
-
-    const response = await postCreateLegalMessage(getNodeFetch())(
-      "pec@demo.it",
-      body
-    );
-
-    expect(response.status).toEqual(400);
-  });
-
-  it("should return 201 when no middleware fails", async () => {
-    const nodeFetch = getNodeFetch({
-      "x-subscription-id": aValidServiceId
-    });
-
-    const body = {
-      message: {
-        fiscal_code: anAutoFiscalCode,
-        content: aValidLegalMessageContent
-      }
-    };
-
-    const response = await postCreateLegalMessage(nodeFetch)(
-      aValidSenderEmail,
-      body
-    );
-
-    expect(response.status).toEqual(201);
-  });
-});
-
-describe("Create Legal Message", () => {
-  it.each`
-    senderEmail                                    | errorCondition                                                   | errorCode
-    ${aNotExistingSenderEmail}                     | ${"sender email does not exists"}                                | ${404}
-    ${aNotExistingSenderServiceEmail}              | ${"sender email related service does not exists"}                | ${404}
-    ${aRaiseErrorSenderServiceEmail}               | ${"impersonated Service' s retrieve fails"}                      | ${500}
-    ${aValidServiceWithoutWriteMessageGroupsEmail} | ${"impersonated Service does not have message write permission"} | ${403}
-  `(
-    "should return $errorCode if $errorCondition",
-    async ({ senderEmail, errorCode }) => {
-      const body = {
-        message: {
-          fiscal_code: anAutoFiscalCode,
-          content: aValidLegalMessageContent
-        }
-      };
-
-      const nodeFetch = getNodeFetch({ "x-subscription-id": aValidServiceId });
-
-      const result = await postCreateLegalMessage(nodeFetch)(senderEmail, body);
-
-      expect(result.status).toEqual(errorCode);
-    }
-  );
-});
-
 const aMessageId = ulidGenerator();
 const aSerializedNewMessageWithoutContent = {
   createdAt: new Date().toISOString(),
@@ -1194,19 +1091,6 @@ describe("Get Message", () => {
 
 const postCreateMessage = (nodeFetch: typeof fetch) => async body => {
   return await nodeFetch(`${baseUrl}/api/v1/messages`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(body.message)
-  });
-};
-
-const postCreateLegalMessage = (nodeFetch: typeof fetch) => async (
-  mailParam,
-  body
-) => {
-  return await nodeFetch(`${baseUrl}/api/v1/legal-messages/${mailParam}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
