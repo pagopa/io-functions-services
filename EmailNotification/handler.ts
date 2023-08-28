@@ -17,7 +17,6 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
 
 import { sendMail } from "@pagopa/io-functions-commons/dist/src/mailer";
-import * as B from "fp-ts/boolean";
 import { withJsonInput } from "../utils/with-json-input";
 import { withDecodedInput } from "../utils/with-decoded-input";
 import {
@@ -25,12 +24,9 @@ import {
   NotificationCreatedEvent
 } from "../utils/events/message";
 import { DataFetcher, withExpandedInput } from "../utils/with-expanded-input";
-import { BetaUsers, IConfig } from "../utils/config";
-import {
-  FeatureFlag,
-  getIsUserEligibleForNewFeature
-} from "../utils/featureFlag";
-import { messageToHtml, messageReducedToHtml } from "./utils";
+import { BetaUsers } from "../utils/config";
+import { FeatureFlag } from "../utils/featureFlag";
+import { messageReducedToHtml } from "./utils";
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type FfTemplateEmail = {
@@ -69,8 +65,7 @@ export const getEmailNotificationHandler = (
   lMailerTransporter: NodeMailer.Transporter,
   lNotificationModel: NotificationModel,
   retrieveProcessingMessageData: DataFetcher<CommonMessageData>,
-  notificationDefaultParams: INotificationDefaults,
-  { BETA_USERS, FF_TEMPLATE_EMAIL, PN_SERVICE_ID }: IConfig
+  notificationDefaultParams: INotificationDefaults
 ) =>
   withJsonInput(
     withDecodedInput(
@@ -140,16 +135,8 @@ export const getEmailNotificationHandler = (
             errorOrEmailNotification.right.channels.EMAIL;
 
           const documentHtml = await pipe(
-            errorOrActiveMessage.right.fiscalCode,
-            getIsUserEligibleForNewFeature(
-              cf => BETA_USERS.includes(cf),
-              () => PN_SERVICE_ID === message.senderServiceId, // We want to use the new template only for PN messages
-              FF_TEMPLATE_EMAIL
-            ),
-            B.fold(
-              () => pipe({ content, senderMetadata }, messageToHtml()),
-              () => pipe({ content, senderMetadata }, messageReducedToHtml())
-            ),
+            { content, senderMetadata },
+            messageReducedToHtml(),
             TE.mapLeft(err => {
               throw err;
             }),

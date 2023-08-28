@@ -20,7 +20,6 @@
     "generate": "npm-run-all generate:* generate:templates:*",
     "generate:definitions": "rimraf ./generated/definitions && shx mkdir -p ./generated/definitions && gen-api-models --api-spec ./openapi/index.yaml --no-strict --out-dir ./generated/definitions",
     "generate:payment-updater": "rimraf generated/payment-updater && shx mkdir -p generated/payment-updater && gen-api-models --api-spec ./openapi/payment-updater.yaml --no-strict --out-dir ./generated/payment-updater --request-types --response-decoders --client",
-    "generate:templates:servicemessage": "shx rm -rf generated/templates/servicemessage && shx mkdir -p generated/templates/servicemessage && ts-node template_script.ts v1.0.1 \"generated/templates/servicemessage/index\"",
     "generate:templates:messagepreview": "shx rm -rf generated/templates/messagepreview && shx mkdir -p generated/templates/messagepreview && ts-node template_reduced_script.ts v1.0.6 \"generated/templates/messagepreview/index\"",
     "openapi:bundle": "bundle-api-spec -i openapi/index.yaml.template -o openapi/index.yaml -V $npm_package_version",
     "openapi:validate": "oval validate -p openapi/index.yaml",
@@ -43,6 +42,7 @@
     "@types/jest": "^24.0.15",
     "@types/lolex": "^5.1.2",
     "@types/nodemailer": "^4.6.2",
+    "@types/remove-markdown": "^0.3.1",
     "@types/semver": "^7.3.10",
     "auto-changelog": "^2.2.1",
     "dependency-check": "^4.1.0",
@@ -82,6 +82,7 @@
     "node-fetch": "^2.6.7",
     "nodemailer": "^6.4.16",
     "nodemailer-sendgrid": "^1.0.3",
+    "remove-markdown": "^0.5.0",
     "semver": "^7.3.7",
     "ts-pattern": "^4.0.3"
   },

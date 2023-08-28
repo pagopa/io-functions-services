@@ -36,7 +36,7 @@ import { FeatureFlagEnum } from "../../utils/featureFlag";
 import * as messagetemplate from "../../generated/templates/messagepreview/index";
 import { markdownToHtml } from "@pagopa/io-functions-commons/dist/src/utils/markdown";
 import { aFiscalCode, anotherFiscalCode } from "../../__mocks__/mocks";
-import { generateDocumentHtml } from "../utils";
+import { generateDocumentHtml, prepareBody } from "../utils";
 import { IConfig } from "../../utils/config";
 
 beforeEach(() => jest.clearAllMocks());
@@ -143,52 +143,38 @@ const mockRetrieveProcessingMessageData = jest.fn().mockImplementation(() =>
 );
 
 describe("getEmailNotificationActivityHandler", () => {
-  test.each([
-    {
-      betaList: [],
-      ff: FeatureFlagEnum.ALL,
-      expectedHtmlFormTemplate: true
-    }
-  ])(
-    "GIVEN an EmailNotification.handeler with FF: $ff and beta_list: $betaList WHEN the handler run with input $input THEN should return SUCCESS with the right html email body",
-    async ({ betaList, ff, expectedHtmlFormTemplate }) => {
-      const mockSendMail = jest
-        .spyOn(mail, "sendMail")
-        .mockReturnValueOnce(TE.of("SUCCESS"));
+  test("GIVEN an EmailNotification.handler WHEN the handler run  THEN should return SUCCESS with the right html email body", async () => {
+    const mockSendMail = jest
+      .spyOn(mail, "sendMail")
+      .mockReturnValueOnce(TE.of("SUCCESS"));
 
-      const GetEmailNotificationActivityHandler = getEmailNotificationHandler(
-        lMailerTransporterMock,
-        notificationModelMock,
-        mockRetrieveProcessingMessageData,
-        defaultNotificationParams,
-        ({ BETA_USERS: betaList, FF_TEMPLATE_EMAIL: ff } as unknown) as IConfig
-      );
+    const GetEmailNotificationActivityHandler = getEmailNotificationHandler(
+      lMailerTransporterMock,
+      notificationModelMock,
+      mockRetrieveProcessingMessageData,
+      defaultNotificationParams
+    );
 
-      const result = await GetEmailNotificationActivityHandler(
-        mockContext,
-        JSON.stringify(input)
-      );
+    const result = await GetEmailNotificationActivityHandler(
+      mockContext,
+      JSON.stringify(input)
+    );
 
-      const expectedHtml = expectedHtmlFormTemplate
-        ? messagetemplate.apply(
-            aMessageContent.subject,
-            (await markdownToHtml.process(aMessageContent.markdown)).toString(),
-            aSenderMetadata
-          )
-        : await generateDocumentHtml(
-            aMessageContent.subject,
-            aMessageContent.markdown,
-            aSenderMetadata
-          );
+    const expectedHtml = messagetemplate.apply(
+      aMessageContent.subject,
+      (
+        await markdownToHtml.process(prepareBody(aMessageContent.markdown))
+      ).toString(),
+      aSenderMetadata
+    );
 
-      expect(mockSendMail).toBeCalledWith(
-        expect.anything(),
-        expect.objectContaining({ html: expectedHtml })
-      );
+    expect(mockSendMail).toBeCalledWith(
+      lMailerTransporterMock,
+      expect.objectContaining({ html: expectedHtml })
+    );
 
-      expect(result.kind).toBe("SUCCESS");
-    }
-  );
+    expect(result.kind).toBe("SUCCESS");
+  });
 
   it("should respond with 'SUCCESS' if the mail is sent", async () => {
     jest.spyOn(mail, "sendMail").mockReturnValueOnce(TE.of("SUCCESS"));
@@ -197,11 +183,7 @@ describe("getEmailNotificationActivityHandler", () => {
       lMailerTransporterMock,
       notificationModelMock,
       mockRetrieveProcessingMessageData,
-      defaultNotificationParams,
-      ({
-        BETA_USERS: [],
-        FF_TEMPLATE_EMAIL: FeatureFlagEnum.NONE
-      } as unknown) as IConfig
+      defaultNotificationParams
     );
 
     const result = await GetEmailNotificationActivityHandler(
@@ -223,11 +205,7 @@ describe("getEmailNotificationActivityHandler", () => {
       lMailerTransporterMock,
       notificationModelMock,
       mockRetrieveProcessingMessageData,
-      defaultNotificationParams,
-      ({
-        BETA_USERS: [],
-        FF_TEMPLATE_EMAIL: FeatureFlagEnum.NONE
-      } as unknown) as IConfig
+      defaultNotificationParams
     );
 
     try {
@@ -238,5 +216,15 @@ describe("getEmailNotificationActivityHandler", () => {
     } catch (e) {
       expect(e.message).toBe("Error while sending email: " + errorMessage);
     }
+  });
+});
+
+describe("prepareBody", () => {
+  it("should return the markdown striped and truncated correctly", () => {
+    const markdown =
+      "# Header 1\nsome text\n## Header 2\nsome text\n### Header 3\nsome text\n#### Header 4\nsome text\n##### Header 5\nsome text\ntestesttesttesttestesttesttesttestesttesttesttestesttesttesttestesttesttesttestesttesttest";
+    const r = prepareBody(markdown);
+    expect(r).toHaveLength(134);
+    expect(r).not.toContain("#");
   });
 });
