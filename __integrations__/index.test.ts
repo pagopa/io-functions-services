@@ -41,7 +41,6 @@ import { PaymentStatusEnum } from "./generated/fn-services/PaymentStatus";
 import { RejectionReasonEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/RejectionReason";
 import { TimeToLiveSeconds } from "./generated/fn-services/TimeToLiveSeconds";
 import { NewMessageWithoutContent } from "@pagopa/io-functions-commons/dist/src/models/message";
-import { isRight } from "fp-ts/lib/Either";
 import { ulidGenerator } from "@pagopa/io-functions-commons/dist/src/utils/strings";
 import { ProblemJson } from "@pagopa/ts-commons/lib/responses";
 
@@ -72,12 +71,10 @@ const messageStatusModel = new MessageStatusModel(messageStatusContainer);
 // ----------------
 
 const aLegacyInboxEnabledFiscalCode = "AAABBB01C02D345L" as FiscalCode;
-const aLegacyInboxDisabledFiscalCode = "AAABBB01C02D345I" as FiscalCode;
 const anAutoFiscalCode = "AAABBB01C02D345A" as FiscalCode;
 const aManualFiscalCode = "AAABBB01C02D345M" as FiscalCode;
 
 const anEnabledServiceId = "anEnabledServiceId" as NonEmptyString;
-const anEnabledServiceWithEmailId = "anEnabledServiceWithEmailId" as NonEmptyString;
 const aDisabledServiceId = "aDisabledServiceId" as NonEmptyString;
 const aNonExistingServiceId = "aNonExistingServiceId" as NonEmptyString;
 const aValidServiceId = "aValidServiceId" as NonEmptyString;
