@@ -111,7 +111,7 @@ export const truncateMarkdown = (plainText: string): string =>
   plainText.substring(0, MAX_CHARACTER_FOR_BODY_MAIL);
 
 export const prepareBody = (markdown: string): string =>
-  pipe(markdown, removeMd, truncateMarkdown);
+  pipe(markdown.split("---").pop(), removeMd, truncateMarkdown);
 
 type MessageReducedToHtmlOutput = ({
   content,

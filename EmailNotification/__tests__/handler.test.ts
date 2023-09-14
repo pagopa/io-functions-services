@@ -86,7 +86,8 @@ const notificationModelMock = ({
 const aNotificationId = "A_NOTIFICATION_ID" as NonEmptyString;
 const anOrganizationFiscalCode = "10000000000" as OrganizationFiscalCode;
 
-const aMessageBodyMarkdown = "test".repeat(80) as MessageBodyMarkdown;
+const aMessageBodyMarkdown = ('---\nit:\n  cta_1: \n    text: "Login"\n    action: "iosso://https://domainexample.com/path"\nen:\n "\n---' +
+  "test".repeat(80)) as MessageBodyMarkdown;
 
 const aMessageContent: MessageContent = {
   markdown: aMessageBodyMarkdown,
