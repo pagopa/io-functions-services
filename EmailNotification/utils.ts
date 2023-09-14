@@ -111,6 +111,7 @@ export const truncateMarkdown = (plainText: string): string =>
   plainText.substring(0, MAX_CHARACTER_FOR_BODY_MAIL);
 
 export const prepareBody = (markdown: string): string =>
+  // eslint-disable-next-line functional/immutable-data
   pipe(markdown.split("---").pop(), removeMd, truncateMarkdown);
 
 type MessageReducedToHtmlOutput = ({
