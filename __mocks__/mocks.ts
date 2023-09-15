@@ -277,6 +277,22 @@ export const aMessagePayload = {
   time_to_live: 3600
 };
 
+export const aMessageContentWithLegalData: MessageContent = {
+  ...aMessagePayload.content,
+  legal_data: {
+    has_attachment: false,
+    message_unique_id: "A_MESSAGE_UNIQUE_ID" as NonEmptyString,
+    sender_mail_from: "demo@pec.it" as NonEmptyString
+  }
+};
+
+export const aMessagePayloadWithLegalData = {
+  content: {
+    ...aMessageContentWithLegalData
+  },
+  time_to_live: 3600
+};
+
 export const anActivation: RetrievedActivation = {
   ...aCosmosResourceMetadata,
   id: generateComposedVersionedModelId<
