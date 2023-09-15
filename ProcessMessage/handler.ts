@@ -42,7 +42,6 @@ import { TaskEither } from "fp-ts/lib/TaskEither";
 import { RejectionReasonEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/RejectionReason";
 import { Ttl } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model_ttl";
 import { SpecialServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/SpecialServiceCategory";
-import { LegalData } from "../generated/definitions/LegalData";
 import { PaymentData } from "../generated/definitions/PaymentData";
 import { ThirdPartyData } from "../generated/definitions/ThirdPartyData";
 import { initTelemetryClient } from "../utils/appinsights";
@@ -659,13 +658,8 @@ export const getProcessMessageHandler = ({
             properties: {
               featureLevelType: createdMessageEvent.message.featureLevelType,
               fiscalCode: toHash(profile.fiscalCode),
-              hasAttachments:
-                createdMessageEvent.content.legal_data?.has_attachment ?? false,
               hasEuCovidCertData: EUCovidCert.is(
                 createdMessageEvent.content.eu_covid_cert
-              ),
-              hasLegalData: LegalData.is(
-                createdMessageEvent.content.legal_data
               ),
               hasPaymentData: PaymentData.is(
                 createdMessageEvent.content.payment_data
