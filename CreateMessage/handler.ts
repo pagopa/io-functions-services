@@ -79,6 +79,7 @@ import {
   CreatedMessageEvent
 } from "../utils/events/message";
 import { commonCreateMessageMiddlewares } from "../utils/message_middlewares";
+import { LegalData } from "../generated/definitions/LegalData";
 import {
   ApiNewMessageWithAdvancedFeatures,
   ApiNewMessageWithContentOf,
@@ -472,6 +473,14 @@ export function CreateMessage(
         ),
         new Set([UserGroup.ApiMessageWriteWithPayee]),
         "You do not have enough permissions to send a payment message with payee"
+      ),
+      // Ensures only users in ApiMessageWriteWithLegalDataWithoutImpersonification group can send legal messages
+      AzureAllowBodyPayloadMiddleware(
+        ApiNewMessageWithContentOf(t.interface({ legal_data: LegalData })),
+        new Set([
+          UserGroup.ApiMessageWriteWithLegalDataWithoutImpersonification
+        ]),
+        "You do not have enough permissions to send a legal message"
       ),
       // Allow only users in the ApiMessageWriteAdvanced group to send messages with "ADVANCED" feature_type
       AzureAllowBodyPayloadMiddleware(

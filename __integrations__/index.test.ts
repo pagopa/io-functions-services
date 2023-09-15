@@ -91,6 +91,15 @@ export const anInvalidMessageContent: MessageContent = {
   subject: "invalid"
 };
 
+const aValidLegalMessageContent = {
+  ...aMessageContent,
+  legal_data: {
+    has_attachment: false,
+    message_unique_id: "A_MESSAGE_UNIQUE_ID" as NonEmptyString,
+    sender_mail_from: "demo@pec.it" as NonEmptyString
+  }
+};
+
 const aValidThirdPartyMessageContent = {
   id: "ID"
 };
@@ -112,7 +121,7 @@ const aSubscriptionKey = "aSubscriptionKey";
 
 const customHeaders = {
   "x-user-groups":
-    "ApiUserAdmin,ApiLimitedProfileRead,ApiFullProfileRead,ApiProfileWrite,ApiDevelopmentProfileWrite,ApiServiceRead,ApiServiceList,ApiServiceWrite,ApiPublicServiceRead,ApiPublicServiceList,ApiServiceByRecipientQuery,ApiMessageRead,ApiMessageWrite,ApiMessageWriteDefaultAddress,ApiMessageList,ApiSubscriptionsFeedRead,ApiInfoRead,ApiDebugRead,ApiMessageWriteEUCovidCert",
+    "ApiUserAdmin,ApiLimitedProfileRead,ApiFullProfileRead,ApiProfileWrite,ApiDevelopmentProfileWrite,ApiServiceRead,ApiServiceList,ApiServiceWrite,ApiPublicServiceRead,ApiPublicServiceList,ApiServiceByRecipientQuery,ApiMessageRead,ApiMessageWrite,ApiMessageWriteDefaultAddress,ApiMessageList,ApiSubscriptionsFeedRead,ApiInfoRead,ApiDebugRead,ApiMessageWriteEUCovidCert,ApiMessageWriteWithLegalData",
   "x-subscription-id": anEnabledServiceId,
   "x-user-email": "unused@example.com",
   "x-user-id": "unused",
@@ -189,6 +198,30 @@ describe("Create Message |> Middleware errors", () => {
     const response = await postCreateMessage(nodeFetch)(body);
 
     expect(response.status).toEqual(403);
+  });
+
+  it("should return 403 when creating a legal message directly without right permission", async () => {
+    const nodeFetch = getNodeFetch({
+      "x-user-groups": "ApiMessageWrite"
+    });
+
+    const body = {
+      message: {
+        fiscal_code: anAutoFiscalCode,
+        content: aValidLegalMessageContent
+      }
+    };
+
+    const response = await postCreateMessage(nodeFetch)(body);
+
+    expect(response.status).toEqual(403);
+
+    const problemJson = (await response.json()) as ProblemJson;
+
+    expect(problemJson).toMatchObject({
+      detail: "You do not have enough permissions to send a legal message",
+      title: "You are not allowed here"
+    });
   });
 
   it("should return 403 when creating a third party message without right permission", async () => {
@@ -455,7 +488,6 @@ describe("Create Message", () => {
           )
         ),
         TE.mapLeft(_ => fail(`Error retrieving message data from Cosmos.`)),
-        x => x,
         TE.map(({ message, status, content }) => {
           expect(O.isSome(message)).toBeTruthy();
           expect(O.isSome(status)).toBeTruthy();

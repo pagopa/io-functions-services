@@ -51,7 +51,11 @@ import * as TE from "fp-ts/lib/TaskEither";
 
 import { GetMessageHandler } from "../handler";
 
-import { aMessageContent, aPaymentMessageContent } from "../../__mocks__/mocks";
+import {
+  aMessageContent,
+  aMessagePayload,
+  aPaymentMessageContent
+} from "../../__mocks__/mocks";
 
 import { PaymentStatusEnum } from "../../generated/definitions/PaymentStatus";
 
@@ -121,6 +125,13 @@ describe("GetMessageHandler", () => {
 
   const aUserAuthenticationDeveloper: IAzureApiAuthorization = {
     groups: new Set([UserGroup.ApiMessageRead, UserGroup.ApiMessageWrite]),
+    kind: "IAzureApiAuthorization",
+    subscriptionId: "s123" as NonEmptyString,
+    userId: "u123" as NonEmptyString
+  };
+
+  const aUserAuthenticationLegalDeveloper: IAzureApiAuthorization = {
+    groups: new Set([UserGroup.ApiLegalMessageRead]),
     kind: "IAzureApiAuthorization",
     subscriptionId: "s123" as NonEmptyString,
     userId: "u123" as NonEmptyString

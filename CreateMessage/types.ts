@@ -5,6 +5,7 @@ import {
   FeatureLevelType,
   FeatureLevelTypeEnum
 } from "@pagopa/io-functions-commons/dist/generated/definitions/FeatureLevelType";
+import { LegalData } from "../generated/definitions/LegalData";
 import { ThirdPartyData } from "../generated/definitions/ThirdPartyData";
 
 export type ApiNewMessageWithDefaults = t.TypeOf<
@@ -38,6 +39,14 @@ export const ApiNewMessageWithContentOf = <T extends PartialMessageContent>(
       content: contentPattern
     })
   ]);
+
+export const ApiNewMessageWithDefaultsLegalData = t.intersection([
+  ApiNewMessageWithDefaults,
+  ApiNewMessageWithContentOf(t.interface({ legal_data: LegalData }))
+]);
+export type ApiNewMessageWithDefaultsLegalData = t.TypeOf<
+  typeof ApiNewMessageWithDefaultsLegalData
+>;
 
 export type ApiNewMessageWithAdvancedFeatures = t.TypeOf<
   typeof ApiNewMessageWithAdvancedFeatures

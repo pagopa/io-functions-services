@@ -1595,6 +1595,8 @@ definitions:
             $ref: '#/definitions/PaymentData'
           prescription_data:
             $ref: '#/definitions/PrescriptionData'
+          legal_data:
+            $ref: '#/definitions/LegalData'
           eu_covid_cert:
             $ref: '#/definitions/EUCovidCert'
           third_party_data:
@@ -1616,6 +1618,8 @@ definitions:
             $ref: '#/definitions/EUCovidCert'
           third_party_data:
             $ref: '#/definitions/ThirdPartyData'
+          legal_data:
+            $ref: '#/definitions/LegalData'
   NewMessage:
     type: object
     properties:
@@ -1933,6 +1937,27 @@ definitions:
             $ref: '#/definitions/Payee'
         required:
           - payee
+  LegalData:
+    type: object
+    properties:
+      sender_mail_from:
+        type: string
+        minLength: 1
+      has_attachment:
+        type: boolean
+        default: false
+      message_unique_id:
+        type: string
+        minLength: 1
+      original_message_url:
+        type: string
+        minLength: 1
+      pec_server_service_id:
+        $ref: '#/definitions/ServiceId'
+    required:
+      - sender_mail_from
+      - has_attachment
+      - message_unique_id
   SubscriptionKeys:
     type: object
     properties:
@@ -2214,6 +2239,15 @@ definitions:
       - auto_publish
 responses: {}
 parameters:
+  LegalMail:
+    name: legalmail
+    in: path
+    type: string
+    required: true
+    description: The legal mail related to a legal message' s sender.
+    format: EmailString
+    x-example: demo@pec.it
+    x-import: italia-ts-commons/lib/strings
   FiscalCode:
     name: fiscal_code
     in: path

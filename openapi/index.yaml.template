@@ -1255,6 +1255,8 @@ definitions:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/Payee"
   PaymentDataWithRequiredPayee:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/PaymentDataWithRequiredPayee"
+  LegalData:
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/LegalData"
   SubscriptionKeys:
     type: object
     properties:
@@ -1514,6 +1516,15 @@ definitions:
 
 responses: {}
 parameters:
+  LegalMail:
+    name: legalmail
+    in: path
+    type: string
+    required: true
+    description: The legal mail related to a legal message' s sender.
+    format: EmailString
+    x-example: demo@pec.it
+    x-import: italia-ts-commons/lib/strings
   FiscalCode:
     name: fiscal_code
     in: path
