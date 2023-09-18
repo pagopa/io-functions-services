@@ -108,7 +108,10 @@ type MessageReducedToHtmlInput = {
 };
 
 export const truncateMarkdown = (plainText: string): string =>
-  plainText.substring(0, MAX_CHARACTER_FOR_BODY_MAIL);
+  // we add "..." only when the message is going to be truncate
+  plainText.length > 134
+    ? plainText.substring(0, MAX_CHARACTER_FOR_BODY_MAIL) + "..."
+    : plainText.substring(0, MAX_CHARACTER_FOR_BODY_MAIL);
 
 export const prepareBody = (markdown: string): string =>
   // eslint-disable-next-line functional/immutable-data
