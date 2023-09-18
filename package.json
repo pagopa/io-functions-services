@@ -20,7 +20,7 @@
     "generate": "npm-run-all generate:* generate:templates:*",
     "generate:definitions": "rimraf ./generated/definitions && shx mkdir -p ./generated/definitions && gen-api-models --api-spec ./openapi/index.yaml --no-strict --out-dir ./generated/definitions",
     "generate:payment-updater": "rimraf generated/payment-updater && shx mkdir -p generated/payment-updater && gen-api-models --api-spec ./openapi/payment-updater.yaml --no-strict --out-dir ./generated/payment-updater --request-types --response-decoders --client",
-    "generate:templates:messagepreview": "shx rm -rf generated/templates/messagepreview && shx mkdir -p generated/templates/messagepreview && ts-node template_reduced_script.ts v1.0.6 \"generated/templates/messagepreview/index\"",
+    "generate:templates:messagepreview": "shx rm -rf generated/templates/messagepreview && shx mkdir -p generated/templates/messagepreview && ts-node template_reduced_script.ts v1.0.10 \"generated/templates/messagepreview/index\"",
     "openapi:bundle": "bundle-api-spec -i openapi/index.yaml.template -o openapi/index.yaml -V $npm_package_version",
     "openapi:validate": "oval validate -p openapi/index.yaml",
     "dist:modules": "modclean -r -n default:safe && yarn install --production",
