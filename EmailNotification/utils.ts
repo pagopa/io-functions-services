@@ -109,7 +109,7 @@ type MessageReducedToHtmlInput = {
 
 export const truncateMarkdown = (plainText: string): string =>
   // we add "..." only when the message is going to be truncate
-  plainText.length > 134
+  plainText.length > MAX_CHARACTER_FOR_BODY_MAIL
     ? plainText.substring(0, MAX_CHARACTER_FOR_BODY_MAIL) + "..."
     : plainText.substring(0, MAX_CHARACTER_FOR_BODY_MAIL);
 
