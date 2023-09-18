@@ -225,7 +225,8 @@ describe("prepareBody", () => {
     const markdown =
       "# Header 1\nsome text\n## Header 2\nsome text\n### Header 3\nsome text\n#### Header 4\nsome text\n##### Header 5\nsome text\ntestesttesttesttestesttesttesttestesttesttesttestesttesttesttestesttesttesttestesttesttest";
     const r = prepareBody(markdown);
-    expect(r).toHaveLength(134);
+    //this should be 134 + 3 cause "..." is added at the end
+    expect(r).toHaveLength(137);
     expect(r).not.toContain("#");
   });
 });

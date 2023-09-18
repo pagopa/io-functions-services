@@ -1,4 +1,8 @@
-import { contentToHtml, messageReducedToHtml } from "../utils";
+import {
+  contentToHtml,
+  messageReducedToHtml,
+  truncateMarkdown
+} from "../utils";
 import * as E from "fp-ts/Either";
 import {
   aCreatedMessageEventSenderMetadata,
@@ -50,5 +54,16 @@ describe("messageReducedToHtml", () => {
     };
     const result = await messageReducedToHtml(mockProcessor)(simpleMessage)();
     expect(result).toEqual(E.left(anError));
+  });
+});
+
+describe("truncateMarkdown", () => {
+  test("should add '...' at the end of the string if the plain text length is > 134", () => {
+    expect(truncateMarkdown(aMessageContent.markdown).slice(-3)).toBe("...");
+  });
+  test("should not add '...' at the end of the string if the plain text length is <= 134", () => {
+    expect(truncateMarkdown("This message is < than 134 chars")).not.toContain(
+      "..."
+    );
   });
 });
