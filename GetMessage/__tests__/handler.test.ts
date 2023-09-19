@@ -51,7 +51,12 @@ import * as TE from "fp-ts/lib/TaskEither";
 
 import { GetMessageHandler } from "../handler";
 
-import { aMessageContent, aPaymentMessageContent } from "../../__mocks__/mocks";
+import {
+  aMessageContent,
+  aMessageContentWithLegalData,
+  aMessagePayload,
+  aPaymentMessageContent
+} from "../../__mocks__/mocks";
 
 import { PaymentStatusEnum } from "../../generated/definitions/PaymentStatus";
 
@@ -121,6 +126,13 @@ describe("GetMessageHandler", () => {
 
   const aUserAuthenticationDeveloper: IAzureApiAuthorization = {
     groups: new Set([UserGroup.ApiMessageRead, UserGroup.ApiMessageWrite]),
+    kind: "IAzureApiAuthorization",
+    subscriptionId: "s123" as NonEmptyString,
+    userId: "u123" as NonEmptyString
+  };
+
+  const aUserAuthenticationLegalDeveloper: IAzureApiAuthorization = {
+    groups: new Set([UserGroup.ApiLegalMessageRead]),
     kind: "IAzureApiAuthorization",
     subscriptionId: "s123" as NonEmptyString,
     userId: "u123" as NonEmptyString
@@ -431,7 +443,181 @@ describe("GetMessageHandler", () => {
     );
   });
 
-  it("should respond with not found a message does not exist", async () => {
+  it("should respond with forbidden if requesting user is not allowed to see legal message", async () => {
+    const message = {
+      ...aRetrievedMessageWithoutContent,
+      senderServiceId: "anotherOrg"
+    };
+
+    const mockMessageModel = {
+      findMessageForRecipient: jest.fn(() => TE.of(some(message))),
+      getContentFromBlob: jest.fn(() =>
+        TE.of(some(aMessageContentWithLegalData))
+      )
+    };
+
+    const getMessageHandler = GetMessageHandler(
+      true,
+      mockMessageModel as any,
+      getMessageStatusModelMock(),
+      {} as any,
+      {} as any,
+      {} as any,
+      mockMessageReadStatusAuth,
+      getPaymentUpdaterClientMock()
+    );
+
+    const result = await getMessageHandler(
+      mockContext,
+      aUserAuthenticationDeveloper,
+      undefined as any, // not used
+      someUserAttributes,
+      aFiscalCode,
+      aRetrievedMessageWithoutContent.id
+    );
+
+    expect(mockMessageModel.findMessageForRecipient).toHaveBeenCalledTimes(1);
+    expect(mockMessageModel.findMessageForRecipient).toHaveBeenCalledWith(
+      aRetrievedMessageWithoutContent.fiscalCode,
+      aRetrievedMessageWithoutContent.id
+    );
+
+    expect(result.kind).toBe("IResponseErrorForbiddenNotAuthorized");
+    expect(result.detail).toContain(
+      "You are not allowed to read this message, you can only read messages that you have sent"
+    );
+  });
+
+  it("should respond with forbidden if requesting user is allowed to see legal_message but not other messages", async () => {
+    const message = {
+      ...aRetrievedMessageWithoutContent,
+      senderServiceId: "anotherOrg"
+    };
+
+    const mockMessageModel = {
+      findMessageForRecipient: jest.fn(() => TE.of(some(message))),
+      getContentFromBlob: jest.fn(() => TE.of(some(aMessagePayload.content)))
+    };
+
+    const getMessageHandler = GetMessageHandler(
+      true,
+      mockMessageModel as any,
+      getMessageStatusModelMock(),
+      {} as any,
+      {} as any,
+      {} as any,
+      mockMessageReadStatusAuth,
+      getPaymentUpdaterClientMock()
+    );
+
+    const result = await getMessageHandler(
+      mockContext,
+      aUserAuthenticationLegalDeveloper,
+      undefined as any, // not used
+      someUserAttributes,
+      aFiscalCode,
+      aRetrievedMessageWithoutContent.id
+    );
+
+    expect(mockMessageModel.findMessageForRecipient).toHaveBeenCalledTimes(1);
+    expect(mockMessageModel.findMessageForRecipient).toHaveBeenCalledWith(
+      aRetrievedMessageWithoutContent.fiscalCode,
+      aRetrievedMessageWithoutContent.id
+    );
+
+    expect(result.kind).toBe("IResponseErrorForbiddenNotAuthorized");
+  });
+
+  it("should respond with Not Found if requesting user is allowed to see legal_message but message content is not stored yet", async () => {
+    const message = {
+      ...aRetrievedMessageWithoutContent,
+      senderServiceId: "anotherOrg"
+    };
+
+    const mockMessageModel = {
+      findMessageForRecipient: jest.fn(() => TE.of(some(message))),
+      getContentFromBlob: jest.fn(() => TE.of(none))
+    };
+
+    const getMessageHandler = GetMessageHandler(
+      true,
+      mockMessageModel as any,
+      getMessageStatusModelMock(),
+      {} as any,
+      {} as any,
+      {} as any,
+      mockMessageReadStatusAuth,
+      getPaymentUpdaterClientMock()
+    );
+
+    const result = await getMessageHandler(
+      mockContext,
+      aUserAuthenticationLegalDeveloper,
+      undefined as any, // not used
+      someUserAttributes,
+      aFiscalCode,
+      aRetrievedMessageWithoutContent.id
+    );
+
+    expect(mockMessageModel.findMessageForRecipient).toHaveBeenCalledTimes(1);
+    expect(mockMessageModel.findMessageForRecipient).toHaveBeenCalledWith(
+      aRetrievedMessageWithoutContent.fiscalCode,
+      aRetrievedMessageWithoutContent.id
+    );
+
+    expect(result.kind).toBe("IResponseErrorNotFound");
+  });
+
+  it("should respond with a message with legal data if requesting user is allowed to see legal message", async () => {
+    const mockMessageModel = {
+      findMessageForRecipient: jest.fn(() =>
+        TE.of(some(aRetrievedMessageWithoutContent))
+      ),
+      getContentFromBlob: jest.fn(() =>
+        TE.of(some(aMessageContentWithLegalData))
+      )
+    };
+
+    const getMessageHandler = GetMessageHandler(
+      true,
+      mockMessageModel as any,
+      getMessageStatusModelMock(),
+      getNotificationModelMock(),
+      getNotificationStatusModelMock(),
+      {} as any,
+      mockMessageReadStatusAuth,
+      getPaymentUpdaterClientMock()
+    );
+
+    const result = await getMessageHandler(
+      mockContext,
+      aUserAuthenticationLegalDeveloper,
+      undefined as any, // not used
+      someUserAttributes,
+      aFiscalCode,
+      aRetrievedMessageWithoutContent.id
+    );
+
+    expect(mockMessageModel.getContentFromBlob).toHaveBeenCalledTimes(1);
+    expect(mockMessageModel.findMessageForRecipient).toHaveBeenCalledTimes(1);
+    expect(mockMessageModel.findMessageForRecipient).toHaveBeenCalledWith(
+      aRetrievedMessageWithoutContent.fiscalCode,
+      aRetrievedMessageWithoutContent.id
+    );
+    expect(result.kind).toBe("IResponseSuccessJson");
+    if (result.kind === "IResponseSuccessJson") {
+      expect(result.value).toEqual({
+        ...aPublicExtendedMessageResponse,
+        message: {
+          ...aPublicExtendedMessageResponse.message,
+          time_to_live: 3600,
+          content: { ...aMessageContentWithLegalData }
+        }
+      });
+    }
+  });
+
+  it("should respond with not found a message doesn not exist", async () => {
     const mockMessageModel = {
       findMessageForRecipient: jest.fn(() => TE.of(none)),
       getContentFromBlob: jest.fn(() => TE.of(none))
