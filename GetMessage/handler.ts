@@ -88,6 +88,7 @@ import {
 import { PaymentStatus } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentStatus";
 import { match } from "ts-pattern";
 import { PaymentDataWithRequiredPayee } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentDataWithRequiredPayee";
+import { MessageContent } from "@pagopa/io-backend-notifications-sdk/MessageContent";
 import { FeatureLevelTypeEnum } from "../generated/definitions/FeatureLevelType";
 
 import { PaymentUpdaterClient } from "../clients/payment-updater";
@@ -95,9 +96,8 @@ import { errorsToError } from "../utils/responses";
 import { ApiPaymentMessage } from "../generated/payment-updater/ApiPaymentMessage";
 import { PaymentStatusEnum } from "../generated/definitions/PaymentStatus";
 import { IConfig } from "../utils/config";
-import { MessageReadStatusAuth } from "./userPreferenceChecker/messageReadStatusAuth";
 import { LegalData } from "../generated/definitions/LegalData";
-import { MessageContent } from "@pagopa/io-backend-notifications-sdk/MessageContent";
+import { MessageReadStatusAuth } from "./userPreferenceChecker/messageReadStatusAuth";
 
 /**
  * Converts a retrieved message to a message that can be shared via API
