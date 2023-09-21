@@ -81,7 +81,6 @@ import { readableReport } from "@pagopa/ts-commons/lib/reporters";
 import { pipe } from "fp-ts/lib/function";
 import * as t from "io-ts";
 import * as B from "fp-ts/lib/boolean";
-import { MessageContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageContent";
 import {
   ReadStatus,
   ReadStatusEnum
@@ -89,7 +88,7 @@ import {
 import { PaymentStatus } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentStatus";
 import { match } from "ts-pattern";
 import { PaymentDataWithRequiredPayee } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentDataWithRequiredPayee";
-import { LegalData } from "../generated/definitions/LegalData";
+import { MessageContent } from "@pagopa/io-backend-notifications-sdk/MessageContent";
 import { FeatureLevelTypeEnum } from "../generated/definitions/FeatureLevelType";
 
 import { PaymentUpdaterClient } from "../clients/payment-updater";
@@ -97,6 +96,7 @@ import { errorsToError } from "../utils/responses";
 import { ApiPaymentMessage } from "../generated/payment-updater/ApiPaymentMessage";
 import { PaymentStatusEnum } from "../generated/definitions/PaymentStatus";
 import { IConfig } from "../utils/config";
+import { LegalData } from "../generated/definitions/LegalData";
 import { MessageReadStatusAuth } from "./userPreferenceChecker/messageReadStatusAuth";
 
 /**

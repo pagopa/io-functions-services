@@ -73,7 +73,7 @@ To start itegration tests:
 cd __integrations__
 cp environments/env.base environments/.env
 yarn start 
-docker exec integrations___testagent_1 yarn test
+docker exec integrations__-testagent_1 yarn test
 ```
 
 To stop docker containers:
