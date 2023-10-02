@@ -991,10 +991,10 @@
     fp-ts "^2.10.5"
     io-ts "^2.2.16"
 
-"@pagopa/io-functions-commons@^28.0.0":
-  version "28.1.0"
-  resolved "https://registry.yarnpkg.com/@pagopa/io-functions-commons/-/io-functions-commons-28.1.0.tgz#a3ddbe5da07e5a38a685cad8fddd1c856fa0d233"
-  integrity sha512-YP89Z75wrl5ICOqYzJwBy6oI05bfiaPEd93FR3PrfdHcFMNDiZENoyidZkJk4t1qKb6P3DqiKN3W9SRN0zEL5Q==
+"@pagopa/io-functions-commons@^28.3.0":
+  version "28.3.0"
+  resolved "https://registry.yarnpkg.com/@pagopa/io-functions-commons/-/io-functions-commons-28.3.0.tgz#4af086b7e22081bb50b0f95d33545e1927fed7c6"
+  integrity sha512-uT8t5uzomybCtiVYi/cEYHHw3XD2jggSOZT0U3075LxE6NkEj2Ui39oQt16mQa1vu/szIFRC1d4+fEKGmuFfgg==
   dependencies:
     "@azure/cosmos" "^3.17.1"
     "@pagopa/ts-commons" "^11.0.0"
