@@ -55,6 +55,17 @@ const createContext = (): Context =>
 
 const aSandboxFiscalCode = "AAAAAA12A12A111A" as NonEmptyString;
 
+const mockTelemetryClient = ({
+  trackEvent: jest.fn()
+  } as unknown) as ReturnType<typeof initAppInsights>;
+
+const mockSaveBlob = jest.fn((_: string, __: any) =>
+  TE.of(O.some({} as any))
+  );
+const mockMessageModel = ({
+  create: jest.fn(() => TE.of({}))
+  } as unknown) as MessageModel;
+
 //
 // tests
 //
@@ -331,16 +342,6 @@ describe("CreateMessageHandler", () => {
     const mockGenerateObjId = jest
       .fn()
       .mockImplementationOnce(() => "mocked-message-id");
-    const mockTelemetryClient = ({
-      trackEvent: jest.fn()
-    } as unknown) as ReturnType<typeof initAppInsights>;
-
-    const mockSaveBlob = jest.fn((_: string, __: any) =>
-      TE.of(O.some({} as any))
-    );
-    const mockMessageModel = ({
-      create: jest.fn(() => TE.of({}))
-    } as unknown) as MessageModel;
 
     const createMessageHandler = CreateMessageHandler(
       mockTelemetryClient,
@@ -380,16 +381,6 @@ describe("CreateMessageHandler", () => {
     const mockGenerateObjId = jest
       .fn()
       .mockImplementationOnce(() => "mocked-message-id");
-    const mockTelemetryClient = ({
-      trackEvent: jest.fn()
-    } as unknown) as ReturnType<typeof initAppInsights>;
-
-    const mockSaveBlob = jest.fn((_: string, __: any) =>
-      TE.of(O.some({} as any))
-    );
-    const mockMessageModel = ({
-      create: jest.fn(() => TE.of({}))
-    } as unknown) as MessageModel;
 
     const createMessageHandler = CreateMessageHandler(
       mockTelemetryClient,
