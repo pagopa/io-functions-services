@@ -44,14 +44,15 @@ import {
 import { initAppInsights } from "@pagopa/ts-commons/lib/appinsights";
 import { ApiNewMessageWithDefaults } from "../types";
 import { Context } from "@azure/functions";
+import { ServiceMetadata } from "@pagopa/io-functions-admin-sdk/ServiceMetadata";
 
 const createContext = (): Context =>
-(({
-  bindings: {},
-  executionContext: { functionName: "funcname" },
-  // eslint-disable no-console
-  log: { ...console, verbose: console.log }
-} as unknown) as Context);
+  (({
+    bindings: {},
+    executionContext: { functionName: "funcname" },
+    // eslint-disable no-console
+    log: { ...console, verbose: console.log }
+  } as unknown) as Context);
 
 const aSandboxFiscalCode = "AAAAAA12A12A111A" as NonEmptyString;
 
@@ -327,7 +328,7 @@ describe("CreateMessageHandler", () => {
     );
   });
 
-  it("should return the require_secure_channels flag from the message content if present", async () => {
+  it("should call the mockSaveBlob using the value of the requireSecureChannels of the service if the value is not provided in the message", async () => {
     const mockGenerateObjId = jest
       .fn()
       .mockImplementationOnce(() => "mocked-message-id");
@@ -352,7 +353,7 @@ describe("CreateMessageHandler", () => {
       aSandboxFiscalCode
     );
 
-    const response = await createMessageHandler(
+    await createMessageHandler(
       createContext(),
       anAzureApiAuthorization,
       undefined as any,
@@ -365,34 +366,64 @@ describe("CreateMessageHandler", () => {
       } as ApiNewMessageWithDefaults,
       some(anotherFiscalCode)
     );
-    
-    const expectedCommonMessageData = {
-      content:{
-         markdown:"md",
-         subject:"subject"
-      },
-      message:{
-         createdAt:"2023-10-10T08:19:38.308Z",
-         featureLevelType:undefined,
-         fiscalCode:"AAABBB01C02D345W",
-         id:"mocked-message-id",
-         indexedId:"mocked-message-id",
-         isPending:true,
-         senderServiceId:"01234567890",
-         senderUserId:"01234567890",
-         timeToLiveSeconds:undefined
-      },
-      senderMetadata:{
-         departmentName:"department",
-         organizationFiscalCode:"01234567890",
-         organizationName:"Organization",
-         requireSecureChannels:true,
-         serviceCategory:"STANDARD",
-         serviceName:"Service",
-         serviceUserEmail:"foo@example.com"
-      }
-   }
-    console.log(response);
-    expect(mockSaveBlob).toBeCalledWith(expect.any(String), expect.objectContaining({senderMetaData: expect.anything()}))
+
+    expect(mockSaveBlob).toBeCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        senderMetadata: expect.objectContaining({
+          requireSecureChannels: true
+        })
+      })
+    );
+  });
+
+  it("should call the mockSaveBlob using the value of the requireSecureChannels of the message if provided ignoring the value of the service", async () => {
+    const mockGenerateObjId = jest
+      .fn()
+      .mockImplementationOnce(() => "mocked-message-id");
+    const mockTelemetryClient = ({
+      trackEvent: jest.fn()
+    } as unknown) as ReturnType<typeof initAppInsights>;
+
+    const mockSaveBlob = jest.fn((_: string, __: any) =>
+      TE.of(O.some({} as any))
+    );
+    const mockMessageModel = ({
+      create: jest.fn(() => TE.of({}))
+    } as unknown) as MessageModel;
+
+    const createMessageHandler = CreateMessageHandler(
+      mockTelemetryClient,
+      mockMessageModel,
+      mockGenerateObjId,
+      mockSaveBlob,
+      true,
+      [],
+      aSandboxFiscalCode
+    );
+
+    await createMessageHandler(
+      createContext(),
+      anAzureApiAuthorization,
+      undefined as any,
+      anAzureUserAttributes,
+      {
+        content: {
+          markdown: "md",
+          subject: "subject",
+          require_secure_channels: false
+        }
+      } as ApiNewMessageWithDefaults,
+      some(anotherFiscalCode)
+    );
+
+    expect(mockSaveBlob).toBeCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        senderMetadata: expect.objectContaining({
+          requireSecureChannels: false
+        })
+      })
+    );
   });
 });
