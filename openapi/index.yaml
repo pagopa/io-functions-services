@@ -1375,9 +1375,6 @@ definitions:
           to show how easily markdown can be converted to **HTML**
 
           Remember: this has to be a long text.
-      require_secure_channels:
-        type: boolean
-        description: When true, messages won't trigger email notifications (only push).
     required:
       - subject
       - markdown
