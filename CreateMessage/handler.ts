@@ -377,7 +377,10 @@ export function CreateMessageHandler(
                 departmentName: service.departmentName,
                 organizationFiscalCode: service.organizationFiscalCode,
                 organizationName: service.organizationName,
-                requireSecureChannels: service.requireSecureChannels,
+                requireSecureChannels:
+                  messagePayload.content.require_secure_channels !== undefined
+                    ? messagePayload.content.require_secure_channels
+                    : service.requireSecureChannels,
                 serviceCategory: pipe(
                   O.fromNullable(service.serviceMetadata?.category),
                   O.getOrElse(() => StandardServiceCategoryEnum.STANDARD)
