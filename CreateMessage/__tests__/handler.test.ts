@@ -44,7 +44,6 @@ import {
 import { initAppInsights } from "@pagopa/ts-commons/lib/appinsights";
 import { ApiNewMessageWithDefaults } from "../types";
 import { Context } from "@azure/functions";
-import { ServiceMetadata } from "@pagopa/io-functions-admin-sdk/ServiceMetadata";
 
 const createContext = (): Context =>
   (({
