@@ -36,6 +36,8 @@ import { EmailString, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 import { IAzureUserAttributes } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
 import {
   aFiscalCode,
+  anAzureApiAuthorization,
+  anAzureUserAttributes,
   anIncompleteService,
   anotherFiscalCode
 } from "../../__mocks__/mocks";
@@ -52,6 +54,17 @@ const createContext = (): Context =>
   } as unknown) as Context);
 
 const aSandboxFiscalCode = "AAAAAA12A12A111A" as NonEmptyString;
+
+const mockTelemetryClient = ({
+  trackEvent: jest.fn()
+  } as unknown) as ReturnType<typeof initAppInsights>;
+
+const mockSaveBlob = jest.fn((_: string, __: any) =>
+  TE.of(O.some({} as any))
+  );
+const mockMessageModel = ({
+  create: jest.fn(() => TE.of({}))
+  } as unknown) as MessageModel;
 
 //
 // tests
@@ -322,6 +335,85 @@ describe("CreateMessageHandler", () => {
 
     expect(response.kind).toBe(
       "IResponseErrorForbiddenNotAuthorizedForRecipient"
+    );
+  });
+
+  it("should call the mockSaveBlob using the value of the requireSecureChannels of the service if the value is not provided in the message", async () => {
+    const mockGenerateObjId = jest
+      .fn()
+      .mockImplementationOnce(() => "mocked-message-id");
+
+    const createMessageHandler = CreateMessageHandler(
+      mockTelemetryClient,
+      mockMessageModel,
+      mockGenerateObjId,
+      mockSaveBlob,
+      true,
+      [],
+      aSandboxFiscalCode
+    );
+
+    await createMessageHandler(
+      createContext(),
+      anAzureApiAuthorization,
+      undefined as any,
+      anAzureUserAttributes,
+      {
+        content: {
+          markdown: "md",
+          subject: "subject"
+        }
+      } as ApiNewMessageWithDefaults,
+      some(anotherFiscalCode)
+    );
+
+    expect(mockSaveBlob).toBeCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        senderMetadata: expect.objectContaining({
+          requireSecureChannels: true
+        })
+      })
+    );
+  });
+
+  it("should call the mockSaveBlob using the value of the requireSecureChannels of the message if provided ignoring the value of the service", async () => {
+    const mockGenerateObjId = jest
+      .fn()
+      .mockImplementationOnce(() => "mocked-message-id");
+
+    const createMessageHandler = CreateMessageHandler(
+      mockTelemetryClient,
+      mockMessageModel,
+      mockGenerateObjId,
+      mockSaveBlob,
+      true,
+      [],
+      aSandboxFiscalCode
+    );
+
+    await createMessageHandler(
+      createContext(),
+      anAzureApiAuthorization,
+      undefined as any,
+      anAzureUserAttributes,
+      {
+        content: {
+          markdown: "md",
+          subject: "subject",
+          require_secure_channels: false
+        }
+      } as ApiNewMessageWithDefaults,
+      some(anotherFiscalCode)
+    );
+
+    expect(mockSaveBlob).toBeCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        senderMetadata: expect.objectContaining({
+          requireSecureChannels: false
+        })
+      })
     );
   });
 });
