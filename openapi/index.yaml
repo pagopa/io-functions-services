@@ -626,7 +626,6 @@ paths:
       operationId: cmsGetService
       security:
         - ManageSubscriptionKey: []
-        - SubscriptionKey: []
       parameters:
         - name: serviceId
           in: path
@@ -685,6 +684,8 @@ paths:
           description: Forbidden
         '404':
           description: Not found
+        '409':
+          description: Service status is incompatible with update action
         '429':
           description: Too many requests
         '500':
