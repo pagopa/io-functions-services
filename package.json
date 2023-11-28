@@ -64,7 +64,7 @@
     "@pagopa/express-azure-functions": "^4.0.1",
     "@pagopa/io-backend-notifications-sdk": "x",
     "@pagopa/io-functions-admin-sdk": "x",
-    "@pagopa/io-functions-commons": "^28.5.0",
+    "@pagopa/io-functions-commons": "^28.9.0",
     "@pagopa/ts-commons": "^11.0.0",
     "applicationinsights": "^1.7.4",
     "azure-storage": "^2.10.4",
