@@ -706,7 +706,8 @@ describe("Create Third Party Message", () => {
               ...body.message.content,
               third_party_data: {
                 ...body.message.content.third_party_data,
-                has_attachments: false
+                has_attachments: false,
+                has_remote_content: false
               }
             }
           }),
