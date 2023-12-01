@@ -1236,9 +1236,6 @@ definitions:
       has_attachments:
         type: boolean
         default: false
-      has_remote_content:
-        type: boolean
-        default: false
       has_precondition:
         type: string
         x-extensible-enum:
@@ -1816,8 +1813,6 @@ definitions:
             type: string
           status:
             $ref: '#/definitions/CmsServiceLifecycleStatus'
-          version:
-            type: integer
           last_update:
             $ref: '#/definitions/Timestamp'
       - $ref: '#/definitions/CmsServicePayload'
@@ -1834,8 +1829,6 @@ definitions:
             type: string
           status:
             $ref: '#/definitions/CmsServicePublicationStatusType'
-          version:
-            type: integer
           last_update:
             $ref: '#/definitions/Timestamp'
       - $ref: '#/definitions/CmsServicePayload'
@@ -1870,12 +1863,6 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/CIDR'
-      max_allowed_payment_amount:
-        type: integer
-        format: int32
-        minimum: 0
-        maximum: 9999999999
-        default: 0
       metadata:
         $ref: '#/definitions/CmsServiceMetadata'
     required:
