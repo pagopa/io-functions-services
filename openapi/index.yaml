@@ -1380,7 +1380,7 @@ definitions:
         description: |
           When true:
           * Messages won't trigger email notifications;
-          * Push notifications will be anonymous;
+          * Push notifications will be anonymous.
     required:
       - subject
       - markdown
