@@ -307,11 +307,9 @@ export function CreateMessageHandler(
     const { service, email: serviceUserEmail } = userAttributes;
     const { authorizedRecipients, serviceId } = service;
 
-    // in order to send attachments with a message the message should be ADVANCED
     const canSendAttachments =
-      (messagePayload.feature_level_type === FeatureLevelTypeEnum.STANDARD ||
-        !messagePayload.feature_level_type) &&
-      messagePayload.content.third_party_data.has_attachments === true;
+      messagePayload.feature_level_type !== FeatureLevelTypeEnum.ADVANCED &&
+      messagePayload.content.third_party_data?.has_attachments === true;
 
     if (canSendAttachments) {
       return ResponseErrorForbiddenNotAuthorizedForAttachments;
