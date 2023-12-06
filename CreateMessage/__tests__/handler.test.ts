@@ -416,7 +416,7 @@ describe("CreateMessageHandler", () => {
     );
   });
 
-  it("should return 403 error if the flag has_remote_content is true but the message is not advanced", async () => {
+  it("should return 403 error if the flag has_attachments is true but the message is not advanced", async () => {
     const createMessageHandler = CreateMessageHandler(
       mockTelemetryClient,
       mockMessageModel,
@@ -449,7 +449,7 @@ describe("CreateMessageHandler", () => {
     );
   });
 
-  it("should return 403 error if the flag has_remote_content is true but the feature_level_type is not provided", async () => {
+  it("should return 403 error if the flag has_attachments true but the feature_level_type is not provided", async () => {
     const createMessageHandler = CreateMessageHandler(
       mockTelemetryClient,
       mockMessageModel,
