@@ -448,4 +448,36 @@ describe("CreateMessageHandler", () => {
       "Attachments call forbidden: You are not allowed to send messages with attachmens with STANDARD messages, please use ADVANCED"
     );
   });
+
+  it("should return 403 error if the flag has_remote_content is true but the feature_level_type is not provided", async () => {
+    const createMessageHandler = CreateMessageHandler(
+      mockTelemetryClient,
+      mockMessageModel,
+      undefined as any,
+      mockSaveBlob,
+      true,
+      [],
+      aSandboxFiscalCode
+    );
+
+    const r = await createMessageHandler(
+      createContext(),
+      anAzureApiAuthorization,
+      undefined as any,
+      anAzureUserAttributes,
+      {
+        content: {
+          markdown: "md",
+          subject: "subject",
+          third_party_data: { has_attachments: true }
+        }
+      } as ApiNewMessageWithDefaults,
+      some(anotherFiscalCode)
+    );
+
+    expect(r.kind).toBe("IResponseErrorForbiddenNotAuthorizedForAttachments");
+    expect(r.detail).toBe(
+      "Attachments call forbidden: You are not allowed to send messages with attachmens with STANDARD messages, please use ADVANCED"
+    );
+  });
 });
