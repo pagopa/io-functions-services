@@ -1816,8 +1816,6 @@ definitions:
             type: string
           status:
             $ref: '#/definitions/CmsServiceLifecycleStatus'
-          version:
-            type: integer
           last_update:
             $ref: '#/definitions/Timestamp'
       - $ref: '#/definitions/CmsServicePayload'
@@ -1834,8 +1832,6 @@ definitions:
             type: string
           status:
             $ref: '#/definitions/CmsServicePublicationStatusType'
-          version:
-            type: integer
           last_update:
             $ref: '#/definitions/Timestamp'
       - $ref: '#/definitions/CmsServicePayload'
