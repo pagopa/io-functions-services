@@ -51,6 +51,8 @@ import {
 import { initAppInsights } from "@pagopa/ts-commons/lib/appinsights";
 import { readableReportSimplified } from "@pagopa/ts-commons/lib/reporters";
 import {
+  HttpStatusCodeEnum,
+  IResponse,
   IResponseErrorForbiddenAnonymousUser,
   IResponseErrorForbiddenNoAuthorizationGroups,
   IResponseErrorForbiddenNotAuthorized,
@@ -61,6 +63,7 @@ import {
   IResponseSuccessRedirectToResource,
   ResponseErrorForbiddenNotAuthorizedForProduction,
   ResponseErrorForbiddenNotAuthorizedForRecipient,
+  ResponseErrorGeneric,
   ResponseErrorInternal,
   ResponseErrorValidation,
   ResponseSuccessRedirectToResource
@@ -74,6 +77,7 @@ import { TaskEither } from "fp-ts/lib/TaskEither";
 import { PaymentDataWithRequiredPayee } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentDataWithRequiredPayee";
 import { NewMessage as ApiNewMessage } from "@pagopa/io-functions-commons/dist/generated/definitions/NewMessage";
 import { StandardServiceCategoryEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/StandardServiceCategory";
+import { FeatureLevelTypeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/FeatureLevelType";
 import {
   CommonMessageData,
   CreatedMessageEvent
@@ -113,6 +117,7 @@ type ICreateMessageHandler = (
   | IResponseErrorForbiddenNotAuthorized
   | IResponseErrorForbiddenNotAuthorizedForRecipient
   | IResponseErrorForbiddenNotAuthorizedForProduction
+  | IResponseErrorForbiddenNotAuthorizedForAttachments
 >;
 
 export type CreateMessageHandlerResponse = PromiseType<
@@ -145,6 +150,22 @@ export const canWriteMessage = (
   }
 
   return E.right(true);
+};
+
+/**
+ * The user is not allowed to issue production requests.
+ */
+export type IResponseErrorForbiddenNotAuthorizedForAttachments = IResponse<
+  "IResponseErrorForbiddenNotAuthorizedForAttachments"
+>;
+
+export const ResponseErrorForbiddenNotAuthorizedForAttachments: IResponseErrorForbiddenNotAuthorizedForAttachments = {
+  ...ResponseErrorGeneric(
+    HttpStatusCodeEnum.HTTP_STATUS_403,
+    "Attachments call forbidden",
+    "You are not allowed to send messages with attachmens with STANDARD messages, please use ADVANCED"
+  ),
+  kind: "IResponseErrorForbiddenNotAuthorizedForAttachments"
 };
 
 /**
@@ -241,7 +262,7 @@ const redirectToNewMessage = (
 /**
  * Returns a type safe CreateMessage handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions,max-params
+// eslint-disable-next-line prefer-arrow/prefer-arrow-functions,max-params, max-lines-per-function
 export function CreateMessageHandler(
   telemetryClient: ReturnType<typeof initAppInsights>,
   messageModel: MessageModel,
@@ -285,6 +306,16 @@ export function CreateMessageHandler(
     const fiscalCode = maybeFiscalCode.value;
     const { service, email: serviceUserEmail } = userAttributes;
     const { authorizedRecipients, serviceId } = service;
+
+    const isPremium =
+      messagePayload.feature_level_type === FeatureLevelTypeEnum.ADVANCED;
+
+    const wantToSendAttachments =
+      messagePayload.content.third_party_data?.has_attachments === true;
+
+    if (!isPremium && wantToSendAttachments) {
+      return ResponseErrorForbiddenNotAuthorizedForAttachments;
+    }
 
     // a new message ID gets generated for each request, even for requests that
     // fail as it's used as a unique operation identifier in application

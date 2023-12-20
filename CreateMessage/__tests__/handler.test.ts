@@ -44,6 +44,7 @@ import {
 import { initAppInsights } from "@pagopa/ts-commons/lib/appinsights";
 import { ApiNewMessageWithDefaults } from "../types";
 import { Context } from "@azure/functions";
+import { FeatureLevelTypeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/FeatureLevelType";
 
 const createContext = (): Context =>
   (({
@@ -57,14 +58,12 @@ const aSandboxFiscalCode = "AAAAAA12A12A111A" as NonEmptyString;
 
 const mockTelemetryClient = ({
   trackEvent: jest.fn()
-  } as unknown) as ReturnType<typeof initAppInsights>;
+} as unknown) as ReturnType<typeof initAppInsights>;
 
-const mockSaveBlob = jest.fn((_: string, __: any) =>
-  TE.of(O.some({} as any))
-  );
+const mockSaveBlob = jest.fn((_: string, __: any) => TE.of(O.some({} as any)));
 const mockMessageModel = ({
   create: jest.fn(() => TE.of({}))
-  } as unknown) as MessageModel;
+} as unknown) as MessageModel;
 
 //
 // tests
@@ -414,6 +413,71 @@ describe("CreateMessageHandler", () => {
           requireSecureChannels: false
         })
       })
+    );
+  });
+
+  it("should return 403 error if the flag has_attachments is true but the message is not advanced", async () => {
+    const createMessageHandler = CreateMessageHandler(
+      mockTelemetryClient,
+      mockMessageModel,
+      undefined as any,
+      mockSaveBlob,
+      true,
+      [],
+      aSandboxFiscalCode
+    );
+
+    const r = await createMessageHandler(
+      createContext(),
+      anAzureApiAuthorization,
+      undefined as any,
+      anAzureUserAttributes,
+      {
+        content: {
+          markdown: "md",
+          subject: "subject",
+          third_party_data: { has_attachments: true }
+        },
+        feature_level_type: FeatureLevelTypeEnum.STANDARD
+      } as ApiNewMessageWithDefaults,
+      some(anotherFiscalCode)
+    );
+
+    expect(r.kind).toBe("IResponseErrorForbiddenNotAuthorizedForAttachments");
+    expect(r.detail).toBe(
+      "Attachments call forbidden: You are not allowed to send messages with attachmens with STANDARD messages, please use ADVANCED"
+    );
+  });
+
+  it("should return 403 error if the flag has_attachments true but the feature_level_type is not provided", async () => {
+    const createMessageHandler = CreateMessageHandler(
+      mockTelemetryClient,
+      mockMessageModel,
+      undefined as any,
+      mockSaveBlob,
+      true,
+      [],
+      aSandboxFiscalCode
+    );
+
+    const r = await createMessageHandler(
+      createContext(),
+      anAzureApiAuthorization,
+      undefined as any,
+      anAzureUserAttributes,
+      {
+        content: {
+          markdown: "md",
+          subject: "subject",
+          third_party_data: { has_attachments: true }
+        }
+      } as ApiNewMessageWithDefaults,
+      some(anotherFiscalCode)
+    );
+
+    expect(r.kind).toBe("IResponseErrorForbiddenNotAuthorizedForAttachments");
+    expect(r.detail).toBe(
+      "Attachments call forbidden: You are not allowed to send messages with attachmens with STANDARD messages, please use ADVANCED"
     );
   });
 });
