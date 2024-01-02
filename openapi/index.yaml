@@ -2098,7 +2098,7 @@ definitions:
       name:
         type: string
         description: The topic name
-        example: 'Benessere sociale'
+        example: Benessere sociale
     required:
       - id
       - name
