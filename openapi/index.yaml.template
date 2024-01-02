@@ -565,7 +565,7 @@ paths:
     get:
       tags:
         - service-topics
-      summary: Retrieve all services
+      summary: Retrieve all service topics
       description: Retrieve all service topics
       operationId: getServiceTopics
       responses:
