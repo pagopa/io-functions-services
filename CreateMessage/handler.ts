@@ -86,8 +86,7 @@ import { commonCreateMessageMiddlewares } from "../utils/message_middlewares";
 import {
   ApiNewMessageWithAdvancedFeatures,
   ApiNewMessageWithContentOf,
-  ApiNewMessageWithDefaults,
-  ApiNewThirdPartyMessage
+  ApiNewMessageWithDefaults
 } from "./types";
 import { makeUpsertBlobFromObject } from "./utils";
 
