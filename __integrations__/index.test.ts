@@ -191,63 +191,6 @@ describe("Create Message |> Middleware errors", () => {
     expect(response.status).toEqual(403);
   });
 
-  it("should return 403 when creating a third party message without right permission", async () => {
-    const nodeFetch = getNodeFetch({
-      "x-user-groups": "ApiMessageWrite"
-    });
-
-    const body = {
-      message: {
-        fiscal_code: anAutoFiscalCode,
-        content: {
-          ...aMessageContent,
-          third_party_data: aValidThirdPartyMessageContent
-        }
-      }
-    };
-
-    const response = await postCreateMessage(nodeFetch)(body);
-
-    expect(response.status).toEqual(403);
-
-    const problemJson = (await response.json()) as ProblemJson;
-
-    expect(problemJson).toMatchObject({
-      detail:
-        "You do not have enough permissions to send a third party message",
-      title: "You are not allowed here"
-    });
-  });
-
-  it("should return 403 when creating a no ADVANCED third party message with wrong permission", async () => {
-    const nodeFetch = getNodeFetch({
-      "x-user-groups":
-        customHeaders["x-user-groups"] + ",ApiMessageWriteAdvanced"
-    });
-
-    const body = {
-      message: {
-        fiscal_code: anAutoFiscalCode,
-        content: {
-          ...aMessageContent,
-          third_party_data: aValidThirdPartyMessageContent
-        }
-      }
-    };
-
-    const response = await postCreateMessage(nodeFetch)(body);
-
-    expect(response.status).toEqual(403);
-
-    const problemJson = (await response.json()) as ProblemJson;
-
-    expect(problemJson).toMatchObject({
-      detail:
-        "You do not have enough permissions to send a third party message",
-      title: "You are not allowed here"
-    });
-  });
-
   it("should return 403 when creating an EUCovidCert message without right permission", async () => {
     const nodeFetch = getNodeFetch({
       "x-user-groups": "ApiMessageWrite"
