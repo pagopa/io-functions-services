@@ -113,9 +113,12 @@ export const truncateMarkdown = (plainText: string): string =>
     ? plainText.substring(0, MAX_CHARACTER_FOR_BODY_MAIL) + "..."
     : plainText.substring(0, MAX_CHARACTER_FOR_BODY_MAIL);
 
+export const removeLinks = (text: string): string =>
+  text.replace(/(?:https?|ftp):\/\/[\n\S]+/g, "");
+
 export const prepareBody = (markdown: string): string =>
   // eslint-disable-next-line functional/immutable-data
-  pipe(markdown.split("---").pop(), removeMd, truncateMarkdown);
+  pipe(markdown.split("---").pop(), removeMd, truncateMarkdown, removeLinks);
 
 type MessageReducedToHtmlOutput = ({
   content,
