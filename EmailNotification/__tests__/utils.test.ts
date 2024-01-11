@@ -1,6 +1,7 @@
 import {
   contentToHtml,
   messageReducedToHtml,
+  removeLinks,
   truncateMarkdown
 } from "../utils";
 import * as E from "fp-ts/Either";
@@ -65,5 +66,30 @@ describe("truncateMarkdown", () => {
     expect(truncateMarkdown("This message is < than 134 chars")).not.toContain(
       "..."
     );
+  });
+});
+
+describe("removeLinks", () => {
+  test("should return the same string if no url is contained", () => {
+    const text = "A simple text without any url";
+    expect(removeLinks(text)).toBe(text);
+  });
+
+  test("should return the string without the url if a simple url is contained", () => {
+    const simpleLink = "https://asimplelink.com/";
+    const baseText = `A simple text`;
+    expect(removeLinks(`${baseText}${simpleLink}`)).toBe(baseText);
+  });
+
+  test("should return the string without the url if an url with query params is contained", () => {
+    const simpleLink = "https://asimplelink.com/?qp1=value";
+    const baseText = `A simple text`;
+    expect(removeLinks(`${baseText}${simpleLink}`)).toBe(baseText);
+  });
+
+  test("should return the string without the url if an url with query params and # is contained ", () => {
+    const simpleLink = "https://asimplelink.com/?qp1=value#header";
+    const baseText = `A simple text`;
+    expect(removeLinks(`${baseText}${simpleLink}`)).toBe(baseText);
   });
 });
