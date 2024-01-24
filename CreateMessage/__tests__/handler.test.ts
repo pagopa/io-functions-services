@@ -400,7 +400,7 @@ describe("CreateMessageHandler", () => {
         content: {
           markdown: "md",
           subject: "subject",
-          require_secure_channels: false
+          require_secure_channels: false,
         }
       } as ApiNewMessageWithDefaults,
       some(anotherFiscalCode)
@@ -479,5 +479,71 @@ describe("CreateMessageHandler", () => {
     expect(r.detail).toBe(
       "Attachments call forbidden: You are not allowed to send messages with attachmens with STANDARD messages, please use ADVANCED"
     );
+  });
+
+  it("should return 200 ok if a configuration_id is provided", async () => {
+    const mockGenerateObjId = jest
+      .fn()
+      .mockImplementationOnce(() => "mocked-message-id");
+
+    const createMessageHandler = CreateMessageHandler(
+      mockTelemetryClient,
+      mockMessageModel,
+      mockGenerateObjId,
+      mockSaveBlob,
+      true,
+      [],
+      aSandboxFiscalCode
+    );
+
+    const r = await createMessageHandler(
+      createContext(),
+      anAzureApiAuthorization,
+      undefined as any,
+      anAzureUserAttributes,
+      {
+        content: {
+          markdown: "md",
+          subject: "subject",
+          third_party_data: { has_attachments: false, configuration_id: "01ARZ3NDEKTSV4RRFFQ69G5FAV" }
+        }
+      } as ApiNewMessageWithDefaults,
+      some(anotherFiscalCode)
+    );
+
+    expect(r.kind).toBe("IResponseSuccessRedirectToResource");
+  });
+
+  it("should return 200 ok if a configuration_id is not provided", async () => {
+    const mockGenerateObjId = jest
+      .fn()
+      .mockImplementationOnce(() => "mocked-message-id");
+
+    const createMessageHandler = CreateMessageHandler(
+      mockTelemetryClient,
+      mockMessageModel,
+      mockGenerateObjId,
+      mockSaveBlob,
+      true,
+      [],
+      aSandboxFiscalCode
+    );
+
+    const r = await createMessageHandler(
+      createContext(),
+      anAzureApiAuthorization,
+      undefined as any,
+      anAzureUserAttributes,
+      {
+        content: {
+          markdown: "md",
+          subject: "subject",
+          third_party_data: { has_attachments: false, has_remote_content: false }
+        }
+      } as ApiNewMessageWithDefaults,
+      some(anotherFiscalCode)
+    );
+
+    expect(r.kind).toBe("IResponseSuccessRedirectToResource");
   });
 });
