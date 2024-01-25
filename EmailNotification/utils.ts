@@ -124,8 +124,8 @@ export const invalidateClickableLinks = (text: string): string =>
   text.replace(/\./g, ".\u{200B}");
 
 export const prepareBody = (markdown: string): string =>
-  // eslint-disable-next-line functional/immutable-data
   pipe(
+    // eslint-disable-next-line functional/immutable-data
     markdown.split("---").pop(),
     removeMd,
     removeLinks,
