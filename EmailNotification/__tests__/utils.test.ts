@@ -1,5 +1,6 @@
 import {
   contentToHtml,
+  invalidateClickableLinks,
   messageReducedToHtml,
   removeLinks,
   truncateMarkdown
@@ -106,6 +107,20 @@ describe("removeLinks", () => {
     const baseText = `A simple text`;
     expect(removeLinks(`${baseText} ${simpleLink}`)).toBe(
       `${baseText} [link rimosso]`
+    );
+  });
+});
+
+describe("invalidateClickableLinks", () => {
+  test("should return the same string if no period are provided", () => {
+    expect(invalidateClickableLinks("a simple text with no perios")).toBe(
+      "a simple text with no perios"
+    );
+  });
+
+  test("should add a zero-width space before every '.' character", () => {
+    expect(invalidateClickableLinks("a text.with 2 period.")).toBe(
+      "a text.\u{200B}with 2 period.\u{200B}"
     );
   });
 });
