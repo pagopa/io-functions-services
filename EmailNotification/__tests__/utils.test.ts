@@ -78,18 +78,34 @@ describe("removeLinks", () => {
   test("should return the string without the url if a simple url is contained", () => {
     const simpleLink = "https://asimplelink.com/";
     const baseText = `A simple text`;
-    expect(removeLinks(`${baseText}${simpleLink}`)).toBe(baseText);
+    expect(removeLinks(`${baseText} ${simpleLink}`)).toBe(
+      `${baseText} [link rimosso]`
+    );
+  });
+
+  test("should return the string without the url if more than one simple url are contained", () => {
+    const simpleLink = "https://asimplelink.com/";
+    const baseText = `A simple text`;
+    expect(
+      removeLinks(
+        `${baseText} ${simpleLink} this is another link ${simpleLink}`
+      )
+    ).toBe(`${baseText} [link rimosso] this is another link [link rimosso]`);
   });
 
   test("should return the string without the url if an url with query params is contained", () => {
     const simpleLink = "https://asimplelink.com/?qp1=value";
     const baseText = `A simple text`;
-    expect(removeLinks(`${baseText}${simpleLink}`)).toBe(baseText);
+    expect(removeLinks(`${baseText} ${simpleLink}`)).toBe(
+      `${baseText} [link rimosso]`
+    );
   });
 
   test("should return the string without the url if an url with query params and # is contained ", () => {
     const simpleLink = "https://asimplelink.com/?qp1=value#header";
     const baseText = `A simple text`;
-    expect(removeLinks(`${baseText}${simpleLink}`)).toBe(baseText);
+    expect(removeLinks(`${baseText} ${simpleLink}`)).toBe(
+      `${baseText} [link rimosso]`
+    );
   });
 });
