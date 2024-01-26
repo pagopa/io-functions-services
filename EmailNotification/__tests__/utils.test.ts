@@ -113,8 +113,8 @@ describe("removeLinks", () => {
 
 describe("invalidateClickableLinks", () => {
   test("should return the same string if no period are provided", () => {
-    expect(invalidateClickableLinks("a simple text with no perios")).toBe(
-      "a simple text with no perios"
+    expect(invalidateClickableLinks("a simple text with no period")).toBe(
+      "a simple text with no period"
     );
   });
 
