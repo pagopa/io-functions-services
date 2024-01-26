@@ -114,7 +114,7 @@ export const truncateMarkdown = (plainText: string): string =>
     : plainText.substring(0, MAX_CHARACTER_FOR_BODY_MAIL);
 
 export const removeLinks = (text: string): string =>
-  text.replace(/(?:https?|ftp):\/\/[\n\S]+/g, "[link rimosso]");
+  text.replace(/\w+:\/\/[^\s]*\.\w+[\w\?\/=%&#+-]+/g, "[link rimosso]");
 
 /**
  * Add a zero-width space before every '.' character in order to makke all the links not clickable
