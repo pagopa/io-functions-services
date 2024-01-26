@@ -118,7 +118,7 @@ describe("invalidateClickableLinks", () => {
     );
   });
 
-  test("should add a zero-width space before every '.' character", () => {
+  test("should add a zero-width space after every '.' character", () => {
     expect(invalidateClickableLinks("a text.with 2 period.")).toBe(
       "a text.\u{200B}with 2 period.\u{200B}"
     );
