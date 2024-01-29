@@ -129,8 +129,8 @@ export const prepareBody = (markdown: string): string =>
     markdown.split("---").pop(),
     removeMd,
     removeLinks,
-    invalidateClickableLinks,
-    truncateMarkdown
+    truncateMarkdown,
+    invalidateClickableLinks
   );
 
 type MessageReducedToHtmlOutput = ({
