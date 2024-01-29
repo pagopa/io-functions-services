@@ -102,8 +102,6 @@ host: api.io.pagopa.it
 basePath: "/api/v1"
 schemes:
   - https
-security:
-  - SubscriptionKey: []
 paths:
   "/messages":
     post:
@@ -116,6 +114,8 @@ paths:
         the sender MUST call `getProfile` and check that the profile exists
         (for the specified fiscal code) and that the `sender_allowed` field
         of the user's profile it set to `true`.
+      security:
+        - SubscriptionKey: []
       parameters:
         - name: message
           in: body
@@ -171,6 +171,8 @@ paths:
         the sender MUST call `getProfile` and check that the profile exists
         (for the specified fiscal code) and that the `sender_allowed` field
         of the user's profile it set to `true`.
+      security:
+        - SubscriptionKey: []
       parameters:
         - $ref: "#/parameters/FiscalCode"
         - name: message
@@ -229,6 +231,8 @@ paths:
         returned. With right permission and `ADVANCED` feature level type
         related to the previously submitted message, also read and payment
         status infos (when applicable) are returned.
+      security:
+        - SubscriptionKey: []
       parameters:
         - $ref: "#/parameters/FiscalCode"
         - name: id
@@ -277,6 +281,8 @@ paths:
         Returns the preferences for the user identified by the
         fiscal code provided in the request body. The field `sender_allowed` is set fo `false` in case
         the service which is calling the API has been disabled by the user.
+      security:
+        - SubscriptionKey: []
       responses:
         "200":
           description: Found.
@@ -309,6 +315,8 @@ paths:
         Returns the preferences for the user identified by the provided
         fiscal code. The field `sender_allowed` is set fo `false` in case
         the service which is calling the API has been disabled by the user.
+      security:
+        - SubscriptionKey: []
       responses:
         "200":
           description: Found.
@@ -359,6 +367,8 @@ paths:
         This feed serves the purpose of minimizing data processing activities
         while preserving optimization of API calls and data accuracy.
         Organizations allowed are required to query this feed everyday.
+      security:
+        - SubscriptionKey: []
       responses:
         "200":
           description: Found.
@@ -392,6 +402,8 @@ paths:
       description: |
         Upsert a logo for an Organization.
       operationId: uploadOrganizationLogo
+      security:
+        - SubscriptionKey: []
       parameters:
         - name: body
           in: body
@@ -422,6 +434,8 @@ paths:
       summary: Get a Service Activation for a User
       description: |-
         Returns the current Activation for a couple Service/User
+      security:
+        - SubscriptionKey: []
       responses:
         "200":
           description: Found.
@@ -457,6 +471,8 @@ paths:
       summary: Upsert a Service Activation for a User
       description: |-
         Create or update an Activation for a couple Service/User
+      security:
+        - SubscriptionKey: []
       responses:
         "200":
           description: Found.
@@ -568,6 +584,8 @@ paths:
       summary: Retrieve all service topics
       description: Retrieve all service topics
       operationId: getServiceTopics
+      security:
+        - SubscriptionKey: []
       responses:
         '200':
           description: Service topics fetched successfully
