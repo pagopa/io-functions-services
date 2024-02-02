@@ -128,8 +128,8 @@ export const prepareBody = (markdown: string): string =>
     // eslint-disable-next-line functional/immutable-data
     markdown.split("---").pop(),
     removeMd,
-    removeLinks,
     truncateMarkdown,
+    removeLinks,
     invalidateClickableLinks
   );
 
