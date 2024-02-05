@@ -114,11 +114,24 @@ export const truncateMarkdown = (plainText: string): string =>
     : plainText.substring(0, MAX_CHARACTER_FOR_BODY_MAIL);
 
 export const removeLinks = (text: string): string =>
-  text.replace(/(?:https?|ftp):\/\/[\n\S]+/g, "");
+  text.replace(/\w*:\/\/[^\s]*\.[\w?/=&%-+#]*/g, "[link rimosso]");
+
+/**
+ * Add a zero-width space before every '.' character in order to makke all the links not clickable
+ * */
+
+export const invalidateClickableLinks = (text: string): string =>
+  text.replace(/\./g, ".\u{200B}");
 
 export const prepareBody = (markdown: string): string =>
-  // eslint-disable-next-line functional/immutable-data
-  pipe(markdown.split("---").pop(), removeMd, truncateMarkdown, removeLinks);
+  pipe(
+    // eslint-disable-next-line functional/immutable-data
+    markdown.split("---").pop(),
+    removeMd,
+    truncateMarkdown,
+    removeLinks,
+    invalidateClickableLinks
+  );
 
 type MessageReducedToHtmlOutput = ({
   content,

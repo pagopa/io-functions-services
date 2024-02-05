@@ -1,5 +1,6 @@
 import {
   contentToHtml,
+  invalidateClickableLinks,
   messageReducedToHtml,
   removeLinks,
   truncateMarkdown
@@ -78,18 +79,48 @@ describe("removeLinks", () => {
   test("should return the string without the url if a simple url is contained", () => {
     const simpleLink = "https://asimplelink.com/";
     const baseText = `A simple text`;
-    expect(removeLinks(`${baseText}${simpleLink}`)).toBe(baseText);
+    expect(removeLinks(`${baseText} ${simpleLink}`)).toBe(
+      `${baseText} [link rimosso]`
+    );
+  });
+
+  test("should return the string without the url if more than one simple url are contained", () => {
+    const simpleLink = "https://asimplelink.com/";
+    const baseText = `A simple text`;
+    expect(
+      removeLinks(
+        `${baseText} ${simpleLink} this is another link ${simpleLink}`
+      )
+    ).toBe(`${baseText} [link rimosso] this is another link [link rimosso]`);
   });
 
   test("should return the string without the url if an url with query params is contained", () => {
     const simpleLink = "https://asimplelink.com/?qp1=value";
     const baseText = `A simple text`;
-    expect(removeLinks(`${baseText}${simpleLink}`)).toBe(baseText);
+    expect(removeLinks(`${baseText} ${simpleLink}`)).toBe(
+      `${baseText} [link rimosso]`
+    );
   });
 
   test("should return the string without the url if an url with query params and # is contained ", () => {
     const simpleLink = "https://asimplelink.com/?qp1=value#header";
     const baseText = `A simple text`;
-    expect(removeLinks(`${baseText}${simpleLink}`)).toBe(baseText);
+    expect(removeLinks(`${baseText} ${simpleLink}`)).toBe(
+      `${baseText} [link rimosso]`
+    );
+  });
+});
+
+describe("invalidateClickableLinks", () => {
+  test("should return the same string if no period are provided", () => {
+    expect(invalidateClickableLinks("a simple text with no period")).toBe(
+      "a simple text with no period"
+    );
+  });
+
+  test("should add a zero-width space after every '.' character", () => {
+    expect(invalidateClickableLinks("a text.with 2 period.")).toBe(
+      "a text.\u{200B}with 2 period.\u{200B}"
+    );
   });
 });
