@@ -59,12 +59,15 @@ import {
   IResponseErrorForbiddenNotAuthorizedForProduction,
   IResponseErrorForbiddenNotAuthorizedForRecipient,
   IResponseErrorInternal,
+  IResponseErrorNotFound,
   IResponseErrorValidation,
   IResponseSuccessRedirectToResource,
+  ResponseErrorForbiddenNotAuthorized,
   ResponseErrorForbiddenNotAuthorizedForProduction,
   ResponseErrorForbiddenNotAuthorizedForRecipient,
   ResponseErrorGeneric,
   ResponseErrorInternal,
+  ResponseErrorNotFound,
   ResponseErrorValidation,
   ResponseSuccessRedirectToResource
 } from "@pagopa/ts-commons/lib/responses";
@@ -83,6 +86,7 @@ import {
   CreatedMessageEvent
 } from "../utils/events/message";
 import { commonCreateMessageMiddlewares } from "../utils/message_middlewares";
+import { MessagesServicesApiClient } from "../clients/messages-services-api";
 import {
   ApiNewMessageWithAdvancedFeatures,
   ApiNewMessageWithContentOf,
@@ -109,6 +113,7 @@ type ICreateMessageHandler = (
 ) => Promise<
   // eslint-disable-next-line @typescript-eslint/ban-types
   | IResponseSuccessRedirectToResource<Message, {}>
+  | IResponseErrorNotFound
   | IResponseErrorInternal
   | IResponseErrorQuery
   | IResponseErrorValidation
@@ -118,6 +123,8 @@ type ICreateMessageHandler = (
   | IResponseErrorForbiddenNotAuthorizedForRecipient
   | IResponseErrorForbiddenNotAuthorizedForProduction
   | IResponseErrorForbiddenNotAuthorizedForAttachments
+  | IResponseErrorForbiddenNoConfigurationId
+  | IResponseErrorForbiddenNotYourConfiguration
 >;
 
 export type CreateMessageHandlerResponse = PromiseType<
@@ -153,7 +160,39 @@ export const canWriteMessage = (
 };
 
 /**
- * The user is not allowed to issue production requests.
+ * The user has not sent a configuration id for the remote content.
+ */
+export type IResponseErrorForbiddenNoConfigurationId = IResponse<
+  "IResponseErrorForbiddenNoConfigurationId"
+>;
+
+export const ResponseErrorForbiddenNoConfigurationId: IResponseErrorForbiddenNoConfigurationId = {
+  ...ResponseErrorGeneric(
+    HttpStatusCodeEnum.HTTP_STATUS_403,
+    "No configuration id for remote content",
+    "You did not send any configuration id for your remote content in third_party_data"
+  ),
+  kind: "IResponseErrorForbiddenNoConfigurationId"
+};
+
+/**
+ * The user has not sent a configuration id for the remote content.
+ */
+export type IResponseErrorForbiddenNotYourConfiguration = IResponse<
+  "IResponseErrorForbiddenNotYourConfiguration"
+>;
+
+export const ResponseErrorForbiddenNotYourConfiguration: IResponseErrorForbiddenNotYourConfiguration = {
+  ...ResponseErrorGeneric(
+    HttpStatusCodeEnum.HTTP_STATUS_403,
+    "Not your configuration",
+    "You're not the owner of the configuration related to the given configuration_id"
+  ),
+  kind: "IResponseErrorForbiddenNotYourConfiguration"
+};
+
+/**
+ * The user is not allowed to send attachments.
  */
 export type IResponseErrorForbiddenNotAuthorizedForAttachments = IResponse<
   "IResponseErrorForbiddenNotAuthorizedForAttachments"
@@ -265,6 +304,7 @@ const redirectToNewMessage = (
 // eslint-disable-next-line prefer-arrow/prefer-arrow-functions,max-params, max-lines-per-function
 export function CreateMessageHandler(
   telemetryClient: ReturnType<typeof initAppInsights>,
+  messagesServicesApiClient: MessagesServicesApiClient,
   messageModel: MessageModel,
   generateObjectId: ObjectIdGenerator,
   saveProcessingMessage: ReturnType<typeof makeUpsertBlobFromObject>,
@@ -272,7 +312,7 @@ export function CreateMessageHandler(
   incompleteServiceWhitelist: ReadonlyArray<ServiceId>,
   sandboxFiscalCode: NonEmptyString
 ): ICreateMessageHandler {
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, max-lines-per-function
   return async (
     context,
     auth,
@@ -280,7 +320,7 @@ export function CreateMessageHandler(
     userAttributes,
     messagePayload,
     maybeFiscalCodeInPath
-    // eslint-disable-next-line max-params
+    // eslint-disable-next-line max-params, sonarjs/cognitive-complexity
   ) => {
     const maybeFiscalCodeInPayload = O.fromNullable(messagePayload.fiscal_code);
 
@@ -306,6 +346,61 @@ export function CreateMessageHandler(
     const fiscalCode = maybeFiscalCode.value;
     const { service, email: serviceUserEmail } = userAttributes;
     const { authorizedRecipients, serviceId } = service;
+
+    // Check configuration id if third_party_data has been sent
+    const isRemoteContentMessage = !!messagePayload.content.third_party_data;
+    const hasRemoteContentMessageConfigurationId = !!messagePayload.content
+      .third_party_data?.configuration_id;
+
+    if (isRemoteContentMessage && !hasRemoteContentMessageConfigurationId) {
+      return ResponseErrorForbiddenNoConfigurationId;
+    }
+
+    if (hasRemoteContentMessageConfigurationId) {
+      // Get the remote content configuration and check status codes
+      const getRCConfigurationResponseOrError = await messagesServicesApiClient.getRCConfiguration(
+        {
+          configurationId:
+            messagePayload.content.third_party_data.configuration_id
+        }
+      );
+
+      if (E.isLeft(getRCConfigurationResponseOrError)) {
+        return ResponseErrorInternal(
+          "Validation error to build the request that retrieves the remote content configuration."
+        );
+      }
+
+      switch (getRCConfigurationResponseOrError.right.status) {
+        case 400:
+          return ResponseErrorValidation(
+            "Validation error",
+            "The request to get the remote content configuration is invalid."
+          );
+        case 403:
+          return ResponseErrorForbiddenNotAuthorized;
+        case 404:
+          return ResponseErrorNotFound(
+            "Remote Content Configuration NOT FOUND",
+            "Cannot find any Remote Content Configuration with the given id"
+          );
+        case 500:
+          return ResponseErrorInternal(
+            "Generic error happened while trying to get remote content configuration."
+          );
+        case 200:
+          // check the ownership of the remote content configuration if sent with third_party_data
+          if (
+            auth.userId !==
+            getRCConfigurationResponseOrError.right.value.user_id
+          ) {
+            return ResponseErrorForbiddenNotYourConfiguration;
+          }
+          break;
+        default:
+          break;
+      }
+    }
 
     const isPremium =
       messagePayload.feature_level_type === FeatureLevelTypeEnum.ADVANCED;
@@ -474,6 +569,7 @@ export function CreateMessageHandler(
 // eslint-disable-next-line prefer-arrow/prefer-arrow-functions, max-params
 export function CreateMessage(
   telemetryClient: ReturnType<typeof initAppInsights>,
+  messagesServicesApiClient: MessagesServicesApiClient,
   serviceModel: ServiceModel,
   messageModel: MessageModel,
   saveProcessingMessage: ReturnType<typeof makeUpsertBlobFromObject>,
@@ -483,6 +579,7 @@ export function CreateMessage(
 ): express.RequestHandler {
   const handler = CreateMessageHandler(
     telemetryClient,
+    messagesServicesApiClient,
     messageModel,
     ulidGenerator,
     saveProcessingMessage,
