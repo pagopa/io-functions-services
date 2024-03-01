@@ -99,7 +99,9 @@ export const anInvalidMessageContent: MessageContent = {
 };
 
 const aValidThirdPartyMessageContent = {
-  id: "ID"
+  id: "ID",
+  has_attachments: false,
+  configuration_id: aRCConfigurationResponse.configuration_id
 };
 
 const aValidEuCovidCertMessageContent = {
@@ -386,6 +388,7 @@ describe("Create Message |> Middleware errors", () => {
 
     const response = await postCreateMessage(nodeFetch)(body);
 
+    expect(mockGetRCConfiguration).toHaveBeenCalledTimes(1);
     expect(response.status).toEqual(201);
   });
 
