@@ -42,6 +42,13 @@ import { TimeToLiveSeconds } from "./generated/fn-services/TimeToLiveSeconds";
 import { NewMessageWithoutContent } from "@pagopa/io-functions-commons/dist/src/models/message";
 import { ulidGenerator } from "@pagopa/io-functions-commons/dist/src/utils/strings";
 import { ProblemJson } from "@pagopa/ts-commons/lib/responses";
+import { Server, ServerResponse } from "http";
+import { aRCConfigurationResponse } from "../__mocks__/remote-content";
+import { RCConfigurationResponse } from "../generated/messages-services-api/RCConfigurationResponse";
+import {
+  startServer,
+  closeServer
+} from "./__mocks__/server/io-functions-service-messages.mock";
 
 const MAX_ATTEMPT = 50;
 jest.setTimeout(WAIT_MS * MAX_ATTEMPT);
@@ -152,6 +159,20 @@ const getNodeFetch = (
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
+let ioFunctionsServiceMessages: Server;
+const mockGetRCConfiguration = jest.fn();
+mockGetRCConfiguration.mockImplementation((response: ServerResponse) => {
+  sendRCConfiguration(response, aRCConfigurationResponse);
+});
+
+function sendRCConfiguration(
+  response: ServerResponse,
+  aRCConfigurationResponse: RCConfigurationResponse
+) {
+  response.writeHead(200, { "Content-Type": "application/json" });
+  response.end(JSON.stringify(aRCConfigurationResponse));
+}
+
 // Wait some time
 beforeAll(async () => {
   let i = 0;
@@ -169,7 +190,12 @@ beforeAll(async () => {
     console.log("Function unable to setup in time");
     exit(1);
   }
+
+  // Setup mock io-functions-service-messages server
+  ioFunctionsServiceMessages = await startServer(8001, mockGetRCConfiguration);
 });
+
+afterAll(async () => await closeServer(ioFunctionsServiceMessages));
 
 beforeEach(() => jest.clearAllMocks());
 
