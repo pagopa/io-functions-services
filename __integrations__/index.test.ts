@@ -43,11 +43,12 @@ import { NewMessageWithoutContent } from "@pagopa/io-functions-commons/dist/src/
 import { ulidGenerator } from "@pagopa/io-functions-commons/dist/src/utils/strings";
 import { ProblemJson } from "@pagopa/ts-commons/lib/responses";
 import { Server, ServerResponse } from "http";
-import { aRCConfigurationResponse } from "./__mocks__/remote-content";
+import { aRCConfigurationResponse } from "../__mocks__/remote-content";
 import {
   startServer,
   closeServer
 } from "./__mocks__/server/io-functions-service-messages.mock";
+import { RCConfigurationResponse } from "../generated/messages-services-api/RCConfigurationResponse";
 
 const MAX_ATTEMPT = 50;
 jest.setTimeout(WAIT_MS * MAX_ATTEMPT);

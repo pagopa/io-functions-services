@@ -64,6 +64,8 @@ services:
       - environments/generated/env.integration-tests
     volumes:
       - "./:/usr/src/app"
+      - "../generated:/usr/src/generated"
+      - "../__mocks__:/usr/src/__mocks__"
       - "../openapi:/usr/src/openapi"
     depends_on:
       - cosmosdb
