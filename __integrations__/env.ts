@@ -8,3 +8,5 @@ export const SHOW_LOGS = process.env.SHOW_LOGS === "true";
 export const COSMOSDB_URI = process.env.COSMOSDB_URI;
 export const COSMOSDB_KEY = process.env.COSMOSDB_KEY;
 export const COSMOSDB_NAME = process.env.COSMOSDB_NAME;
+
+export const APIM_PORT = Number(process.env.APIM_PORT ?? 0);

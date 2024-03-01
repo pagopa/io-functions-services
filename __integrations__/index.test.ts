@@ -12,7 +12,8 @@ import {
   COSMOSDB_URI,
   COSMOSDB_KEY,
   COSMOSDB_NAME,
-  QueueStorageConnection
+  QueueStorageConnection,
+  APIM_PORT
 } from "./env";
 
 import { ExternalMessageResponseWithContent } from "./generated/fn-services/ExternalMessageResponseWithContent";
@@ -98,7 +99,7 @@ export const anInvalidMessageContent: MessageContent = {
   subject: "invalid"
 };
 
-const aValidThirdPartyMessageContent = {
+const aValidThirdPartyData = {
   id: "ID",
   has_attachments: false,
   configuration_id: aRCConfigurationResponse.configuration_id
@@ -194,7 +195,10 @@ beforeAll(async () => {
   }
 
   // Setup mock io-functions-service-messages server
-  ioFunctionsServiceMessages = await startServer(8001, mockGetRCConfiguration);
+  ioFunctionsServiceMessages = await startServer(
+    APIM_PORT,
+    mockGetRCConfiguration
+  );
 });
 
 afterAll(async () => await closeServer(ioFunctionsServiceMessages));
@@ -229,7 +233,7 @@ describe("Create Message |> Middleware errors", () => {
         fiscal_code: anAutoFiscalCode,
         content: {
           ...aMessageContent,
-          third_party_data: aValidThirdPartyMessageContent
+          third_party_data: aValidThirdPartyData
         }
       }
     };
@@ -258,7 +262,7 @@ describe("Create Message |> Middleware errors", () => {
         fiscal_code: anAutoFiscalCode,
         content: {
           ...aMessageContent,
-          third_party_data: aValidThirdPartyMessageContent
+          third_party_data: aValidThirdPartyData
         }
       }
     };
@@ -372,7 +376,8 @@ describe("Create Message |> Middleware errors", () => {
   it("should return 201 when creating an ADVANCED third party message with right permission", async () => {
     const nodeFetch = getNodeFetch({
       "x-user-groups":
-        customHeaders["x-user-groups"] + ",ApiMessageWriteAdvanced"
+        customHeaders["x-user-groups"] + ",ApiMessageWriteAdvanced",
+      "x-user-id": aRCConfigurationResponse.user_id
     });
 
     const body = {
@@ -380,7 +385,7 @@ describe("Create Message |> Middleware errors", () => {
         fiscal_code: anAutoFiscalCode,
         content: {
           ...aMessageContent,
-          third_party_data: aValidThirdPartyMessageContent
+          third_party_data: aValidThirdPartyData
         },
         feature_level_type: "ADVANCED"
       }
@@ -403,7 +408,7 @@ describe("Create Message |> Middleware errors", () => {
         fiscal_code: anAutoFiscalCode,
         content: {
           ...aMessageContent,
-          third_party_data: aValidThirdPartyMessageContent
+          third_party_data: aValidThirdPartyData
         },
         feature_level_type: "STANDARD"
       }
@@ -667,7 +672,7 @@ describe("Create Third Party Message", () => {
           fiscal_code: fiscalCode,
           content: {
             ...aMessageContent,
-            third_party_data: aValidThirdPartyMessageContent
+            third_party_data: aValidThirdPartyData
           }
         }
       };

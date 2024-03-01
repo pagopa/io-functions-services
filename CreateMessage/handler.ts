@@ -398,7 +398,9 @@ export function CreateMessageHandler(
           }
           break;
         default:
-          break;
+          return ResponseErrorInternal(
+            "Unknown response while trying to get remote content configuration."
+          );
       }
     }
 

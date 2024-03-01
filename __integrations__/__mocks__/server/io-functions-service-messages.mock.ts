@@ -7,9 +7,8 @@ export const startServer = async (
 ): Promise<Server> => {
   console.log("Creating server");
   const server = createServer((_, response) => {
-    console.log("message", _.url);
-
-    if (_.url?.startsWith("/remote-contents/configurations/"))
+    console.log("remote-contents", _.url);
+    if (_.url?.startsWith("/service-messages/api/v1/remote-contents/configurations/"))
       mockGetRCConfiguration(response);
     else {
       response.statusCode = 500;
