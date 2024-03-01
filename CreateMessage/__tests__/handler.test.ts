@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 import * as fc from "fast-check";
 
 import { MessageModel } from "@pagopa/io-functions-commons/dist/src/models/message";
@@ -45,6 +44,8 @@ import { initAppInsights } from "@pagopa/ts-commons/lib/appinsights";
 import { ApiNewMessageWithDefaults } from "../types";
 import { Context } from "@azure/functions";
 import { FeatureLevelTypeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/FeatureLevelType";
+import { MessagesServicesApiClient } from "../../clients/messages-services-api";
+import { aRCConfigurationResponse as anOwnedRCConfiguration } from "../../__mocks__/remote-content";
 
 const createContext = (): Context =>
   (({
@@ -64,6 +65,37 @@ const mockSaveBlob = jest.fn((_: string, __: any) => TE.of(O.some({} as any)));
 const mockMessageModel = ({
   create: jest.fn(() => TE.of({}))
 } as unknown) as MessageModel;
+
+const anOtherRCConfiguration = {
+  ...anOwnedRCConfiguration,
+  configuration_id: "01HQRD0YCVDXF1XDW634N87XCH",
+  user_id: "09876543210"
+};
+
+const mockGetRCConfiguration = jest
+  .fn()
+  .mockImplementation(async (input: Record<"configurationId", string>) => {
+    if (input.configurationId == anOwnedRCConfiguration.configuration_id) {
+      return E.right({
+        status: 200,
+        value: anOwnedRCConfiguration
+      });
+    }
+
+    if (input.configurationId == anOtherRCConfiguration.configuration_id) {
+      return E.right({
+        status: 200,
+        value: anOtherRCConfiguration
+      });
+    }
+
+    return E.right({
+      status: 404
+    });
+  });
+const mockMessagesServicesApiClient: MessagesServicesApiClient = ({
+  getRCConfiguration: mockGetRCConfiguration
+} as unknown) as MessagesServicesApiClient;
 
 //
 // tests
@@ -235,6 +267,7 @@ describe("CreateMessageHandler", () => {
       fc.asyncProperty(fiscalCodeArb, async fiscalCode => {
         const createMessageHandler = CreateMessageHandler(
           undefined as any,
+          mockMessagesServicesApiClient,
           undefined as any,
           undefined as any,
           undefined as any,
@@ -262,6 +295,7 @@ describe("CreateMessageHandler", () => {
   it("should return a validation error if fiscalcode is not specified in path nor payload", async () => {
     const createMessageHandler = CreateMessageHandler(
       undefined as any,
+      mockMessagesServicesApiClient,
       undefined as any,
       undefined as any,
       undefined as any,
@@ -310,6 +344,7 @@ describe("CreateMessageHandler", () => {
     );
     const createMessageHandler = CreateMessageHandler(
       mockTelemetryClient,
+      mockMessagesServicesApiClient,
       undefined as any,
       mockGenerateObjId,
       mockSaveBlob,
@@ -344,6 +379,7 @@ describe("CreateMessageHandler", () => {
 
     const createMessageHandler = CreateMessageHandler(
       mockTelemetryClient,
+      mockMessagesServicesApiClient,
       mockMessageModel,
       mockGenerateObjId,
       mockSaveBlob,
@@ -383,6 +419,7 @@ describe("CreateMessageHandler", () => {
 
     const createMessageHandler = CreateMessageHandler(
       mockTelemetryClient,
+      mockMessagesServicesApiClient,
       mockMessageModel,
       mockGenerateObjId,
       mockSaveBlob,
@@ -400,7 +437,7 @@ describe("CreateMessageHandler", () => {
         content: {
           markdown: "md",
           subject: "subject",
-          require_secure_channels: false,
+          require_secure_channels: false
         }
       } as ApiNewMessageWithDefaults,
       some(anotherFiscalCode)
@@ -419,6 +456,7 @@ describe("CreateMessageHandler", () => {
   it("should return 403 error if the flag has_attachments is true but the message is not advanced", async () => {
     const createMessageHandler = CreateMessageHandler(
       mockTelemetryClient,
+      mockMessagesServicesApiClient,
       mockMessageModel,
       undefined as any,
       mockSaveBlob,
@@ -436,7 +474,10 @@ describe("CreateMessageHandler", () => {
         content: {
           markdown: "md",
           subject: "subject",
-          third_party_data: { has_attachments: true }
+          third_party_data: {
+            has_attachments: true,
+            configuration_id: anOwnedRCConfiguration.configuration_id
+          }
         },
         feature_level_type: FeatureLevelTypeEnum.STANDARD
       } as ApiNewMessageWithDefaults,
@@ -452,6 +493,7 @@ describe("CreateMessageHandler", () => {
   it("should return 403 error if the flag has_attachments true but the feature_level_type is not provided", async () => {
     const createMessageHandler = CreateMessageHandler(
       mockTelemetryClient,
+      mockMessagesServicesApiClient,
       mockMessageModel,
       undefined as any,
       mockSaveBlob,
@@ -469,7 +511,10 @@ describe("CreateMessageHandler", () => {
         content: {
           markdown: "md",
           subject: "subject",
-          third_party_data: { has_attachments: true }
+          third_party_data: {
+            has_attachments: true,
+            configuration_id: anOwnedRCConfiguration.configuration_id
+          }
         }
       } as ApiNewMessageWithDefaults,
       some(anotherFiscalCode)
@@ -481,13 +526,14 @@ describe("CreateMessageHandler", () => {
     );
   });
 
-  it("should return 200 ok if a configuration_id is provided", async () => {
+  it("should return 200 ok if a configuration_id is provided and the configuration is of the current user", async () => {
     const mockGenerateObjId = jest
       .fn()
       .mockImplementationOnce(() => "mocked-message-id");
 
     const createMessageHandler = CreateMessageHandler(
       mockTelemetryClient,
+      mockMessagesServicesApiClient,
       mockMessageModel,
       mockGenerateObjId,
       mockSaveBlob,
@@ -505,7 +551,10 @@ describe("CreateMessageHandler", () => {
         content: {
           markdown: "md",
           subject: "subject",
-          third_party_data: { has_attachments: false, configuration_id: "01ARZ3NDEKTSV4RRFFQ69G5FAV" }
+          third_party_data: {
+            has_attachments: false,
+            configuration_id: anOwnedRCConfiguration.configuration_id
+          }
         }
       } as ApiNewMessageWithDefaults,
       some(anotherFiscalCode)
@@ -514,13 +563,14 @@ describe("CreateMessageHandler", () => {
     expect(r.kind).toBe("IResponseSuccessRedirectToResource");
   });
 
-  it("should return 200 ok if a configuration_id is not provided", async () => {
+  it("should return 403 ok if a configuration_id is provided and the configuration is NOT of the current user", async () => {
     const mockGenerateObjId = jest
       .fn()
       .mockImplementationOnce(() => "mocked-message-id");
 
     const createMessageHandler = CreateMessageHandler(
       mockTelemetryClient,
+      mockMessagesServicesApiClient,
       mockMessageModel,
       mockGenerateObjId,
       mockSaveBlob,
@@ -538,12 +588,52 @@ describe("CreateMessageHandler", () => {
         content: {
           markdown: "md",
           subject: "subject",
-          third_party_data: { has_attachments: false, has_remote_content: false }
+          third_party_data: {
+            has_attachments: false,
+            configuration_id: anOtherRCConfiguration.configuration_id
+          }
         }
       } as ApiNewMessageWithDefaults,
       some(anotherFiscalCode)
     );
 
-    expect(r.kind).toBe("IResponseSuccessRedirectToResource");
+    expect(r.kind).toBe("IResponseErrorForbiddenNotYourConfiguration");
+  });
+
+  it("should return 403 ok if a configuration_id is not provided", async () => {
+    const mockGenerateObjId = jest
+      .fn()
+      .mockImplementationOnce(() => "mocked-message-id");
+
+    const createMessageHandler = CreateMessageHandler(
+      mockTelemetryClient,
+      mockMessagesServicesApiClient,
+      mockMessageModel,
+      mockGenerateObjId,
+      mockSaveBlob,
+      true,
+      [],
+      aSandboxFiscalCode
+    );
+
+    const r = await createMessageHandler(
+      createContext(),
+      anAzureApiAuthorization,
+      undefined as any,
+      anAzureUserAttributes,
+      {
+        content: {
+          markdown: "md",
+          subject: "subject",
+          third_party_data: {
+            has_attachments: false,
+            has_remote_content: false
+          }
+        }
+      } as ApiNewMessageWithDefaults,
+      some(anotherFiscalCode)
+    );
+
+    expect(r.kind).toBe("IResponseErrorForbiddenNoConfigurationId");
   });
 });
