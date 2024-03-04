@@ -175,8 +175,9 @@ function sendRCConfiguration(
   response.writeHead(200, { "Content-Type": "application/json" });
   const r = JSON.stringify(aRCConfigurationResponse);
   console.log(
-    `Sending configuration with id: ${aRCConfigurationResponse.configuration_id} owned by user id: ${aRCConfigurationResponse.user_id}. | ${r}`
+    `Sending configuration with id: ${aRCConfigurationResponse.configuration_id} owned by user id: ${aRCConfigurationResponse.user_id}.`
   );
+  console.log(`${r}`);
   response.end(r);
 }
 
