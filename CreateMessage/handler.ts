@@ -405,7 +405,7 @@ export function CreateMessageHandler(
         case 200:
           // check the ownership of the remote content configuration if sent with third_party_data
           if (
-            parseOwnerIdFullPath(auth.userId) !=
+            parseOwnerIdFullPath(auth.userId) !==
             getRCConfigurationResponseOrError.right.value.user_id
           ) {
             return ResponseErrorForbiddenNotYourConfiguration;
