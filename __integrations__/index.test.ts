@@ -49,6 +49,7 @@ import {
   startServer,
   closeServer
 } from "./__mocks__/server/io-functions-service-messages.mock";
+import { RCConfigurationResponse } from "../generated/messages-services-api/RCConfigurationResponse";
 
 const MAX_ATTEMPT = 50;
 jest.setTimeout(WAIT_MS * MAX_ATTEMPT);
@@ -169,7 +170,7 @@ mockGetRCConfiguration.mockImplementation((response: ServerResponse) => {
 
 function sendRCConfiguration(
   response: ServerResponse,
-  mockedResponse: typeof aRCConfigurationResponse
+  mockedResponse: RCConfigurationResponse
 ) {
   response.writeHead(200, { "Content-Type": "application/json" });
   const r = JSON.stringify(mockedResponse);
