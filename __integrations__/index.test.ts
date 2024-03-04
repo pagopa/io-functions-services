@@ -49,7 +49,6 @@ import {
   startServer,
   closeServer
 } from "./__mocks__/server/io-functions-service-messages.mock";
-import { RCConfigurationResponse } from "../generated/messages-services-api/RCConfigurationResponse";
 
 const MAX_ATTEMPT = 50;
 jest.setTimeout(WAIT_MS * MAX_ATTEMPT);
@@ -170,12 +169,12 @@ mockGetRCConfiguration.mockImplementation((response: ServerResponse) => {
 
 function sendRCConfiguration(
   response: ServerResponse,
-  aRCConfigurationResponse: RCConfigurationResponse
+  mockedResponse: typeof aRCConfigurationResponse
 ) {
   response.writeHead(200, { "Content-Type": "application/json" });
-  const r = JSON.stringify(aRCConfigurationResponse);
+  const r = JSON.stringify(mockedResponse);
   console.log(
-    `Sending configuration with id: ${aRCConfigurationResponse.configuration_id} owned by user id: ${aRCConfigurationResponse.user_id}.`
+    `Sending configuration with id: ${mockedResponse.configuration_id} owned by user id: ${mockedResponse.user_id}.`
   );
   console.log(`${r}`);
   response.end(r);
