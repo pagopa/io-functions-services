@@ -409,7 +409,8 @@ describe("Create Message |> Middleware errors", () => {
   it("should return 201 when creating a third party message with right permission", async () => {
     const nodeFetch = getNodeFetch({
       "x-user-groups":
-        customHeaders["x-user-groups"] + ",ApiThirdPartyMessageWrite"
+        customHeaders["x-user-groups"] + ",ApiThirdPartyMessageWrite",
+      "x-user-id": fullPathUserIdFromAPIM
     });
 
     const body = {
@@ -425,6 +426,7 @@ describe("Create Message |> Middleware errors", () => {
 
     const response = await postCreateMessage(nodeFetch)(body);
 
+    expect(mockGetRCConfiguration).toHaveBeenCalledTimes(1);
     expect(response.status).toEqual(201);
   });
 
@@ -689,13 +691,15 @@ describe("Create Third Party Message", () => {
       const nodeFetch = getNodeFetch({
         "x-subscription-id": serviceId,
         "x-user-groups":
-          customHeaders["x-user-groups"] + ",ApiThirdPartyMessageWrite"
+          customHeaders["x-user-groups"] + ",ApiThirdPartyMessageWrite",
+        "x-user-id": fullPathUserIdFromAPIM
       });
 
       const result = await postCreateMessage(nodeFetch)(body);
       const createdMessage = (await result.json()) as CreatedMessage;
-      expect(createdMessage).not.toHaveProperty("ttl");
 
+      expect(mockGetRCConfiguration).toHaveBeenCalledTimes(1);
+      expect(createdMessage).not.toHaveProperty("ttl");
       expect(result.status).toEqual(201);
 
       const messageId = createdMessage.id;
