@@ -62,11 +62,13 @@ services:
     command: tail -f /dev/null # to keep it   up&running
     env_file:
       - environments/generated/env.integration-tests
+    ports:
+      - ${APIM_PORT}:${APIM_PORT}
     volumes:
       - "./:/usr/src/app"
-      - "../generated:/usr/src/generated"
       - "../__mocks__:/usr/src/__mocks__"
       - "../node_modules:/usr/src/node_modules"
+      - "../generated:/usr/src/generated"
       - "../openapi:/usr/src/openapi"
     depends_on:
       - cosmosdb

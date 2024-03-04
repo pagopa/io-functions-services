@@ -298,6 +298,20 @@ const redirectToNewMessage = (
     { id: newMessageWithoutContent.id }
   );
 
+/*
+ ** The right full path for ownerID is in this kind of format:
+ ** "/subscriptions/subid/resourceGroups/{resourceGroup}/providers/Microsoft.ApiManagement/service/{apimService}/users/5931a75ae4bbd512a88c680b",
+ ** resouce link: https://docs.microsoft.com/en-us/rest/api/apimanagement/current-ga/subscription/get
+ */
+export const parseOwnerIdFullPath = (
+  fullPath: NonEmptyString
+): NonEmptyString =>
+  pipe(
+    fullPath,
+    f => f.split("/"),
+    a => a[a.length - 1] as NonEmptyString
+  );
+
 /**
  * Returns a type safe CreateMessage handler.
  */
@@ -391,7 +405,7 @@ export function CreateMessageHandler(
         case 200:
           // check the ownership of the remote content configuration if sent with third_party_data
           if (
-            auth.userId !==
+            parseOwnerIdFullPath(auth.userId) !=
             getRCConfigurationResponseOrError.right.value.user_id
           ) {
             return ResponseErrorForbiddenNotYourConfiguration;

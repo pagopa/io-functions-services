@@ -173,8 +173,14 @@ function sendRCConfiguration(
   aRCConfigurationResponse: RCConfigurationResponse
 ) {
   response.writeHead(200, { "Content-Type": "application/json" });
-  response.end(JSON.stringify(aRCConfigurationResponse));
+  const r = JSON.stringify(aRCConfigurationResponse);
+  console.log(
+    `Sending configuration with id: ${aRCConfigurationResponse.configuration_id} owned by user id: ${aRCConfigurationResponse.user_id}. | ${r}`
+  );
+  response.end(r);
 }
+
+const fullPathUserIdFromAPIM = `/full/path/userid/${aRCConfigurationResponse.user_id}`;
 
 // Wait some time
 beforeAll(async () => {
@@ -377,7 +383,7 @@ describe("Create Message |> Middleware errors", () => {
     const nodeFetch = getNodeFetch({
       "x-user-groups":
         customHeaders["x-user-groups"] + ",ApiMessageWriteAdvanced",
-      "x-user-id": aRCConfigurationResponse.user_id
+      "x-user-id": fullPathUserIdFromAPIM
     });
 
     const body = {
@@ -392,6 +398,8 @@ describe("Create Message |> Middleware errors", () => {
     };
 
     const response = await postCreateMessage(nodeFetch)(body);
+
+    console.log(`=======> ${JSON.stringify(await response.json())}`);
 
     expect(mockGetRCConfiguration).toHaveBeenCalledTimes(1);
     expect(response.status).toEqual(201);

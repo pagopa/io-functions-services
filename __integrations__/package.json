@@ -25,6 +25,7 @@
     "@azure/storage-queue": "^12.7.0",
     "@pagopa/io-functions-admin-sdk": "^0.32.1",
     "@pagopa/io-functions-commons": "^28.19.0",
+    "@pagopa/ts-commons": "^12.5.0",
     "@types/jest": "^27.0.2",
     "@types/node": "^13.11.0",
     "azure-storage": "^2.10.5",
