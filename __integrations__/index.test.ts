@@ -183,6 +183,9 @@ function sendRCConfiguration(
 
 const fullPathUserIdFromAPIM = `/full/path/userid/${aRCConfigurationResponse.user_id}`;
 
+const notExistingRCConfigurationId = "01HQRD0YCVDXF1XDW634N87XCF";
+const notMatchingRCConfigurationId = "01HQRD0YCVDXF1XDW634N87XCE";
+
 // Wait some time
 beforeAll(async () => {
   let i = 0;
@@ -368,6 +371,91 @@ describe("Create Message |> Middleware errors", () => {
     });
   });
 
+  it("should return 403 when creating a Remote Content message and configuration is not of the user", async () => {
+    const nodeFetch = getNodeFetch({
+      "x-user-groups":
+        customHeaders["x-user-groups"] + ",ApiMessageWriteAdvanced",
+      "x-user-id": fullPathUserIdFromAPIM + "/anotheruserid"
+    });
+
+    const body = {
+      message: {
+        fiscal_code: anAutoFiscalCode,
+        content: {
+          ...aMessageContent,
+          third_party_data: aValidThirdPartyData
+        },
+        feature_level_type: "ADVANCED"
+      }
+    };
+
+    const response = await postCreateMessage(nodeFetch)(body);
+
+    expect(mockGetRCConfiguration).toHaveBeenCalledTimes(1);
+    expect(response.status).toEqual(403);
+
+    const problemJson = (await response.json()) as ProblemJson;
+    expect(problemJson).toMatchObject({
+      detail:
+        "You're not the owner of the configuration related to the given configuration_id",
+      title: "Not your configuration"
+    });
+  });
+
+  it("should return 404 when creating a Remote Content message and the given configuration_id cannot be found", async () => {
+    const nodeFetch = getNodeFetch({
+      "x-user-groups":
+        customHeaders["x-user-groups"] + ",ApiMessageWriteAdvanced",
+      "x-user-id": fullPathUserIdFromAPIM
+    });
+
+    const body = {
+      message: {
+        fiscal_code: anAutoFiscalCode,
+        content: {
+          ...aMessageContent,
+          third_party_data: {
+            ...aValidThirdPartyData,
+            configuration_id: notExistingRCConfigurationId
+          }
+        },
+        feature_level_type: "ADVANCED"
+      }
+    };
+
+    const response = await postCreateMessage(nodeFetch)(body);
+
+    expect(mockGetRCConfiguration).toHaveBeenCalledTimes(1);
+    expect(response.status).toEqual(404);
+  });
+
+  it("should return 500 when creating a Remote Content message and there is an error in retrieving the configuration", async () => {
+    const nodeFetch = getNodeFetch({
+      "x-user-groups":
+        customHeaders["x-user-groups"] + ",ApiMessageWriteAdvanced",
+      "x-user-id": fullPathUserIdFromAPIM
+    });
+
+    const body = {
+      message: {
+        fiscal_code: anAutoFiscalCode,
+        content: {
+          ...aMessageContent,
+          third_party_data: {
+            ...aValidThirdPartyData,
+            configuration_id: notMatchingRCConfigurationId
+          }
+        },
+        feature_level_type: "ADVANCED"
+      }
+    };
+
+    const response = await postCreateMessage(nodeFetch)(body);
+
+    expect(mockGetRCConfiguration).toHaveBeenCalledTimes(1);
+    expect(response.status).toEqual(403);
+  });
+
   it("should return 201 when no middleware fails", async () => {
     const body = {
       message: {
@@ -399,8 +487,6 @@ describe("Create Message |> Middleware errors", () => {
     };
 
     const response = await postCreateMessage(nodeFetch)(body);
-
-    console.log(`=======> ${JSON.stringify(await response.json())}`);
 
     expect(mockGetRCConfiguration).toHaveBeenCalledTimes(1);
     expect(response.status).toEqual(201);

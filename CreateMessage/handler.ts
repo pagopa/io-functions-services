@@ -381,7 +381,7 @@ export function CreateMessageHandler(
 
       if (E.isLeft(getRCConfigurationResponseOrError)) {
         return ResponseErrorInternal(
-          "Validation error to build the request that retrieves the remote content configuration."
+          "Cannot retrieve the remote content configuration. Service unreachable."
         );
       }
 

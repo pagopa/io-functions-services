@@ -8,11 +8,22 @@ export const startServer = async (
   console.log("Creating server");
   const server = createServer((_, response) => {
     console.log("remote-contents", _.url);
-    if (_.url?.startsWith("/service-messages/api/v1/remote-contents/configurations/")){
-      console.log("matched call");
+    if (
+      _.url?.startsWith(
+        "/service-messages/api/v1/remote-contents/configurations/01HQRD0YCVDXF1XDW634N87XCG"
+      )
+    ) {
+      console.log("matched call with existing configuration");
       mockGetRCConfiguration(response);
-    }
-    else {
+    } else if (
+      _.url?.startsWith(
+        "/service-messages/api/v1/remote-contents/configurations/01HQRD0YCVDXF1XDW634N87XCF"
+      )
+    ) {
+      console.log("matched call with not existing configuration");
+      response.statusCode = 404;
+      response.end();
+    } else {
       console.log("call not matched");
       response.statusCode = 500;
       response.end();
