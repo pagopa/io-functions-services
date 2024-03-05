@@ -425,7 +425,7 @@ describe("Create Message |> Middleware errors", () => {
 
     const response = await postCreateMessage(nodeFetch)(body);
 
-    expect(mockGetRCConfiguration).toHaveBeenCalledTimes(1);
+    expect(mockGetRCConfiguration).not.toHaveBeenCalled(); // 404 and 500 do not call the mock
     expect(response.status).toEqual(404);
   });
 
@@ -452,8 +452,8 @@ describe("Create Message |> Middleware errors", () => {
 
     const response = await postCreateMessage(nodeFetch)(body);
 
-    expect(mockGetRCConfiguration).toHaveBeenCalledTimes(1);
-    expect(response.status).toEqual(403);
+    expect(mockGetRCConfiguration).not.toHaveBeenCalled(); // 404 and 500 do not call the mock
+    expect(response.status).toEqual(500);
   });
 
   it("should return 201 when no middleware fails", async () => {

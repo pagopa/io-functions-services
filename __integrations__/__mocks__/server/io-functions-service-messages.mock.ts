@@ -21,10 +21,12 @@ export const startServer = async (
       )
     ) {
       console.log("matched call with not existing configuration");
+      response.writeHead(404, { "Content-Type": "application/json" });
       response.statusCode = 404;
       response.end();
     } else {
       console.log("call not matched");
+      response.writeHead(500, { "Content-Type": "application/json" });
       response.statusCode = 500;
       response.end();
     }
