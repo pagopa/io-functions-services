@@ -85,6 +85,7 @@ stages:
         steps:
         - template: templates/node-job-setup/template.yaml@pagopaCommons
         - script: |
+            yarn generate
             cd __integrations__
             cp environments/env.base environments/.env
             yarn install --frozen-lockfile

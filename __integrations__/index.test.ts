@@ -12,7 +12,8 @@ import {
   COSMOSDB_URI,
   COSMOSDB_KEY,
   COSMOSDB_NAME,
-  QueueStorageConnection
+  QueueStorageConnection,
+  APIM_PORT
 } from "./env";
 
 import { ExternalMessageResponseWithContent } from "./generated/fn-services/ExternalMessageResponseWithContent";
@@ -42,6 +43,13 @@ import { TimeToLiveSeconds } from "./generated/fn-services/TimeToLiveSeconds";
 import { NewMessageWithoutContent } from "@pagopa/io-functions-commons/dist/src/models/message";
 import { ulidGenerator } from "@pagopa/io-functions-commons/dist/src/utils/strings";
 import { ProblemJson } from "@pagopa/ts-commons/lib/responses";
+import { Server, ServerResponse } from "http";
+import { aRCConfigurationResponse } from "../__mocks__/remote-content";
+import {
+  startServer,
+  closeServer
+} from "./__mocks__/server/io-functions-service-messages.mock";
+import { RCConfigurationResponse } from "../generated/messages-services-api/RCConfigurationResponse";
 
 const MAX_ATTEMPT = 50;
 jest.setTimeout(WAIT_MS * MAX_ATTEMPT);
@@ -91,8 +99,10 @@ export const anInvalidMessageContent: MessageContent = {
   subject: "invalid"
 };
 
-const aValidThirdPartyMessageContent = {
-  id: "ID"
+const aValidThirdPartyData = {
+  id: "ID",
+  has_attachments: false,
+  configuration_id: aRCConfigurationResponse.configuration_id
 };
 
 const aValidEuCovidCertMessageContent = {
@@ -152,6 +162,30 @@ const getNodeFetch = (
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
+let ioFunctionsServiceMessages: Server;
+const mockGetRCConfiguration = jest.fn();
+mockGetRCConfiguration.mockImplementation((response: ServerResponse) => {
+  sendRCConfiguration(response, aRCConfigurationResponse);
+});
+
+function sendRCConfiguration(
+  response: ServerResponse,
+  mockedResponse: RCConfigurationResponse
+) {
+  response.writeHead(200, { "Content-Type": "application/json" });
+  const r = JSON.stringify(mockedResponse);
+  console.log(
+    `Sending configuration with id: ${mockedResponse.configuration_id} owned by user id: ${mockedResponse.user_id}.`
+  );
+  console.log(`${r}`);
+  response.end(r);
+}
+
+const fullPathUserIdFromAPIM = `/full/path/userid/${aRCConfigurationResponse.user_id}`;
+
+const notExistingRCConfigurationId = "01HQRD0YCVDXF1XDW634N87XCF";
+const notMatchingRCConfigurationId = "01HQRD0YCVDXF1XDW634N87XCE";
+
 // Wait some time
 beforeAll(async () => {
   let i = 0;
@@ -169,7 +203,15 @@ beforeAll(async () => {
     console.log("Function unable to setup in time");
     exit(1);
   }
+
+  // Setup mock io-functions-service-messages server
+  ioFunctionsServiceMessages = await startServer(
+    APIM_PORT,
+    mockGetRCConfiguration
+  );
 });
+
+afterAll(async () => await closeServer(ioFunctionsServiceMessages));
 
 beforeEach(() => jest.clearAllMocks());
 
@@ -201,7 +243,7 @@ describe("Create Message |> Middleware errors", () => {
         fiscal_code: anAutoFiscalCode,
         content: {
           ...aMessageContent,
-          third_party_data: aValidThirdPartyMessageContent
+          third_party_data: aValidThirdPartyData
         }
       }
     };
@@ -230,7 +272,7 @@ describe("Create Message |> Middleware errors", () => {
         fiscal_code: anAutoFiscalCode,
         content: {
           ...aMessageContent,
-          third_party_data: aValidThirdPartyMessageContent
+          third_party_data: aValidThirdPartyData
         }
       }
     };
@@ -329,6 +371,91 @@ describe("Create Message |> Middleware errors", () => {
     });
   });
 
+  it("should return 403 when creating a Remote Content message and configuration is not of the user", async () => {
+    const nodeFetch = getNodeFetch({
+      "x-user-groups":
+        customHeaders["x-user-groups"] + ",ApiMessageWriteAdvanced",
+      "x-user-id": fullPathUserIdFromAPIM + "/anotheruserid"
+    });
+
+    const body = {
+      message: {
+        fiscal_code: anAutoFiscalCode,
+        content: {
+          ...aMessageContent,
+          third_party_data: aValidThirdPartyData
+        },
+        feature_level_type: "ADVANCED"
+      }
+    };
+
+    const response = await postCreateMessage(nodeFetch)(body);
+
+    expect(mockGetRCConfiguration).toHaveBeenCalledTimes(1);
+    expect(response.status).toEqual(403);
+
+    const problemJson = (await response.json()) as ProblemJson;
+    expect(problemJson).toMatchObject({
+      detail:
+        "You're not the owner of the configuration related to the given configuration_id",
+      title: "Not your configuration"
+    });
+  });
+
+  it("should return 404 when creating a Remote Content message and the given configuration_id cannot be found", async () => {
+    const nodeFetch = getNodeFetch({
+      "x-user-groups":
+        customHeaders["x-user-groups"] + ",ApiMessageWriteAdvanced",
+      "x-user-id": fullPathUserIdFromAPIM
+    });
+
+    const body = {
+      message: {
+        fiscal_code: anAutoFiscalCode,
+        content: {
+          ...aMessageContent,
+          third_party_data: {
+            ...aValidThirdPartyData,
+            configuration_id: notExistingRCConfigurationId
+          }
+        },
+        feature_level_type: "ADVANCED"
+      }
+    };
+
+    const response = await postCreateMessage(nodeFetch)(body);
+
+    expect(mockGetRCConfiguration).not.toHaveBeenCalled(); // 404 and 500 do not call the mock
+    expect(response.status).toEqual(404);
+  });
+
+  it("should return 500 when creating a Remote Content message and there is an error in retrieving the configuration", async () => {
+    const nodeFetch = getNodeFetch({
+      "x-user-groups":
+        customHeaders["x-user-groups"] + ",ApiMessageWriteAdvanced",
+      "x-user-id": fullPathUserIdFromAPIM
+    });
+
+    const body = {
+      message: {
+        fiscal_code: anAutoFiscalCode,
+        content: {
+          ...aMessageContent,
+          third_party_data: {
+            ...aValidThirdPartyData,
+            configuration_id: notMatchingRCConfigurationId
+          }
+        },
+        feature_level_type: "ADVANCED"
+      }
+    };
+
+    const response = await postCreateMessage(nodeFetch)(body);
+
+    expect(mockGetRCConfiguration).not.toHaveBeenCalled(); // 404 and 500 do not call the mock
+    expect(response.status).toEqual(500);
+  });
+
   it("should return 201 when no middleware fails", async () => {
     const body = {
       message: {
@@ -344,7 +471,8 @@ describe("Create Message |> Middleware errors", () => {
   it("should return 201 when creating an ADVANCED third party message with right permission", async () => {
     const nodeFetch = getNodeFetch({
       "x-user-groups":
-        customHeaders["x-user-groups"] + ",ApiMessageWriteAdvanced"
+        customHeaders["x-user-groups"] + ",ApiMessageWriteAdvanced",
+      "x-user-id": fullPathUserIdFromAPIM
     });
 
     const body = {
@@ -352,7 +480,7 @@ describe("Create Message |> Middleware errors", () => {
         fiscal_code: anAutoFiscalCode,
         content: {
           ...aMessageContent,
-          third_party_data: aValidThirdPartyMessageContent
+          third_party_data: aValidThirdPartyData
         },
         feature_level_type: "ADVANCED"
       }
@@ -360,13 +488,15 @@ describe("Create Message |> Middleware errors", () => {
 
     const response = await postCreateMessage(nodeFetch)(body);
 
+    expect(mockGetRCConfiguration).toHaveBeenCalledTimes(1);
     expect(response.status).toEqual(201);
   });
 
   it("should return 201 when creating a third party message with right permission", async () => {
     const nodeFetch = getNodeFetch({
       "x-user-groups":
-        customHeaders["x-user-groups"] + ",ApiThirdPartyMessageWrite"
+        customHeaders["x-user-groups"] + ",ApiThirdPartyMessageWrite",
+      "x-user-id": fullPathUserIdFromAPIM
     });
 
     const body = {
@@ -374,7 +504,7 @@ describe("Create Message |> Middleware errors", () => {
         fiscal_code: anAutoFiscalCode,
         content: {
           ...aMessageContent,
-          third_party_data: aValidThirdPartyMessageContent
+          third_party_data: aValidThirdPartyData
         },
         feature_level_type: "STANDARD"
       }
@@ -382,6 +512,7 @@ describe("Create Message |> Middleware errors", () => {
 
     const response = await postCreateMessage(nodeFetch)(body);
 
+    expect(mockGetRCConfiguration).toHaveBeenCalledTimes(1);
     expect(response.status).toEqual(201);
   });
 
@@ -638,7 +769,7 @@ describe("Create Third Party Message", () => {
           fiscal_code: fiscalCode,
           content: {
             ...aMessageContent,
-            third_party_data: aValidThirdPartyMessageContent
+            third_party_data: aValidThirdPartyData
           }
         }
       };
@@ -646,13 +777,15 @@ describe("Create Third Party Message", () => {
       const nodeFetch = getNodeFetch({
         "x-subscription-id": serviceId,
         "x-user-groups":
-          customHeaders["x-user-groups"] + ",ApiThirdPartyMessageWrite"
+          customHeaders["x-user-groups"] + ",ApiThirdPartyMessageWrite",
+        "x-user-id": fullPathUserIdFromAPIM
       });
 
       const result = await postCreateMessage(nodeFetch)(body);
       const createdMessage = (await result.json()) as CreatedMessage;
-      expect(createdMessage).not.toHaveProperty("ttl");
 
+      expect(mockGetRCConfiguration).toHaveBeenCalledTimes(1);
+      expect(createdMessage).not.toHaveProperty("ttl");
       expect(result.status).toEqual(201);
 
       const messageId = createdMessage.id;

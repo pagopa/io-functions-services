@@ -1043,6 +1043,8 @@ definitions:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/NewMessage"
   FeatureLevelType:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/FeatureLevelType"
+  HasPrecondition:
+    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/HasPrecondition"
   ReadStatus:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ReadStatus"
   PaymentStatus:

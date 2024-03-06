@@ -22,6 +22,7 @@ import { cosmosdbInstance } from "../utils/cosmosdb";
 import { initTelemetryClient } from "../utils/appinsights";
 
 import { getConfigOrThrow } from "../utils/config";
+import { messagesServicesApiClient } from "../clients/messages-services-api";
 import { CreateMessage } from "./handler";
 import { makeUpsertBlobFromObject } from "./utils";
 
@@ -55,6 +56,7 @@ app.post(
   "/api/v1/messages/:fiscalcode?",
   CreateMessage(
     telemetryClient,
+    messagesServicesApiClient,
     serviceModel,
     messageModel,
     makeUpsertBlobFromObject(
