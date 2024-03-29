@@ -1465,8 +1465,6 @@ definitions:
             type: string
           status:
             $ref: '#/definitions/CmsServiceHistoryItemStatus'
-          version:
-            type: integer
           last_update:
             $ref: '#/definitions/Timestamp'
           metadata:
