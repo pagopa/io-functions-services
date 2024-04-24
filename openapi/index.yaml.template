@@ -99,11 +99,11 @@ info:
          the message has been notified to the recipient.
 
 host: api.io.pagopa.it
-basePath: "/api/v1"
+basePath: "/"
 schemes:
   - https
 paths:
-  "/messages":
+  "/api/v1/messages":
     post:
       operationId: submitMessageforUserWithFiscalCodeInBody
       summary: Submit a Message passing the user fiscal_code in the request body
@@ -160,7 +160,7 @@ paths:
           description: The message cannot be delivered.
           schema:
             $ref: "#/definitions/ProblemJson"
-  "/messages/{fiscal_code}":
+  "/api/v1/messages/{fiscal_code}":
     post:
       operationId: submitMessageforUser
       summary: Submit a Message passing the user fiscal_code as path parameter
@@ -222,7 +222,7 @@ paths:
           description: The message cannot be delivered.
           schema:
             $ref: "#/definitions/ProblemJson"
-  "/messages/{fiscal_code}/{id}":
+  "/api/v1/messages/{fiscal_code}/{id}":
     get:
       operationId: getMessage
       summary: Get Message
@@ -273,7 +273,7 @@ paths:
             $ref: "#/definitions/ProblemJson"
         "429":
           description: Too many requests
-  "/profiles":
+  "/api/v1/profiles":
     post:
       operationId: getProfileByPOST
       summary: Get a User Profile using POST
@@ -307,7 +307,7 @@ paths:
           in: body
           schema:
             $ref: "#/definitions/FiscalCodePayload"
-  "/profiles/{fiscal_code}":
+  "/api/v1/profiles/{fiscal_code}":
     get:
       operationId: getProfile
       summary: Get a User Profile
@@ -338,7 +338,7 @@ paths:
           description: Too many requests
       parameters:
         - $ref: "#/parameters/FiscalCode"
-  "/subscriptions-feed/{date}":
+  "/api/v1/subscriptions-feed/{date}":
     get:
       operationId: getSubscriptionsFeedForDate
       summary: Get Subscriptions Feed
@@ -394,7 +394,7 @@ paths:
           description: Too many requests
       parameters:
         - $ref: "#/parameters/DateUTC"
-  "/organizations/{organization_fiscal_code}/logo":
+  "/api/v1/organizations/{organization_fiscal_code}/logo":
     parameters:
       - $ref: "#/parameters/OrganizationFiscalCode"
     put:
@@ -428,7 +428,7 @@ paths:
           description: The organization logo cannot be uploaded.
           schema:
             $ref: "#/definitions/ProblemJson"
-  "/activations/":
+  "/api/v1/activations/":
     post:
       operationId: getServiceActivationByPOST
       summary: Get a Service Activation for a User
@@ -503,7 +503,7 @@ paths:
           in: body
           schema:
             $ref: "#/definitions/ActivationPayload"
-  "/manage/services":
+  "/api/v1/manage/services":
     post:
       tags:
         - manage
@@ -577,7 +577,7 @@ paths:
           description: Internal server error
           schema:
             $ref: "#/definitions/ProblemJson"
-  "/manage/services/topics":
+  "/api/v1/manage/services/topics":
     get:
       tags:
         - service-topics
@@ -599,7 +599,7 @@ paths:
           description: Too many requests
         '500':
           description: Internal server error
-  "/manage/services/{serviceId}":
+  "/api/v1/manage/services/{serviceId}":
     get:
       tags:
         - manage
@@ -703,7 +703,7 @@ paths:
           description: Internal server error
           schema:
             $ref: "#/definitions/ProblemJson"
-  "/manage/services/{serviceId}/logo":
+  "/api/v1/manage/services/{serviceId}/logo":
     put:
       tags:
         - manage
@@ -747,7 +747,7 @@ paths:
           description: Internal server error
           schema:
             $ref: "#/definitions/ProblemJson"
-  "/manage/services/{serviceId}/history":
+  "/api/v1/manage/services/{serviceId}/history":
     get:
       tags:
         - manage
@@ -797,7 +797,7 @@ paths:
           description: Internal server error
           schema:
             $ref: "#/definitions/ProblemJson"
-  "/manage/services/{serviceId}/keys":
+  "/api/v1/manage/services/{serviceId}/keys":
     get:
       tags:
         - manage-authorization
@@ -829,7 +829,7 @@ paths:
           description: Internal server error
           schema:
             $ref: "#/definitions/ProblemJson"
-  "/manage/services/{serviceId}/keys/{keyType}":
+  "/api/v1/manage/services/{serviceId}/keys/{keyType}":
     put:
       tags:
         - manage-authorization
@@ -866,7 +866,7 @@ paths:
           description: Internal server error
           schema:
             $ref: "#/definitions/ProblemJson"
-  "/manage/services/{serviceId}/review":
+  "/api/v1/manage/services/{serviceId}/review":
     put:
       tags:
         - manage-review
@@ -902,7 +902,7 @@ paths:
           description: Internal server error
           schema:
             $ref: "#/definitions/ProblemJson"
-  "/manage/services/{serviceId}/release":
+  "/api/v1/manage/services/{serviceId}/release":
     post:
       tags:
         - manage-release
@@ -994,6 +994,298 @@ paths:
           description: Internal server error
           schema:
             $ref: "#/definitions/ProblemJson"
+
+  "/service-messages/api/v1/remote-contents/configurations":
+    post:
+      tags:
+        - remote-content
+      operationId: createRCConfiguration
+      security:
+        - ManageSubscriptionKey: []
+      summary: Create a new remote-content configuration
+      description: Create a new remote-content configuration using the provided payload
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/NewRCConfigurationPublic"
+          x-examples:
+            text/json: |
+              "name": "Descriptive congiguration name",
+              "description": "Configuration description",
+              "has_precondition": "NONE",
+              "disable_lollipop_for": [
+                "DIXDPZ44E08F367A"
+              ],
+              "is_lollipop_enabled": false,
+              "test_environment": {
+                "base_url": "string",
+                "details_authentication": {
+                  "header_key_name": "string",
+                  "key": "string",
+                  "type": "API-KEY"
+                },
+                "test_users": [
+                  "DIXDPZ44E08F367A"
+                ]
+              },
+              "prod_environment": {
+                "base_url": "string",
+                "details_authentication": {
+                  "header_key_name": "string",
+                  "key": "string",
+                  "type": "API-KEY",
+                }
+              }
+      responses:
+        "201":
+          description: Configuration created
+          schema:
+            $ref: "#/definitions/RCConfigurationPublic"
+          examples:
+            text/json: |
+              "configuration_id": "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+              "name": "Configuration name",
+              "description": "Configuration description",
+              "has_precondition": "NONE",
+              "disable_lollipop_for": [
+                "DIXDPZ44E08F367A"
+              ],
+              "is_lollipop_enabled": false,
+              "test_environment": {
+                "base_url": "string",
+                "details_authentication": {
+                  "header_key_name": "string",
+                  "key": "string",
+                  "type": "API-KEY"
+                },
+                "test_users": [
+                  "DIXDPZ44E08F367A"
+                ]
+              },
+              "prod_environment": {
+                "base_url": "string",
+                "details_authentication": {
+                  "header_key_name": "string",
+                  "key": "string",
+                  "type": "API-KEY",
+                }
+              }
+        "400":
+          description: Bad request
+          schema:
+            $ref: "#/definitions/ProblemJson"
+        "500":
+          description: >-
+            There was an error creating the configuration.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+      consumes:
+        - application/json
+      produces:
+        - application/json
+    get:
+      tags:
+        - remote-content
+      operationId: listRCConfiguration
+      security:
+        - ManageSubscriptionKey: []
+      summary: Get all the owned remote-content configurations
+      description: Get all the owned remote-content configurations
+      responses:
+        "200":
+          description: Return the configurations
+          schema:
+            $ref: "#/definitions/RCConfigurationListResponse"
+          examples:
+            text/json: |
+              rcConfigList: [
+                {
+                  "configuration_id": "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+                  "name": "Configuration name",
+                  "description": "Configuration description",
+                  "has_precondition": "NONE",
+                  "disable_lollipop_for": [
+                    "DIXDPZ44E08F367A"
+                  ],
+                  "is_lollipop_enabled": false,
+                  "test_environment": {
+                    "base_url": "string",
+                    "details_authentication": {
+                      "header_key_name": "string",
+                      "key": "string",
+                      "type": "API-KEY"
+                    },
+                    "test_users": [
+                      "DIXDPZ44E08F367A"
+                    ]
+                  },
+                  "prod_environment": {
+                    "base_url": "string",
+                    "details_authentication": {
+                      "header_key_name": "string",
+                      "key": "string",
+                      "type": "API-KEY",
+                    }
+                  }
+                }
+              ]
+        "400":
+          description: Bad request
+          schema:
+            $ref: "#/definitions/ProblemJson"
+        "403":
+          description: Request not authorized.
+        "404":
+          description: Resource not found.
+        "500":
+          description: >-
+            There was an error trying to get the configurations.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  "/service-messages/api/v1/remote-contents/configurations/{configurationId}":
+    get:
+      tags:
+        - remote-content
+      operationId: getRCConfiguration
+      security:
+        - ManageSubscriptionKey: []
+      summary: Get the remote-content configuration identified by the configurationId
+      description: Get the remote-content configuration using the provided configurationId passed as path param
+      parameters:
+        - in: path
+          name: configurationId
+          required: true
+          type: string
+          description: Ulid string.
+          format: Ulid
+          x-import: "@pagopa/ts-commons/lib/strings"
+      responses:
+        "200":
+          description: Return the configuration
+          schema:
+            $ref: "#/definitions/RCConfigurationResponse"
+          examples:
+            text/json: |
+              "configuration_id": "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+              "name": "Configuration name",
+              "description": "Configuration description",
+              "has_precondition": "NONE",
+              "disable_lollipop_for": [
+                "DIXDPZ44E08F367A"
+              ],
+              "is_lollipop_enabled": false,
+              "test_environment": {
+                "base_url": "string",
+                "details_authentication": {
+                  "header_key_name": "string",
+                  "key": "string",
+                  "type": "API-KEY"
+                },
+                "test_users": [
+                  "DIXDPZ44E08F367A"
+                ]
+              },
+              "prod_environment": {
+                "base_url": "string",
+                "details_authentication": {
+                  "header_key_name": "string",
+                  "key": "string",
+                  "type": "API-KEY",
+                }
+              }
+        "400":
+          description: Bad request
+          schema:
+            $ref: "#/definitions/ProblemJson"
+        "403":
+          description: Request not authorized.
+        "404":
+          description: Resource not found.
+        "500":
+          description: >-
+            There was an error trying to get the configuration.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+      consumes:
+        - application/json
+      produces:
+        - application/json
+    put:
+      tags:
+        - remote-content
+      operationId: updateRCConfiguration
+      security:
+        - ManageSubscriptionKey: []
+      summary: Update an existing remote-content configuration
+      description: Update an existing remote-content configuration using the provided payload
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/NewRCConfigurationPublic"
+          x-examples:
+            text/json: |
+              "name": "Descriptive congiguration name",
+              "description": "Configuration description",
+              "has_precondition": "NONE",
+              "disable_lollipop_for": [
+                "DIXDPZ44E08F367A"
+              ],
+              "is_lollipop_enabled": false,
+              "test_environment": {
+                "base_url": "string",
+                "details_authentication": {
+                  "header_key_name": "string",
+                  "key": "string",
+                  "type": "API-KEY"
+                },
+                "test_users": [
+                  "DIXDPZ44E08F367A"
+                ]
+              },
+              "prod_environment": {
+                "base_url": "string",
+                "details_authentication": {
+                  "header_key_name": "string",
+                  "key": "string",
+                  "type": "API-KEY",
+                }
+              }
+        - in: path
+          name: configurationId
+          required: true
+          type: string
+          description: Ulid string.
+          format: Ulid
+          x-import: "@pagopa/ts-commons/lib/strings"
+      responses:
+        "204":
+          description: Configuration updated
+        "400":
+          description: Bad request
+          schema:
+            $ref: "#/definitions/ProblemJson"
+        "403":
+          description: Request not authorized.
+        "404":
+          description: Resource not found.
+        "500":
+          description: >-
+            There was an error updating the configuration.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+      consumes:
+        - application/json
+      produces:
+        - application/json
+
 definitions:
   ActivationStatus:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ActivationStatus"
@@ -1499,6 +1791,129 @@ definitions:
       A Service History record contains either publication or lifecycle items, so can have a combination of Service lifecycle status and publication status<br>
     type: string
     enum: [draft, submitted, approved, rejected, deleted, published, unpublished]
+  RCConfigurationId:
+    type: string
+    description: Ulid string.
+    format: Ulid
+    x-import: '@pagopa/ts-commons/lib/strings'
+    example: 01ARZ3NDEKTSV4RRFFQ69G5FAV
+  RCConfigurationPublic:
+    allOf:
+      - $ref: '#/definitions/RCConfigurationBase'
+      - $ref: '#/definitions/RCConfigurationEnvironment'
+  NewRCConfigurationBase:
+    type: object
+    properties:
+      name:
+        type: string
+        minLength: 1
+        description: Configuration name.
+      description:
+        type: string
+        minLength: 1
+        description: Configuration description.
+      has_precondition:
+        $ref: '#/definitions/HasPrecondition'
+      disable_lollipop_for:
+        type: array
+        items:
+          type: string
+          description: User's fiscal code.
+          format: FiscalCode
+          x-import: '@pagopa/ts-commons/lib/strings'
+          example: SPNDNL80R13C555X
+      is_lollipop_enabled:
+        type: boolean
+        description: Flag to check if lollipop is enabled
+    required:
+      - name
+      - description
+      - has_precondition
+      - disable_lollipop_for
+      - is_lollipop_enabled
+  NewRCConfigurationPublic:
+    allOf:
+      - $ref: '#/definitions/NewRCConfigurationBase'
+      - $ref: '#/definitions/RCConfigurationEnvironment'
+  RCConfigurationBase:
+    allOf:
+      - $ref: '#/definitions/NewRCConfigurationBase'
+      - type: object
+        properties:
+          configuration_id:
+            type: string
+            description: Ulid string.
+            format: Ulid
+            x-import: '@pagopa/ts-commons/lib/strings'
+            example: 01ARZ3NDEKTSV4RRFFQ69G5FAV
+        required:
+          - configuration_id
+  RCConfigurationEnvironment:
+    type: object
+    properties:
+      test_environment:
+        $ref: '#/definitions/RCConfigurationTestEnvironment'
+      prod_environment:
+        $ref: '#/definitions/RCConfigurationProdEnvironment'
+  RCConfigurationProdEnvironment:
+    type: object
+    properties:
+      base_url:
+        type: string
+        minLength: 1
+        description: Base url of the server.
+      details_authentication:
+        $ref: '#/definitions/RCAuthenticationConfig'
+    required:
+      - base_url
+      - details_authentication
+  RCAuthenticationConfig:
+    type: object
+    properties:
+      header_key_name:
+        type: string
+        minLength: 1
+        description: header key name
+      key:
+        type: string
+        minLength: 1
+        description: authentication config key
+      type:
+        type: string
+        minLength: 1
+        description: authentication config type
+    required:
+      - header_key_name
+      - key
+      - type
+  RCConfigurationTestEnvironment:
+    allOf:
+      - $ref: '#/definitions/RCConfigurationProdEnvironment'
+      - type: object
+        properties:
+          test_users:
+            type: array
+            items:
+              $ref: '#/definitions/FiscalCode'
+        required:
+          - test_users
+  RCConfigurationListResponse:
+    type: object
+    properties:
+      rcConfigList:
+        type: array
+        items:
+          $ref: '#/definitions/RCConfigurationResponse'
+  RCConfigurationResponse:
+    allOf:
+      - $ref: '#/definitions/RCConfigurationPublic'
+      - type: object
+        properties:
+          user_id:
+            type: string
+            minLength: 1
+        required:
+          - user_id
 
 responses: {}
 parameters:
