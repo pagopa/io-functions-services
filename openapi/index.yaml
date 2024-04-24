@@ -1052,7 +1052,7 @@ paths:
           description: Internal server error
           schema:
             $ref: '#/definitions/ProblemJson'
-  /service-messages/api/v1/remote-contents/configurations:
+  /service-messages/manage/api/v1/remote-contents/configurations:
     post:
       tags:
         - remote-content
@@ -1203,7 +1203,7 @@ paths:
         - application/json
       produces:
         - application/json
-  /service-messages/api/v1/remote-contents/configurations/{configurationId}:
+  /service-messages/manage/api/v1/remote-contents/configurations/{configurationId}:
     get:
       tags:
         - remote-content
