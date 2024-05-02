@@ -99,7 +99,6 @@ info:
          the message has been notified to the recipient.
 
 host: api.io.pagopa.it
-basePath: "/"
 schemes:
   - https
 paths:
