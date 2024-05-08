@@ -1014,7 +1014,7 @@ paths:
             text/json: |
               "name": "Descriptive congiguration name",
               "description": "Configuration description",
-              "has_precondition": "NONE",
+              "has_precondition": "NEVER",
               "disable_lollipop_for": [
                 "DIXDPZ44E08F367A"
               ],
@@ -1048,7 +1048,7 @@ paths:
               "configuration_id": "01ARZ3NDEKTSV4RRFFQ69G5FAV",
               "name": "Configuration name",
               "description": "Configuration description",
-              "has_precondition": "NONE",
+              "has_precondition": "NEVER",
               "disable_lollipop_for": [
                 "DIXDPZ44E08F367A"
               ],
@@ -1105,7 +1105,7 @@ paths:
                   "configuration_id": "01ARZ3NDEKTSV4RRFFQ69G5FAV",
                   "name": "Configuration name",
                   "description": "Configuration description",
-                  "has_precondition": "NONE",
+                  "has_precondition": "NEVER",
                   "disable_lollipop_for": [
                     "DIXDPZ44E08F367A"
                   ],
@@ -1175,7 +1175,7 @@ paths:
               "configuration_id": "01ARZ3NDEKTSV4RRFFQ69G5FAV",
               "name": "Configuration name",
               "description": "Configuration description",
-              "has_precondition": "NONE",
+              "has_precondition": "NEVER",
               "disable_lollipop_for": [
                 "DIXDPZ44E08F367A"
               ],
@@ -1234,7 +1234,7 @@ paths:
             text/json: |
               "name": "Descriptive congiguration name",
               "description": "Configuration description",
-              "has_precondition": "NONE",
+              "has_precondition": "NEVER",
               "disable_lollipop_for": [
                 "DIXDPZ44E08F367A"
               ],
