@@ -10,14 +10,14 @@ export const startServer = async (
     console.log("remote-contents", _.url);
     if (
       _.url?.startsWith(
-        "/service-messages/manage/api/v1/remote-contents/configurations/01HQRD0YCVDXF1XDW634N87XCG"
+        "/api/v1/messages-sending/remote-contents/configurations/01HQRD0YCVDXF1XDW634N87XCG"
       )
     ) {
       console.log("matched call with existing configuration");
       mockGetRCConfiguration(response);
     } else if (
       _.url?.startsWith(
-        "/service-messages/manage/api/v1/remote-contents/configurations/01HQRD0YCVDXF1XDW634N87XCF"
+        "/api/v1/messages-sending/remote-contents/configurations/01HQRD0YCVDXF1XDW634N87XCF"
       )
     ) {
       console.log("matched call with not existing configuration");

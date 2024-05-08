@@ -99,10 +99,11 @@ info:
          the message has been notified to the recipient.
 
 host: api.io.pagopa.it
+basePath: /api/v1
 schemes:
   - https
 paths:
-  "/api/v1/messages":
+  "/messages":
     post:
       operationId: submitMessageforUserWithFiscalCodeInBody
       summary: Submit a Message passing the user fiscal_code in the request body
@@ -159,7 +160,7 @@ paths:
           description: The message cannot be delivered.
           schema:
             $ref: "#/definitions/ProblemJson"
-  "/api/v1/messages/{fiscal_code}":
+  "/messages/{fiscal_code}":
     post:
       operationId: submitMessageforUser
       summary: Submit a Message passing the user fiscal_code as path parameter
@@ -221,7 +222,7 @@ paths:
           description: The message cannot be delivered.
           schema:
             $ref: "#/definitions/ProblemJson"
-  "/api/v1/messages/{fiscal_code}/{id}":
+  "/messages/{fiscal_code}/{id}":
     get:
       operationId: getMessage
       summary: Get Message
@@ -272,7 +273,7 @@ paths:
             $ref: "#/definitions/ProblemJson"
         "429":
           description: Too many requests
-  "/api/v1/profiles":
+  "/profiles":
     post:
       operationId: getProfileByPOST
       summary: Get a User Profile using POST
@@ -306,7 +307,7 @@ paths:
           in: body
           schema:
             $ref: "#/definitions/FiscalCodePayload"
-  "/api/v1/profiles/{fiscal_code}":
+  "/profiles/{fiscal_code}":
     get:
       operationId: getProfile
       summary: Get a User Profile
@@ -337,7 +338,7 @@ paths:
           description: Too many requests
       parameters:
         - $ref: "#/parameters/FiscalCode"
-  "/api/v1/subscriptions-feed/{date}":
+  "/subscriptions-feed/{date}":
     get:
       operationId: getSubscriptionsFeedForDate
       summary: Get Subscriptions Feed
@@ -393,7 +394,7 @@ paths:
           description: Too many requests
       parameters:
         - $ref: "#/parameters/DateUTC"
-  "/api/v1/organizations/{organization_fiscal_code}/logo":
+  "/organizations/{organization_fiscal_code}/logo":
     parameters:
       - $ref: "#/parameters/OrganizationFiscalCode"
     put:
@@ -427,7 +428,7 @@ paths:
           description: The organization logo cannot be uploaded.
           schema:
             $ref: "#/definitions/ProblemJson"
-  "/api/v1/activations/":
+  "/activations/":
     post:
       operationId: getServiceActivationByPOST
       summary: Get a Service Activation for a User
@@ -502,7 +503,7 @@ paths:
           in: body
           schema:
             $ref: "#/definitions/ActivationPayload"
-  "/api/v1/manage/services":
+  "/manage/services":
     post:
       tags:
         - manage
@@ -576,7 +577,7 @@ paths:
           description: Internal server error
           schema:
             $ref: "#/definitions/ProblemJson"
-  "/api/v1/manage/services/topics":
+  "/manage/services/topics":
     get:
       tags:
         - service-topics
@@ -598,7 +599,7 @@ paths:
           description: Too many requests
         '500':
           description: Internal server error
-  "/api/v1/manage/services/{serviceId}":
+  "/manage/services/{serviceId}":
     get:
       tags:
         - manage
@@ -702,7 +703,7 @@ paths:
           description: Internal server error
           schema:
             $ref: "#/definitions/ProblemJson"
-  "/api/v1/manage/services/{serviceId}/logo":
+  "/manage/services/{serviceId}/logo":
     put:
       tags:
         - manage
@@ -746,7 +747,7 @@ paths:
           description: Internal server error
           schema:
             $ref: "#/definitions/ProblemJson"
-  "/api/v1/manage/services/{serviceId}/history":
+  "/manage/services/{serviceId}/history":
     get:
       tags:
         - manage
@@ -796,7 +797,7 @@ paths:
           description: Internal server error
           schema:
             $ref: "#/definitions/ProblemJson"
-  "/api/v1/manage/services/{serviceId}/keys":
+  "/manage/services/{serviceId}/keys":
     get:
       tags:
         - manage-authorization
@@ -828,7 +829,7 @@ paths:
           description: Internal server error
           schema:
             $ref: "#/definitions/ProblemJson"
-  "/api/v1/manage/services/{serviceId}/keys/{keyType}":
+  "/manage/services/{serviceId}/keys/{keyType}":
     put:
       tags:
         - manage-authorization
@@ -865,7 +866,7 @@ paths:
           description: Internal server error
           schema:
             $ref: "#/definitions/ProblemJson"
-  "/api/v1/manage/services/{serviceId}/review":
+  "/manage/services/{serviceId}/review":
     put:
       tags:
         - manage-review
@@ -901,7 +902,7 @@ paths:
           description: Internal server error
           schema:
             $ref: "#/definitions/ProblemJson"
-  "/api/v1/manage/services/{serviceId}/release":
+  "/manage/services/{serviceId}/release":
     post:
       tags:
         - manage-release
@@ -994,7 +995,7 @@ paths:
           schema:
             $ref: "#/definitions/ProblemJson"
 
-  "/service-messages/manage/api/v1/remote-contents/configurations":
+  "/messages-sending/remote-contents/configurations":
     post:
       tags:
         - remote-content
@@ -1147,7 +1148,7 @@ paths:
         - application/json
       produces:
         - application/json
-  "/service-messages/manage/api/v1/remote-contents/configurations/{configurationId}":
+  "/messages-sending/remote-contents/configurations/{configurationId}":
     get:
       tags:
         - remote-content
