@@ -145,7 +145,7 @@ describe("userPreferencesCheckerFactory |> userPreferencesCheckerFactory", () =>
     const res = await userPreferencesCheckerFactory(
       {
         ...aRetrievedProfile,
-        lastAppVersion: "UNKNOWN"
+        lastAppVersion: MIN_READ_STATUS_PREFERENCES_VERSION
       },
       mockServicePreferencesGetter,
       MIN_READ_STATUS_PREFERENCES_VERSION
