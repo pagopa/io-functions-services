@@ -91,6 +91,28 @@ describe("canAccessMessageReadStatus |> ok", () => {
     expect(mockServicePreferencesFind).not.toHaveBeenCalled();
   });
 
+  it("should return false if profile servicePreferencesSettings is of type LEGACY (version is -1)", async () => {
+    mockProfileFindLastVersionByModelId.mockReturnValueOnce(
+      TE.of(
+        O.some({
+          ...aRetrievedProfile,
+          lastAppVersion: MIN_READ_STATUS_PREFERENCES_VERSION
+        })
+      )
+    );
+
+    const res = await canAccessMessageReadStatus(
+      profileModel,
+      servicePreferenceModel,
+      MIN_READ_STATUS_PREFERENCES_VERSION
+    )(aServiceId, aFiscalCode)();
+
+    expect(res).toStrictEqual(E.right(false));
+
+    // Do not call service preferences if app version is UNKNOWN
+    expect(mockServicePreferencesFind).not.toHaveBeenCalled();
+  });
+
   it("should return true if profile lastAppVersion is = MIN_READ_STATUS_PREFERENCES_VERSION", async () => {
     mockProfileFindLastVersionByModelId.mockReturnValueOnce(
       TE.of(
@@ -234,7 +256,7 @@ describe("canAccessMessageReadStatus |> Errors", () => {
     );
   });
 
-  it("should return an Error if profile servicePreferencesSettings is of type LEGACY", async () => {
+  it("should return false if profile servicePreferencesSettings is of type LEGACY", async () => {
     mockProfileFindLastVersionByModelId.mockReturnValueOnce(
       TE.of(
         O.some({
@@ -251,11 +273,9 @@ describe("canAccessMessageReadStatus |> Errors", () => {
       MIN_READ_STATUS_PREFERENCES_VERSION
     )(aServiceId, aFiscalCode)();
 
-    expect(res).toStrictEqual(
-      E.left(Error("Legacy service preferences not allowed"))
-    );
+    expect(res).toStrictEqual(E.right(false));
 
-    // Do not call service preferences if app version is UNKNOWN
+    // Do not call service preferences like if app version is UNKNOWN
     expect(mockServicePreferencesFind).not.toHaveBeenCalled();
   });
 });

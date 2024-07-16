@@ -20,7 +20,8 @@ import {
 import {
   aFiscalCode,
   aRetrievedProfile,
-  aServiceId
+  aServiceId,
+  autoProfileServicePreferencesSettings
 } from "../../../__mocks__/mocks";
 
 const MIN_READ_STATUS_PREFERENCES_VERSION = "1.15.3" as Semver;
@@ -138,6 +139,24 @@ describe("userPreferencesCheckerFactory |> userPreferencesCheckerFactory", () =>
     expect(res).toStrictEqual(E.right(false));
   });
 
+  it("should call userPreferenceCheckerVersionUNKNOWNToVersionWithReadAuth if profile servicePreferencesSettings is of type LEGACY (version is -1)", async () => {
+    mockServicePreferencesGetter.mockReturnValueOnce(TE.of(O.none));
+
+    const res = await userPreferencesCheckerFactory(
+      {
+        ...aRetrievedProfile,
+        lastAppVersion: MIN_READ_STATUS_PREFERENCES_VERSION
+      },
+      mockServicePreferencesGetter,
+      MIN_READ_STATUS_PREFERENCES_VERSION
+    ).canAccessMessageReadStatus(aServiceId, aFiscalCode)();
+
+    expect(spyUnknownImplementation).toHaveBeenCalled();
+    expect(spyVersionGreaterThanImplementation).not.toHaveBeenCalled();
+
+    expect(res).toStrictEqual(E.right(false));
+  });
+
   it("should call userPreferenceCheckerVersionUNKNOWNToVersionWithReadAuth if appVersion is < MIN_READ_STATUS_PREFERENCES_VERSION", async () => {
     mockServicePreferencesGetter.mockReturnValueOnce(TE.of(O.none));
 
@@ -162,6 +181,7 @@ describe("userPreferencesCheckerFactory |> userPreferencesCheckerFactory", () =>
     const res = await userPreferencesCheckerFactory(
       {
         ...aRetrievedProfile,
+        servicePreferencesSettings: autoProfileServicePreferencesSettings,
         lastAppVersion: MIN_READ_STATUS_PREFERENCES_VERSION
       },
       mockServicePreferencesGetter,
@@ -180,6 +200,7 @@ describe("userPreferencesCheckerFactory |> userPreferencesCheckerFactory", () =>
     const res = await userPreferencesCheckerFactory(
       {
         ...aRetrievedProfile,
+        servicePreferencesSettings: autoProfileServicePreferencesSettings,
         lastAppVersion: NEWER_APP_VERSION
       },
       mockServicePreferencesGetter,

@@ -16,6 +16,7 @@ import {
   ServicePreference
 } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 import { Semver } from "@pagopa/ts-commons/lib/strings";
+import { NonNegativeInteger } from "@pagopa/ts-commons/lib/numbers";
 
 /**
  * It return the right UserPreferenceChecker, based on user's appVersion
@@ -38,7 +39,8 @@ export const userPreferencesCheckerFactory: UserPreferenceCheckerFactory = (
       !isAppVersionHandlingReadAuthorization(
         minAppVersionHandlingReadAuth,
         version
-      ),
+      ) ||
+      !NonNegativeInteger.is(profile.servicePreferencesSettings.version),
     b.match(
       () => userPreferenceCheckerVersionWithReadAuth(servicePreferencesGetter),
       () => userPreferenceCheckerVersionUNKNOWNToVersionWithReadAuth
