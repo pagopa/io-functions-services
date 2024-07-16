@@ -250,4 +250,29 @@ describe("canAccessMessageReadStatus |> Errors", () => {
       E.left(Error("Error retrieving user' service preferences from Cosmos DB"))
     );
   });
+
+  it("should return false if profile servicePreferencesSettings is of type LEGACY", async () => {
+    mockProfileFindLastVersionByModelId.mockReturnValueOnce(
+      TE.of(
+        O.some({
+          ...aRetrievedProfile,
+          lastAppVersion: MIN_READ_STATUS_PREFERENCES_VERSION,
+          servicePreferencesSettings: legacyProfileServicePreferencesSettings
+        })
+      )
+    );
+
+    const res = await canAccessMessageReadStatus(
+      profileModel,
+      servicePreferenceModel,
+      MIN_READ_STATUS_PREFERENCES_VERSION
+    )(aServiceId, aFiscalCode)();
+
+    expect(res).toStrictEqual(
+      E.right(false)
+    );
+
+    // Do not call service preferences like if app version is UNKNOWN
+    expect(mockServicePreferencesFind).not.toHaveBeenCalled();
+  });
 });
