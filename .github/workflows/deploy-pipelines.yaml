@@ -58,82 +58,85 @@ jobs:
         run: yarn build
         working-directory: .
 
-      # - name: Copy deploy files
-      #   uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea #v7.0.1
-      #   env:
-      #     TARGET_FOLDER: "${{ github.workspace }}/${{ env.BUNDLE_NAME }}"
-      #     SOURCE_FOLDER: "${{ github.workspace }}"
-      #     CONTENTS: |
-      #       **/*
-      #       !.git/**/*
-      #       !**/*.js.map
-      #       !**/*.ts
-      #       !.vscode/**/*
-      #       !.devops/**/*
-      #       !.github/**/*
-      #       !.prettierrc
-      #       !.gitignore
-      #       !README.md
-      #       !jest.config.js
-      #       !local.settings.json
-      #       !test
-      #       !tsconfig.json
-      #       !tslint.json
-      #       !yarn.lock
-      #       !Dangerfile.js
-      #       !CODEOWNERS
-      #       !__*/**/*
-      #   with:
-      #     github-token: "${{ secrets.GITHUB_TOKEN }}"
-      #     script: |-
-      #       const fs = require('fs').promises
-      #       const path = require('path')
-      #       const target = path.resolve(process.env.TARGET_FOLDER)
+      - name: Copy deploy files
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea #v7.0.1
+        env:
+          TARGET_FOLDER: "${{ github.workspace }}/${{ env.BUNDLE_NAME }}"
+          SOURCE_FOLDER: "${{ github.workspace }}"
+          CONTENTS: |
+            **/*
+            !.git/**/*
+            !**/*.js.map
+            !**/*.ts
+            !.vscode/**/*
+            !.devops/**/*
+            !.github/**/*
+            !.prettierrc
+            !.gitignore
+            !README.md
+            !jest.config.js
+            !local.settings.json
+            !test
+            !tsconfig.json
+            !.terraform-version
+            !infra/**/*
+            !.pre-commit-config.yaml
+            !tslint.json
+            !yarn.lock
+            !Dangerfile.js
+            !CODEOWNERS
+            !__*/**/*
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+          script: |-
+            const fs = require('fs').promises
+            const path = require('path')
+            const target = path.resolve(process.env.TARGET_FOLDER)
 
-      #       process.chdir(process.env.SOURCE_FOLDER || '.')
+            process.chdir(process.env.SOURCE_FOLDER || '.')
 
-      #       if (process.env.CLEAN_TARGET_FOLDER === 'true') await io.rmRF(target)
+            if (process.env.CLEAN_TARGET_FOLDER === 'true') await io.rmRF(target)
 
-      #       const flattenFolders = process.env.FLATTEN_FOLDERS === 'true'
-      #       const options = {force: process.env.OVERWRITE === 'true'}
-      #       const globber = await glob.create(process.env.CONTENTS || '**')
+            const flattenFolders = process.env.FLATTEN_FOLDERS === 'true'
+            const options = {force: process.env.OVERWRITE === 'true'}
+            const globber = await glob.create(process.env.CONTENTS || '**')
 
-      #       for await (const file of globber.globGenerator()) {
-      #         if ((await fs.lstat(file)).isDirectory()) continue
-      #         const filename = flattenFolders ? path.basename(file) : file.substring(process.cwd().length)
-      #         const dest = path.join(target, filename)
-      #         await io.mkdirP(path.dirname(dest))
-      #         await io.cp(file, dest, options)
-      #       }
+            for await (const file of globber.globGenerator()) {
+              if ((await fs.lstat(file)).isDirectory()) continue
+              const filename = flattenFolders ? path.basename(file) : file.substring(process.cwd().length)
+              const dest = path.join(target, filename)
+              await io.mkdirP(path.dirname(dest))
+              await io.cp(file, dest, options)
+            }
 
-      # - name: Make Zip File
-      #   run: zip -r ${{ github.workspace }}/${{ env.BUNDLE_NAME }}.zip ${{ github.workspace }}/${{ env.BUNDLE_NAME }}
-
-      # - name: Upload Artifact
-      #   uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # v4.3.4
-      #   with:
-      #     name: ${{ env.BUNDLE_NAME }}
-      #     path: "${{ github.workspace }}/${{ env.BUNDLE_NAME }}.zip"
-      #     if-no-files-found: error
-      #     retention-days: 7
-      
-      - name: Build the Function App Artifact
-        id: make-function-app-artifact
-        run: |
-          npm pkg set --json "bundledDependencies"=true
-          npm pkg set --json "files"='["**/function.json", "dist", "host.json","extensions.csproj"]'
-          npx npm-pack-zip
-          package_name=$(jq -r .name package.json)
-          mv ${package_name//\/}.zip ${{ env.BUNDLE_NAME }}.zip
-          echo "artifact-path=$(realpath ${{ env.BUNDLE_NAME }}.zip)" >> "$GITHUB_OUTPUT"
+      - name: Make Zip File
+        run: zip -r ${{ github.workspace }}/${{ env.BUNDLE_NAME }}.zip ${{ github.workspace }}/${{ env.BUNDLE_NAME }}
 
       - name: Upload Artifact
         uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # v4.3.4
         with:
           name: ${{ env.BUNDLE_NAME }}
-          path: ${{ steps.make-function-app-artifact.outputs.artifact-path }}
+          path: "${{ github.workspace }}/${{ env.BUNDLE_NAME }}.zip"
           if-no-files-found: error
           retention-days: 7
+
+      # - name: Build the Function App Artifact
+      #   id: make-function-app-artifact
+      #   run: |
+      #     npm pkg set --json "bundledDependencies"=true
+      #     npm pkg set --json "files"='["**/function.json", "dist", "host.json","extensions.csproj"]'
+      #     npx npm-pack-zip
+      #     package_name=$(jq -r .name package.json)
+      #     mv ${package_name//\/}.zip ${{ env.BUNDLE_NAME }}.zip
+      #     echo "artifact-path=$(realpath ${{ env.BUNDLE_NAME }}.zip)" >> "$GITHUB_OUTPUT"
+
+      # - name: Upload Artifact
+      #   uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # v4.3.4
+      #   with:
+      #     name: ${{ env.BUNDLE_NAME }}
+      #     path: ${{ steps.make-function-app-artifact.outputs.artifact-path }}
+      #     if-no-files-found: error
+      #     retention-days: 7
 
   deploy:
     if: ${{ !github.event.act }}
