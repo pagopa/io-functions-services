@@ -70,7 +70,6 @@ jobs:
             !**/*.ts
             !.vscode/**/*
             !.devops/**/*
-            !.github/**/*
             !.prettierrc
             !.gitignore
             !README.md
@@ -78,29 +77,26 @@ jobs:
             !local.settings.json
             !test
             !tsconfig.json
-            !.terraform-version
-            !infra/**/*
-            !.pre-commit-config.yaml
             !tslint.json
             !yarn.lock
             !Dangerfile.js
             !CODEOWNERS
             !__*/**/*
+            !.terraform-version
+            !infra/**/*
+            !.pre-commit-config.yaml
+
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
           script: |-
             const fs = require('fs').promises
             const path = require('path')
             const target = path.resolve(process.env.TARGET_FOLDER)
-
             process.chdir(process.env.SOURCE_FOLDER || '.')
-
             if (process.env.CLEAN_TARGET_FOLDER === 'true') await io.rmRF(target)
-
             const flattenFolders = process.env.FLATTEN_FOLDERS === 'true'
             const options = {force: process.env.OVERWRITE === 'true'}
             const globber = await glob.create(process.env.CONTENTS || '**')
-
             for await (const file of globber.globGenerator()) {
               if ((await fs.lstat(file)).isDirectory()) continue
               const filename = flattenFolders ? path.basename(file) : file.substring(process.cwd().length)
