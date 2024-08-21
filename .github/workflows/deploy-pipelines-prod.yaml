@@ -1,0 +1,19 @@
+name: Deploy Pipelines - PROD
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - EC-399-devops-decommissioning
+      
+jobs:
+  deploy_on_prod:
+    uses: ./.github/workflows/deploy-pipelines.yaml
+    name: Deploy on PROD
+    secrets: inherit
+    with:
+      environment: 'prod'
+      resource_group_name: 'io-p-rg-internal'
+      app_name: 'io-p-fn3-services'
+      use_staging_slot: true
+      use_private_agent: false
