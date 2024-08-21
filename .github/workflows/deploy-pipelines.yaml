@@ -106,7 +106,8 @@ jobs:
             }
 
       - name: Make Zip File
-        run: zip -rj ${{ github.workspace }}/${{ env.BUNDLE_NAME }}.zip ${{ github.workspace }}/${{ env.BUNDLE_NAME }}
+        run: |
+          zip -rj ./${{ env.BUNDLE_NAME }}.zip ./${{ env.BUNDLE_NAME }}
 
       - name: Upload Artifact
         uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # v4.3.4
