@@ -8,7 +8,7 @@ resource "github_branch_protection" "protection_master" {
   pattern       = "master"
 
   required_status_checks {
-    strict   = false
+    strict = false
     contexts = [
       "io-functions-services.code-review",
     ]
@@ -31,13 +31,13 @@ resource "github_branch_protection" "protection_master" {
   }
 
   restrict_pushes {
-      blocks_creations = false
-      push_allowances  = [
-          "pagopa/io-backend-admin",
-          "pagopa/io-backend-contributors",
-          "pagopa/engineering-team-cloud-eng",
-        ]
-    }
+    blocks_creations = false
+    push_allowances = [
+      "pagopa/io-backend-admin",
+      "pagopa/io-backend-contributors",
+      "pagopa/engineering-team-cloud-eng",
+    ]
+  }
 
   allows_deletions = false
 }
