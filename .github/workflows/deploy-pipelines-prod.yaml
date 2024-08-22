@@ -2,9 +2,6 @@ name: Deploy Pipelines - PROD
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - EC-399-devops-decommissioning
       
 jobs:
   deploy_on_prod:
