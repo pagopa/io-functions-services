@@ -1,0 +1,118 @@
+name: Publish SDK
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: Environment where the artifact will be deployed.
+        type: string
+        required: true
+      use_private_agent:
+        description: Use a private agent to deploy the built artifact.
+        type: boolean
+        required: false
+        default: true
+      openapiSpecPath:
+        required: false
+        type: string
+      apiProjectDir:
+        required: false
+        default: "."
+        type: string
+      sdkPackageName:
+        required: false
+        default: ''
+        type: string
+      generatorPackageName:
+        required: false
+        default: "@pagopa/openapi-codegen-ts"
+        type: string
+      npmRegistry:
+        required: false
+        default: https://registry.npmjs.org/
+        type: string
+      artifactName:
+        required: false
+        default: Bundle_SDK
+        type: string
+
+env:
+  BUNDLE_NAME: bundle
+  GENERATED_CODE_DIR: ./generated_${{ inputs.artifactName }}
+  CODE_GEN_PACKAGE_NAME_PARAM: ${{ inputs.sdkPackageName != '' && format('--package-name {0}', inputs.sdkPackageName) || '' }}
+
+concurrency:
+  group: ${{ github.workflow }}-cd
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    env:
+      WORKSPACE: ${{ github.workspace }}
+
+    steps:
+      - name: Check-out code
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+  
+
+      - name: Generate client and definitions
+        run: |-
+          set -euo pipefail
+          PACKAGE=${{ inputs.generatorPackageName }}
+    
+          # If the application use a specific version of the generator package, use it; otherwise, just use latest version from the registry
+          # Warning: yarn only is supported
+          CODEGEN_VERSION=$(yarn list --depth=0 | grep $PACKAGE |  grep -Eo "([0-9]+\.)+[0-9]+" || echo '*')
+    
+          # Execute the generator fetching the specific package from the registry
+          npx -p $PACKAGE@$CODEGEN_VERSION gen-api-sdk --api-spec ${{ inputs.openapiSpecPath }} \
+            --out-dir ${{ env.GENERATED_CODE_DIR }} ${{ env.CODE_GEN_PACKAGE_NAME_PARAM }} --request-types --response-decoders --client
+        
+        working-directory: "${{ inputs.apiProjectDir }}"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
+        with:
+          node-version-file: ".node-version"
+          cache: "yarn"
+          cache-dependency-path: "yarn.lock"
+
+      - name: Install dependencies
+        run: yarn install --immutable
+        working-directory: .
+
+      - name: Build
+        run: yarn build
+        working-directory: .
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # v4.3.4
+        with:
+          name: ${{ inputs.artifactName }}
+          path: "${{ env.GENERATED_CODE_DIR }}"
+          if-no-files-found: error
+          retention-days: 7
+
+  deploy:
+    if: ${{ !github.event.act }}
+    needs: [build]
+    runs-on: ${{ inputs.use_private_agent == true && 'self-hosted' || 'ubuntu-22.04' }}
+    environment: ${{ inputs.environment }}-cd
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Download Artifact
+        uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
+        with:
+          name: ${{ inputs.artifactName }}
+          path: ${{ env.GENERATED_CODE_DIR }}
+
+      - name: Publish
+        run: npm publish --access public --registry ${{ inputs.npmRegistry }}
+        working-directory: " ${{ env.GENERATED_CODE_DIR }}"

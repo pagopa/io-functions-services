@@ -1,0 +1,14 @@
+name: Publish SDK - PROD
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy_on_prod:
+    uses: ./.github/workflows/publish-sdk.yaml
+    name: Publish SDK on PROD
+    secrets: inherit
+    with:
+      environment: 'prod'
+      use_private_agent: false
+      openapiSpecPath: openapi/index.yaml
