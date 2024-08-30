@@ -88,6 +88,6 @@
     "ts-pattern": "^4.0.3"
   },
   "resolutions": {
-    "handlebars": "~4.5.3"
+    "handlebars": "~4.7.0"
   }
 }
