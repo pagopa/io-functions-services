@@ -2,10 +2,13 @@ name: Deploy Pipelines - PROD
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - EC-399-devops-decommissioning
       
 jobs:
   deploy_on_prod:
-    uses: ./.github/workflows/deploy-pipelines.yaml
+    uses: pagopa/dx/.github/workflows/legacy_deploy_pipelines.yaml@workflow-functions-test
     name: Deploy on PROD
     secrets: inherit
     with:
