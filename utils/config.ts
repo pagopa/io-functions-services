@@ -86,6 +86,9 @@ export const IConfig = t.intersection([
 
     OPT_OUT_EMAIL_SWITCH_DATE: DateFromTimestamp,
 
+    PAGOPA_ECOMMERCE_API_KEY: NonEmptyString,
+    PAGOPA_ECOMMERCE_BASE_URL: NonEmptyString,
+
     SANDBOX_FISCAL_CODE: NonEmptyString,
 
     WEBHOOK_CHANNEL_URL: NonEmptyString,

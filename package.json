@@ -20,6 +20,7 @@
     "generate": "npm-run-all generate:* generate:templates:*",
     "generate:definitions": "rimraf ./generated/definitions && shx mkdir -p ./generated/definitions && gen-api-models --api-spec ./openapi/index.yaml --no-strict --out-dir ./generated/definitions",
     "generate:payment-updater": "rimraf generated/payment-updater && shx mkdir -p generated/payment-updater && gen-api-models --api-spec ./openapi/payment-updater.yaml --no-strict --out-dir ./generated/payment-updater --request-types --response-decoders --client",
+    "generate:pagopa-ecommerce": "rimraf generated/pagopa-ecommerce && shx mkdir -p generated/pagopa-ecommerce && gen-api-models --api-spec ./openapi/pagopa-ecommerce.json --no-strict --out-dir ./generated/pagopa-ecommerce --request-types --response-decoders --client",
     "generate:templates:messagepreview": "shx rm -rf generated/templates/messagepreview && shx mkdir -p generated/templates/messagepreview && ts-node template_reduced_script.ts v1.0.10 \"generated/templates/messagepreview/index\"",
     "generate:messages-services-api": "rimraf generated/messages-services-api && gen-api-models --api-spec https://raw.githubusercontent.com/pagopa/io-functions-services-messages/master/openapi/index_external.yaml --no-strict --out-dir generated/messages-services-api --request-types --response-decoders --client",
     "openapi:bundle": "bundle-api-spec -i openapi/index.yaml.template -o openapi/index.yaml -V $npm_package_version",
@@ -35,7 +36,7 @@
   "devDependencies": {
     "@azure/functions": "^3.2.0",
     "@pagopa/eslint-config": "^1.3.1",
-    "@pagopa/openapi-codegen-ts": "^10.0.5",
+    "@pagopa/openapi-codegen-ts": "^13.2.0",
     "@types/cors": "^2.8.4",
     "@types/documentdb": "^1.10.5",
     "@types/express": "^4.16.0",

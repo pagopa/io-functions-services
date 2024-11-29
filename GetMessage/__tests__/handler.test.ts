@@ -59,6 +59,8 @@ import {
 } from "../../__mocks__/mocks";
 
 import { PaymentStatusEnum } from "../../generated/definitions/PaymentStatus";
+import { FaultCodeCategoryEnum, PaymentDuplicatedStatusFaultPaymentProblemJson } from "../../generated/pagopa-ecommerce/PaymentDuplicatedStatusFaultPaymentProblemJson";
+import { PaymentDuplicatedStatusFaultEnum } from "../../generated/pagopa-ecommerce/PaymentDuplicatedStatusFault";
 
 // Tests
 // -----------------------
@@ -258,27 +260,19 @@ describe("GetMessageHandler", () => {
     };
   }
 
-  const getPaymentUpdaterClientMock = (paid: boolean = false) => ({
-    getMessagePayment: jest.fn().mockImplementation(() =>
-      TE.right({
-        status: 200,
-        value: {
-          paid
-        },
+  const getPagopaEcommerceClientMock = (status: number = 200, body?: PaymentDuplicatedStatusFaultPaymentProblemJson) => ({
+    getPaymentRequestInfo: jest.fn().mockImplementation(() =>
+      TE.right(body ? {
+        status: status,
+        value: body,
+        headers: {}
+      } :  {
+        status: status,
+        value: {},
         headers: {}
       })()
-    )
-  });
-  const getBrokenPaymentUpdaterClientMock = (status: number) => ({
-    getMessagePayment: jest.fn().mockImplementation(() =>
-      TE.right({
-        status,
-        value: {
-          status
-        },
-        headers: {}
-      })()
-    )
+    ),
+    getCarts: jest.fn()
   });
 
   it("should respond with a message if requesting user is the sender", async () => {
@@ -297,7 +291,7 @@ describe("GetMessageHandler", () => {
       getNotificationStatusModelMock(),
       {} as any,
       mockMessageReadStatusAuth,
-      getPaymentUpdaterClientMock()
+      getPagopaEcommerceClientMock()
     );
 
     const result = await getMessageHandler(
@@ -337,7 +331,7 @@ describe("GetMessageHandler", () => {
       getNotificationStatusModelMock(),
       {} as any,
       mockMessageReadStatusAuth,
-      getPaymentUpdaterClientMock()
+      getPagopaEcommerceClientMock()
     );
 
     const result = await getMessageHandler(
@@ -375,7 +369,7 @@ describe("GetMessageHandler", () => {
       getNotificationStatusModelMock(),
       {} as any,
       mockMessageReadStatusAuth,
-      getPaymentUpdaterClientMock()
+      getPagopaEcommerceClientMock()
     );
 
     const result = await getMessageHandler(
@@ -419,7 +413,7 @@ describe("GetMessageHandler", () => {
       {} as any,
       {} as any,
       mockMessageReadStatusAuth,
-      getPaymentUpdaterClientMock()
+      getPagopaEcommerceClientMock()
     );
 
     const result = await getMessageHandler(
@@ -464,7 +458,7 @@ describe("GetMessageHandler", () => {
       {} as any,
       {} as any,
       mockMessageReadStatusAuth,
-      getPaymentUpdaterClientMock()
+      getPagopaEcommerceClientMock()
     );
 
     const result = await getMessageHandler(
@@ -507,7 +501,7 @@ describe("GetMessageHandler", () => {
       {} as any,
       {} as any,
       mockMessageReadStatusAuth,
-      getPaymentUpdaterClientMock()
+      getPagopaEcommerceClientMock()
     );
 
     const result = await getMessageHandler(
@@ -547,7 +541,7 @@ describe("GetMessageHandler", () => {
       {} as any,
       {} as any,
       mockMessageReadStatusAuth,
-      getPaymentUpdaterClientMock()
+      getPagopaEcommerceClientMock()
     );
 
     const result = await getMessageHandler(
@@ -586,7 +580,7 @@ describe("GetMessageHandler", () => {
       getNotificationStatusModelMock(),
       {} as any,
       mockMessageReadStatusAuth,
-      getPaymentUpdaterClientMock()
+      getPagopaEcommerceClientMock()
     );
 
     const result = await getMessageHandler(
@@ -631,7 +625,7 @@ describe("GetMessageHandler", () => {
       {} as any,
       {} as any,
       mockMessageReadStatusAuth,
-      getPaymentUpdaterClientMock()
+      getPagopaEcommerceClientMock()
     );
 
     const result = await getMessageHandler(
@@ -681,7 +675,7 @@ describe("GetMessageHandler", () => {
       getNotificationStatusModelMock(),
       {} as any,
       mockMessageReadStatusAuth,
-      getPaymentUpdaterClientMock()
+      getPagopaEcommerceClientMock()
     );
 
     const result = await getMessageHandler(
@@ -729,7 +723,7 @@ describe("GetMessageHandler", () => {
       getNotificationStatusModelMock(),
       {} as any,
       mockMessageReadStatusAuth,
-      getPaymentUpdaterClientMock()
+      getPagopaEcommerceClientMock()
     );
 
     const result = await getMessageHandler(
@@ -767,7 +761,7 @@ describe("GetMessageHandler", () => {
       getNotificationStatusModelMock(),
       {} as any,
       mockMessageReadStatusAuth,
-      getPaymentUpdaterClientMock()
+      getPagopaEcommerceClientMock()
     );
 
     const result = await getMessageHandler(
@@ -850,7 +844,7 @@ describe("GetMessageHandler", () => {
       getNotificationStatusModelMock(),
       {} as any,
       mockMessageReadStatusAuth,
-      getPaymentUpdaterClientMock()
+      getPagopaEcommerceClientMock()
     );
 
     const result = await getMessageHandler(
@@ -893,7 +887,7 @@ describe("GetMessageHandler", () => {
       getNotificationStatusModelMock(),
       {} as any,
       mockMessageReadStatusAuth,
-      getPaymentUpdaterClientMock()
+      getPagopaEcommerceClientMock()
     );
 
     const result = await getMessageHandler(
@@ -943,7 +937,7 @@ describe("GetMessageHandler", () => {
       getNotificationStatusModelMock(),
       {} as any,
       mockMessageReadStatusAuth,
-      getPaymentUpdaterClientMock()
+      getPagopaEcommerceClientMock()
     );
 
     const result = await getMessageHandler(
@@ -994,7 +988,7 @@ describe("GetMessageHandler", () => {
       getNotificationStatusModelMock(),
       {} as any,
       mockMessageReadStatusAuth,
-      getPaymentUpdaterClientMock()
+      getPagopaEcommerceClientMock()
     );
 
     const result = await getMessageHandler(
@@ -1048,7 +1042,7 @@ describe("GetMessageHandler", () => {
       getNotificationStatusModelMock(),
       {} as any,
       mockMessageReadStatusAuth,
-      getPaymentUpdaterClientMock()
+      getPagopaEcommerceClientMock()
     );
 
     const result = await getMessageHandler(
@@ -1100,7 +1094,11 @@ describe("GetMessageHandler", () => {
       getNotificationStatusModelMock(),
       {} as any,
       mockMessageReadStatusAuth,
-      getPaymentUpdaterClientMock(true)
+      getPagopaEcommerceClientMock(409, 
+        {
+          faultCodeCategory: FaultCodeCategoryEnum.PAYMENT_DUPLICATED,
+          faultCodeDetail: PaymentDuplicatedStatusFaultEnum.PAA_PAGAMENTO_DUPLICATO
+        })
     );
 
     const result = await getMessageHandler(
@@ -1152,7 +1150,11 @@ describe("GetMessageHandler", () => {
       getNotificationStatusModelMock(),
       {} as any,
       mockMessageReadStatusAuth,
-      getPaymentUpdaterClientMock(true)
+      getPagopaEcommerceClientMock(409, 
+        {
+          faultCodeCategory: FaultCodeCategoryEnum.PAYMENT_DUPLICATED,
+          faultCodeDetail: PaymentDuplicatedStatusFaultEnum.PAA_PAGAMENTO_DUPLICATO
+        })
     );
 
     const result = await getMessageHandler(
@@ -1204,7 +1206,7 @@ describe("GetMessageHandler", () => {
       getNotificationStatusModelMock(),
       {} as any,
       mockMessageReadStatusAuth,
-      getBrokenPaymentUpdaterClientMock(404)
+      getPagopaEcommerceClientMock(404)
     );
 
     const result = await getMessageHandler(
@@ -1256,7 +1258,7 @@ describe("GetMessageHandler", () => {
       getNotificationStatusModelMock(),
       {} as any,
       mockMessageReadStatusAuth,
-      getBrokenPaymentUpdaterClientMock(503)
+      getPagopaEcommerceClientMock(503)
     );
 
     const result = await getMessageHandler(
