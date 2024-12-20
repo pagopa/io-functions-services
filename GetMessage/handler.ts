@@ -93,7 +93,6 @@ import { FeatureLevelTypeEnum } from "../generated/definitions/FeatureLevelType"
 
 import { PagoPaEcommerceClient } from "../clients/pagopa-ecommerce";
 import { errorsToError } from "../utils/responses";
-import { ApiPaymentMessage } from "../generated/payment-updater/ApiPaymentMessage";
 import { PaymentStatusEnum } from "../generated/definitions/PaymentStatus";
 import { IConfig } from "../utils/config";
 import { LegalData } from "../generated/definitions/LegalData";
@@ -176,7 +175,11 @@ export const getReadStatusForService = (
     O.getOrElse(() => ReadStatusEnum.UNREAD)
   );
 
-const mapPaymentStatus = ({ paid }: ApiPaymentMessage): PaymentStatus =>
+const mapPaymentStatus = ({
+  paid
+}: {
+  readonly paid: boolean;
+}): PaymentStatus =>
   paid ? PaymentStatusEnum.PAID : PaymentStatusEnum.NOT_PAID;
 
 const WithPayment = t.interface({
