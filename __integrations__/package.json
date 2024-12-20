@@ -7,9 +7,9 @@
   "author": "",
   "scripts": {
     "prestart": "npm-run-all generate-env",
-    "start": "docker-compose --env-file environments/.env up -d",
-    "stop": "docker-compose --env-file environments/.env down",
-    "stop:all": "docker-compose --env-file environments/.env down && docker image prune -a -f && docker volume prune -f",
+    "start": "docker compose --env-file environments/.env up -d",
+    "stop": "docker compose --env-file environments/.env down",
+    "stop:all": "docker compose --env-file environments/.env down && docker image prune -a -f && docker volume prune -f",
     "pretest": "npm-run-all generate:models:*",
     "test": "jest --verbose --runInBand",
     "generate:models:services": "rimraf generated/fn-services && gen-api-models --api-spec ../openapi/index.yaml --no-strict --out-dir generated/fn-services --request-types --response-decoders",
