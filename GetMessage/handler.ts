@@ -244,6 +244,7 @@ const decorateWithPaymentStatus = <
           TE.chain(response =>
             match(response)
               .with({ status: 200 }, () => TE.right({ paid: false }))
+              .with({ status: 404 }, () => TE.right({ paid: false }))
               .with({ status: 409 }, conflict => {
                 if (
                   PaymentDuplicatedStatusFaultPaymentProblemJson.is(conflict)

@@ -263,13 +263,10 @@ describe("GetMessageHandler", () => {
   const getPagopaEcommerceClientMock = (status: number = 200, body?: PaymentDuplicatedStatusFaultPaymentProblemJson) => ({
     getPaymentRequestInfo: jest.fn().mockImplementation(() =>
       TE.right(body ? {
+        ...body,
         status: status,
-        value: body,
-        headers: {}
       } :  {
-        status: status,
-        value: {},
-        headers: {}
+        status: status
       })()
     ),
     getCarts: jest.fn()
@@ -1280,7 +1277,7 @@ describe("GetMessageHandler", () => {
     expect(result).toEqual(
       expect.objectContaining({
         detail:
-          "Internal server error: Error retrieving Payment Status: Failed to fetch payment status from Payment Updater: 503",
+          "Internal server error: Error retrieving Payment Status: Failed to fetch payment status from PagoPa ecommerce api: 503",
         kind: "IResponseErrorInternal"
       })
     );
