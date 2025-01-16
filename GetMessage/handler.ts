@@ -235,7 +235,7 @@ const decorateWithPaymentStatus = <
     TE.foldW(
       () => TE.right({ ...messageWithContent, payment_status: undefined }),
       paymentData => {
-        const rptId = `${paymentData.payee}${paymentData.notice_number}`;
+        const rptId = `${paymentData.payee.fiscal_code}${paymentData.notice_number}`;
         return pipe(
           TE.tryCatch(
             () =>
