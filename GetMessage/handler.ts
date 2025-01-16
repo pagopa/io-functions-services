@@ -263,7 +263,7 @@ const decorateWithPaymentStatus = <
               .otherwise(error =>
                 TE.left(
                   new Error(
-                    `Failed to fetch payment status from PagoPa ecommerce api: ${error.status}`
+                    `Failed to fetch payment status from PagoPa ecommerce api: status: ${error.status}, ${error.value.title}`
                   )
                 )
               )
