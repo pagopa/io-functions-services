@@ -61,6 +61,8 @@ import {
 import { PaymentStatusEnum } from "../../generated/definitions/PaymentStatus";
 import { FaultCodeCategoryEnum, PaymentDuplicatedStatusFaultPaymentProblemJson } from "../../generated/pagopa-ecommerce/PaymentDuplicatedStatusFaultPaymentProblemJson";
 import { PaymentDuplicatedStatusFaultEnum } from "../../generated/pagopa-ecommerce/PaymentDuplicatedStatusFault";
+import { PartyConfigurationFaultEnum } from "../../generated/pagopa-ecommerce/PartyConfigurationFault";
+import { FaultCodeCategoryEnum as faultCode, PartyConfigurationFaultPaymentProblemJson } from "../../generated/pagopa-ecommerce/PartyConfigurationFaultPaymentProblemJson";
 
 // Tests
 // -----------------------
@@ -260,11 +262,11 @@ describe("GetMessageHandler", () => {
     };
   }
 
-  const getPagopaEcommerceClientMock = (status: number = 200, body?: PaymentDuplicatedStatusFaultPaymentProblemJson) => ({
+  const getPagopaEcommerceClientMock = (status: number = 200, body?: PaymentDuplicatedStatusFaultPaymentProblemJson | PartyConfigurationFaultPaymentProblemJson) => ({
     getPaymentRequestInfo: jest.fn().mockImplementation(() =>
       TE.right(body ? {
-        ...body,
-        status: status,
+        value: body,
+        status: status
       } :  {
         status: status
       })()
@@ -1255,7 +1257,13 @@ describe("GetMessageHandler", () => {
       getNotificationStatusModelMock(),
       {} as any,
       mockMessageReadStatusAuth,
-      getPagopaEcommerceClientMock(503)
+      getPagopaEcommerceClientMock(503,
+        {
+          faultCodeCategory: faultCode.DOMAIN_UNKNOWN,
+          faultCodeDetail: PartyConfigurationFaultEnum.PAA_ID_DOMINIO_ERRATO,
+          title: "UnexpectedError"
+        }
+      )
     );
 
     const result = await getMessageHandler(
@@ -1276,8 +1284,6 @@ describe("GetMessageHandler", () => {
 
     expect(result).toEqual(
       expect.objectContaining({
-        detail:
-          "Internal server error: Error retrieving Payment Status: Failed to fetch payment status from PagoPa ecommerce api: 503",
         kind: "IResponseErrorInternal"
       })
     );

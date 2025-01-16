@@ -250,11 +250,13 @@ const decorateWithPaymentStatus = <
               .with({ status: 404 }, () => TE.right({ paid: false }))
               .with({ status: 409 }, conflict => {
                 if (
-                  PaymentDuplicatedStatusFaultPaymentProblemJson.is(conflict)
+                  PaymentDuplicatedStatusFaultPaymentProblemJson.is(
+                    conflict.value
+                  )
                 ) {
                   return TE.right({
                     paid:
-                      conflict.faultCodeCategory ===
+                      conflict.value.faultCodeCategory ===
                       FaultCodeCategoryEnum.PAYMENT_DUPLICATED
                   });
                 }
