@@ -6,14 +6,14 @@ import {
 } from "@pagopa/ts-commons/lib/fetch";
 import { Millisecond } from "@pagopa/ts-commons/lib/units";
 import nodeFetch from "node-fetch";
-import { createClient } from "../generated/payment-updater/client";
+import { createClient } from "../generated/pagopa-ecommerce/client";
 
 import { getConfigOrThrow } from "../utils/config";
 
 const config = getConfigOrThrow();
 
-export const apimBaseUrl = config.APIM_BASE_URL;
-export const apimSubscriptionKey = config.APIM_SUBSCRIPTION_KEY;
+export const baseUrl = config.PAGOPA_ECOMMERCE_BASE_URL;
+export const apiKey = config.PAGOPA_ECOMMERCE_API_KEY;
 
 // 5 seconds timeout by default
 const DEFAULT_REQUEST_TIMEOUT_MS = 10000;
@@ -25,12 +25,12 @@ const fetchWithTimeout = toFetch(
 );
 const fetchApi: typeof fetchWithTimeout = (nodeFetch as unknown) as typeof fetchWithTimeout;
 
-export const paymentUpdaterClient = createClient<"SubscriptionKey">({
-  baseUrl: apimBaseUrl,
+export const pagoPaEcommerceClient = createClient<"ApiKeyAuth">({
+  baseUrl,
   fetchApi,
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   withDefaults: op => params =>
-    op({ SubscriptionKey: apimSubscriptionKey, ...params })
+    op({ ApiKeyAuth: apiKey, ...params, id_cart: "" })
 });
 
-export type PaymentUpdaterClient = typeof paymentUpdaterClient;
+export type PagoPaEcommerceClient = typeof pagoPaEcommerceClient;

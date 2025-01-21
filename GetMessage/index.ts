@@ -39,7 +39,7 @@ import {
 
 import { cosmosdbInstance } from "../utils/cosmosdb";
 import { getConfigOrThrow } from "../utils/config";
-import { paymentUpdaterClient } from "../clients/payment-updater";
+import { pagoPaEcommerceClient } from "../clients/pagopa-ecommerce";
 import { canAccessMessageReadStatus } from "./userPreferenceChecker/messageReadStatusAuth";
 
 import { GetMessage } from "./handler";
@@ -102,7 +102,7 @@ app.get(
       servicePreferencesModel,
       config.MIN_APP_VERSION_WITH_READ_AUTH
     ),
-    paymentUpdaterClient
+    pagoPaEcommerceClient
   )
 );
 
