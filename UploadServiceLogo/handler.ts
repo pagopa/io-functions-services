@@ -43,7 +43,6 @@ import { RequiredBodyPayloadMiddleware } from "@pagopa/io-functions-commons/dist
 import { pipe } from "fp-ts/lib/function";
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import * as TE from "fp-ts/lib/TaskEither";
-import { Logo } from "@pagopa/io-functions-admin-sdk/Logo";
 import { SequenceMiddleware } from "@pagopa/ts-commons/lib/sequence_middleware";
 import {
   AzureUserAttributesManageMiddleware,
@@ -58,6 +57,7 @@ import {
   serviceOwnerCheckManageTask,
   serviceOwnerCheckTask
 } from "../utils/subscription";
+import { Logo } from "../generated/definitions/Logo";
 
 type ResponseTypes =
   | IResponseSuccessJson<undefined>
