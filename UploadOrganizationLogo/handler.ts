@@ -40,6 +40,7 @@ import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/m
 import { RequiredBodyPayloadMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_body_payload";
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import * as TE from "fp-ts/lib/TaskEither";
+import * as t from "io-ts";
 import { pipe } from "fp-ts/lib/function";
 import { APIClient } from "../clients/admin";
 import { withApiRequestWrapper } from "../utils/api";
@@ -135,7 +136,8 @@ export function UploadOrganizationLogo(
     ClientIpMiddleware,
     AzureUserAttributesMiddleware(serviceModel),
     RequiredParamMiddleware("organization_fiscal_code", OrganizationFiscalCode),
-    RequiredBodyPayloadMiddleware(Logo)
+    // Added t.exact following the replacement of @pagopa/io-functions-admin-sdk/Logo with generated/definitions/Logo
+    RequiredBodyPayloadMiddleware(t.exact(Logo))
   );
   return wrapRequestHandler(
     middlewaresWrap(

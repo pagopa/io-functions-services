@@ -43,6 +43,7 @@ import { RequiredBodyPayloadMiddleware } from "@pagopa/io-functions-commons/dist
 import { pipe } from "fp-ts/lib/function";
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import * as TE from "fp-ts/lib/TaskEither";
+import * as t from "io-ts";
 import { SequenceMiddleware } from "@pagopa/ts-commons/lib/sequence_middleware";
 import {
   AzureUserAttributesManageMiddleware,
@@ -156,7 +157,8 @@ export function UploadServiceLogo(
       AzureUserAttributesManageMiddleware(subscriptionCIDRsModel)
     ),
     RequiredParamMiddleware("service_id", NonEmptyString),
-    RequiredBodyPayloadMiddleware(Logo)
+    // Added t.exact following the replacement of @pagopa/io-functions-admin-sdk/Logo with generated/definitions/Logo
+    RequiredBodyPayloadMiddleware(t.exact(Logo))
   );
   return wrapRequestHandler(
     middlewaresWrap(
