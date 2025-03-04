@@ -1287,6 +1287,60 @@ paths:
         - application/json
 
 definitions:
+  ExternalMessageResponseWithContent:
+    type: object
+    properties:
+      message:
+        $ref: '#/definitions/ExternalCreatedMessageWithContent'
+      notification:
+        $ref: '#/definitions/MessageResponseNotificationStatus'
+      status:
+        $ref: '#/definitions/MessageStatusValue'
+      read_status:
+        $ref: '#/definitions/ReadStatus'
+        description: >-
+          Describes whether a user has read the message or not
+
+          NOTE  : This value is only available for ADVANCED messages
+
+          NOTE 2: `UNAVAILABLE` will be returned if user revoked the permission
+          to access to read status
+      payment_status:
+        $ref: '#/definitions/PaymentStatus'
+        description: |-
+          Describes the state of the related payment notice
+          NOTE: This value is only available for ADVANCED payment messages
+    required:
+      - message
+  ExternalCreatedMessageWithContent:
+    allOf:
+      - $ref: '#/definitions/CreatedMessageWithContent'
+      - type: object
+        properties:
+          feature_level_type:
+            $ref: '#/definitions/FeatureLevelType'
+        required:
+          - feature_level_type
+  CreatedMessageWithContent:
+    type: object
+    properties:
+      id:
+        type: string
+      fiscal_code:
+        $ref: '#/definitions/FiscalCode'
+      time_to_live:
+        $ref: '#/definitions/TimeToLiveSeconds'
+      created_at:
+        $ref: '#/definitions/Timestamp'
+      content:
+        $ref: '#/definitions/NewMessageContent'
+      sender_service_id:
+        $ref: '#/definitions/ServiceId'
+    required:
+      - id
+      - fiscal_code
+      - created_at
+      - sender_service_id
   ActivationStatus:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ActivationStatus"
   Activation:
@@ -1339,8 +1393,6 @@ definitions:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/NotificationChannelStatusValue"
   MessageResponseWithContent:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/MessageResponseWithContent"
-  ExternalMessageResponseWithContent:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ExternalMessageResponseWithContent"
   MessageResponseNotificationStatus:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/MessageResponseNotificationStatus"
   RejectedMessageStatusValue:
@@ -1349,10 +1401,6 @@ definitions:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/NotRejectedMessageStatusValue"
   MessageStatusValue:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/MessageStatusValue"
-  ExternalCreatedMessageWithContent:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/ExternalCreatedMessageWithContent"
-  CreatedMessageWithContent:
-    $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/CreatedMessageWithContent"
   EUCovidCert:
     $ref: "../node_modules/@pagopa/io-functions-commons/openapi/definitions.yaml#/EUCovidCert"
   ThirdPartyData:
