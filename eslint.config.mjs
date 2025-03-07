@@ -25,7 +25,6 @@ export default [
       "**/__integrations__/*",
       "**/__tests__/*",
       "**/__mocks__/*",
-      "Dangerfile.*",
       "**/*.d.ts"
     ]
   }
