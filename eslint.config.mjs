@@ -12,12 +12,8 @@ export default [
       "perfectionist/sort-objects": "off",
       "perfectionist/sort-object-types": "off",
       "perfectionist/sort-union-types": "off",
-      // "prefer-arrow/prefer-arrow-functions": "off",
       "@typescript-eslint/array-type": ["error", { default: "generic" }],
-      // "@typescript-eslint/naming-convention": "off",
       "@typescript-eslint/no-inferrable-types": "off"
-      // "@typescript-eslint/explicit-function-return-type": "off",
-      // "no-invalid-this": "off"
     }
   },
   {
