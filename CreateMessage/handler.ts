@@ -2,19 +2,13 @@
  * Implements the API handlers for the Message resource.
  */
 import { Context } from "@azure/functions";
-
-import * as express from "express";
-
-import * as E from "fp-ts/lib/Either";
-import { pipe } from "fp-ts/lib/function";
-import * as O from "fp-ts/lib/Option";
-import * as TE from "fp-ts/lib/TaskEither";
-import * as T from "fp-ts/lib/Task";
-
-import * as t from "io-ts";
-
-import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
 import { EUCovidCert } from "@pagopa/io-functions-commons/dist/generated/definitions/EUCovidCert";
+import { FeatureLevelTypeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/FeatureLevelType";
+import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
+import { NewMessage as ApiNewMessage } from "@pagopa/io-functions-commons/dist/generated/definitions/NewMessage";
+import { PaymentDataWithRequiredPayee } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentDataWithRequiredPayee";
+import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
+import { StandardServiceCategoryEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/StandardServiceCategory";
 import {
   Message,
   MessageModel,
@@ -47,7 +41,6 @@ import {
   ObjectIdGenerator,
   ulidGenerator
 } from "@pagopa/io-functions-commons/dist/src/utils/strings";
-
 import { initAppInsights } from "@pagopa/ts-commons/lib/appinsights";
 import { readableReportSimplified } from "@pagopa/ts-commons/lib/reporters";
 import {
@@ -73,20 +66,23 @@ import {
 } from "@pagopa/ts-commons/lib/responses";
 import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 import { PromiseType } from "@pagopa/ts-commons/lib/types";
-import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
-import { Option } from "fp-ts/lib/Option";
+import * as express from "express";
+import * as E from "fp-ts/lib/Either";
 import { Either } from "fp-ts/lib/Either";
+import * as O from "fp-ts/lib/Option";
+import { Option } from "fp-ts/lib/Option";
+import * as T from "fp-ts/lib/Task";
+import * as TE from "fp-ts/lib/TaskEither";
 import { TaskEither } from "fp-ts/lib/TaskEither";
-import { PaymentDataWithRequiredPayee } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentDataWithRequiredPayee";
-import { NewMessage as ApiNewMessage } from "@pagopa/io-functions-commons/dist/generated/definitions/NewMessage";
-import { StandardServiceCategoryEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/StandardServiceCategory";
-import { FeatureLevelTypeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/FeatureLevelType";
+import { pipe } from "fp-ts/lib/function";
+import * as t from "io-ts";
+
+import { MessagesServicesApiClient } from "../clients/messages-services-api";
 import {
   CommonMessageData,
   CreatedMessageEvent
 } from "../utils/events/message";
 import { commonCreateMessageMiddlewares } from "../utils/message_middlewares";
-import { MessagesServicesApiClient } from "../clients/messages-services-api";
 import {
   ApiNewMessageWithAdvancedFeatures,
   ApiNewMessageWithContentOf,
@@ -162,50 +158,50 @@ export const canWriteMessage = (
 /**
  * The user has not sent a configuration id for the remote content.
  */
-export type IResponseErrorForbiddenNoConfigurationId = IResponse<
-  "IResponseErrorForbiddenNoConfigurationId"
->;
+export type IResponseErrorForbiddenNoConfigurationId =
+  IResponse<"IResponseErrorForbiddenNoConfigurationId">;
 
-export const ResponseErrorForbiddenNoConfigurationId: IResponseErrorForbiddenNoConfigurationId = {
-  ...ResponseErrorGeneric(
-    HttpStatusCodeEnum.HTTP_STATUS_403,
-    "No configuration id for remote content",
-    "You did not send any configuration id for your remote content in third_party_data"
-  ),
-  kind: "IResponseErrorForbiddenNoConfigurationId"
-};
+export const ResponseErrorForbiddenNoConfigurationId: IResponseErrorForbiddenNoConfigurationId =
+  {
+    ...ResponseErrorGeneric(
+      HttpStatusCodeEnum.HTTP_STATUS_403,
+      "No configuration id for remote content",
+      "You did not send any configuration id for your remote content in third_party_data"
+    ),
+    kind: "IResponseErrorForbiddenNoConfigurationId"
+  };
 
 /**
  * The user has not sent a configuration id for the remote content.
  */
-export type IResponseErrorForbiddenNotYourConfiguration = IResponse<
-  "IResponseErrorForbiddenNotYourConfiguration"
->;
+export type IResponseErrorForbiddenNotYourConfiguration =
+  IResponse<"IResponseErrorForbiddenNotYourConfiguration">;
 
-export const ResponseErrorForbiddenNotYourConfiguration: IResponseErrorForbiddenNotYourConfiguration = {
-  ...ResponseErrorGeneric(
-    HttpStatusCodeEnum.HTTP_STATUS_403,
-    "Not your configuration",
-    "You're not the owner of the configuration related to the given configuration_id"
-  ),
-  kind: "IResponseErrorForbiddenNotYourConfiguration"
-};
+export const ResponseErrorForbiddenNotYourConfiguration: IResponseErrorForbiddenNotYourConfiguration =
+  {
+    ...ResponseErrorGeneric(
+      HttpStatusCodeEnum.HTTP_STATUS_403,
+      "Not your configuration",
+      "You're not the owner of the configuration related to the given configuration_id"
+    ),
+    kind: "IResponseErrorForbiddenNotYourConfiguration"
+  };
 
 /**
  * The user is not allowed to send attachments.
  */
-export type IResponseErrorForbiddenNotAuthorizedForAttachments = IResponse<
-  "IResponseErrorForbiddenNotAuthorizedForAttachments"
->;
+export type IResponseErrorForbiddenNotAuthorizedForAttachments =
+  IResponse<"IResponseErrorForbiddenNotAuthorizedForAttachments">;
 
-export const ResponseErrorForbiddenNotAuthorizedForAttachments: IResponseErrorForbiddenNotAuthorizedForAttachments = {
-  ...ResponseErrorGeneric(
-    HttpStatusCodeEnum.HTTP_STATUS_403,
-    "Attachments call forbidden",
-    "You are not allowed to send messages with attachmens with STANDARD messages, please use ADVANCED"
-  ),
-  kind: "IResponseErrorForbiddenNotAuthorizedForAttachments"
-};
+export const ResponseErrorForbiddenNotAuthorizedForAttachments: IResponseErrorForbiddenNotAuthorizedForAttachments =
+  {
+    ...ResponseErrorGeneric(
+      HttpStatusCodeEnum.HTTP_STATUS_403,
+      "Attachments call forbidden",
+      "You are not allowed to send messages with attachmens with STANDARD messages, please use ADVANCED"
+    ),
+    kind: "IResponseErrorForbiddenNotAuthorizedForAttachments"
+  };
 
 /**
  * Checks whether the client service is allowed to request a payment to the
@@ -276,7 +272,7 @@ export const createMessageDocument = (
   // attempt to create the message
   return pipe(
     messageModel.create(newMessageWithoutContent),
-    TE.mapLeft(e =>
+    TE.mapLeft((e) =>
       e.kind === "COSMOS_ERROR_RESPONSE"
         ? ResponseErrorInternal(JSON.stringify(e))
         : ResponseErrorQuery("Error while creating Message", e)
@@ -308,14 +304,14 @@ export const parseOwnerIdFullPath = (
 ): NonEmptyString =>
   pipe(
     fullPath,
-    f => f.split("/"),
-    a => a[a.length - 1] as NonEmptyString
+    (f) => f.split("/"),
+    (a) => a[a.length - 1] as NonEmptyString
   );
 
 /**
  * Returns a type safe CreateMessage handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions,max-params, max-lines-per-function
+// eslint-disable-next-line max-params, max-lines-per-function
 export function CreateMessageHandler(
   telemetryClient: ReturnType<typeof initAppInsights>,
   messagesServicesApiClient: MessagesServicesApiClient,
@@ -334,7 +330,7 @@ export function CreateMessageHandler(
     userAttributes,
     messagePayload,
     maybeFiscalCodeInPath
-    // eslint-disable-next-line max-params, sonarjs/cognitive-complexity
+    // eslint-disable-next-line max-params
   ) => {
     const maybeFiscalCodeInPayload = O.fromNullable(messagePayload.fiscal_code);
 
@@ -363,8 +359,8 @@ export function CreateMessageHandler(
 
     // Check configuration id if third_party_data has been sent
     const isRemoteContentMessage = !!messagePayload.content.third_party_data;
-    const hasRemoteContentMessageConfigurationId = !!messagePayload.content
-      .third_party_data?.configuration_id;
+    const hasRemoteContentMessageConfigurationId =
+      !!messagePayload.content.third_party_data?.configuration_id;
 
     if (isRemoteContentMessage && !hasRemoteContentMessageConfigurationId) {
       return ResponseErrorForbiddenNoConfigurationId;
@@ -372,12 +368,11 @@ export function CreateMessageHandler(
 
     if (hasRemoteContentMessageConfigurationId) {
       // Get the remote content configuration and check status codes
-      const getRCConfigurationResponseOrError = await messagesServicesApiClient.getRCConfiguration(
-        {
+      const getRCConfigurationResponseOrError =
+        await messagesServicesApiClient.getRCConfiguration({
           configurationId:
             messagePayload.content.third_party_data.configuration_id
-        }
-      );
+        });
 
       if (E.isLeft(getRCConfigurationResponseOrError)) {
         return ResponseErrorInternal(
@@ -471,7 +466,7 @@ export function CreateMessageHandler(
         canWriteMessage(auth.groups, authorizedRecipients, fiscalCode)
       ),
       // Verify if the Service has the required quality to sent message
-      TE.chain(_ =>
+      TE.chain(() =>
         disableIncompleteServices &&
         !incompleteServiceWhitelist.includes(serviceId) &&
         !authorizedRecipients.has(fiscalCode)
@@ -479,14 +474,14 @@ export function CreateMessageHandler(
               pipe(
                 ValidService.decode(userAttributes.service),
                 E.bimap(
-                  _1 => ResponseErrorForbiddenNotAuthorizedForRecipient,
-                  _1 => true
+                  () => ResponseErrorForbiddenNotAuthorizedForRecipient,
+                  () => true
                 )
               )
             )
           : TE.right(true)
       ),
-      TE.chainW(_ =>
+      TE.chainW(() =>
         // check whether the client can ask for payment
         TE.fromEither(
           canPaymentAmount(
@@ -495,7 +490,7 @@ export function CreateMessageHandler(
           )
         )
       ),
-      TE.chainW(_ =>
+      TE.chainW(() =>
         // create a Message document in the database
         createMessageDocument(
           messageId,
@@ -508,7 +503,7 @@ export function CreateMessageHandler(
         )
       ),
       // store CommonMessageData into a support storage
-      TE.chainFirstW(newMessageWithoutContent =>
+      TE.chainFirstW((newMessageWithoutContent) =>
         pipe(
           saveProcessingMessage(
             newMessageWithoutContent.id,
@@ -532,7 +527,7 @@ export function CreateMessageHandler(
               }
             })
           ),
-          TE.mapLeft(err => {
+          TE.mapLeft((err) => {
             context.log.error(
               `CreateMessageHandler|Error storing processing message to blob|${err.message}`
             );
@@ -542,7 +537,7 @@ export function CreateMessageHandler(
       ),
 
       // processing the message asynchrnously
-      TE.chain(newMessageWithoutContent =>
+      TE.chain((newMessageWithoutContent) =>
         pipe(
           {
             defaultAddresses: {}, // deprecated feature
@@ -551,14 +546,13 @@ export function CreateMessageHandler(
           },
           CreatedMessageEvent.decode,
           TE.fromEither,
-          TE.mapLeft(err =>
+          TE.mapLeft((err) =>
             ResponseErrorValidation(
               "Unable to decode CreatedMessageEvent",
               readableReportSimplified(err)
             )
           ),
-          TE.map(createdMessage => {
-            // eslint-disable-next-line functional/immutable-data
+          TE.map((createdMessage) => {
             context.bindings.createdMessage = createdMessage;
             return redirectToNewMessage(newMessageWithoutContent);
           })
@@ -567,7 +561,7 @@ export function CreateMessageHandler(
       // fold failure responses (left) and success responses (right) to a
       // single response
       TE.toUnion,
-      T.map(r => {
+      T.map((r) => {
         // before returning the response to the client we log the result
         const isSuccess = r.kind === "IResponseSuccessRedirectToResource";
         const isSandbox = fiscalCode.toString() === sandboxFiscalCode;
@@ -582,7 +576,7 @@ export function CreateMessageHandler(
 /**
  * Wraps a CreateMessage handler inside an Express request handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, max-params
+// eslint-disable-next-line max-params
 export function CreateMessage(
   telemetryClient: ReturnType<typeof initAppInsights>,
   messagesServicesApiClient: MessagesServicesApiClient,
@@ -636,7 +630,7 @@ export function CreateMessage(
   );
   return wrapRequestHandler(
     middlewaresWrap(
-      // eslint-disable-next-line max-params
+      // eslint-disable-next-line max-params, @typescript-eslint/no-unused-vars
       checkSourceIpForHandler(handler, (_, __, c, u, ___, ____, _____) =>
         ipTuple(c, u)
       )

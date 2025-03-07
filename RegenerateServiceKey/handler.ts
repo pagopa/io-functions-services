@@ -1,12 +1,6 @@
-import * as express from "express";
-
-import {
-  ClientIp,
-  ClientIpMiddleware
-} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
-
-import { RequiredParamMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_param";
-
+import { Context } from "@azure/functions";
+import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
+import { SubscriptionCIDRsModel } from "@pagopa/io-functions-commons/dist/src/models/subscription_cidrs";
 import {
   AzureApiAuthMiddleware,
   IAzureApiAuthorization,
@@ -17,9 +11,24 @@ import {
   IAzureUserAttributes
 } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
 import {
+  AzureUserAttributesManageMiddleware,
+  IAzureUserAttributesManage
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes_manage";
+import {
+  ClientIp,
+  ClientIpMiddleware
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
+import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
+import { RequiredBodyPayloadMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_body_payload";
+import { RequiredParamMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_param";
+import {
   withRequestMiddlewares,
   wrapRequestHandler
 } from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
+import {
+  checkSourceIpForHandler,
+  clientIPAndCidrTuple as ipTuple
+} from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
 import {
   IResponseErrorForbiddenNotAuthorized,
   IResponseErrorInternal,
@@ -29,31 +38,18 @@ import {
   ResponseErrorForbiddenNotAuthorized,
   ResponseSuccessJson
 } from "@pagopa/ts-commons/lib/responses";
+import { SequenceMiddleware } from "@pagopa/ts-commons/lib/sequence_middleware";
 import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
-
-import {
-  checkSourceIpForHandler,
-  clientIPAndCidrTuple as ipTuple
-} from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
-
-import { Context } from "@azure/functions";
-import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
-import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
-import { RequiredBodyPayloadMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_body_payload";
-import { pipe } from "fp-ts/lib/function";
+import * as express from "express";
 import * as TE from "fp-ts/lib/TaskEither";
 import { TaskEither } from "fp-ts/lib/TaskEither";
-import { SequenceMiddleware } from "@pagopa/ts-commons/lib/sequence_middleware";
-import {
-  AzureUserAttributesManageMiddleware,
-  IAzureUserAttributesManage
-} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes_manage";
-import { SubscriptionCIDRsModel } from "@pagopa/io-functions-commons/dist/src/models/subscription_cidrs";
+import { pipe } from "fp-ts/lib/function";
+
 import { APIClient } from "../clients/admin";
-import { SubscriptionKeys } from "../generated/definitions/SubscriptionKeys";
 import { SubscriptionKeyTypePayload } from "../generated/definitions/SubscriptionKeyTypePayload";
+import { SubscriptionKeys } from "../generated/definitions/SubscriptionKeys";
 import { withApiRequestWrapper } from "../utils/api";
-import { getLogger, ILogger } from "../utils/logging";
+import { ILogger, getLogger } from "../utils/logging";
 import { ErrorResponses, IResponseErrorUnauthorized } from "../utils/responses";
 import {
   serviceOwnerCheckManageTask,
@@ -107,7 +103,6 @@ const regenerateServiceKeyTask = (
 /**
  * Handles requests for upload a service logo by a service ID and a base64 logo' s string.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function RegenerateServiceKeyHandler(
   apiClient: APIClient
 ): IRegenerateServiceKeyHandler {
@@ -115,7 +110,7 @@ export function RegenerateServiceKeyHandler(
   return (_, apiAuth, ___, ____, serviceId, subscriptionKeyTypePayload) =>
     pipe(
       serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId),
-      TE.orElse(__ =>
+      TE.orElse(() =>
         serviceOwnerCheckManageTask(
           getLogger(_, logPrefix, "GetSubscription"),
           apiClient,
@@ -139,7 +134,6 @@ export function RegenerateServiceKeyHandler(
 /**
  * Wraps a RegenerateServiceKey handler inside an Express request handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function RegenerateServiceKey(
   serviceModel: ServiceModel,
   client: APIClient,
@@ -159,7 +153,7 @@ export function RegenerateServiceKey(
   );
   return wrapRequestHandler(
     middlewaresWrap(
-      // eslint-disable-next-line max-params
+      // eslint-disable-next-line max-params, @typescript-eslint/no-unused-vars
       checkSourceIpForHandler(handler, (_, __, c, u, ___, ____) =>
         ipTuple(c, u)
       )

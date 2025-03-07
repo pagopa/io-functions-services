@@ -1,10 +1,10 @@
-import * as express from "express";
-
-import {
-  ClientIp,
-  ClientIpMiddleware
-} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
-
+import { Context } from "@azure/functions";
+import { Service } from "@pagopa/io-functions-admin-sdk/Service";
+import { StandardServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/StandardServiceCategory";
+import { Subscription } from "@pagopa/io-functions-admin-sdk/Subscription";
+import { UserInfo } from "@pagopa/io-functions-admin-sdk/UserInfo";
+import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
+import { SubscriptionCIDRsModel } from "@pagopa/io-functions-commons/dist/src/models/subscription_cidrs";
 import {
   AzureApiAuthMiddleware,
   IAzureApiAuthorization,
@@ -15,9 +15,28 @@ import {
   IAzureUserAttributes
 } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
 import {
+  AzureUserAttributesManageMiddleware,
+  IAzureUserAttributesManage
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes_manage";
+import {
+  ClientIp,
+  ClientIpMiddleware
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
+import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
+import { RequiredBodyPayloadMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_body_payload";
+import {
   withRequestMiddlewares,
   wrapRequestHandler
 } from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
+import {
+  checkSourceIpForHandler,
+  clientIPAndCidrTuple as ipTuple
+} from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
+import {
+  ObjectIdGenerator,
+  ulidGenerator
+} from "@pagopa/io-functions-commons/dist/src/utils/strings";
+import { initAppInsights } from "@pagopa/ts-commons/lib/appinsights";
 import {
   IResponseErrorForbiddenNotAuthorized,
   IResponseErrorInternal,
@@ -27,46 +46,24 @@ import {
   ResponseErrorForbiddenNotAuthorized,
   ResponseSuccessJson
 } from "@pagopa/ts-commons/lib/responses";
-
-import {
-  checkSourceIpForHandler,
-  clientIPAndCidrTuple as ipTuple
-} from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
-
-import { Context } from "@azure/functions";
-import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
-import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
-import { RequiredBodyPayloadMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_body_payload";
-import {
-  ObjectIdGenerator,
-  ulidGenerator
-} from "@pagopa/io-functions-commons/dist/src/utils/strings";
-import { TaskEither } from "fp-ts/lib/TaskEither";
-import * as O from "fp-ts/lib/Option";
-import * as TE from "fp-ts/lib/TaskEither";
-import { initAppInsights } from "@pagopa/ts-commons/lib/appinsights";
+import { SequenceMiddleware } from "@pagopa/ts-commons/lib/sequence_middleware";
 import {
   EmailString,
   FiscalCode,
   NonEmptyString
 } from "@pagopa/ts-commons/lib/strings";
-import { pipe } from "fp-ts/lib/function";
+import * as express from "express";
 import { sequenceS } from "fp-ts/lib/Apply";
-import { Service } from "@pagopa/io-functions-admin-sdk/Service";
-import { Subscription } from "@pagopa/io-functions-admin-sdk/Subscription";
-import { UserInfo } from "@pagopa/io-functions-admin-sdk/UserInfo";
-import { StandardServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/StandardServiceCategory";
-import { SequenceMiddleware } from "@pagopa/ts-commons/lib/sequence_middleware";
-import {
-  AzureUserAttributesManageMiddleware,
-  IAzureUserAttributesManage
-} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes_manage";
-import { SubscriptionCIDRsModel } from "@pagopa/io-functions-commons/dist/src/models/subscription_cidrs";
+import * as O from "fp-ts/lib/Option";
+import { TaskEither } from "fp-ts/lib/TaskEither";
+import * as TE from "fp-ts/lib/TaskEither";
+import { pipe } from "fp-ts/lib/function";
+
 import { APIClient } from "../clients/admin";
 import { ServicePayload } from "../generated/definitions/ServicePayload";
 import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWithSubscriptionKeys";
 import { withApiRequestWrapper } from "../utils/api";
-import { getLogger, ILogger } from "../utils/logging";
+import { ILogger, getLogger } from "../utils/logging";
 import { ErrorResponses, IResponseErrorUnauthorized } from "../utils/responses";
 
 type ResponseTypes =
@@ -163,8 +160,8 @@ export const getAuthorizedRecipientsFromPayload = (
       // eslint-disable-next-line @typescript-eslint/dot-notation
       servicePayload["authorized_recipients"] as ReadonlyArray<FiscalCode>
     ),
-    O.map(items =>
-      items.map(cf =>
+    O.map((items) =>
+      items.map((cf) =>
         pipe(FiscalCode.decode(cf), O.fromEither, O.getOrElse(null))
       )
     )
@@ -173,7 +170,6 @@ export const getAuthorizedRecipientsFromPayload = (
 /**
  * Handles requests for create a service by a Service Payload.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function CreateServiceHandler(
   telemetryClient: ReturnType<typeof initAppInsights>,
   apiClient: APIClient,
@@ -209,7 +205,7 @@ export function CreateServiceHandler(
           servicePayload,
           subscriptionId,
           [
-            (sandboxFiscalCode as unknown) as FiscalCode,
+            sandboxFiscalCode as unknown as FiscalCode,
             ...pipe(
               getAuthorizedRecipientsFromPayload(servicePayload),
               O.getOrElse(() => [] as ReadonlyArray<FiscalCode>)
@@ -243,36 +239,35 @@ export function CreateServiceHandler(
 /**
  * Wraps a CreateService handler inside an Express request handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
-export const CreateService = (
-  telemetryClient: ReturnType<typeof initAppInsights>,
-  client: APIClient
-) => (
-  productName: NonEmptyString,
-  sandboxFiscalCode: NonEmptyString,
-  serviceModel: ServiceModel,
-  subscriptionCIDRsModel: SubscriptionCIDRsModel
-): express.RequestHandler => {
-  const handler = CreateServiceHandler(
-    telemetryClient,
-    client,
-    ulidGenerator,
-    productName,
-    sandboxFiscalCode
-  );
-  const middlewaresWrap = withRequestMiddlewares(
-    ContextMiddleware(),
-    AzureApiAuthMiddleware(new Set([UserGroup.ApiServiceWrite])),
-    ClientIpMiddleware,
-    SequenceMiddleware(ResponseErrorForbiddenNotAuthorized)(
-      AzureUserAttributesMiddleware(serviceModel),
-      AzureUserAttributesManageMiddleware(subscriptionCIDRsModel)
-    ),
-    RequiredBodyPayloadMiddleware(ServicePayload)
-  );
-  return wrapRequestHandler(
-    middlewaresWrap(
-      checkSourceIpForHandler(handler, (_, __, c, u, ___) => ipTuple(c, u))
-    )
-  );
-};
+export const CreateService =
+  (telemetryClient: ReturnType<typeof initAppInsights>, client: APIClient) =>
+  (
+    productName: NonEmptyString,
+    sandboxFiscalCode: NonEmptyString,
+    serviceModel: ServiceModel,
+    subscriptionCIDRsModel: SubscriptionCIDRsModel
+  ): express.RequestHandler => {
+    const handler = CreateServiceHandler(
+      telemetryClient,
+      client,
+      ulidGenerator,
+      productName,
+      sandboxFiscalCode
+    );
+    const middlewaresWrap = withRequestMiddlewares(
+      ContextMiddleware(),
+      AzureApiAuthMiddleware(new Set([UserGroup.ApiServiceWrite])),
+      ClientIpMiddleware,
+      SequenceMiddleware(ResponseErrorForbiddenNotAuthorized)(
+        AzureUserAttributesMiddleware(serviceModel),
+        AzureUserAttributesManageMiddleware(subscriptionCIDRsModel)
+      ),
+      RequiredBodyPayloadMiddleware(ServicePayload)
+    );
+    return wrapRequestHandler(
+      middlewaresWrap(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        checkSourceIpForHandler(handler, (_, __, c, u, ___) => ipTuple(c, u))
+      )
+    );
+  };

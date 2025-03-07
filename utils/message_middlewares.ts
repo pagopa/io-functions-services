@@ -7,6 +7,9 @@ import { AzureUserAttributesMiddleware } from "@pagopa/io-functions-commons/dist
 import { ClientIpMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { OptionalFiscalCodeMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/fiscalcode";
+import { IRequestMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
+import { IResponseErrorQuery } from "@pagopa/io-functions-commons/dist/src/utils/response";
+import { readableReportSimplified } from "@pagopa/ts-commons/lib/reporters";
 import {
   IResponse,
   IResponseErrorForbiddenAnonymousUser,
@@ -19,12 +22,10 @@ import {
   IResponseErrorValidation,
   ResponseErrorValidation
 } from "@pagopa/ts-commons/lib/responses";
-import { IResponseErrorQuery } from "@pagopa/io-functions-commons/dist/src/utils/response";
-import { IRequestMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
-import { pipe } from "fp-ts/lib/function";
 import * as TE from "fp-ts/lib/TaskEither";
-import { readableReportSimplified } from "@pagopa/ts-commons/lib/reporters";
+import { pipe } from "fp-ts/lib/function";
 import { Errors } from "io-ts";
+
 import { ApiNewMessageWithDefaults } from "../CreateMessage/types";
 
 /**
@@ -33,7 +34,7 @@ import { ApiNewMessageWithDefaults } from "../CreateMessage/types";
 export const MessagePayloadMiddleware: IRequestMiddleware<
   "IResponseErrorValidation",
   ApiNewMessageWithDefaults
-> = request =>
+> = (request) =>
   pipe(
     request.body,
     ApiNewMessageWithDefaults.decode,
@@ -76,27 +77,28 @@ export const commonCreateMessageMiddlewares = (serviceModel: ServiceModel) =>
  * A custom type that infers IResponse type and returns cast
  * to the correct handler ResponseType
  */
-export type IResponseType<T> = T extends IResponse<infer S>
-  ? S extends "IResponseErrorInternal"
-    ? IResponseErrorInternal
-    : S extends "IResponseErrorValidation"
-    ? IResponseErrorValidation
-    : S extends "IResponseErrorForbiddenNotAuthorizedForProduction"
-    ? IResponseErrorForbiddenNotAuthorizedForProduction
-    : S extends "IResponseErrorNotFound"
-    ? IResponseErrorNotFound
-    : S extends "IResponseErrorForbiddenNotAuthorizedForDefaultAddresses"
-    ? IResponseErrorForbiddenNotAuthorizedForDefaultAddresses
-    : S extends "IResponseErrorForbiddenNoAuthorizationGroups"
-    ? IResponseErrorForbiddenNoAuthorizationGroups
-    : S extends "IResponseErrorForbiddenAnonymousUser"
-    ? IResponseErrorForbiddenAnonymousUser
-    : S extends "IResponseErrorQuery"
-    ? IResponseErrorQuery
-    : S extends "IResponseErrorTooManyRequests"
-    ? IResponseErrorTooManyRequests
-    : never
-  : never;
+export type IResponseType<T> =
+  T extends IResponse<infer S>
+    ? S extends "IResponseErrorInternal"
+      ? IResponseErrorInternal
+      : S extends "IResponseErrorValidation"
+        ? IResponseErrorValidation
+        : S extends "IResponseErrorForbiddenNotAuthorizedForProduction"
+          ? IResponseErrorForbiddenNotAuthorizedForProduction
+          : S extends "IResponseErrorNotFound"
+            ? IResponseErrorNotFound
+            : S extends "IResponseErrorForbiddenNotAuthorizedForDefaultAddresses"
+              ? IResponseErrorForbiddenNotAuthorizedForDefaultAddresses
+              : S extends "IResponseErrorForbiddenNoAuthorizationGroups"
+                ? IResponseErrorForbiddenNoAuthorizationGroups
+                : S extends "IResponseErrorForbiddenAnonymousUser"
+                  ? IResponseErrorForbiddenAnonymousUser
+                  : S extends "IResponseErrorQuery"
+                    ? IResponseErrorQuery
+                    : S extends "IResponseErrorTooManyRequests"
+                      ? IResponseErrorTooManyRequests
+                      : never
+    : never;
 
 export const mapMiddlewareResponse = <T>(res: T): IResponseType<T> =>
   res as IResponseType<typeof res>;

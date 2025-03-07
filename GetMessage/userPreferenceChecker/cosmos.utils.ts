@@ -1,18 +1,15 @@
-import * as TE from "fp-ts/TaskEither";
-import { identity, pipe } from "fp-ts/function";
-
-import { NonNegativeInteger } from "@pagopa/ts-commons/lib/numbers";
-
 import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
-
-import {
-  makeServicesPreferencesDocumentId,
-  ServicesPreferencesModel
-} from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 import {
   ProfileModel,
   RetrievedProfile
 } from "@pagopa/io-functions-commons/dist/src/models/profile";
+import {
+  ServicesPreferencesModel,
+  makeServicesPreferencesDocumentId
+} from "@pagopa/io-functions-commons/dist/src/models/service_preference";
+import { NonNegativeInteger } from "@pagopa/ts-commons/lib/numbers";
+import * as TE from "fp-ts/TaskEither";
+import { identity, pipe } from "fp-ts/function";
 
 import { ServicePreferencesGetter } from "./userPreferencesCheckerFactory";
 
@@ -29,10 +26,10 @@ export type GetProfileOrError = (
 export const getProfile: (
   profileModel: ProfileModel
 ) => // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-GetProfileOrError = profileModel => fiscalCode =>
+GetProfileOrError = (profileModel) => (fiscalCode) =>
   pipe(
     profileModel.findLastVersionByModelId([fiscalCode]),
-    TE.mapLeft(_ => Error(`Error retrieving user profile from Cosmos DB`)),
+    TE.mapLeft(() => Error(`Error retrieving user profile from Cosmos DB`)),
     TE.chainOptionK(() => Error(`Profile not found`))(identity)
   );
 
@@ -45,23 +42,25 @@ GetProfileOrError = profileModel => fiscalCode =>
 export const getServicePreferenceSettings: (
   servicePreferencesModel: ServicesPreferencesModel,
   servicePreferencesSettingsVersion: NonNegativeInteger | -1
-) => ServicePreferencesGetter = (
-  servicePreferencesModel,
-  servicePreferencesSettingsVersion
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-) => (fiscalCode, serviceId) =>
-  servicePreferencesSettingsVersion !== -1
-    ? pipe(
-        servicePreferencesModel.find([
-          makeServicesPreferencesDocumentId(
-            fiscalCode,
-            serviceId,
-            servicePreferencesSettingsVersion
-          ),
-          fiscalCode
-        ]),
-        TE.mapLeft(_ =>
-          Error(`Error retrieving user' service preferences from Cosmos DB`)
+) => ServicePreferencesGetter =
+  (
+    servicePreferencesModel,
+    servicePreferencesSettingsVersion
+    // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+  ) =>
+  (fiscalCode, serviceId) =>
+    servicePreferencesSettingsVersion !== -1
+      ? pipe(
+          servicePreferencesModel.find([
+            makeServicesPreferencesDocumentId(
+              fiscalCode,
+              serviceId,
+              servicePreferencesSettingsVersion
+            ),
+            fiscalCode
+          ]),
+          TE.mapLeft(() =>
+            Error(`Error retrieving user' service preferences from Cosmos DB`)
+          )
         )
-      )
-    : TE.left(Error("Legacy service preferences not allowed"));
+      : TE.left(Error("Legacy service preferences not allowed"));

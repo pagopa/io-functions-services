@@ -1,5 +1,4 @@
-import { toError } from "fp-ts/lib/Either";
-import { Errors } from "io-ts";
+import { errorsToReadableMessages } from "@pagopa/ts-commons/lib/reporters";
 import { IResponseType } from "@pagopa/ts-commons/lib/requests";
 import {
   HttpStatusCodeEnum,
@@ -14,8 +13,8 @@ import {
   ResponseErrorNotFound,
   ResponseErrorTooManyRequests
 } from "@pagopa/ts-commons/lib/responses";
-
-import { errorsToReadableMessages } from "@pagopa/ts-commons/lib/reporters";
+import { toError } from "fp-ts/lib/Either";
+import { Errors } from "io-ts";
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export const unhandledResponseStatus = (status: number) =>
@@ -35,7 +34,6 @@ export interface IResponseErrorUnauthorized
 /**
  * Returns an unauthorized error response with status code 401.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function ResponseErrorUnauthorized(
   title: string,
   detail: string

@@ -1,10 +1,11 @@
-import * as t from "io-ts";
-import { TimeToLiveSeconds } from "@pagopa/io-functions-commons/dist/generated/definitions/TimeToLiveSeconds";
-import { NewMessage as ApiNewMessage } from "@pagopa/io-functions-commons/dist/generated/definitions/NewMessage";
 import {
   FeatureLevelType,
   FeatureLevelTypeEnum
 } from "@pagopa/io-functions-commons/dist/generated/definitions/FeatureLevelType";
+import { NewMessage as ApiNewMessage } from "@pagopa/io-functions-commons/dist/generated/definitions/NewMessage";
+import { TimeToLiveSeconds } from "@pagopa/io-functions-commons/dist/generated/definitions/TimeToLiveSeconds";
+import * as t from "io-ts";
+
 import { ThirdPartyData } from "../generated/definitions/ThirdPartyData";
 
 export type ApiNewMessageWithDefaults = t.TypeOf<
@@ -18,7 +19,7 @@ export const ApiNewMessageWithDefaults = t.intersection([
   })
 ]);
 
-type PartialMessageContent = Partial<typeof ApiNewMessage._A["content"]>;
+type PartialMessageContent = Partial<(typeof ApiNewMessage._A)["content"]>;
 
 /**
  * Codec that matches a Message with a specific content pattern
@@ -26,11 +27,10 @@ type PartialMessageContent = Partial<typeof ApiNewMessage._A["content"]>;
  * @param contentPattern a coded that matches a content pattern
  * @returns a codec that specialize ApiNewMessage
  */
-export type ApiNewMessageWithContentOf<
-  T extends PartialMessageContent
-> = ApiNewMessage & { readonly content: T };
+export type ApiNewMessageWithContentOf<T extends PartialMessageContent> =
+  ApiNewMessage & { readonly content: T };
 export const ApiNewMessageWithContentOf = <T extends PartialMessageContent>(
-  contentPattern: t.Type<T, Partial<typeof ApiNewMessage._O["content"]>>
+  contentPattern: t.Type<T, Partial<(typeof ApiNewMessage._O)["content"]>>
 ): t.Type<ApiNewMessage & { readonly content: T }, typeof ApiNewMessage._O> =>
   t.intersection([
     ApiNewMessage,

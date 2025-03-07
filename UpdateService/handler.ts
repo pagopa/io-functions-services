@@ -1,10 +1,12 @@
-import * as express from "express";
-
-import {
-  ClientIp,
-  ClientIpMiddleware
-} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
-
+import { Context } from "@azure/functions";
+import { Service } from "@pagopa/io-functions-admin-sdk/Service";
+import { SpecialServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/SpecialServiceCategory";
+import { SpecialServiceMetadata } from "@pagopa/io-functions-admin-sdk/SpecialServiceMetadata";
+import { StandardServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/StandardServiceCategory";
+import { SubscriptionKeys } from "@pagopa/io-functions-admin-sdk/SubscriptionKeys";
+import { UserInfo } from "@pagopa/io-functions-admin-sdk/UserInfo";
+import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
+import { SubscriptionCIDRsModel } from "@pagopa/io-functions-commons/dist/src/models/subscription_cidrs";
 import {
   AzureApiAuthMiddleware,
   IAzureApiAuthorization,
@@ -14,11 +16,26 @@ import {
   AzureUserAttributesMiddleware,
   IAzureUserAttributes
 } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
+import {
+  AzureUserAttributesManageMiddleware,
+  IAzureUserAttributesManage
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes_manage";
+import {
+  ClientIp,
+  ClientIpMiddleware
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
+import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { RequiredBodyPayloadMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_body_payload";
+import { RequiredParamMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_param";
 import {
   withRequestMiddlewares,
   wrapRequestHandler
 } from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
+import {
+  checkSourceIpForHandler,
+  clientIPAndCidrTuple as ipTuple
+} from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
+import { initAppInsights } from "@pagopa/ts-commons/lib/appinsights";
 import {
   IResponseErrorForbiddenNotAuthorized,
   IResponseErrorInternal,
@@ -28,38 +45,18 @@ import {
   ResponseErrorForbiddenNotAuthorized,
   ResponseSuccessJson
 } from "@pagopa/ts-commons/lib/responses";
-
-import {
-  checkSourceIpForHandler,
-  clientIPAndCidrTuple as ipTuple
-} from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
-
-import { Context } from "@azure/functions";
-import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
-import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
-import { RequiredParamMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_param";
+import { SequenceMiddleware } from "@pagopa/ts-commons/lib/sequence_middleware";
+import { EmailString, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
+import * as express from "express";
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import * as TE from "fp-ts/lib/TaskEither";
-import { initAppInsights } from "@pagopa/ts-commons/lib/appinsights";
-import { EmailString, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
 import { pipe } from "fp-ts/lib/function";
-import { Service } from "@pagopa/io-functions-admin-sdk/Service";
-import { SubscriptionKeys } from "@pagopa/io-functions-admin-sdk/SubscriptionKeys";
-import { UserInfo } from "@pagopa/io-functions-admin-sdk/UserInfo";
-import { StandardServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/StandardServiceCategory";
-import { SpecialServiceMetadata } from "@pagopa/io-functions-admin-sdk/SpecialServiceMetadata";
-import { SpecialServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/SpecialServiceCategory";
-import { SequenceMiddleware } from "@pagopa/ts-commons/lib/sequence_middleware";
-import {
-  AzureUserAttributesManageMiddleware,
-  IAzureUserAttributesManage
-} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes_manage";
-import { SubscriptionCIDRsModel } from "@pagopa/io-functions-commons/dist/src/models/subscription_cidrs";
+
 import { APIClient } from "../clients/admin";
 import { ServicePayload } from "../generated/definitions/ServicePayload";
 import { ServiceWithSubscriptionKeys } from "../generated/definitions/ServiceWithSubscriptionKeys";
 import { withApiRequestWrapper } from "../utils/api";
-import { getLogger, ILogger } from "../utils/logging";
+import { ILogger, getLogger } from "../utils/logging";
 import { ErrorResponses, IResponseErrorUnauthorized } from "../utils/responses";
 import {
   serviceOwnerCheckManageTask,
@@ -176,7 +173,6 @@ const updateServiceTask = (
 /**
  * Handles requests for updating a service by given serviceId and a Service Payload.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function UpdateServiceHandler(
   telemetryClient: ReturnType<typeof initAppInsights>,
   apiClient: APIClient
@@ -186,7 +182,7 @@ export function UpdateServiceHandler(
     pipe(
       pipe(
         serviceOwnerCheckTask(serviceId, apiAuth.subscriptionId),
-        TE.orElse(__ =>
+        TE.orElse(() =>
           serviceOwnerCheckManageTask(
             getLogger(_, logPrefix, "GetSubscription"),
             apiClient,
@@ -202,14 +198,14 @@ export function UpdateServiceHandler(
               apiClient,
               serviceId
             ),
-            TE.chain(retrievedService =>
+            TE.chain((retrievedService) =>
               pipe(
                 getUserTask(
                   getLogger(_, logPrefix, "GetUser"),
                   apiClient,
                   userAttributes.email
                 ),
-                TE.chain(userInfo =>
+                TE.chain((userInfo) =>
                   updateServiceTask(
                     getLogger(_, logPrefix, "UpdateService"),
                     apiClient,
@@ -219,7 +215,7 @@ export function UpdateServiceHandler(
                     userInfo.token_name
                   )
                 ),
-                TE.chain(service => {
+                TE.chain((service) => {
                   if (retrievedService.is_visible !== service.is_visible) {
                     telemetryClient.trackEvent({
                       name: "api.services.update",
@@ -236,7 +232,7 @@ export function UpdateServiceHandler(
                       apiClient,
                       serviceId
                     ),
-                    TE.map(subscriptionKeys =>
+                    TE.map((subscriptionKeys) =>
                       ResponseSuccessJson({
                         ...service,
                         ...subscriptionKeys
@@ -256,7 +252,6 @@ export function UpdateServiceHandler(
 /**
  * Wraps a UpdateService handler inside an Express request handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function UpdateService(
   telemetryClient: ReturnType<typeof initAppInsights>,
   serviceModel: ServiceModel,
@@ -277,7 +272,7 @@ export function UpdateService(
   );
   return wrapRequestHandler(
     middlewaresWrap(
-      // eslint-disable-next-line max-params
+      // eslint-disable-next-line max-params, @typescript-eslint/no-unused-vars
       checkSourceIpForHandler(handler, (_, __, c, u, ___, ____) =>
         ipTuple(c, u)
       )

@@ -1,8 +1,5 @@
 import { Context } from "@azure/functions";
-
-import * as cors from "cors";
-import * as express from "express";
-
+import createAzureFunctionHandler from "@pagopa/express-azure-functions/dist/src/createAzureFunctionsHandler";
 import {
   MESSAGE_COLLECTION_NAME,
   MessageModel
@@ -11,18 +8,17 @@ import {
   SERVICE_COLLECTION_NAME,
   ServiceModel
 } from "@pagopa/io-functions-commons/dist/src/models/service";
+import { withAppInsightsContext } from "@pagopa/io-functions-commons/dist/src/utils/application_insights";
 import { secureExpressApp } from "@pagopa/io-functions-commons/dist/src/utils/express";
 import { setAppContext } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
-
-import createAzureFunctionHandler from "@pagopa/express-azure-functions/dist/src/createAzureFunctionsHandler";
-
-import { withAppInsightsContext } from "@pagopa/io-functions-commons/dist/src/utils/application_insights";
 import { createBlobService } from "azure-storage";
-import { cosmosdbInstance } from "../utils/cosmosdb";
-import { initTelemetryClient } from "../utils/appinsights";
+import * as cors from "cors";
+import * as express from "express";
 
-import { getConfigOrThrow } from "../utils/config";
 import { messagesServicesApiClient } from "../clients/messages-services-api";
+import { initTelemetryClient } from "../utils/appinsights";
+import { getConfigOrThrow } from "../utils/config";
+import { cosmosdbInstance } from "../utils/cosmosdb";
 import { CreateMessage } from "./handler";
 import { makeUpsertBlobFromObject } from "./utils";
 
@@ -72,7 +68,6 @@ app.post(
 const azureFunctionHandler = createAzureFunctionHandler(app);
 
 // Binds the express app to an Azure Function handler
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 function httpStart(context: Context): void {
   setAppContext(app, context);
   withAppInsightsContext(context, () => azureFunctionHandler(context));

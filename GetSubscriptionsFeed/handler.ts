@@ -1,16 +1,8 @@
-import * as express from "express";
-
-import * as t from "io-ts";
-
+import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import {
-  ClientIp,
-  ClientIpMiddleware
-} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
-
-import { RequiredParamMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_param";
-
-import { IResponseErrorQuery } from "@pagopa/io-functions-commons/dist/src/utils/response";
-
+  ServiceModel,
+  ValidService
+} from "@pagopa/io-functions-commons/dist/src/models/service";
 import {
   AzureApiAuthMiddleware,
   IAzureApiAuthorization,
@@ -21,9 +13,19 @@ import {
   IAzureUserAttributes
 } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
 import {
+  ClientIp,
+  ClientIpMiddleware
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
+import { RequiredParamMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_param";
+import {
   withRequestMiddlewares,
   wrapRequestHandler
 } from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
+import { IResponseErrorQuery } from "@pagopa/io-functions-commons/dist/src/utils/response";
+import {
+  checkSourceIpForHandler,
+  clientIPAndCidrTuple as ipTuple
+} from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
 import {
   IResponseErrorForbiddenNotAuthorized,
   IResponseErrorInternal,
@@ -35,27 +37,16 @@ import {
   ResponseSuccessJson
 } from "@pagopa/ts-commons/lib/responses";
 import { PatternString } from "@pagopa/ts-commons/lib/strings";
-
-import {
-  checkSourceIpForHandler,
-  clientIPAndCidrTuple as ipTuple
-} from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
-
-import {
-  ServiceModel,
-  ValidService
-} from "@pagopa/io-functions-commons/dist/src/models/service";
-
 import { TableService } from "azure-storage";
+import * as express from "express";
+import * as t from "io-ts";
 
-import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { DateUTC } from "../generated/definitions/DateUTC";
 import { FiscalCodeHash } from "../generated/definitions/FiscalCodeHash";
 import { SubscriptionsFeed } from "../generated/definitions/SubscriptionsFeed";
-
 import {
-  getPagedQuery,
   PagedQuery,
+  getPagedQuery,
   queryFilterForKey,
   queryUsers
 } from "./utils";
@@ -80,7 +71,6 @@ type IGetSubscriptionsFeedHandler = (
 /**
  * Handles requests for getting a single message for a recipient.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function GetSubscriptionsFeedHandler(
   tableService: TableService,
   subscriptionsFeedTable: string,
@@ -151,15 +141,14 @@ export function GetSubscriptionsFeedHandler(
     );
 
     const subscriptions = new Array<FiscalCodeHash>();
-    profileSubscriptionsSet.forEach(ps => {
+    profileSubscriptionsSet.forEach((ps) => {
       if (!serviceUnsubscriptionsSet.has(ps)) {
         // add new users to the new subscriptions, skipping those that
         // unsubscribed from this service
-        // eslint-disable-next-line functional/immutable-data
         subscriptions.push(ps);
       }
     });
-    serviceSubscriptionsSet.forEach(ss => {
+    serviceSubscriptionsSet.forEach((ss) => {
       if (
         !profileSubscriptionsSet.has(ss) &&
         !profileUnsubscriptionsSet.has(ss)
@@ -167,23 +156,21 @@ export function GetSubscriptionsFeedHandler(
         // add all users that subscribed to this service, skipping those that
         // are new users as they're yet counted in as new subscribers in the
         // previous step
-        // eslint-disable-next-line functional/immutable-data
         subscriptions.push(ss);
       }
     });
 
     const unsubscriptions = new Array<FiscalCodeHash>();
 
-    profileUnsubscriptionsSet.forEach(pu => {
+    profileUnsubscriptionsSet.forEach((pu) => {
       if (!serviceSubscriptionsSet.has(pu)) {
         // add all users that deleted its own account skipping those that
         // subscribed to this service
-        // eslint-disable-next-line functional/immutable-data
         unsubscriptions.push(pu);
       }
     });
 
-    serviceUnsubscriptionsSet.forEach(su => {
+    serviceUnsubscriptionsSet.forEach((su) => {
       if (
         !profileSubscriptionsSet.has(su) &&
         !profileUnsubscriptionsSet.has(su)
@@ -191,7 +178,6 @@ export function GetSubscriptionsFeedHandler(
         // add all users that unsubscribed from this service, skipping those
         // that created the profile on the same day as the service will not
         // yet know they exist or deleted their account
-        // eslint-disable-next-line functional/immutable-data
         unsubscriptions.push(su);
       }
     });
@@ -211,14 +197,13 @@ export function GetSubscriptionsFeedHandler(
  */
 const ShortDateString = t.refinement(
   PatternString("\\d\\d\\d\\d-\\d\\d-\\d\\d"),
-  s => !isNaN(new Date(s).getTime()),
+  (s) => !isNaN(new Date(s).getTime()),
   "ShortDateString"
 );
 
 /**
  * Wraps a GetMessage handler inside an Express request handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function GetSubscriptionsFeed(
   serviceModel: ServiceModel,
   tableService: TableService,
@@ -240,6 +225,7 @@ export function GetSubscriptionsFeed(
   );
   return wrapRequestHandler(
     middlewaresWrap(
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       checkSourceIpForHandler(handler, (_, c, u, __) => ipTuple(c, u))
     )
   );

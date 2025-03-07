@@ -3,12 +3,10 @@ import {
   NotificationModel
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
 import {
-  ProfileModel,
-  PROFILE_COLLECTION_NAME
+  PROFILE_COLLECTION_NAME,
+  ProfileModel
 } from "@pagopa/io-functions-commons/dist/src/models/profile";
-
 import { agent } from "@pagopa/ts-commons";
-
 import {
   AbortableFetch,
   setFetchTimeout,
@@ -16,12 +14,12 @@ import {
 } from "@pagopa/ts-commons/lib/fetch";
 import { Millisecond } from "@pagopa/ts-commons/lib/units";
 import { createBlobService } from "azure-storage";
+
 import { getUserProfileReader } from "../readers/user-profile";
 import { getConfigOrThrow } from "../utils/config";
 import { cosmosdbInstance } from "../utils/cosmosdb";
 import { CommonMessageData } from "../utils/events/message";
 import { makeRetrieveExpandedDataFromBlob } from "../utils/with-expanded-input";
-
 import { getNotifyClient } from "./client";
 import { getWebhookNotificationHandler } from "./handler";
 
