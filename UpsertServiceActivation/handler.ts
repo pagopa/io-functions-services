@@ -1,6 +1,10 @@
-import * as express from "express";
-
+import { Context } from "@azure/functions";
+import {
+  ActivationModel,
+  NewActivation
+} from "@pagopa/io-functions-commons/dist/src/models/activation";
 import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
+import { toApiServiceActivation } from "@pagopa/io-functions-commons/dist/src/utils/activations";
 import {
   AzureApiAuthMiddleware,
   IAzureApiAuthorization,
@@ -14,19 +18,20 @@ import {
   ClientIp,
   ClientIpMiddleware
 } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
+import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
+import { RequiredBodyPayloadMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_body_payload";
 import {
   withRequestMiddlewares,
   wrapRequestHandler
 } from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
 import {
+  IResponseErrorQuery,
+  ResponseErrorQuery
+} from "@pagopa/io-functions-commons/dist/src/utils/response";
+import {
   checkSourceIpForHandler,
   clientIPAndCidrTuple as ipTuple
 } from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
-
-import {
-  ActivationModel,
-  NewActivation
-} from "@pagopa/io-functions-commons/dist/src/models/activation";
 import {
   IResponseErrorForbiddenNotAuthorized,
   IResponseErrorInternal,
@@ -34,22 +39,16 @@ import {
   IResponseSuccessJson,
   ResponseSuccessJson
 } from "@pagopa/ts-commons/lib/responses";
-import {
-  IResponseErrorQuery,
-  ResponseErrorQuery
-} from "@pagopa/io-functions-commons/dist/src/utils/response";
-import { pipe } from "fp-ts/lib/function";
+import * as express from "express";
 import * as TE from "fp-ts/lib/TaskEither";
-import { toApiServiceActivation } from "@pagopa/io-functions-commons/dist/src/utils/activations";
-import { RequiredBodyPayloadMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_body_payload";
-import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
-import { Context } from "@azure/functions";
+import { pipe } from "fp-ts/lib/function";
 import { flow } from "fp-ts/lib/function";
+
 import { Activation } from "../generated/definitions/Activation";
 import { ActivationPayload } from "../generated/definitions/ActivationPayload";
 import { ServiceId } from "../generated/definitions/ServiceId";
-import { authorizedForSpecialServicesTask } from "../utils/services";
 import { getLogger } from "../utils/logging";
+import { authorizedForSpecialServicesTask } from "../utils/services";
 
 export type IUpertActivationFailureResponses =
   | IResponseErrorNotFound
@@ -86,7 +85,6 @@ const toModelServiceActivation = (
 /**
  * Returns a type safe GetActivationByPOST handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function UpsertServiceActivationHandler(
   activationModel: ActivationModel
 ): IUpsertActivationByPOSTHandler {
@@ -100,7 +98,7 @@ export function UpsertServiceActivationHandler(
     );
     return pipe(
       authorizedForSpecialServicesTask(userAttributes.service),
-      TE.chainW(_ =>
+      TE.chainW(() =>
         pipe(
           activationModel.upsert(
             toModelServiceActivation(
@@ -108,7 +106,7 @@ export function UpsertServiceActivationHandler(
               userAttributes.service.serviceId
             )
           ),
-          TE.mapLeft(error => {
+          TE.mapLeft((error) => {
             logger.logCosmosErrors(error);
             return ResponseErrorQuery(
               "Error upserting service Activation",
@@ -126,7 +124,6 @@ export function UpsertServiceActivationHandler(
 /**
  * Wraps a GetServiceActivation handler inside an Express request handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function UpsertServiceActivation(
   serviceModel: ServiceModel,
   activationModel: ActivationModel
@@ -143,6 +140,7 @@ export function UpsertServiceActivation(
 
   return wrapRequestHandler(
     middlewaresWrap(
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       checkSourceIpForHandler(handler, (_, __, c, u, ___) => ipTuple(c, u))
     )
   );

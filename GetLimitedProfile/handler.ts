@@ -1,4 +1,5 @@
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
+import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
 import { ProfileModel } from "@pagopa/io-functions-commons/dist/src/models/profile";
 import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
 import { ServicesPreferencesModel } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
@@ -24,14 +25,13 @@ import {
   checkSourceIpForHandler,
   clientIPAndCidrTuple as ipTuple
 } from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
-import * as express from "express";
 import { FiscalCode } from "@pagopa/ts-commons/lib/strings";
-import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
-import { initTelemetryClient } from "../utils/appinsights";
+import * as express from "express";
 
+import { initTelemetryClient } from "../utils/appinsights";
 import {
-  getLimitedProfileTask,
-  IGetLimitedProfileResponses
+  IGetLimitedProfileResponses,
+  getLimitedProfileTask
 } from "../utils/profile";
 import { CanSendMessageOnActivation } from "../utils/services";
 
@@ -51,7 +51,7 @@ type IGetLimitedProfileHandler = (
 /**
  * Returns a type safe GetLimitedProfile handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, max-params
+// eslint-disable-next-line max-params
 export function GetLimitedProfileHandler(
   profileModel: ProfileModel,
   serviceActivationModel: ActivationModel,
@@ -80,7 +80,7 @@ export function GetLimitedProfileHandler(
 /**
  * Wraps a GetLimitedProfile handler inside an Express request handler.
  */
-// eslint-disable-next-line max-params,prefer-arrow/prefer-arrow-functions
+// eslint-disable-next-line max-params
 export function GetLimitedProfile(
   serviceModel: ServiceModel,
   profileModel: ProfileModel,
@@ -110,6 +110,7 @@ export function GetLimitedProfile(
 
   return wrapRequestHandler(
     middlewaresWrap(
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       checkSourceIpForHandler(handler, (_, c, u, __) => ipTuple(c, u))
     )
   );

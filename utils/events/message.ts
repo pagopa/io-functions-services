@@ -1,11 +1,12 @@
-import * as t from "io-ts";
-import { CreatedMessageEventSenderMetadata } from "@pagopa/io-functions-commons/dist/src/models/created_message_sender_metadata";
-import { NewMessageDefaultAddresses } from "@pagopa/io-functions-commons/dist/generated/definitions/NewMessageDefaultAddresses";
-import { NewMessageWithoutContent } from "@pagopa/io-functions-commons/dist/src/models/message";
-import { NonNegativeNumber } from "@pagopa/ts-commons/lib/numbers";
 import { BlockedInboxOrChannel } from "@pagopa/io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
+import { NewMessageDefaultAddresses } from "@pagopa/io-functions-commons/dist/generated/definitions/NewMessageDefaultAddresses";
+import { CreatedMessageEventSenderMetadata } from "@pagopa/io-functions-commons/dist/src/models/created_message_sender_metadata";
+import { NewMessageWithoutContent } from "@pagopa/io-functions-commons/dist/src/models/message";
 import { RetrievedProfile } from "@pagopa/io-functions-commons/dist/src/models/profile";
+import { NonNegativeNumber } from "@pagopa/ts-commons/lib/numbers";
 import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
+import * as t from "io-ts";
+
 import { MessageContent } from "../../generated/definitions/MessageContent";
 
 export type MessageId = t.TypeOf<typeof MessageId> &

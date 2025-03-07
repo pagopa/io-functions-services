@@ -1,7 +1,8 @@
-import * as express from "express";
-
+import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
+import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
 import { ProfileModel } from "@pagopa/io-functions-commons/dist/src/models/profile";
 import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
+import { ServicesPreferencesModel } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 import {
   AzureApiAuthMiddleware,
   IAzureApiAuthorization,
@@ -23,17 +24,15 @@ import {
   checkSourceIpForHandler,
   clientIPAndCidrTuple as ipTuple
 } from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
+import * as express from "express";
 
-import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
-import { ServicesPreferencesModel } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
-import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
 import { FiscalCodePayload } from "../generated/definitions/FiscalCodePayload";
+import { initTelemetryClient } from "../utils/appinsights";
 import {
   FiscalCodePayloadMiddleware,
   IGetLimitedProfileResponses,
   getLimitedProfileTask
 } from "../utils/profile";
-import { initTelemetryClient } from "../utils/appinsights";
 import { CanSendMessageOnActivation } from "../utils/services";
 
 /**
@@ -51,7 +50,6 @@ type IGetLimitedProfileByPOSTHandler = (
 /**
  * Returns a type safe GetLimitedProfileByPOST handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions, max-params
 export function GetLimitedProfileByPOSTHandler(
   profileModel: ProfileModel,
   disableIncompleteServices: boolean,
@@ -80,7 +78,6 @@ export function GetLimitedProfileByPOSTHandler(
 /**
  * Wraps a GetLimitedProfileByPOST handler inside an Express request handler.
  */
-// eslint-disable-next-line max-params,prefer-arrow/prefer-arrow-functions
 export function GetLimitedProfileByPOST(
   serviceModel: ServiceModel,
   profileModel: ProfileModel,
@@ -110,6 +107,7 @@ export function GetLimitedProfileByPOST(
 
   return wrapRequestHandler(
     middlewaresWrap(
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       checkSourceIpForHandler(handler, (_, c, u, __) => ipTuple(c, u))
     )
   );

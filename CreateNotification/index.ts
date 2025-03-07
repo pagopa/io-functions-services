@@ -1,27 +1,25 @@
 ﻿import { AzureFunction } from "@azure/functions";
-
 import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
 import { HttpsUrl } from "@pagopa/io-functions-commons/dist/generated/definitions/HttpsUrl";
-
 import {
   NOTIFICATION_COLLECTION_NAME,
   NotificationModel
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
+import { createBlobService } from "azure-storage";
 import * as E from "fp-ts/lib/Either";
 import { pipe } from "fp-ts/lib/function";
-import { createBlobService } from "azure-storage";
-import { cosmosdbInstance } from "../utils/cosmosdb";
 
 import { getConfigOrThrow } from "../utils/config";
-import { makeRetrieveExpandedDataFromBlob } from "../utils/with-expanded-input";
+import { cosmosdbInstance } from "../utils/cosmosdb";
 import { CommonMessageData } from "../utils/events/message";
+import { makeRetrieveExpandedDataFromBlob } from "../utils/with-expanded-input";
 import { getCreateNotificationHandler } from "./handler";
 
 const config = getConfigOrThrow();
 
 const sandboxFiscalCode = pipe(
   FiscalCode.decode(config.SANDBOX_FISCAL_CODE),
-  E.getOrElse(_ => {
+  E.getOrElse(() => {
     throw new Error(
       `Check that the environment variable SANDBOX_FISCAL_CODE is set to a valid FiscalCode`
     );
@@ -40,7 +38,7 @@ const notificationModel = new NotificationModel(
 
 const defaultWebhookUrl = pipe(
   HttpsUrl.decode(config.WEBHOOK_CHANNEL_URL),
-  E.getOrElse(_ => {
+  E.getOrElse(() => {
     throw new Error(
       `Check that the environment variable WEBHOOK_CHANNEL_URL is set to a valid URL`
     );

@@ -1,19 +1,18 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
+import * as healthcheck from "@pagopa/io-functions-commons/dist/src/utils/healthcheck";
 import { wrapRequestHandler } from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
-import * as express from "express";
 import {
   IResponseErrorInternal,
   IResponseSuccessJson,
   ResponseErrorInternal,
   ResponseSuccessJson
 } from "@pagopa/ts-commons/lib/responses";
-
+import * as express from "express";
 import * as TE from "fp-ts/lib/TaskEither";
 import { pipe } from "fp-ts/lib/function";
 
-import * as healthcheck from "@pagopa/io-functions-commons/dist/src/utils/healthcheck";
 import * as packageJson from "../package.json";
-import { envConfig, IConfig } from "../utils/config";
+import { IConfig, envConfig } from "../utils/config";
 
 interface IInfo {
   readonly name: string;
@@ -31,15 +30,14 @@ type HealthChecker = (
   true
 >;
 
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function InfoHandler(healthCheck: HealthChecker): InfoHandler {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   return () =>
     pipe(
       envConfig,
       healthCheck,
-      TE.mapLeft(problems => ResponseErrorInternal(problems.join("\n\n"))),
-      TE.map(_ =>
+      TE.mapLeft((problems) => ResponseErrorInternal(problems.join("\n\n"))),
+      TE.map(() =>
         ResponseSuccessJson({
           name: packageJson.name,
           version: packageJson.version
@@ -49,24 +47,24 @@ export function InfoHandler(healthCheck: HealthChecker): InfoHandler {
     )();
 }
 
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function Info(): express.RequestHandler {
   const handler = InfoHandler(
     healthcheck.checkApplicationHealth(IConfig, [
-      c => healthcheck.checkAzureCosmosDbHealth(c.COSMOSDB_URI, c.COSMOSDB_KEY),
-      c =>
+      (c) =>
+        healthcheck.checkAzureCosmosDbHealth(c.COSMOSDB_URI, c.COSMOSDB_KEY),
+      (c) =>
         healthcheck.checkAzureStorageHealth(
           c.MESSAGE_CONTENT_STORAGE_CONNECTION_STRING
         ),
-      c =>
+      (c) =>
         healthcheck.checkAzureStorageHealth(
           c.SUBSCRIPTION_FEED_STORAGE_CONNECTION_STRING
         ),
-      c =>
+      (c) =>
         healthcheck.checkAzureStorageHealth(
           c.INTERNAL_STORAGE_CONNECTION_STRING
         ),
-      c => healthcheck.checkUrlHealth(c.WEBHOOK_CHANNEL_URL)
+      (c) => healthcheck.checkUrlHealth(c.WEBHOOK_CHANNEL_URL)
     ])
   );
 

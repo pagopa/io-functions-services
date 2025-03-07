@@ -1,14 +1,14 @@
+import { Notification } from "@pagopa/io-backend-notifications-sdk/Notification";
+import { SuccessResponse } from "@pagopa/io-backend-notifications-sdk/SuccessResponse";
+import { notifyDefaultDecoder } from "@pagopa/io-backend-notifications-sdk/requestTypes";
 import { HttpsUrl } from "@pagopa/io-functions-commons/dist/generated/definitions/HttpsUrl";
 import {
   ApiHeaderJson,
-  createFetchRequestForApi,
-  TypeofApiCall
+  TypeofApiCall,
+  createFetchRequestForApi
 } from "@pagopa/ts-commons/lib/requests";
 import * as r from "@pagopa/ts-commons/lib/requests";
 import { ProblemJson } from "@pagopa/ts-commons/lib/responses";
-import { Notification } from "@pagopa/io-backend-notifications-sdk/Notification";
-import { notifyDefaultDecoder } from "@pagopa/io-backend-notifications-sdk/requestTypes";
-import { SuccessResponse } from "@pagopa/io-backend-notifications-sdk/SuccessResponse";
 
 export type WebhookNotifyT = r.IPostApiRequestType<
   { readonly notification: Notification; readonly webhookEndpoint: HttpsUrl },
@@ -25,12 +25,12 @@ export const getNotifyClient = (
 ): TypeofApiCall<WebhookNotifyT> =>
   createFetchRequestForApi(
     {
-      body: params => JSON.stringify(params.notification),
+      body: (params) => JSON.stringify(params.notification),
       headers: ApiHeaderJson,
       method: "post",
-      query: _ => ({}),
+      query: () => ({}),
       response_decoder: notifyDefaultDecoder(),
-      url: params => `${params.webhookEndpoint}`
+      url: (params) => `${params.webhookEndpoint}`
     } as WebhookNotifyT,
     { fetchApi }
   );

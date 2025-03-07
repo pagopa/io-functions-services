@@ -1,13 +1,14 @@
-import { fromPredicate, TaskEither } from "fp-ts/lib/TaskEither";
-import * as TE from "fp-ts/lib/TaskEither";
+import { SubscriptionWithoutKeys } from "@pagopa/io-functions-admin-sdk/SubscriptionWithoutKeys";
 import { ResponseErrorForbiddenNotAuthorized } from "@pagopa/ts-commons/lib/responses";
 import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
-import { SubscriptionWithoutKeys } from "@pagopa/io-functions-admin-sdk/SubscriptionWithoutKeys";
+import { TaskEither, fromPredicate } from "fp-ts/lib/TaskEither";
+import * as TE from "fp-ts/lib/TaskEither";
 import { pipe } from "fp-ts/lib/function";
+
 import { APIClient } from "../clients/admin";
-import { ErrorResponses } from "./responses";
-import { ILogger } from "./logging";
 import { withApiRequestWrapper } from "./api";
+import { ILogger } from "./logging";
+import { ErrorResponses } from "./responses";
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export const serviceOwnerCheckTask = (
@@ -16,7 +17,7 @@ export const serviceOwnerCheckTask = (
 ) =>
   fromPredicate<ErrorResponses, NonEmptyString>(
     (svcId: NonEmptyString) => svcId === ownerSubscriptionId,
-    _ => ResponseErrorForbiddenNotAuthorized
+    () => ResponseErrorForbiddenNotAuthorized
   )(serviceId);
 
 export const getSubscription = (
@@ -53,7 +54,7 @@ export const serviceOwnerCheckManageTask = (
 ): TaskEither<ErrorResponses, NonEmptyString> =>
   pipe(
     getSubscription(logger, apiClient, serviceId),
-    TE.chain(serviceSubscription =>
+    TE.chain((serviceSubscription) =>
       ownerSubscriptionId.startsWith("MANAGE-")
         ? serviceSubscription.owner_id === userId
           ? TE.of(serviceId)

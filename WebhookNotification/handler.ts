@@ -6,53 +6,47 @@
  * which in turns delivers the message to the mobile App.
  */
 
-import * as t from "io-ts";
-
-import * as E from "fp-ts/lib/Either";
-import * as O from "fp-ts/lib/Option";
-
-import { readableReport } from "@pagopa/ts-commons/lib/reporters";
-
-import {
-  NotificationModel,
-  WebhookNotification
-} from "@pagopa/io-functions-commons/dist/src/models/notification";
-
-import {
-  isTransientError,
-  PermanentError,
-  RuntimeError,
-  TransientError
-} from "@pagopa/io-functions-commons/dist/src/utils/errors";
-
+import { Notification } from "@pagopa/io-backend-notifications-sdk/Notification";
+import { HttpsUrl } from "@pagopa/io-functions-commons/dist/generated/definitions/HttpsUrl";
+import { MessageContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageContent";
+import { PushNotificationsContentTypeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/PushNotificationsContentType";
+import { SenderMetadata } from "@pagopa/io-functions-commons/dist/generated/definitions/SenderMetadata";
 import { CreatedMessageEventSenderMetadata } from "@pagopa/io-functions-commons/dist/src/models/created_message_sender_metadata";
 import {
   ActiveMessage,
   NewMessageWithoutContent
 } from "@pagopa/io-functions-commons/dist/src/models/message";
-
-import { HttpsUrl } from "@pagopa/io-functions-commons/dist/generated/definitions/HttpsUrl";
-import { MessageContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageContent";
-import { SenderMetadata } from "@pagopa/io-functions-commons/dist/generated/definitions/SenderMetadata";
-
-import * as TE from "fp-ts/lib/TaskEither";
+import {
+  NotificationModel,
+  WebhookNotification
+} from "@pagopa/io-functions-commons/dist/src/models/notification";
+import { Profile } from "@pagopa/io-functions-commons/dist/src/models/profile";
+import {
+  PermanentError,
+  RuntimeError,
+  TransientError,
+  isTransientError
+} from "@pagopa/io-functions-commons/dist/src/utils/errors";
+import { readableReport } from "@pagopa/ts-commons/lib/reporters";
 import {
   TypeofApiCall,
   TypeofApiResponse
 } from "@pagopa/ts-commons/lib/requests";
-import { flow, pipe } from "fp-ts/lib/function";
+import * as E from "fp-ts/lib/Either";
+import * as O from "fp-ts/lib/Option";
+import * as TE from "fp-ts/lib/TaskEither";
 import { TaskEither } from "fp-ts/lib/TaskEither";
-import { Profile } from "@pagopa/io-functions-commons/dist/src/models/profile";
-import { PushNotificationsContentTypeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/PushNotificationsContentType";
-import { Notification } from "@pagopa/io-backend-notifications-sdk/Notification";
-import { withJsonInput } from "../utils/with-json-input";
-import { withDecodedInput } from "../utils/with-decoded-input";
+import { flow, pipe } from "fp-ts/lib/function";
+import * as t from "io-ts";
+
+import { UserProfileReader } from "../readers/user-profile";
 import {
   CommonMessageData,
   NotificationCreatedEvent
 } from "../utils/events/message";
+import { withDecodedInput } from "../utils/with-decoded-input";
 import { DataFetcher, withExpandedInput } from "../utils/with-expanded-input";
-import { UserProfileReader } from "../readers/user-profile";
+import { withJsonInput } from "../utils/with-json-input";
 import { WebhookNotifyT } from "./client";
 
 export const WebhookNotificationInput = NotificationCreatedEvent;
@@ -81,7 +75,6 @@ export type WebhookNotificationResult = t.TypeOf<
  * Convert the internal representation of the message
  * to the one of the public NotificationAPI
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function newMessageToPublic(
   newMessage: NewMessageWithoutContent,
   content?: MessageContent
@@ -99,7 +92,6 @@ export function newMessageToPublic(
  * Convert the internal representation of sender metadata
  * to the one of the public API
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function senderMetadataToPublic(
   senderMetadata: CreatedMessageEventSenderMetadata
 ): SenderMetadata {
@@ -144,7 +136,7 @@ export const sendToWebhook = (
           },
           webhookEndpoint
         }),
-      err =>
+      (err) =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (err as any).name === "AbortError"
           ? (TransientError(`Timeout calling webhook: ${err}`) as RuntimeError)
@@ -155,27 +147,27 @@ export const sendToWebhook = (
     TE.chain(
       flow(
         E.foldW(
-          errs =>
+          (errs) =>
             E.left(
               PermanentError(
                 `Decoding error calling webhook: ${readableReport(errs)}`
               )
             ),
-          r =>
+          (r) =>
             r.status === 200
               ? E.right(r)
               : r.status === 500
-              ? // in case of server HTTP 5xx errors we trigger a retry
-                E.left(
-                  TransientError(
-                    `Transient HTTP error calling webhook: ${r.status}`
+                ? // in case of server HTTP 5xx errors we trigger a retry
+                  E.left(
+                    TransientError(
+                      `Transient HTTP error calling webhook: ${r.status}`
+                    )
                   )
-                )
-              : E.left(
-                  PermanentError(
-                    `Permanent HTTP error calling webhook: ${r.status}`
+                : E.left(
+                    PermanentError(
+                      `Permanent HTTP error calling webhook: ${r.status}`
+                    )
                   )
-                )
         ),
         TE.fromEither
       )
@@ -263,7 +255,7 @@ export const getWebhookNotificationHandler = (
             userProfileReader({
               fiscalCode: message.fiscalCode
             }),
-            TE.getOrElse(err => {
+            TE.getOrElse((err) => {
               throw new Error(err.title);
             })
           )();

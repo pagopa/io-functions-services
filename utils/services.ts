@@ -1,3 +1,4 @@
+import { ActivationStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ActivationStatus";
 import { SpecialServiceCategoryEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/SpecialServiceCategory";
 import { RetrievedActivation } from "@pagopa/io-functions-commons/dist/src/models/activation";
 import {
@@ -9,12 +10,11 @@ import {
   IResponseErrorForbiddenNotAuthorized,
   ResponseErrorForbiddenNotAuthorized
 } from "@pagopa/ts-commons/lib/responses";
-import { pipe } from "fp-ts/lib/function";
+import { Second } from "@pagopa/ts-commons/lib/units";
+import { isBefore, subSeconds } from "date-fns";
 import * as O from "fp-ts/lib/Option";
 import * as TE from "fp-ts/lib/TaskEither";
-import { Second } from "@pagopa/ts-commons/lib/units";
-import { ActivationStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ActivationStatus";
-import { isBefore, subSeconds } from "date-fns";
+import { pipe } from "fp-ts/lib/function";
 
 /**
  * Return Unauthorized if the Service is not a SPECIAL service.
@@ -29,7 +29,7 @@ export const authorizedForSpecialServicesTask = (
   pipe(
     O.fromNullable(service.serviceMetadata),
     O.filter(
-      serviceMetadata =>
+      (serviceMetadata) =>
         serviceMetadata.category === SpecialServiceCategoryEnum.SPECIAL
     ),
     TE.fromOption(() => ResponseErrorForbiddenNotAuthorized)
@@ -47,22 +47,20 @@ export type CanSendMessageOnActivation = (
  *
  * @param pendingActivationGracePeriod PENDING grace period in seconds
  */
-export const canSendMessageOnActivationWithGrace = (
-  pendingActivationGracePeriod: Second
-): CanSendMessageOnActivation => (
-  maybeActivation: O.Option<RetrievedActivation>
-): boolean =>
-  pipe(
-    maybeActivation,
-    O.map(
-      activation =>
-        activation.status === ActivationStatusEnum.ACTIVE ||
-        (activation.status === ActivationStatusEnum.PENDING &&
-          isBefore(
-            subSeconds(new Date(), pendingActivationGracePeriod),
-            // eslint-disable-next-line no-underscore-dangle
-            activation._ts
-          ))
-    ),
-    O.getOrElse(() => false)
-  );
+export const canSendMessageOnActivationWithGrace =
+  (pendingActivationGracePeriod: Second): CanSendMessageOnActivation =>
+  (maybeActivation: O.Option<RetrievedActivation>): boolean =>
+    pipe(
+      maybeActivation,
+      O.map(
+        (activation) =>
+          activation.status === ActivationStatusEnum.ACTIVE ||
+          (activation.status === ActivationStatusEnum.PENDING &&
+            isBefore(
+              subSeconds(new Date(), pendingActivationGracePeriod),
+              // eslint-disable-next-line no-underscore-dangle
+              activation._ts
+            ))
+      ),
+      O.getOrElse(() => false)
+    );

@@ -7,23 +7,23 @@
 
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { MailerConfig } from "@pagopa/io-functions-commons/dist/src/mailer";
-import * as O from "fp-ts/lib/Option";
-import * as E from "fp-ts/lib/Either";
-import * as t from "io-ts";
-import { BooleanFromString, JsonFromString, withFallback } from "io-ts-types";
-
+import { DateFromTimestamp } from "@pagopa/ts-commons/lib/dates";
+import {
+  NonNegativeIntegerFromString,
+  NumberFromString
+} from "@pagopa/ts-commons/lib/numbers";
 import { readableReport } from "@pagopa/ts-commons/lib/reporters";
 import {
   FiscalCode,
   NonEmptyString,
   Semver
 } from "@pagopa/ts-commons/lib/strings";
-import { DateFromTimestamp } from "@pagopa/ts-commons/lib/dates";
-import {
-  NonNegativeIntegerFromString,
-  NumberFromString
-} from "@pagopa/ts-commons/lib/numbers";
+import * as E from "fp-ts/lib/Either";
+import * as O from "fp-ts/lib/Option";
 import { flow, pipe } from "fp-ts/lib/function";
+import * as t from "io-ts";
+import { BooleanFromString, JsonFromString, withFallback } from "io-ts-types";
+
 import { CommaSeparatedListOf } from "./comma-separated-list";
 import { FeatureFlag, FeatureFlagEnum } from "./featureFlag";
 
@@ -130,17 +130,17 @@ export const envConfig = {
 
   FF_DISABLE_INCOMPLETE_SERVICES: pipe(
     O.fromNullable(process.env.FF_DISABLE_INCOMPLETE_SERVICES),
-    O.map(_ => _.toLowerCase() === "true"),
+    O.map((_) => _.toLowerCase() === "true"),
     O.getOrElse(() => false)
   ),
   FF_DISABLE_WEBHOOK_MESSAGE_CONTENT: pipe(
     O.fromNullable(process.env.FF_DISABLE_WEBHOOK_MESSAGE_CONTENT),
-    O.map(_ => _.toLowerCase() === "true"),
+    O.map((_) => _.toLowerCase() === "true"),
     O.getOrElse(() => false)
   ),
   FF_OPT_IN_EMAIL_ENABLED: pipe(
     O.fromNullable(process.env.FF_OPT_IN_EMAIL_ENABLED),
-    O.map(_ => _.toLocaleLowerCase() === "true"),
+    O.map((_) => _.toLocaleLowerCase() === "true"),
     O.getOrElse(() => false)
   ),
   OPT_OUT_EMAIL_SWITCH_DATE: pipe(
@@ -179,7 +179,6 @@ const errorOrConfig: t.Validation<IConfig> = IConfig.decode(envConfig);
  *
  * @returns either the configuration values or a list of validation errors
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function getConfig(): t.Validation<IConfig> {
   return errorOrConfig;
 }
@@ -191,11 +190,10 @@ export function getConfig(): t.Validation<IConfig> {
  * @returns the configuration values
  * @throws validation errors found while parsing the application configuration
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function getConfigOrThrow(): IConfig {
   return pipe(
     errorOrConfig,
-    E.getOrElse(errors => {
+    E.getOrElse((errors) => {
       throw new Error(`Invalid configuration: ${readableReport(errors)}`);
     })
   );

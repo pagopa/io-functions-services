@@ -1,31 +1,28 @@
-import * as t from "io-ts";
-import * as E from "fp-ts/lib/Either";
-import * as O from "fp-ts/lib/Option";
-import * as TE from "fp-ts/lib/TaskEither";
-import { pipe } from "fp-ts/lib/function";
-
-import * as HtmlToText from "html-to-text";
-import * as NodeMailer from "nodemailer";
-
-import { readableReport } from "@pagopa/ts-commons/lib/reporters";
-import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
-
+import { sendMail } from "@pagopa/io-functions-commons/dist/src/mailer";
 import { ActiveMessage } from "@pagopa/io-functions-commons/dist/src/models/message";
 import {
   EmailNotification,
   NotificationModel
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
+import { readableReport } from "@pagopa/ts-commons/lib/reporters";
+import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
+import * as E from "fp-ts/lib/Either";
+import * as O from "fp-ts/lib/Option";
+import * as TE from "fp-ts/lib/TaskEither";
+import { pipe } from "fp-ts/lib/function";
+import * as HtmlToText from "html-to-text";
+import * as t from "io-ts";
+import * as NodeMailer from "nodemailer";
 
-import { sendMail } from "@pagopa/io-functions-commons/dist/src/mailer";
-import { withJsonInput } from "../utils/with-json-input";
-import { withDecodedInput } from "../utils/with-decoded-input";
+import { BetaUsers } from "../utils/config";
 import {
   CommonMessageData,
   NotificationCreatedEvent
 } from "../utils/events/message";
-import { DataFetcher, withExpandedInput } from "../utils/with-expanded-input";
-import { BetaUsers } from "../utils/config";
 import { FeatureFlag } from "../utils/featureFlag";
+import { withDecodedInput } from "../utils/with-decoded-input";
+import { DataFetcher, withExpandedInput } from "../utils/with-expanded-input";
+import { withJsonInput } from "../utils/with-json-input";
 import { messageReducedToHtml } from "./utils";
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
@@ -137,7 +134,7 @@ export const getEmailNotificationHandler = (
           const documentHtml = await pipe(
             { content, senderMetadata },
             messageReducedToHtml(),
-            TE.mapLeft(err => {
+            TE.mapLeft((err) => {
               throw err;
             }),
             TE.toUnion
@@ -168,7 +165,7 @@ export const getEmailNotificationHandler = (
               // disableUrlAccess: true,
             }),
             TE.bimap(
-              error => {
+              (error) => {
                 context.log.error(`${logPrefix}|ERROR=${error.message}`);
                 throw new Error(`Error while sending email: ${error.message}`);
               },

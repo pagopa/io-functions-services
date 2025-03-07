@@ -1,4 +1,9 @@
 import { Context } from "@azure/functions";
+import createAzureFunctionHandler from "@pagopa/express-azure-functions/dist/src/createAzureFunctionsHandler";
+import {
+  ACTIVATION_COLLECTION_NAME,
+  ActivationModel
+} from "@pagopa/io-functions-commons/dist/src/models/activation";
 import {
   PROFILE_COLLECTION_NAME,
   ProfileModel
@@ -8,25 +13,21 @@ import {
   ServiceModel
 } from "@pagopa/io-functions-commons/dist/src/models/service";
 import {
-  ServicesPreferencesModel,
-  SERVICE_PREFERENCES_COLLECTION_NAME
+  SERVICE_PREFERENCES_COLLECTION_NAME,
+  ServicesPreferencesModel
 } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 import { secureExpressApp } from "@pagopa/io-functions-commons/dist/src/utils/express";
 import { setAppContext } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
-import cors = require("cors");
-import express = require("express");
-import createAzureFunctionHandler from "@pagopa/express-azure-functions/dist/src/createAzureFunctionsHandler";
-import {
-  ActivationModel,
-  ACTIVATION_COLLECTION_NAME
-} from "@pagopa/io-functions-commons/dist/src/models/activation";
 import { Second } from "@pagopa/ts-commons/lib/units";
+
 import { initTelemetryClient } from "../utils/appinsights";
 import { getConfigOrThrow } from "../utils/config";
 import { cosmosdbInstance } from "../utils/cosmosdb";
-
 import { canSendMessageOnActivationWithGrace } from "../utils/services";
 import { GetLimitedProfile } from "./handler";
+
+import cors = require("cors");
+import express = require("express");
 
 const config = getConfigOrThrow();
 const telemetryClient = initTelemetryClient(
@@ -76,7 +77,6 @@ app.get(
 const azureFunctionHandler = createAzureFunctionHandler(app);
 
 // Binds the express app to an Azure Function handler
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 function httpStart(context: Context): void {
   setAppContext(app, context);
   azureFunctionHandler(context);

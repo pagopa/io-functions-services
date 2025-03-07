@@ -1,12 +1,20 @@
+import { SpecialServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/SpecialServiceCategory";
 import { BlockedInboxOrChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
 import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
 import { LimitedProfile } from "@pagopa/io-functions-commons/dist/generated/definitions/LimitedProfile";
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
+import { ServicesPreferencesModeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServicesPreferencesMode";
+import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
 import {
   ProfileModel,
   RetrievedProfile
 } from "@pagopa/io-functions-commons/dist/src/models/profile";
 import { ValidService } from "@pagopa/io-functions-commons/dist/src/models/service";
+import {
+  ServicesPreferencesModel,
+  makeServicesPreferencesDocumentId
+} from "@pagopa/io-functions-commons/dist/src/models/service_preference";
+import { CosmosErrors } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
 import { IAzureApiAuthorization } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
 import { IAzureUserAttributes } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
 import { IRequestMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
@@ -14,35 +22,27 @@ import {
   IResponseErrorQuery,
   ResponseErrorQuery
 } from "@pagopa/io-functions-commons/dist/src/utils/response";
-import * as O from "fp-ts/lib/Option";
-import * as TE from "fp-ts/lib/TaskEither";
-import * as E from "fp-ts/lib/Either";
-
-import { Task } from "fp-ts/lib/Task";
-import { ServicesPreferencesModeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServicesPreferencesMode";
-import {
-  makeServicesPreferencesDocumentId,
-  ServicesPreferencesModel
-} from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 import { NonNegativeInteger } from "@pagopa/ts-commons/lib/numbers";
-import { CosmosErrors } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
 import {
-  ResponseErrorInternal,
   IResponseErrorForbiddenNotAuthorizedForRecipient,
+  IResponseErrorInternal,
   IResponseErrorNotFound,
   IResponseSuccessJson,
   ResponseErrorForbiddenNotAuthorizedForRecipient,
   ResponseErrorFromValidationErrors,
+  ResponseErrorInternal,
   ResponseErrorNotFound,
-  ResponseSuccessJson,
-  IResponseErrorInternal
+  ResponseSuccessJson
 } from "@pagopa/ts-commons/lib/responses";
+import * as E from "fp-ts/lib/Either";
+import * as O from "fp-ts/lib/Option";
+import { Task } from "fp-ts/lib/Task";
+import * as TE from "fp-ts/lib/TaskEither";
 import { TaskEither } from "fp-ts/lib/TaskEither";
-import { pipe, identity } from "fp-ts/lib/function";
-import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
-import { SpecialServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/SpecialServiceCategory";
-import { FiscalCodePayload } from "../generated/definitions/FiscalCodePayload";
+import { identity, pipe } from "fp-ts/lib/function";
+
 import { canWriteMessage } from "../CreateMessage/handler";
+import { FiscalCodePayload } from "../generated/definitions/FiscalCodePayload";
 import { initTelemetryClient } from "./appinsights";
 import { toHash } from "./crypto";
 import { CanSendMessageOnActivation } from "./services";
@@ -105,8 +105,8 @@ export const isSenderAllowed = (
   pipe(
     makeServicesPreferencesDocumentId(fiscalCode, serviceId, version),
     TE.of,
-    TE.chain(docId => servicesPreferencesModel.find([docId, fiscalCode])),
-    TE.chain(maybeDoc =>
+    TE.chain((docId) => servicesPreferencesModel.find([docId, fiscalCode])),
+    TE.chain((maybeDoc) =>
       pipe(
         maybeDoc,
         O.fold(
@@ -116,10 +116,10 @@ export const isSenderAllowed = (
             mode === ServicesPreferencesModeEnum.AUTO
               ? TE.of(true)
               : mode === ServicesPreferencesModeEnum.MANUAL
-              ? TE.of(false)
-              : TE.left(unexpectedValue(mode)),
+                ? TE.of(false)
+                : TE.left(unexpectedValue(mode)),
           // Read straight from the preference
-          doc => TE.of(doc.isInboxEnabled)
+          (doc) => TE.of(doc.isInboxEnabled)
         )
       )
     )
@@ -128,7 +128,6 @@ export const isSenderAllowed = (
 /**
  * Converts the RetrievedProfile model to LimitedProfile type.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function retrievedProfileToLimitedProfile(
   retrivedProfile: RetrievedProfile,
   senderAllowed: boolean
@@ -146,7 +145,7 @@ export function retrievedProfileToLimitedProfile(
 export const FiscalCodePayloadMiddleware: IRequestMiddleware<
   "IResponseErrorValidation",
   FiscalCodePayload
-> = request =>
+> = (request) =>
   Promise.resolve(
     pipe(
       request.body,
@@ -191,10 +190,10 @@ export const getLimitedProfileTask = (
           fiscalCode
         ),
         TE.fromEither,
-        TE.mapLeft(_ => ResponseErrorForbiddenNotAuthorizedForRecipient)
+        TE.mapLeft(() => ResponseErrorForbiddenNotAuthorizedForRecipient)
       )
     ), // Verify if the Service has the required quality to sent message
-    TE.chain(_ => {
+    TE.chain(() => {
       if (
         disableIncompleteServices &&
         !incompleteServiceWhitelist.includes(
@@ -206,27 +205,27 @@ export const getLimitedProfileTask = (
           userAttributes.service,
           ValidService.decode,
           E.bimap(
-            _1 => ResponseErrorForbiddenNotAuthorizedForRecipient,
-            _1 => true
+            () => ResponseErrorForbiddenNotAuthorizedForRecipient,
+            () => true
           ),
           TE.fromEither
         );
       }
       return TE.fromEither(E.right(true));
     }),
-    TE.chainW(_ =>
+    TE.chainW(() =>
       pipe(
         profileModel.findLastVersionByModelId([fiscalCode]),
-        TE.mapLeft(error =>
+        TE.mapLeft((error) =>
           ResponseErrorQuery("Error while retrieving the profile", error)
         )
       )
     ),
     TE.chainW(
       TE.fromPredicate(
-        maybeProfile =>
+        (maybeProfile) =>
           O.isSome(maybeProfile) && maybeProfile.value.isInboxEnabled,
-        _ =>
+        () =>
           ResponseErrorNotFound(
             "Profile not found",
             "The profile you requested was not found in the system."
@@ -240,7 +239,7 @@ export const getLimitedProfileTask = (
         );
       })
     ),
-    TE.chain(profile =>
+    TE.chain((profile) =>
       pipe(
         TE.of(void 0),
         TE.fromPredicate(
@@ -270,19 +269,19 @@ export const getLimitedProfileTask = (
             return pipe(
               isSenderAllowedTask,
               TE.bimap(
-                error =>
+                (error) =>
                   error.kind === "UNEXPECTED_VALUE"
                     ? ResponseErrorInternal(`Unexpected mode: ${error.value}`)
                     : ResponseErrorQuery(
                         "Failed to read preference for the given service",
                         error
                       ),
-                isAllowed => ({
+                (isAllowed) => ({
                   isAllowed,
                   profile
                 })
               ),
-              TE.map(_ => {
+              TE.map((_) => {
                 telemetryClient.trackEvent({
                   name: "api.limitedprofile.sender-allowed",
                   properties: {
@@ -305,8 +304,8 @@ export const getLimitedProfileTask = (
                 profile.fiscalCode
               ]),
               TE.map(canSendMessageOnActivation),
-              TE.map(isAllowed => ({ isAllowed, profile })),
-              TE.mapLeft(_ =>
+              TE.map((isAllowed) => ({ isAllowed, profile })),
+              TE.mapLeft(() =>
                 ResponseErrorInternal(
                   "Error while retrieving the user service activation"
                 )

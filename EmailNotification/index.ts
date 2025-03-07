@@ -1,14 +1,13 @@
 ﻿import { AzureFunction } from "@azure/functions";
-
+import { getMailerTransporter } from "@pagopa/io-functions-commons/dist/src/mailer";
 import {
   NOTIFICATION_COLLECTION_NAME,
   NotificationModel
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
-
-import { getMailerTransporter } from "@pagopa/io-functions-commons/dist/src/mailer";
 import { createBlobService } from "azure-storage";
-import { cosmosdbInstance } from "../utils/cosmosdb";
+
 import { getConfigOrThrow } from "../utils/config";
+import { cosmosdbInstance } from "../utils/cosmosdb";
 import { CommonMessageData } from "../utils/events/message";
 import { makeRetrieveExpandedDataFromBlob } from "../utils/with-expanded-input";
 import { getEmailNotificationHandler } from "./handler";

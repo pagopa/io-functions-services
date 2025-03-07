@@ -1,17 +1,16 @@
-import { Either, left, right } from "fp-ts/lib/Either";
-import * as NodeMailer from "nodemailer";
-
 import { MessageBodyMarkdown } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageBodyMarkdown";
 import { MessageSubject } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageSubject";
 import { CreatedMessageEventSenderMetadata } from "@pagopa/io-functions-commons/dist/src/models/created_message_sender_metadata";
-import { markdownToHtml } from "@pagopa/io-functions-commons/dist/src/utils/markdown";
-
 import defaultEmailTemplate from "@pagopa/io-functions-commons/dist/src/templates/html/default";
-import { flow, pipe } from "fp-ts/lib/function";
-import * as TE from "fp-ts/TaskEither";
-import * as E from "fp-ts/Either";
+import { markdownToHtml } from "@pagopa/io-functions-commons/dist/src/utils/markdown";
 import { OrganizationFiscalCode } from "@pagopa/ts-commons/lib/strings";
+import * as E from "fp-ts/Either";
+import * as TE from "fp-ts/TaskEither";
+import { Either, left, right } from "fp-ts/lib/Either";
+import { flow, pipe } from "fp-ts/lib/function";
 import * as S from "fp-ts/string";
+import * as NodeMailer from "nodemailer";
+
 import { MessageContent } from "../generated/definitions/MessageContent";
 import * as message_reduced_template from "../generated/templates/messagepreview/index";
 
@@ -57,7 +56,6 @@ export const generateDocumentHtml = async (
   // wrap the generated HTML into an email template
   return defaultEmailTemplate(
     subject, // title
-    // eslint-disable-next-line extra-rules/no-commented-out-code
     "", // TODO: headline
     senderMetadata.organizationName, // organization name
     senderServiceName, // service name
@@ -71,12 +69,11 @@ export const generateDocumentHtml = async (
 /**
  * Promise wrapper around Transporter#sendMail
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export async function sendMail(
   transporter: NodeMailer.Transporter,
   options: NodeMailer.SendMailOptions
 ): Promise<Either<Error, NodeMailer.SentMessageInfo>> {
-  return new Promise<Either<Error, NodeMailer.SentMessageInfo>>(resolve => {
+  return new Promise<Either<Error, NodeMailer.SentMessageInfo>>((resolve) => {
     transporter.sendMail(options, (err, res) => {
       const result: Either<Error, NodeMailer.SentMessageInfo> = err
         ? left(err)
@@ -96,8 +93,8 @@ export const contentToHtml: (
   processor = markdownToHtml.process
 ) =>
   flow(
-    TE.tryCatchK(m => processor(m), E.toError),
-    TE.map(htmlAsFile => htmlAsFile.toString()),
+    TE.tryCatchK((m) => processor(m), E.toError),
+    TE.map((htmlAsFile) => htmlAsFile.toString()),
     TE.map(S.replace(/\n|\r\n/g, "</p><p>"))
   );
 
@@ -125,7 +122,6 @@ export const invalidateClickableLinks = (text: string): string =>
 
 export const prepareBody = (markdown: string): string =>
   pipe(
-    // eslint-disable-next-line functional/immutable-data
     markdown.split("---").pop(),
     removeMd,
     truncateMarkdown,
@@ -138,24 +134,21 @@ type MessageReducedToHtmlOutput = ({
   senderMetadata
 }: MessageReducedToHtmlInput) => TE.TaskEither<Error, string>;
 
-export const messageReducedToHtml = (
-  processor?: Processor
-): MessageReducedToHtmlOutput => ({
-  content,
-  senderMetadata
-}): TE.TaskEither<Error, string> =>
-  pipe(
-    content.markdown,
-    prepareBody,
-    contentToHtml(processor),
-    // strip leading zeroes
-    TE.map(bodyHtml =>
-      message_reduced_template.apply(content.subject, bodyHtml, {
-        ...senderMetadata,
-        organizationFiscalCode: senderMetadata.organizationFiscalCode.replace(
-          /^0+/,
-          ""
-        ) as OrganizationFiscalCode
-      })
-    )
-  );
+export const messageReducedToHtml =
+  (processor?: Processor): MessageReducedToHtmlOutput =>
+  ({ content, senderMetadata }): TE.TaskEither<Error, string> =>
+    pipe(
+      content.markdown,
+      prepareBody,
+      contentToHtml(processor),
+      // strip leading zeroes
+      TE.map((bodyHtml) =>
+        message_reduced_template.apply(content.subject, bodyHtml, {
+          ...senderMetadata,
+          organizationFiscalCode: senderMetadata.organizationFiscalCode.replace(
+            /^0+/,
+            ""
+          ) as OrganizationFiscalCode
+        })
+      )
+    );

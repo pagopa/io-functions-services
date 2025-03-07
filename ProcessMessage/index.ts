@@ -1,30 +1,30 @@
 import { AzureFunction } from "@azure/functions";
-import { createBlobService } from "azure-storage";
-
+import {
+  ACTIVATION_COLLECTION_NAME,
+  ActivationModel
+} from "@pagopa/io-functions-commons/dist/src/models/activation";
 import {
   MESSAGE_COLLECTION_NAME,
   MessageModel
 } from "@pagopa/io-functions-commons/dist/src/models/message";
 import {
-  PROFILE_COLLECTION_NAME,
-  ProfileModel
-} from "@pagopa/io-functions-commons/dist/src/models/profile";
-import {
-  ServicesPreferencesModel,
-  SERVICE_PREFERENCES_COLLECTION_NAME
-} from "@pagopa/io-functions-commons/dist/src/models/service_preference";
-import {
   MESSAGE_STATUS_COLLECTION_NAME,
   MessageStatusModel
 } from "@pagopa/io-functions-commons/dist/src/models/message_status";
 import {
-  ActivationModel,
-  ACTIVATION_COLLECTION_NAME
-} from "@pagopa/io-functions-commons/dist/src/models/activation";
+  PROFILE_COLLECTION_NAME,
+  ProfileModel
+} from "@pagopa/io-functions-commons/dist/src/models/profile";
+import {
+  SERVICE_PREFERENCES_COLLECTION_NAME,
+  ServicesPreferencesModel
+} from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 import { Second } from "@pagopa/ts-commons/lib/units";
-import { cosmosdbInstance } from "../utils/cosmosdb";
-import { getConfigOrThrow } from "../utils/config";
+import { createBlobService } from "azure-storage";
+
 import { initTelemetryClient } from "../utils/appinsights";
+import { getConfigOrThrow } from "../utils/config";
+import { cosmosdbInstance } from "../utils/cosmosdb";
 import { CommonMessageData } from "../utils/events/message";
 import { makeRetrieveExpandedDataFromBlob } from "../utils/with-expanded-input";
 import { getProcessMessageHandler } from "./handler";
@@ -81,7 +81,8 @@ const activityFunctionHandler: AzureFunction = getProcessMessageHandler({
   lProfileModel: profileModel,
   lServicePreferencesModel: servicePreferencesModel,
   optOutEmailSwitchDate: config.OPT_OUT_EMAIL_SWITCH_DATE,
-  pendingActivationGracePeriod: config.PENDING_ACTIVATION_GRACE_PERIOD_SECONDS as Second,
+  pendingActivationGracePeriod:
+    config.PENDING_ACTIVATION_GRACE_PERIOD_SECONDS as Second,
   retrieveProcessingMessageData,
   telemetryClient
 });

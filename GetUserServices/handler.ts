@@ -1,10 +1,7 @@
-import * as express from "express";
-
-import {
-  ClientIp,
-  ClientIpMiddleware
-} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
-
+import { Context } from "@azure/functions";
+import { UserInfoAndSubscriptions } from "@pagopa/io-functions-admin-sdk/UserInfoAndSubscriptions";
+import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
+import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
 import {
   AzureApiAuthMiddleware,
   IAzureApiAuthorization,
@@ -15,32 +12,32 @@ import {
   IAzureUserAttributes
 } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
 import {
+  ClientIp,
+  ClientIpMiddleware
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
+import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
+import {
   withRequestMiddlewares,
   wrapRequestHandler
 } from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
+import {
+  checkSourceIpForHandler,
+  clientIPAndCidrTuple as ipTuple
+} from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
 import {
   IResponseSuccessJson,
   ResponseSuccessJson
 } from "@pagopa/ts-commons/lib/responses";
 import { EmailString, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
-
-import {
-  checkSourceIpForHandler,
-  clientIPAndCidrTuple as ipTuple
-} from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
-
-import { Context } from "@azure/functions";
-import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
-import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
-import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
-import { pipe } from "fp-ts/lib/function";
+import * as express from "express";
 import * as TE from "fp-ts/lib/TaskEither";
 import { TaskEither } from "fp-ts/lib/TaskEither";
-import { UserInfoAndSubscriptions } from "@pagopa/io-functions-admin-sdk/UserInfoAndSubscriptions";
+import { pipe } from "fp-ts/lib/function";
+
 import { APIClient } from "../clients/admin";
 import { ServiceIdCollection } from "../generated/definitions/ServiceIdCollection";
 import { withApiRequestWrapper } from "../utils/api";
-import { getLogger, ILogger } from "../utils/logging";
+import { ILogger, getLogger } from "../utils/logging";
 import { ErrorResponses } from "../utils/responses";
 
 /**
@@ -74,7 +71,6 @@ const getUserTask = (
 /**
  * Handles requests for getting an array of serviceID by providing the current user email.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function GetUserServicesHandler(
   apiClient: APIClient
 ): IGetUserServicesHandler {
@@ -86,9 +82,9 @@ export function GetUserServicesHandler(
         apiClient,
         userAttributes.email
       ),
-      TE.map(userInfo =>
+      TE.map((userInfo) =>
         ResponseSuccessJson({
-          items: userInfo.subscriptions.map(it =>
+          items: userInfo.subscriptions.map((it) =>
             ServiceId.encode(it.id as NonEmptyString)
           )
         })
@@ -100,7 +96,6 @@ export function GetUserServicesHandler(
 /**
  * Wraps a GetUserServices handler inside an Express request handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function GetUserServices(
   serviceModel: ServiceModel,
   client: APIClient
