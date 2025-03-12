@@ -1,5 +1,4 @@
 import { ServiceResponse, TableQuery, TableService } from "azure-storage";
-
 import * as E from "fp-ts/lib/Either";
 import { Either } from "fp-ts/lib/Either";
 
@@ -26,22 +25,25 @@ export type PagedQuery = (
 /**
  * Returns a paged query function for a certain query on a storage table
  */
-export const getPagedQuery = (tableService: TableService, table: string) => (
-  tableQuery: TableQuery
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-): PagedQuery => currentToken =>
-  new Promise(resolve =>
-    tableService.queryEntities(
-      table,
-      tableQuery,
-      currentToken,
-      (
-        error: Error,
-        result: TableService.QueryEntitiesResult<TableEntry>,
-        response: ServiceResponse
-      ) => resolve(response.isSuccessful ? E.right(result) : E.left(error))
-    )
-  );
+export const getPagedQuery =
+  (tableService: TableService, table: string) =>
+  (
+    tableQuery: TableQuery
+    // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+  ): PagedQuery =>
+  (currentToken) =>
+    new Promise((resolve) =>
+      tableService.queryEntities(
+        table,
+        tableQuery,
+        currentToken,
+        (
+          error: Error,
+          result: TableService.QueryEntitiesResult<TableEntry>,
+          response: ServiceResponse
+        ) => resolve(response.isSuccessful ? E.right(result) : E.left(error))
+      )
+    );
 
 /**
  * Iterates over all pages of entries returned by the provided paged query
@@ -52,7 +54,6 @@ export const getPagedQuery = (tableService: TableService, table: string) => (
 async function* iterateOnPages(
   pagedQuery: PagedQuery
 ): AsyncIterableIterator<ReadonlyArray<TableEntry>> {
-  // eslint-disable-next-line functional/no-let
   let token: TableService.TableContinuationToken = null;
   do {
     // query for a page of entries
@@ -86,24 +87,23 @@ const hashFromEntry = (e: TableEntry): FiscalCodeHash | undefined => {
 /**
  * Do something with the user hash extracted from the table entry
  */
-const withHashFromEntry = (f: (s: FiscalCodeHash) => void) => (
-  e: TableEntry
-): void => {
-  const hash = hashFromEntry(e);
-  if (hash !== undefined) {
-    f(hash);
-  }
-};
+const withHashFromEntry =
+  (f: (s: FiscalCodeHash) => void) =>
+  (e: TableEntry): void => {
+    const hash = hashFromEntry(e);
+    if (hash !== undefined) {
+      f(hash);
+    }
+  };
 
 /**
  * Fetches all user hashed returned by the provided paged query
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export async function queryUsers(
   pagedQuery: PagedQuery
 ): Promise<ReadonlySet<FiscalCodeHash>> {
   const entries = new Set<FiscalCodeHash>();
-  const addToSet = withHashFromEntry(s => entries.add(s));
+  const addToSet = withHashFromEntry((s) => entries.add(s));
   for await (const page of iterateOnPages(pagedQuery)) {
     page.forEach(addToSet);
   }

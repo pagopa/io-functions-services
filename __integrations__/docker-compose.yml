@@ -2,11 +2,11 @@ version: "3.2"
 
 services:
 
-  functions-node-18:
-    image: functions-node-18
+  functions-node-20:
+    image: functions-node-20
     build:
       context: ..
-      dockerfile: ./docker/functions-node-18/Dockerfile
+      dockerfile: ./docker/functions-node-20/Dockerfile
     command: /bin/true
 
   cosmosdb:
@@ -53,11 +53,11 @@ services:
       - cosmosdb
       - storage-account
     depends_on:
-      - functions-node-18
+      - functions-node-20
       - fixtures
 
   testagent:
-    image: node:18-alpine
+    image: node:20-alpine
     container_name: fn_services_testagent
     working_dir: /usr/src/app
     command: tail -f /dev/null # to keep it   up&running

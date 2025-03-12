@@ -1,16 +1,16 @@
 import { AzureFunction } from "@azure/functions";
-
+import {
+  MESSAGE_COLLECTION_NAME,
+  MessageModel
+} from "@pagopa/io-functions-commons/dist/src/models/message";
 import {
   MESSAGE_STATUS_COLLECTION_NAME,
   MessageStatusModel
 } from "@pagopa/io-functions-commons/dist/src/models/message_status";
-import {
-  MessageModel,
-  MESSAGE_COLLECTION_NAME
-} from "@pagopa/io-functions-commons/dist/src/models/message";
-import { cosmosdbInstance } from "../utils/cosmosdb";
-import { getConfigOrThrow } from "../utils/config";
+
 import { initTelemetryClient } from "../utils/appinsights";
+import { getConfigOrThrow } from "../utils/config";
+import { cosmosdbInstance } from "../utils/cosmosdb";
 import { getOnFailedProcessMessageHandler } from "./handler";
 
 const config = getConfigOrThrow();

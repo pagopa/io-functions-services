@@ -1,39 +1,36 @@
-import * as t from "io-ts";
-
-import * as E from "fp-ts/lib/Either";
-import * as O from "fp-ts/lib/Option";
-import { Option } from "fp-ts/lib/Option";
-
 import { BlockedInboxOrChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
 import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
 import { HttpsUrl } from "@pagopa/io-functions-commons/dist/generated/definitions/HttpsUrl";
 import { MessageContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageContent";
 import { NotificationChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/NotificationChannel";
+import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
+import { ServicesPreferencesModeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServicesPreferencesMode";
 import { CreatedMessageEventSenderMetadata } from "@pagopa/io-functions-commons/dist/src/models/created_message_sender_metadata";
 import { NewMessageWithoutContent } from "@pagopa/io-functions-commons/dist/src/models/message";
 import {
-  createNewNotification,
   NewNotification,
   NotificationAddressSourceEnum,
   NotificationChannelEmail,
-  NotificationModel
+  NotificationModel,
+  createNewNotification
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
 import { NotificationEvent } from "@pagopa/io-functions-commons/dist/src/models/notification_event";
 import { RetrievedProfile } from "@pagopa/io-functions-commons/dist/src/models/profile";
 import { ulidGenerator } from "@pagopa/io-functions-commons/dist/src/utils/strings";
-
-import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
-import { ServicesPreferencesModeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServicesPreferencesMode";
+import * as E from "fp-ts/lib/Either";
+import * as O from "fp-ts/lib/Option";
+import { Option } from "fp-ts/lib/Option";
 import { pipe } from "fp-ts/lib/function";
+import * as t from "io-ts";
 
-import { withJsonInput } from "../utils/with-json-input";
-import { withDecodedInput } from "../utils/with-decoded-input";
-import { withExpandedInput, DataFetcher } from "../utils/with-expanded-input";
 import {
   CommonMessageData,
   NotificationCreatedEvent,
   ProcessedMessageEvent
 } from "../utils/events/message";
+import { withDecodedInput } from "../utils/with-decoded-input";
+import { DataFetcher, withExpandedInput } from "../utils/with-expanded-input";
+import { withJsonInput } from "../utils/with-json-input";
 
 /**
  * Attempt to resolve an email address from
@@ -45,7 +42,7 @@ const getEmailAddressFromProfile = (
   pipe(
     profile.email,
     O.fromNullable,
-    O.map(email => ({
+    O.map((email) => ({
       addressSource: NotificationAddressSourceEnum.PROFILE_ADDRESS,
       toAddress: email
     }))
@@ -54,7 +51,6 @@ const getEmailAddressFromProfile = (
 /**
  * Try to create (save) a new notification
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 async function createNotification(
   lNotificationModel: NotificationModel,
   senderMetadata: CreatedMessageEventSenderMetadata,
@@ -62,9 +58,8 @@ async function createNotification(
   newMessageContent: MessageContent,
   newNotification: NewNotification
 ): Promise<NotificationEvent> {
-  const errorOrNotification = await lNotificationModel.create(
-    newNotification
-  )();
+  const errorOrNotification =
+    await lNotificationModel.create(newNotification)();
 
   if (E.isLeft(errorOrNotification)) {
     throw new Error(
@@ -150,9 +145,10 @@ export const getCreateNotificationHandler = (
           const isEmailChannelAllowed = !senderMetadata.requireSecureChannels;
 
           // wether the service is in our blacklist for sending email
-          const isEmailDisabledForService = lEmailNotificationServiceBlackList.includes(
-            newMessageWithoutContent.senderServiceId
-          );
+          const isEmailDisabledForService =
+            lEmailNotificationServiceBlackList.includes(
+              newMessageWithoutContent.senderServiceId
+            );
 
           // whether email notifications are enabled in this user profile - this is
           // true by default, it's false only for users that have isEmailEnabled = false
@@ -207,9 +203,10 @@ export const getCreateNotificationHandler = (
             0;
 
           // wether the service is in our blacklist for sending push notifications
-          const isWebhookDisabledForService = lWebhookNotificationServiceBlackList.includes(
-            newMessageWithoutContent.senderServiceId
-          );
+          const isWebhookDisabledForService =
+            lWebhookNotificationServiceBlackList.includes(
+              newMessageWithoutContent.senderServiceId
+            );
 
           // finally we decide whether we should send the webhook notification or not -
           // we send a webhook notification when all the following conditions are met:
@@ -279,17 +276,19 @@ export const getCreateNotificationHandler = (
           context.log.verbose(`${logPrefix}|RESULT=SUCCESS`);
 
           if (O.isSome(maybeEmailNotificationAddress)) {
-            // eslint-disable-next-line functional/immutable-data
-            context.bindings.notificationCreatedEmail = NotificationCreatedEvent.encode(
-              { messageId, notificationId: createdNotification.notificationId }
-            );
+            context.bindings.notificationCreatedEmail =
+              NotificationCreatedEvent.encode({
+                messageId,
+                notificationId: createdNotification.notificationId
+              });
           }
 
           if (O.isSome(maybeWebhookNotificationUrl)) {
-            // eslint-disable-next-line functional/immutable-data
-            context.bindings.notificationCreatedWebhook = NotificationCreatedEvent.encode(
-              { messageId, notificationId: createdNotification.notificationId }
-            );
+            context.bindings.notificationCreatedWebhook =
+              NotificationCreatedEvent.encode({
+                messageId,
+                notificationId: createdNotification.notificationId
+              });
           }
         }
       )

@@ -1,13 +1,4 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import * as TE from "fp-ts/TaskEither";
-import * as O from "fp-ts/Option";
-import * as b from "fp-ts/boolean";
-import { pipe } from "fp-ts/lib/function";
-
-import * as t from "io-ts";
-
-import * as semver from "semver";
-
 import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { RetrievedProfile } from "@pagopa/io-functions-commons/dist/src/models/profile";
@@ -15,8 +6,14 @@ import {
   AccessReadMessageStatusEnum,
   ServicePreference
 } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
-import { Semver } from "@pagopa/ts-commons/lib/strings";
 import { NonNegativeInteger } from "@pagopa/ts-commons/lib/numbers";
+import { Semver } from "@pagopa/ts-commons/lib/strings";
+import * as O from "fp-ts/Option";
+import * as TE from "fp-ts/TaskEither";
+import * as b from "fp-ts/boolean";
+import { pipe } from "fp-ts/lib/function";
+import * as t from "io-ts";
+import * as semver from "semver";
 
 /**
  * It return the right UserPreferenceChecker, based on user's appVersion
@@ -34,7 +31,7 @@ export const userPreferencesCheckerFactory: UserPreferenceCheckerFactory = (
 ) =>
   pipe(
     profile.lastAppVersion ?? "UNKNOWN",
-    version =>
+    (version) =>
       t.literal("UNKNOWN").is(version) ||
       !isAppVersionHandlingReadAuthorization(
         minAppVersionHandlingReadAuth,
@@ -72,9 +69,11 @@ export interface IUserPreferencesChecker {
  *
  * Always return false (authorization denied)
  */
-export const userPreferenceCheckerVersionUNKNOWNToVersionWithReadAuth: IUserPreferencesChecker = {
-  canAccessMessageReadStatus: (_serviceId, _fiscalCode) => TE.of(false)
-};
+export const userPreferenceCheckerVersionUNKNOWNToVersionWithReadAuth: IUserPreferencesChecker =
+  {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    canAccessMessageReadStatus: (_serviceId, _fiscalCode) => TE.of(false)
+  };
 
 /**
  * User Preference Checker, in case app version is >=the one in which read status preference has been introduced
@@ -84,18 +83,18 @@ export const userPreferenceCheckerVersionUNKNOWNToVersionWithReadAuth: IUserPref
  */
 export const userPreferenceCheckerVersionWithReadAuth: (
   servicePreferencesGetter: ServicePreferencesGetter
-) => IUserPreferencesChecker = servicePreferencesGetter => ({
+) => IUserPreferencesChecker = (servicePreferencesGetter) => ({
   canAccessMessageReadStatus: (
     serviceId,
     fiscalCode
   ): ReturnType<IUserPreferencesChecker["canAccessMessageReadStatus"]> =>
     pipe(
       servicePreferencesGetter(fiscalCode, serviceId),
-      TE.map(O.map(pref => pref.accessReadMessageStatus)),
+      TE.map(O.map((pref) => pref.accessReadMessageStatus)),
       // If user did not specify a custom authorization for the service,
       // we assume it's allowed to access read status
       TE.map(O.getOrElse(() => AccessReadMessageStatusEnum.ALLOW)),
-      TE.map(readStatus => readStatus !== AccessReadMessageStatusEnum.DENY)
+      TE.map((readStatus) => readStatus !== AccessReadMessageStatusEnum.DENY)
     )
 });
 

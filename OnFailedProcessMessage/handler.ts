@@ -1,27 +1,28 @@
 /* eslint-disable max-lines-per-function */
 
 import { Context } from "@azure/functions";
-import {
-  getMessageStatusUpdater,
-  MessageStatusModel
-} from "@pagopa/io-functions-commons/dist/src/models/message_status";
-import { MessageModel } from "@pagopa/io-functions-commons/dist/src/models/message";
 import { NotRejectedMessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/NotRejectedMessageStatusValue";
-import { constant, pipe } from "fp-ts/lib/function";
-import * as E from "fp-ts/Either";
-import * as TE from "fp-ts/TaskEither";
+import { MessageModel } from "@pagopa/io-functions-commons/dist/src/models/message";
 import {
-  CosmosDecodingError,
-  CosmosErrorResponse
-} from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
+  MessageStatusModel,
+  getMessageStatusUpdater
+} from "@pagopa/io-functions-commons/dist/src/models/message_status";
 import {
   asyncIterableToArray,
   flattenAsyncIterable
 } from "@pagopa/io-functions-commons/dist/src/utils/async";
+import {
+  CosmosDecodingError,
+  CosmosErrorResponse
+} from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
+import * as E from "fp-ts/Either";
+import * as TE from "fp-ts/TaskEither";
+import { constant, pipe } from "fp-ts/lib/function";
+
+import { initTelemetryClient } from "../utils/appinsights";
 import { CreatedMessageEvent } from "../utils/events/message";
 import { withDecodedInput } from "../utils/with-decoded-input";
 import { withJsonInput } from "../utils/with-json-input";
-import { initTelemetryClient } from "../utils/appinsights";
 
 export interface IOnFailedProcessMessageHandlerInput {
   readonly lMessageStatusModel: MessageStatusModel;
@@ -52,7 +53,7 @@ export const getOnFailedProcessMessageHandler = ({
         constant,
         TE.fromTask,
         TE.filterOrElse(
-          messages => messages.length === 1,
+          (messages) => messages.length === 1,
           () =>
             CosmosErrorResponse({
               code: 404,
@@ -60,11 +61,11 @@ export const getOnFailedProcessMessageHandler = ({
               name: "Not Found"
             })
         ),
-        TE.chainEitherKW(messages =>
+        TE.chainEitherKW((messages) =>
           pipe(messages[0], E.mapLeft(CosmosDecodingError))
         ),
         // create the message status for the failed message
-        TE.chain(message =>
+        TE.chain((message) =>
           getMessageStatusUpdater(
             lMessageStatusModel,
             messageId,
@@ -81,7 +82,7 @@ export const getOnFailedProcessMessageHandler = ({
           });
         }),
         // throw error to trigger retry
-        TE.getOrElse(e => {
+        TE.getOrElse((e) => {
           throw e;
         })
       )()

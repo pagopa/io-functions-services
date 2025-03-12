@@ -1,17 +1,31 @@
-import * as express from "express";
-
+import { Context } from "@azure/functions";
+import { MessageContent } from "@pagopa/io-backend-notifications-sdk/MessageContent";
+import { ExternalCreatedMessageWithContent } from "@pagopa/io-functions-commons/dist/generated/definitions/ExternalCreatedMessageWithContent";
+import { ExternalCreatedMessageWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/ExternalCreatedMessageWithoutContent";
+import { ExternalMessageResponseWithContent } from "@pagopa/io-functions-commons/dist/generated/definitions/ExternalMessageResponseWithContent";
+import { ExternalMessageResponseWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/ExternalMessageResponseWithoutContent";
+import { NotRejectedMessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/NotRejectedMessageStatusValue";
+import { PaymentDataWithRequiredPayee } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentDataWithRequiredPayee";
+import { PaymentStatus } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentStatus";
 import {
-  ClientIp,
-  ClientIpMiddleware
-} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
-
-import { RequiredParamMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_param";
-
+  ReadStatus,
+  ReadStatusEnum
+} from "@pagopa/io-functions-commons/dist/generated/definitions/ReadStatus";
 import {
-  IResponseErrorQuery,
-  ResponseErrorQuery
-} from "@pagopa/io-functions-commons/dist/src/utils/response";
-
+  MessageModel,
+  RetrievedMessage
+} from "@pagopa/io-functions-commons/dist/src/models/message";
+import {
+  MessageStatusModel,
+  RetrievedMessageStatus
+} from "@pagopa/io-functions-commons/dist/src/models/message_status";
+import { NotificationModel } from "@pagopa/io-functions-commons/dist/src/models/notification";
+import { NotificationStatusModel } from "@pagopa/io-functions-commons/dist/src/models/notification_status";
+import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
+import {
+  getMessageNotificationStatuses,
+  retrievedMessageToPublic
+} from "@pagopa/io-functions-commons/dist/src/utils/messages";
 import {
   AzureApiAuthMiddleware,
   IAzureApiAuthorization,
@@ -21,13 +35,27 @@ import {
   AzureUserAttributesMiddleware,
   IAzureUserAttributes
 } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_user_attributes";
+import {
+  ClientIp,
+  ClientIpMiddleware
+} from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
+import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { FiscalCodeMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/fiscalcode";
+import { RequiredParamMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_param";
 import {
   withRequestMiddlewares,
   wrapRequestHandler
 } from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
 import {
-  getResponseErrorForbiddenNotAuthorized,
+  IResponseErrorQuery,
+  ResponseErrorQuery
+} from "@pagopa/io-functions-commons/dist/src/utils/response";
+import {
+  checkSourceIpForHandler,
+  clientIPAndCidrTuple as ipTuple
+} from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
+import { readableReport } from "@pagopa/ts-commons/lib/reporters";
+import {
   IResponseErrorForbiddenNotAuthorized,
   IResponseErrorInternal,
   IResponseErrorNotFound,
@@ -37,69 +65,30 @@ import {
   ResponseErrorInternal,
   ResponseErrorNotFound,
   ResponseErrorValidation,
-  ResponseSuccessJson
+  ResponseSuccessJson,
+  getResponseErrorForbiddenNotAuthorized
 } from "@pagopa/ts-commons/lib/responses";
 import { FiscalCode, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
-
-import {
-  checkSourceIpForHandler,
-  clientIPAndCidrTuple as ipTuple
-} from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
-
-import { NotificationModel } from "@pagopa/io-functions-commons/dist/src/models/notification";
-import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
-
 import { BlobService } from "azure-storage";
-
-import {
-  MessageModel,
-  RetrievedMessage
-} from "@pagopa/io-functions-commons/dist/src/models/message";
-
-import * as TE from "fp-ts/lib/TaskEither";
+import * as express from "express";
 import * as E from "fp-ts/lib/Either";
 import * as O from "fp-ts/lib/Option";
-
-import {
-  MessageStatusModel,
-  RetrievedMessageStatus
-} from "@pagopa/io-functions-commons/dist/src/models/message_status";
-import { NotificationStatusModel } from "@pagopa/io-functions-commons/dist/src/models/notification_status";
-import {
-  getMessageNotificationStatuses,
-  retrievedMessageToPublic
-} from "@pagopa/io-functions-commons/dist/src/utils/messages";
-
-import { Context } from "@azure/functions";
-import { ExternalMessageResponseWithContent } from "@pagopa/io-functions-commons/dist/generated/definitions/ExternalMessageResponseWithContent";
-import { ExternalMessageResponseWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/ExternalMessageResponseWithoutContent";
-import { ExternalCreatedMessageWithContent } from "@pagopa/io-functions-commons/dist/generated/definitions/ExternalCreatedMessageWithContent";
-import { ExternalCreatedMessageWithoutContent } from "@pagopa/io-functions-commons/dist/generated/definitions/ExternalCreatedMessageWithoutContent";
-import { NotRejectedMessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/NotRejectedMessageStatusValue";
-import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
-import { readableReport } from "@pagopa/ts-commons/lib/reporters";
+import * as TE from "fp-ts/lib/TaskEither";
+import * as B from "fp-ts/lib/boolean";
 import { pipe } from "fp-ts/lib/function";
 import * as t from "io-ts";
-import * as B from "fp-ts/lib/boolean";
-import {
-  ReadStatus,
-  ReadStatusEnum
-} from "@pagopa/io-functions-commons/dist/generated/definitions/ReadStatus";
-import { PaymentStatus } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentStatus";
 import { match } from "ts-pattern";
-import { PaymentDataWithRequiredPayee } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentDataWithRequiredPayee";
-import { MessageContent } from "@pagopa/io-backend-notifications-sdk/MessageContent";
-import { FeatureLevelTypeEnum } from "../generated/definitions/FeatureLevelType";
 
 import { PagoPaEcommerceClient } from "../clients/pagopa-ecommerce";
-import { errorsToError } from "../utils/responses";
-import { PaymentStatusEnum } from "../generated/definitions/PaymentStatus";
-import { IConfig } from "../utils/config";
+import { FeatureLevelTypeEnum } from "../generated/definitions/FeatureLevelType";
 import { LegalData } from "../generated/definitions/LegalData";
+import { PaymentStatusEnum } from "../generated/definitions/PaymentStatus";
 import {
   FaultCodeCategoryEnum,
   PaymentDuplicatedStatusFaultPaymentProblemJson
 } from "../generated/pagopa-ecommerce/PaymentDuplicatedStatusFaultPaymentProblemJson";
+import { IConfig } from "../utils/config";
+import { errorsToError } from "../utils/responses";
 import { MessageReadStatusAuth } from "./userPreferenceChecker/messageReadStatusAuth";
 
 /**
@@ -165,7 +154,7 @@ export const getReadStatusForService = (
 ): ReadStatus =>
   pipe(
     maybeMessageStatus,
-    O.map(messageStatus => messageStatus.isRead),
+    O.map((messageStatus) => messageStatus.isRead),
     O.map(
       B.fold(
         () => ReadStatusEnum.UNREAD,
@@ -190,34 +179,36 @@ const WithPayment = t.interface({
 const WithStatusProcessed = t.interface({
   status: t.literal(NotRejectedMessageStatusValueEnum.PROCESSED)
 });
-const eligibleForPaymentStatus = (FF_PAYMENT_STATUS_ENABLED: boolean) => (
-  messageWithContent: unknown
-): E.Either<Error | t.Errors, PaymentDataWithRequiredPayee> =>
-  pipe(
-    messageWithContent,
-    E.right,
-    E.chainFirst(
-      E.fromPredicate(
-        () => FF_PAYMENT_STATUS_ENABLED,
-        () => Error("Feature Flag disabled")
-      )
-    ),
-    E.chainW(mwc =>
-      pipe(
-        WithStatusProcessed.decode(mwc),
-        E.mapLeft(() => new Error("Message status is not processed"))
-      )
-    ),
-    E.chainW(mwc =>
-      pipe(
-        WithPayment.decode(mwc),
-        E.mapLeft(
-          () => new Error("Message does not contain required payment data")
+const eligibleForPaymentStatus =
+  (FF_PAYMENT_STATUS_ENABLED: boolean) =>
+  (
+    messageWithContent: unknown
+  ): E.Either<Error | t.Errors, PaymentDataWithRequiredPayee> =>
+    pipe(
+      messageWithContent,
+      E.right,
+      E.chainFirst(
+        E.fromPredicate(
+          () => FF_PAYMENT_STATUS_ENABLED,
+          () => Error("Feature Flag disabled")
         )
-      )
-    ),
-    E.map(mwc => mwc.message.content.payment_data)
-  );
+      ),
+      E.chainW((mwc) =>
+        pipe(
+          WithStatusProcessed.decode(mwc),
+          E.mapLeft(() => new Error("Message status is not processed"))
+        )
+      ),
+      E.chainW((mwc) =>
+        pipe(
+          WithPayment.decode(mwc),
+          E.mapLeft(
+            () => new Error("Message does not contain required payment data")
+          )
+        )
+      ),
+      E.map((mwc) => mwc.message.content.payment_data)
+    );
 
 const decorateWithPaymentStatus = <
   T extends {
@@ -234,7 +225,7 @@ const decorateWithPaymentStatus = <
     TE.fromEither,
     TE.foldW(
       () => TE.right({ ...messageWithContent, payment_status: undefined }),
-      paymentData => {
+      (paymentData) => {
         const rptId = `${paymentData.payee.fiscal_code}${paymentData.notice_number}`;
         return pipe(
           TE.tryCatch(
@@ -244,11 +235,11 @@ const decorateWithPaymentStatus = <
           ),
           TE.map(E.mapLeft(errorsToError)),
           TE.chain(TE.fromEither),
-          TE.chain(response =>
+          TE.chain((response) =>
             match(response)
               .with({ status: 200 }, () => TE.right({ paid: false }))
               .with({ status: 404 }, () => TE.right({ paid: false }))
-              .with({ status: 409 }, conflict => {
+              .with({ status: 409 }, (conflict) => {
                 if (
                   PaymentDuplicatedStatusFaultPaymentProblemJson.is(
                     conflict.value
@@ -262,7 +253,7 @@ const decorateWithPaymentStatus = <
                 }
                 return TE.right({ paid: false });
               })
-              .otherwise(error =>
+              .otherwise((error) =>
                 TE.left(
                   new Error(
                     `Failed to fetch payment status from PagoPa ecommerce api: status: ${error.status}, ${error.value.title}`
@@ -270,13 +261,13 @@ const decorateWithPaymentStatus = <
                 )
               )
           ),
-          TE.mapLeft(error =>
+          TE.mapLeft((error) =>
             ResponseErrorInternal(
               `Error retrieving Payment Status: ${error.message}`
             )
           ),
           TE.map(mapPaymentStatus),
-          TE.map(paymentStatus => ({
+          TE.map((paymentStatus) => ({
             ...messageWithContent,
             payment_status: paymentStatus
           }))
@@ -288,204 +279,210 @@ const decorateWithPaymentStatus = <
 /**
  * Handles requests for getting a single message for a recipient.
  */
-export const GetMessageHandler = (
-  FF_PAYMENT_STATUS_ENABLED: boolean,
-  messageModel: MessageModel,
-  messageStatusModel: MessageStatusModel,
-  notificationModel: NotificationModel,
-  notificationStatusModel: NotificationStatusModel,
-  blobService: BlobService,
-  canAccessMessageReadStatus: MessageReadStatusAuth,
-  pagoPaEcommerceClient: PagoPaEcommerceClient
-  // eslint-disable-next-line max-params
-): IGetMessageHandler => async (
-  context,
-  auth,
-  __,
-  userAttributes,
-  fiscalCode,
-  messageId
-  // eslint-disable-next-line max-params
-): ReturnType<IGetMessageHandler> => {
-  const errorOrMessageId = NonEmptyString.decode(messageId);
-
-  if (E.isLeft(errorOrMessageId)) {
-    return ResponseErrorValidation(
-      "Invalid messageId",
-      readableReport(errorOrMessageId.left)
-    );
-  }
-  const errorOrMaybeDocument = await messageModel.findMessageForRecipient(
+export const GetMessageHandler =
+  (
+    FF_PAYMENT_STATUS_ENABLED: boolean,
+    messageModel: MessageModel,
+    messageStatusModel: MessageStatusModel,
+    notificationModel: NotificationModel,
+    notificationStatusModel: NotificationStatusModel,
+    blobService: BlobService,
+    canAccessMessageReadStatus: MessageReadStatusAuth,
+    pagoPaEcommerceClient: PagoPaEcommerceClient
+    // eslint-disable-next-line max-params
+  ): IGetMessageHandler =>
+  async (
+    context,
+    auth,
+    __,
+    userAttributes,
     fiscalCode,
-    errorOrMessageId.right
-  )();
+    messageId
+    // eslint-disable-next-line max-params
+  ): ReturnType<IGetMessageHandler> => {
+    const errorOrMessageId = NonEmptyString.decode(messageId);
 
-  if (E.isLeft(errorOrMaybeDocument)) {
-    // the query failed
-    return ResponseErrorQuery(
-      "Error while retrieving the message",
-      errorOrMaybeDocument.left
-    );
-  }
+    if (E.isLeft(errorOrMessageId)) {
+      return ResponseErrorValidation(
+        "Invalid messageId",
+        readableReport(errorOrMessageId.left)
+      );
+    }
+    const errorOrMaybeDocument = await messageModel.findMessageForRecipient(
+      fiscalCode,
+      errorOrMessageId.right
+    )();
 
-  const maybeDocument = errorOrMaybeDocument.right;
-  if (O.isNone(maybeDocument)) {
-    // the document does not exist
-    return ResponseErrorNotFound(
-      "Message not found",
-      "The message that you requested was not found in the system."
-    );
-  }
+    if (E.isLeft(errorOrMaybeDocument)) {
+      // the query failed
+      return ResponseErrorQuery(
+        "Error while retrieving the message",
+        errorOrMaybeDocument.left
+      );
+    }
 
-  const retrievedMessage = maybeDocument.value;
+    const maybeDocument = errorOrMaybeDocument.right;
+    if (O.isNone(maybeDocument)) {
+      // the document does not exist
+      return ResponseErrorNotFound(
+        "Message not found",
+        "The message that you requested was not found in the system."
+      );
+    }
 
-  const isUserAllowedForLegalMessages =
-    [...auth.groups].indexOf(UserGroup.ApiLegalMessageRead) >= 0;
-  // the service is allowed to see the message when he is the sender of the message
-  const isUserAllowed =
-    retrievedMessage.senderServiceId === userAttributes.service.serviceId ||
-    isUserAllowedForLegalMessages;
+    const retrievedMessage = maybeDocument.value;
 
-  if (!isUserAllowed) {
-    // the user is not allowed to see the message
-    return getResponseErrorForbiddenNotAuthorized(
-      "You are not allowed to read this message, you can only read messages that you have sent"
-    );
-  }
+    const isUserAllowedForLegalMessages =
+      [...auth.groups].indexOf(UserGroup.ApiLegalMessageRead) >= 0;
+    // the service is allowed to see the message when he is the sender of the message
+    const isUserAllowed =
+      retrievedMessage.senderServiceId === userAttributes.service.serviceId ||
+      isUserAllowedForLegalMessages;
 
-  // fetch the content of the message from the blob storage
-  const errorOrMaybeContent = await pipe(
-    messageModel.getContentFromBlob(blobService, retrievedMessage.id),
-    TE.mapLeft(error => {
-      context.log.error(`GetMessageHandler|${JSON.stringify(error)}`);
-      return ResponseErrorInternal(`${error.name}: ${error.message}`);
-    }),
-    TE.chainW(
-      O.fold(
-        () =>
-          isUserAllowedForLegalMessages
-            ? TE.left(
-                ResponseErrorNotFound("Not Found", "Message Content not found")
-              )
-            : TE.of(O.none),
-        messageContent =>
-          pipe(
-            messageContent,
-            LegalMessagePattern.decode,
-            TE.fromEither,
-            TE.map(() => O.some(messageContent)),
-            TE.orElse(_ =>
-              !isUserAllowedForLegalMessages
-                ? TE.of(O.some(messageContent))
-                : TE.left<
-                    | IResponseErrorForbiddenNotAuthorized
-                    | IResponseErrorNotFound,
-                    O.Option<MessageContent>
-                  >(ResponseErrorForbiddenNotAuthorized)
-            )
-          )
-      )
-    )
-  )();
+    if (!isUserAllowed) {
+      // the user is not allowed to see the message
+      return getResponseErrorForbiddenNotAuthorized(
+        "You are not allowed to read this message, you can only read messages that you have sent"
+      );
+    }
 
-  if (E.isLeft(errorOrMaybeContent)) {
-    context.log.error(
-      `GetMessageHandler|${JSON.stringify(errorOrMaybeContent.left)}`
-    );
-    return errorOrMaybeContent.left;
-  }
-
-  const content = O.toUndefined(errorOrMaybeContent.right);
-
-  const message = {
-    content,
-    ...retrievedMessageToExternal(retrievedMessage)
-  };
-
-  const errorOrNotificationStatuses = await getMessageNotificationStatuses(
-    notificationModel,
-    notificationStatusModel,
-    retrievedMessage.id
-  )();
-
-  if (E.isLeft(errorOrNotificationStatuses)) {
-    return ResponseErrorInternal(
-      `Error retrieving NotificationStatus: ${errorOrNotificationStatuses.left.name}|${errorOrNotificationStatuses.left.message}`
-    );
-  }
-  const notificationStatuses = errorOrNotificationStatuses.right;
-
-  const errorOrMaybeMessageStatus = await messageStatusModel.findLastVersionByModelId(
-    [retrievedMessage.id]
-  )();
-
-  if (E.isLeft(errorOrMaybeMessageStatus)) {
-    return ResponseErrorInternal(
-      `Error retrieving MessageStatus: ${JSON.stringify(
-        errorOrMaybeMessageStatus.left
-      )}`
-    );
-  }
-  const maybeMessageStatus = errorOrMaybeMessageStatus.right;
-
-  return pipe(
-    {
-      message,
-      notification: pipe(notificationStatuses, O.toUndefined),
-      // we do not return the status date-time
-      status: pipe(
-        maybeMessageStatus,
-        O.map(messageStatus => messageStatus.status),
-        // when the message has been received but a MessageStatus
-        // does not exist yet, the message is considered to be
-        // in the ACCEPTED state (not yet visible in the user's inbox)
-        O.getOrElse(() => NotRejectedMessageStatusValueEnum.ACCEPTED)
-      )
-    },
-    // Enrich message info with advanced properties if user is allowed to read them
-    messageWithoutAdvancedProperties =>
-      pipe(
-        canReadAdvancedMessageInfo(
-          message,
-          retrievedMessage.isPending ?? true,
-          auth.groups
-        ),
-        B.foldW(
-          () => TE.of(messageWithoutAdvancedProperties),
+    // fetch the content of the message from the blob storage
+    const errorOrMaybeContent = await pipe(
+      messageModel.getContentFromBlob(blobService, retrievedMessage.id),
+      TE.mapLeft((error) => {
+        context.log.error(`GetMessageHandler|${JSON.stringify(error)}`);
+        return ResponseErrorInternal(`${error.name}: ${error.message}`);
+      }),
+      TE.chainW(
+        O.fold(
           () =>
+            isUserAllowedForLegalMessages
+              ? TE.left(
+                  ResponseErrorNotFound(
+                    "Not Found",
+                    "Message Content not found"
+                  )
+                )
+              : TE.of(O.none),
+          (messageContent) =>
             pipe(
-              canAccessMessageReadStatus(auth.subscriptionId, fiscalCode),
-              TE.map(serviceCanReadMessageReadStatus => ({
-                ...messageWithoutAdvancedProperties,
-                read_status: B.fold(
-                  () => ReadStatusEnum.UNAVAILABLE,
-                  () => getReadStatusForService(maybeMessageStatus)
-                )(serviceCanReadMessageReadStatus)
-              })),
-              TE.mapLeft(() =>
-                ResponseErrorInternal(
-                  `Error retrieving information about read status preferences`
-                )
-              ),
-              TE.chain(messageWithAdvanceProperties =>
-                decorateWithPaymentStatus(
-                  FF_PAYMENT_STATUS_ENABLED,
-                  pagoPaEcommerceClient,
-                  messageWithAdvanceProperties
-                )
+              messageContent,
+              LegalMessagePattern.decode,
+              TE.fromEither,
+              TE.map(() => O.some(messageContent)),
+              TE.orElse(() =>
+                !isUserAllowedForLegalMessages
+                  ? TE.of(O.some(messageContent))
+                  : TE.left<
+                      | IResponseErrorForbiddenNotAuthorized
+                      | IResponseErrorNotFound,
+                      O.Option<MessageContent>
+                    >(ResponseErrorForbiddenNotAuthorized)
               )
             )
-        ),
-        TE.map(ResponseSuccessJson),
-        TE.toUnion
+        )
       )
-  )();
-};
+    )();
+
+    if (E.isLeft(errorOrMaybeContent)) {
+      context.log.error(
+        `GetMessageHandler|${JSON.stringify(errorOrMaybeContent.left)}`
+      );
+      return errorOrMaybeContent.left;
+    }
+
+    const content = O.toUndefined(errorOrMaybeContent.right);
+
+    const message = {
+      content,
+      ...retrievedMessageToExternal(retrievedMessage)
+    };
+
+    const errorOrNotificationStatuses = await getMessageNotificationStatuses(
+      notificationModel,
+      notificationStatusModel,
+      retrievedMessage.id
+    )();
+
+    if (E.isLeft(errorOrNotificationStatuses)) {
+      return ResponseErrorInternal(
+        `Error retrieving NotificationStatus: ${errorOrNotificationStatuses.left.name}|${errorOrNotificationStatuses.left.message}`
+      );
+    }
+    const notificationStatuses = errorOrNotificationStatuses.right;
+
+    const errorOrMaybeMessageStatus =
+      await messageStatusModel.findLastVersionByModelId([
+        retrievedMessage.id
+      ])();
+
+    if (E.isLeft(errorOrMaybeMessageStatus)) {
+      return ResponseErrorInternal(
+        `Error retrieving MessageStatus: ${JSON.stringify(
+          errorOrMaybeMessageStatus.left
+        )}`
+      );
+    }
+    const maybeMessageStatus = errorOrMaybeMessageStatus.right;
+
+    return pipe(
+      {
+        message,
+        notification: pipe(notificationStatuses, O.toUndefined),
+        // we do not return the status date-time
+        status: pipe(
+          maybeMessageStatus,
+          O.map((messageStatus) => messageStatus.status),
+          // when the message has been received but a MessageStatus
+          // does not exist yet, the message is considered to be
+          // in the ACCEPTED state (not yet visible in the user's inbox)
+          O.getOrElse(() => NotRejectedMessageStatusValueEnum.ACCEPTED)
+        )
+      },
+      // Enrich message info with advanced properties if user is allowed to read them
+      (messageWithoutAdvancedProperties) =>
+        pipe(
+          canReadAdvancedMessageInfo(
+            message,
+            retrievedMessage.isPending ?? true,
+            auth.groups
+          ),
+          B.foldW(
+            () => TE.of(messageWithoutAdvancedProperties),
+            () =>
+              pipe(
+                canAccessMessageReadStatus(auth.subscriptionId, fiscalCode),
+                TE.map((serviceCanReadMessageReadStatus) => ({
+                  ...messageWithoutAdvancedProperties,
+                  read_status: B.fold(
+                    () => ReadStatusEnum.UNAVAILABLE,
+                    () => getReadStatusForService(maybeMessageStatus)
+                  )(serviceCanReadMessageReadStatus)
+                })),
+                TE.mapLeft(() =>
+                  ResponseErrorInternal(
+                    `Error retrieving information about read status preferences`
+                  )
+                ),
+                TE.chain((messageWithAdvanceProperties) =>
+                  decorateWithPaymentStatus(
+                    FF_PAYMENT_STATUS_ENABLED,
+                    pagoPaEcommerceClient,
+                    messageWithAdvanceProperties
+                  )
+                )
+              )
+          ),
+          TE.map(ResponseSuccessJson),
+          TE.toUnion
+        )
+    )();
+  };
 
 /**
  * Wraps a GetMessage handler inside an Express request handler.
  */
-// eslint-disable-next-line max-params, prefer-arrow/prefer-arrow-functions
+// eslint-disable-next-line max-params
 export function GetMessage(
   { FF_PAYMENT_STATUS_ENABLED }: IConfig,
   serviceModel: ServiceModel,
@@ -519,7 +516,7 @@ export function GetMessage(
   );
   return wrapRequestHandler(
     middlewaresWrap(
-      // eslint-disable-next-line max-params
+      // eslint-disable-next-line max-params, @typescript-eslint/no-unused-vars
       checkSourceIpForHandler(handler, (_, __, c, u, ___, ____) =>
         ipTuple(c, u)
       )

@@ -1,12 +1,14 @@
 /* eslint-disable max-lines-per-function */
 
 import { Context } from "@azure/functions";
+import { SpecialServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/SpecialServiceCategory";
 import { BlockedInboxOrChannelEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/BlockedInboxOrChannel";
 import { EUCovidCert } from "@pagopa/io-functions-commons/dist/generated/definitions/EUCovidCert";
 import { FiscalCode } from "@pagopa/io-functions-commons/dist/generated/definitions/FiscalCode";
-import { RejectedMessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/RejectedMessageStatusValue";
 import { NotRejectedMessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/NotRejectedMessageStatusValue";
 import { PaymentDataWithRequiredPayee } from "@pagopa/io-functions-commons/dist/generated/definitions/PaymentDataWithRequiredPayee";
+import { RejectedMessageStatusValueEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/RejectedMessageStatusValue";
+import { RejectionReasonEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/RejectionReason";
 import {
   ServicesPreferencesMode,
   ServicesPreferencesModeEnum
@@ -17,16 +19,17 @@ import {
   MessageWithoutContent
 } from "@pagopa/io-functions-commons/dist/src/models/message";
 import {
-  getMessageStatusUpdater,
-  MessageStatusModel
+  MessageStatusModel,
+  getMessageStatusUpdater
 } from "@pagopa/io-functions-commons/dist/src/models/message_status";
 import { ProfileModel } from "@pagopa/io-functions-commons/dist/src/models/profile";
 import {
-  makeServicesPreferencesDocumentId,
   ServicePreference,
-  ServicesPreferencesModel
+  ServicesPreferencesModel,
+  makeServicesPreferencesDocumentId
 } from "@pagopa/io-functions-commons/dist/src/models/service_preference";
 import { CosmosErrors } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
+import { Ttl } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model_ttl";
 import { UTCISODateFromString } from "@pagopa/ts-commons/lib/dates";
 import { NonNegativeInteger } from "@pagopa/ts-commons/lib/numbers";
 import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
@@ -34,14 +37,12 @@ import { Second } from "@pagopa/ts-commons/lib/units";
 import { BlobService } from "azure-storage";
 import { isBefore } from "date-fns";
 import * as E from "fp-ts/lib/Either";
-import { flow, pipe } from "fp-ts/lib/function";
 import * as O from "fp-ts/lib/Option";
 import * as T from "fp-ts/lib/Task";
 import * as TE from "fp-ts/lib/TaskEither";
 import { TaskEither } from "fp-ts/lib/TaskEither";
-import { RejectionReasonEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/RejectionReason";
-import { Ttl } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model_ttl";
-import { SpecialServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/SpecialServiceCategory";
+import { flow, pipe } from "fp-ts/lib/function";
+
 import { PaymentData } from "../generated/definitions/PaymentData";
 import { ThirdPartyData } from "../generated/definitions/ThirdPartyData";
 import { initTelemetryClient } from "../utils/appinsights";
@@ -51,10 +52,10 @@ import {
   CreatedMessageEvent,
   ProcessedMessageEvent
 } from "../utils/events/message";
+import { canSendMessageOnActivationWithGrace } from "../utils/services";
 import { withDecodedInput } from "../utils/with-decoded-input";
 import { DataFetcher, withExpandedInput } from "../utils/with-expanded-input";
 import { withJsonInput } from "../utils/with-json-input";
-import { canSendMessageOnActivationWithGrace } from "../utils/services";
 
 // Interface that marks an unexpected value
 interface IUnexpectedValue {
@@ -118,7 +119,7 @@ const channelToBlockedInboxOrChannelEnum: {
 
 const servicePreferenceToBlockedInboxOrChannels: (
   servicePreference: ServicePreference
-) => ReadonlyArray<BlockedInboxOrChannelEnum> = servicePreference =>
+) => ReadonlyArray<BlockedInboxOrChannelEnum> = (servicePreference) =>
   /**
    * Reduce the complexity of User's preferences into an array of BlockedInboxOrChannelEnum
    * In case a preference is set to false, it is translated to proper BlockedInboxOrChannelEnum
@@ -128,10 +129,13 @@ const servicePreferenceToBlockedInboxOrChannels: (
    */
   Object.entries(servicePreference)
     // take only attributes of ServicePreferencesValues
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     .filter(([name, _]) => channelToBlockedInboxOrChannelEnum[name])
     // take values set to false
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     .filter(([_, isEnabled]) => !isEnabled)
     // map to BlockedInboxOrChannelEnum
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     .map(([name, _]) => channelToBlockedInboxOrChannelEnum[name]);
 
 /**
@@ -141,60 +145,63 @@ const servicePreferenceToBlockedInboxOrChannels: (
  * @param servicePreferencesModel
  * @returns
  */
-const getServicePreferenceValueOrError = (
-  servicePreferencesModel: ServicesPreferencesModel
-): ServicePreferenceValueOrError => ({
-  fiscalCode,
-  serviceId,
-  userServicePreferencesMode,
-  userServicePreferencesVersion
-}): TaskEither<
-  ServicePreferenceError,
-  ReadonlyArray<BlockedInboxOrChannelEnum>
-> =>
-  pipe(
-    TE.of<ServicePreferenceError, ServicesPreferencesMode>(
-      userServicePreferencesMode
-    ),
-    TE.chain(
-      TE.fromPredicate(
-        mode => mode !== ServicesPreferencesModeEnum.LEGACY,
-        skippedMode
-      )
-    ),
-    TE.map(_ =>
-      makeServicesPreferencesDocumentId(
-        fiscalCode,
-        serviceId,
-        userServicePreferencesVersion as NonNegativeInteger
-      )
-    ),
-    TE.chainW(documentId =>
-      servicePreferencesModel.find([documentId, fiscalCode])
-    ),
-    TE.chain(maybeServicePref =>
-      pipe(
-        maybeServicePref,
-        O.foldW(
-          () =>
-            // if we do not have a preference we return an empty array only
-            // if we have preference mode AUTO, else we must return an array
-            // with BlockedInboxOrChannelEnum.INBOX
-            userServicePreferencesMode === ServicesPreferencesModeEnum.AUTO
-              ? TE.of([])
-              : userServicePreferencesMode ===
-                ServicesPreferencesModeEnum.MANUAL
-              ? TE.of([BlockedInboxOrChannelEnum.INBOX])
-              : // The following code should never happen
-              // LEGACY is managed above and any other case should be managed explicitly
-              userServicePreferencesMode === ServicesPreferencesModeEnum.LEGACY
-              ? TE.left(skippedMode(userServicePreferencesMode))
-              : TE.left(unexpectedValue(userServicePreferencesMode)),
-          s => TE.of(servicePreferenceToBlockedInboxOrChannels(s))
+const getServicePreferenceValueOrError =
+  (
+    servicePreferencesModel: ServicesPreferencesModel
+  ): ServicePreferenceValueOrError =>
+  ({
+    fiscalCode,
+    serviceId,
+    userServicePreferencesMode,
+    userServicePreferencesVersion
+  }): TaskEither<
+    ServicePreferenceError,
+    ReadonlyArray<BlockedInboxOrChannelEnum>
+  > =>
+    pipe(
+      TE.of<ServicePreferenceError, ServicesPreferencesMode>(
+        userServicePreferencesMode
+      ),
+      TE.chain(
+        TE.fromPredicate(
+          (mode) => mode !== ServicesPreferencesModeEnum.LEGACY,
+          skippedMode
+        )
+      ),
+      TE.map(() =>
+        makeServicesPreferencesDocumentId(
+          fiscalCode,
+          serviceId,
+          userServicePreferencesVersion as NonNegativeInteger
+        )
+      ),
+      TE.chainW((documentId) =>
+        servicePreferencesModel.find([documentId, fiscalCode])
+      ),
+      TE.chain((maybeServicePref) =>
+        pipe(
+          maybeServicePref,
+          O.foldW(
+            () =>
+              // if we do not have a preference we return an empty array only
+              // if we have preference mode AUTO, else we must return an array
+              // with BlockedInboxOrChannelEnum.INBOX
+              userServicePreferencesMode === ServicesPreferencesModeEnum.AUTO
+                ? TE.of([])
+                : userServicePreferencesMode ===
+                    ServicesPreferencesModeEnum.MANUAL
+                  ? TE.of([BlockedInboxOrChannelEnum.INBOX])
+                  : // The following code should never happen
+                    // LEGACY is managed above and any other case should be managed explicitly
+                    userServicePreferencesMode ===
+                      ServicesPreferencesModeEnum.LEGACY
+                    ? TE.left(skippedMode(userServicePreferencesMode))
+                    : TE.left(unexpectedValue(userServicePreferencesMode)),
+            (s) => TE.of(servicePreferenceToBlockedInboxOrChannels(s))
+          )
         )
       )
-    )
-  );
+    );
 
 type BlockedInboxesForSpecialService = (params: {
   readonly senderServiceId: NonEmptyString;
@@ -218,41 +225,45 @@ type BlockedInboxesForSpecialService = (params: {
  * @param lActivation
  * @returns
  */
-const getBlockedInboxesForSpecialService = (
-  lActivation: ActivationModel,
-  pendingActivationGracePeriod: Second
-): BlockedInboxesForSpecialService => ({
-  senderServiceId,
-  fiscalCode,
-  context,
-  logPrefix,
-  blockedInboxOrChannel
-}): T.Task<ReadonlyArray<BlockedInboxOrChannelEnum>> =>
-  pipe(
-    lActivation.findLastVersionByModelId([senderServiceId, fiscalCode]),
-    TE.mapLeft(activationError => {
-      // The query has failed, we consider this as a transient error.
-      context.log.error(`${logPrefix}|${activationError.kind}`);
-      throw Error("Error while retrieving user's service Activation");
-    }),
-    TE.map(canSendMessageOnActivationWithGrace(pendingActivationGracePeriod)),
-    TE.chainW(
-      TE.fromPredicate(
-        hasActiveActivation => hasActiveActivation,
-        () =>
-          blockedInboxOrChannel.includes(BlockedInboxOrChannelEnum.INBOX)
-            ? blockedInboxOrChannel
-            : [...blockedInboxOrChannel, BlockedInboxOrChannelEnum.INBOX]
-      )
-    ),
-    TE.map(() =>
-      blockedInboxOrChannel.filter(el => el !== BlockedInboxOrChannelEnum.INBOX)
-    ),
-    // Both Left and Right are valid BlockedInboxOrChannelEnum values.
-    // The right side contains the blocked inboxes when exists an `ACTIVE` Activation.
-    // The left side contains the blocked inboxes when the Activation is missing or has status NOT `ACTIVE`
-    TE.toUnion
-  );
+const getBlockedInboxesForSpecialService =
+  (
+    lActivation: ActivationModel,
+    pendingActivationGracePeriod: Second
+  ): BlockedInboxesForSpecialService =>
+  ({
+    senderServiceId,
+    fiscalCode,
+    context,
+    logPrefix,
+    blockedInboxOrChannel
+  }): T.Task<ReadonlyArray<BlockedInboxOrChannelEnum>> =>
+    pipe(
+      lActivation.findLastVersionByModelId([senderServiceId, fiscalCode]),
+      TE.mapLeft((activationError) => {
+        // The query has failed, we consider this as a transient error.
+        context.log.error(`${logPrefix}|${activationError.kind}`);
+        throw Error("Error while retrieving user's service Activation");
+      }),
+      TE.map(canSendMessageOnActivationWithGrace(pendingActivationGracePeriod)),
+      TE.chainW(
+        TE.fromPredicate(
+          (hasActiveActivation) => hasActiveActivation,
+          () =>
+            blockedInboxOrChannel.includes(BlockedInboxOrChannelEnum.INBOX)
+              ? blockedInboxOrChannel
+              : [...blockedInboxOrChannel, BlockedInboxOrChannelEnum.INBOX]
+        )
+      ),
+      TE.map(() =>
+        blockedInboxOrChannel.filter(
+          (el) => el !== BlockedInboxOrChannelEnum.INBOX
+        )
+      ),
+      // Both Left and Right are valid BlockedInboxOrChannelEnum values.
+      // The right side contains the blocked inboxes when exists an `ACTIVE` Activation.
+      // The left side contains the blocked inboxes when the Activation is missing or has status NOT `ACTIVE`
+      TE.toUnion
+    );
 
 /**
  * Creates the message and makes it visible or throw an error
@@ -321,7 +332,7 @@ const createMessageOrThrow = async (
     messageStatusUpdater({
       status: NotRejectedMessageStatusValueEnum.PROCESSED
     }),
-    TE.getOrElse(e => {
+    TE.getOrElse((e) => {
       context.log.error(
         `${logPrefixWithMessage}|UPSERT_STATUS=PROCESSED|ERROR=${JSON.stringify(
           e
@@ -404,9 +415,10 @@ export const getProcessMessageHandler = ({
 
           // fetch user's profile associated to the fiscal code
           // of the recipient of the message
-          const errorOrMaybeProfile = await lProfileModel.findLastVersionByModelId(
-            [newMessageWithoutContent.fiscalCode]
-          )();
+          const errorOrMaybeProfile =
+            await lProfileModel.findLastVersionByModelId([
+              newMessageWithoutContent.fiscalCode
+            ])();
 
           if (E.isLeft(errorOrMaybeProfile)) {
             // The query has failed, we consider this as a transient error.
@@ -480,9 +492,9 @@ export const getProcessMessageHandler = ({
                       newMessageWithoutContent.fiscalCode
                     ],
                     // this cast is needed cause patch does not accept ttl
-                    { ttl: TTL_FOR_USER_NOT_FOUND } as Partial<
-                      MessageWithoutContent
-                    >
+                    {
+                      ttl: TTL_FOR_USER_NOT_FOUND
+                    } as Partial<MessageWithoutContent>
                   ),
                   TE.mapLeft((error: CosmosErrors) => {
                     telemetryClient.trackEvent({
@@ -499,7 +511,7 @@ export const getProcessMessageHandler = ({
                   })
                 )
               ),
-              TE.getOrElse(e => {
+              TE.getOrElse((e) => {
                 context.log.error(
                   `${logPrefix}|PROFILE_NOT_FOUND|UPSERT_STATUS=REJECTED|ERROR=${JSON.stringify(
                     e
@@ -529,7 +541,7 @@ export const getProcessMessageHandler = ({
                 rejection_reason: RejectionReasonEnum.SERVICE_NOT_ALLOWED,
                 status: RejectedMessageStatusValueEnum.REJECTED
               }),
-              TE.getOrElse(e => {
+              TE.getOrElse((e) => {
                 context.log.error(
                   `${logPrefix}|MASTER_INBOX_DISABLED|UPSERT_STATUS=REJECTED|ERROR=${JSON.stringify(
                     e
@@ -557,7 +569,7 @@ export const getProcessMessageHandler = ({
               userServicePreferencesVersion:
                 profile.servicePreferencesSettings.version
             }),
-            TE.mapLeft(servicePreferenceError => {
+            TE.mapLeft((servicePreferenceError) => {
               if (servicePreferenceError.kind !== "INVALID_MODE") {
                 // The query has failed, we consider this as a transient error.
                 context.log.error(
@@ -569,7 +581,7 @@ export const getProcessMessageHandler = ({
               // channels the user has blocked for this sender service
               const result = pipe(
                 O.fromNullable(profile.blockedInboxOrChannels),
-                O.chain(bc =>
+                O.chain((bc) =>
                   O.fromNullable(bc[newMessageWithoutContent.senderServiceId])
                 ),
                 O.getOrElse(() => new Array<BlockedInboxOrChannelEnum>())
@@ -582,7 +594,7 @@ export const getProcessMessageHandler = ({
               return result;
             }),
             TE.toUnion,
-            T.chain(blockedInboxOrChannel => {
+            T.chain((blockedInboxOrChannel) => {
               if (
                 createdMessageEvent.senderMetadata.serviceCategory ===
                 SpecialServiceCategoryEnum.SPECIAL
@@ -627,7 +639,7 @@ export const getProcessMessageHandler = ({
                 rejection_reason: RejectionReasonEnum.SERVICE_NOT_ALLOWED,
                 status: RejectedMessageStatusValueEnum.REJECTED
               }),
-              TE.getOrElse(e => {
+              TE.getOrElse((e) => {
                 context.log.error(
                   `${logPrefix}|SENDER_BLOCKED|UPSERT_STATUS=REJECTED|ERROR=${JSON.stringify(
                     e
@@ -676,7 +688,6 @@ export const getProcessMessageHandler = ({
             tagOverrides: { samplingEnabled: "false" }
           });
 
-          // eslint-disable-next-line functional/immutable-data
           context.bindings.processedMessage = ProcessedMessageEvent.encode({
             blockedInboxOrChannels,
             messageId: createdMessageEvent.message.id,

@@ -1,6 +1,7 @@
-import * as express from "express";
-
+import { Context } from "@azure/functions";
+import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
 import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
+import { toApiServiceActivation } from "@pagopa/io-functions-commons/dist/src/utils/activations";
 import {
   AzureApiAuthMiddleware,
   IAzureApiAuthorization,
@@ -14,16 +15,19 @@ import {
   ClientIp,
   ClientIpMiddleware
 } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
+import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import {
   withRequestMiddlewares,
   wrapRequestHandler
 } from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
 import {
+  IResponseErrorQuery,
+  ResponseErrorQuery
+} from "@pagopa/io-functions-commons/dist/src/utils/response";
+import {
   checkSourceIpForHandler,
   clientIPAndCidrTuple as ipTuple
 } from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
-
-import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
 import {
   IResponseErrorForbiddenNotAuthorized,
   IResponseErrorInternal,
@@ -32,20 +36,15 @@ import {
   ResponseErrorNotFound,
   ResponseSuccessJson
 } from "@pagopa/ts-commons/lib/responses";
-import {
-  IResponseErrorQuery,
-  ResponseErrorQuery
-} from "@pagopa/io-functions-commons/dist/src/utils/response";
-import { flow, pipe } from "fp-ts/lib/function";
+import * as express from "express";
 import * as TE from "fp-ts/lib/TaskEither";
-import { toApiServiceActivation } from "@pagopa/io-functions-commons/dist/src/utils/activations";
-import { Context } from "@azure/functions";
-import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
-import { FiscalCodePayloadMiddleware } from "../utils/profile";
-import { FiscalCodePayload } from "../generated/definitions/FiscalCodePayload";
+import { flow, pipe } from "fp-ts/lib/function";
+
 import { Activation } from "../generated/definitions/Activation";
-import { authorizedForSpecialServicesTask } from "../utils/services";
+import { FiscalCodePayload } from "../generated/definitions/FiscalCodePayload";
 import { getLogger } from "../utils/logging";
+import { FiscalCodePayloadMiddleware } from "../utils/profile";
+import { authorizedForSpecialServicesTask } from "../utils/services";
 
 export type IGetActivationFailureResponses =
   | IResponseErrorNotFound
@@ -72,7 +71,6 @@ type IGetActivationByPOSTHandler = (
 /**
  * Returns a type safe GetActivationByPOST handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function GetServiceActivationHandler(
   activationModel: ActivationModel
 ): IGetActivationByPOSTHandler {
@@ -82,13 +80,13 @@ export function GetServiceActivationHandler(
     const logger = getLogger(context, logPrefix, "GetServiceActivationHandler");
     return pipe(
       authorizedForSpecialServicesTask(userAttributes.service),
-      TE.chainW(_ =>
+      TE.chainW(() =>
         pipe(
           activationModel.findLastVersionByModelId([
             userAttributes.service.serviceId,
             fiscal_code
           ]),
-          TE.mapLeft(error => {
+          TE.mapLeft((error) => {
             logger.logCosmosErrors(error);
             return ResponseErrorQuery(
               "Error reading service Activation",
@@ -114,7 +112,6 @@ export function GetServiceActivationHandler(
 /**
  * Wraps a GetServiceActivation handler inside an Express request handler.
  */
-// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
 export function GetServiceActivation(
   serviceModel: ServiceModel,
   activationModel: ActivationModel
@@ -131,6 +128,7 @@ export function GetServiceActivation(
 
   return wrapRequestHandler(
     middlewaresWrap(
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       checkSourceIpForHandler(handler, (_, __, c, u, ___) => ipTuple(c, u))
     )
   );

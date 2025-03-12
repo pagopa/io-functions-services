@@ -6,8 +6,8 @@ import {
 } from "@pagopa/ts-commons/lib/fetch";
 import { Millisecond } from "@pagopa/ts-commons/lib/units";
 import nodeFetch from "node-fetch";
-import { createClient } from "../generated/pagopa-ecommerce/client";
 
+import { createClient } from "../generated/pagopa-ecommerce/client";
 import { getConfigOrThrow } from "../utils/config";
 
 const config = getConfigOrThrow();
@@ -23,13 +23,14 @@ const abortableFetch = AbortableFetch(agent.getHttpsFetch(process.env));
 const fetchWithTimeout = toFetch(
   setFetchTimeout(DEFAULT_REQUEST_TIMEOUT_MS as Millisecond, abortableFetch)
 );
-const fetchApi: typeof fetchWithTimeout = (nodeFetch as unknown) as typeof fetchWithTimeout;
+const fetchApi: typeof fetchWithTimeout =
+  nodeFetch as unknown as typeof fetchWithTimeout;
 
 export const pagoPaEcommerceClient = createClient<"ApiKeyAuth">({
   baseUrl,
   fetchApi,
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  withDefaults: op => params =>
+  withDefaults: (op) => (params) =>
     op({ ApiKeyAuth: apiKey, ...params, id_cart: "" })
 });
 

@@ -1,3 +1,4 @@
+import { createClient } from "@pagopa/io-functions-admin-sdk/client";
 import { agent } from "@pagopa/ts-commons";
 import {
   AbortableFetch,
@@ -6,7 +7,6 @@ import {
 } from "@pagopa/ts-commons/lib/fetch";
 import { Millisecond } from "@pagopa/ts-commons/lib/units";
 import nodeFetch from "node-fetch";
-import { createClient } from "@pagopa/io-functions-admin-sdk/client";
 
 import { getConfigOrThrow } from "../utils/config";
 
@@ -24,13 +24,14 @@ const fetchWithTimeout = toFetch(
   setFetchTimeout(DEFAULT_REQUEST_TIMEOUT_MS as Millisecond, abortableFetch)
 );
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const fetchApi: typeof fetchWithTimeout = (nodeFetch as any) as typeof fetchWithTimeout;
+const fetchApi: typeof fetchWithTimeout = nodeFetch as typeof fetchWithTimeout;
 
 export const apiClient = createClient<"SubscriptionKey">({
   baseUrl: adminBaseUrl,
   fetchApi,
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  withDefaults: op => params => op({ SubscriptionKey: adminToken, ...params })
+  withDefaults: (op) => (params) =>
+    op({ SubscriptionKey: adminToken, ...params })
 });
 
 export type APIClient = typeof apiClient;
