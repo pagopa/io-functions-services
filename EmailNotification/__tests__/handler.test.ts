@@ -32,12 +32,10 @@ import {
   RetrievedNotification
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
 import { StandardServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/StandardServiceCategory";
-import { FeatureFlagEnum } from "../../utils/featureFlag";
-import * as messagetemplate from "../../generated/templates/messagepreview/index";
 import { markdownToHtml } from "@pagopa/io-functions-commons/dist/src/utils/markdown";
-import { aFiscalCode, anotherFiscalCode } from "../../__mocks__/mocks";
+import { aFiscalCode } from "../../__mocks__/mocks";
 import { generateDocumentHtml, prepareBody } from "../utils";
-import { IConfig } from "../../utils/config";
+import { apply } from "@pagopa/io-app-email-templates/MessagePreview/index";
 
 beforeEach(() => jest.clearAllMocks());
 
@@ -79,15 +77,16 @@ const aRetrievedNotification: RetrievedNotification = {
   kind: "IRetrievedNotification"
 };
 
-const notificationModelMock = ({
+const notificationModelMock = {
   find: jest.fn(() => TE.of(O.some(aRetrievedNotification)))
-} as unknown) as NotificationModel;
+} as unknown as NotificationModel;
 
 const aNotificationId = "A_NOTIFICATION_ID" as NonEmptyString;
 const anOrganizationFiscalCode = "10000000000" as OrganizationFiscalCode;
 
-const aMessageBodyMarkdown = ('---\nit:\n  cta_1: \n    text: "Login"\n    action: "iosso://https://domainexample.com/path"\nen:\n "\n---' +
-  "test".repeat(80)) as MessageBodyMarkdown;
+const aMessageBodyMarkdown =
+  ('---\nit:\n  cta_1: \n    text: "Login"\n    action: "iosso://https://domainexample.com/path"\nen:\n "\n---' +
+    "test".repeat(80)) as MessageBodyMarkdown;
 
 const aMessageContent: MessageContent = {
   markdown: aMessageBodyMarkdown,
@@ -120,7 +119,8 @@ const HTML_TO_TEXT_OPTIONS: HtmlToTextOptions = {
   tables: true
 };
 
-const MAIL_FROM = "IO - l’app dei servizi pubblici <no-reply@io.italia.it>" as NonEmptyString;
+const MAIL_FROM =
+  "IO - l’app dei servizi pubblici <no-reply@io.italia.it>" as NonEmptyString;
 const defaultNotificationParams = {
   HTML_TO_TEXT_OPTIONS,
   MAIL_FROM
@@ -131,7 +131,7 @@ const input: EmailNotificationInput = {
   notificationId: aNotificationId
 };
 
-const lMailerTransporterMock = ({} as unknown) as mail.MailerTransporter;
+const lMailerTransporterMock = {} as unknown as mail.MailerTransporter;
 
 const mockRetrieveProcessingMessageData = jest.fn().mockImplementation(() =>
   TE.of(
@@ -161,11 +161,11 @@ describe("getEmailNotificationActivityHandler", () => {
       JSON.stringify(input)
     );
 
-    const expectedHtml = messagetemplate.apply(
-      aMessageContent.subject,
+    const expectedHtml = apply(
       (
         await markdownToHtml.process(prepareBody(aMessageContent.markdown))
       ).toString(),
+      aMessageContent.subject,
       aSenderMetadata
     );
 
