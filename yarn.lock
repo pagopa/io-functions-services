@@ -1135,6 +1135,16 @@
   resolved "https://registry.yarnpkg.com/@pagopa/express-azure-functions/-/express-azure-functions-4.0.1.tgz#0c584ab57773f2bcfda511b996f5e6ccdb89defb"
   integrity sha512-2gSMQ6nCz5z5RdSgE0P5uoVBoxQqUeZr8bUUVyXjEqA/Z1PVDofbDbYJG6aPnDhfHO8aEXLDJOG8eUqjYB4Qsg==
 
+"@pagopa/io-app-email-templates@^0.5.0":
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/@pagopa/io-app-email-templates/-/io-app-email-templates-0.5.0.tgz#cb40d1e034ad9ff4fbff21a88b4957ebef7fc9a9"
+  integrity sha512-madnXsk1B4bwnaybxcsKCWcbFI1ZRMhsaZzMq7s8ATMRdh7SbgcI90lBxMbUE9BqR7gMlpcHhuloD4/1n+JjIA==
+  dependencies:
+    "@pagopa/ts-commons" "^13.0.0"
+    fp-ts "^2.16.5"
+    io-ts "^2.2.21"
+    moment-timezone "^0.5.45"
+
 "@pagopa/io-backend-notifications-sdk@x":
   version "9.7.0"
   resolved "https://registry.yarnpkg.com/@pagopa/io-backend-notifications-sdk/-/io-backend-notifications-sdk-9.7.0.tgz#887069f3c717a01e22ccc4a1323ba3b6a4fc0560"
@@ -1210,7 +1220,7 @@
     semver "^7.3.7"
     validator "^13.7.0"
 
-"@pagopa/ts-commons@^13.1.1", "@pagopa/ts-commons@^13.1.2":
+"@pagopa/ts-commons@^13.0.0", "@pagopa/ts-commons@^13.1.1", "@pagopa/ts-commons@^13.1.2":
   version "13.1.2"
   resolved "https://registry.yarnpkg.com/@pagopa/ts-commons/-/ts-commons-13.1.2.tgz#c98b0ae2d9700ab670edfcda5b1cd46f3b79b35d"
   integrity sha512-TAdqhbaTG5YPQIRyC5qs1qWYr/YPB1aPb1fEwCTOKVVmKZrguQxkAWqdkz6uDaKmKlkUKfOxsJTmMZu2/tpyfg==
@@ -4004,6 +4014,11 @@ io-ts@^2.2.16:
   resolved "https://registry.yarnpkg.com/io-ts/-/io-ts-2.2.20.tgz#be42b75f6668a2c44f706f72ee6e4c906777c7f5"
   integrity sha512-Rq2BsYmtwS5vVttie4rqrOCIfHCS9TgpRLFpKQCM1wZBBRY9nWVGmEvm2FnDbSE2un1UE39DvFpTR5UL47YDcA==
 
+io-ts@^2.2.21:
+  version "2.2.22"
+  resolved "https://registry.yarnpkg.com/io-ts/-/io-ts-2.2.22.tgz#5ab0d3636fe8494a275f0266461ab019da4b8d0b"
+  integrity sha512-FHCCztTkHoV9mdBsHpocLpdTAfh956ZQcIkWQxxS0U5HT53vtrcuYdQneEJKH6xILaLNzXVl2Cvwtoy8XNN0AA==
+
 ip6addr@^0.2.2:
   version "0.2.5"
   resolved "https://registry.yarnpkg.com/ip6addr/-/ip6addr-0.2.5.tgz#06e134f44b4e1a684fd91b24035dca7a53b8f759"
@@ -5302,6 +5317,18 @@ module-details-from-path@^1.0.3:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/module-details-from-path/-/module-details-from-path-1.0.3.tgz#114c949673e2a8a35e9d35788527aa37b679da2b"
   integrity sha512-ySViT69/76t8VhE1xXHK6Ch4NcDd26gx0MzKXLO+F7NOtnqH68d9zF94nT8ZWSxXh8ELOERsnJO/sWt1xZYw5A==
+
+moment-timezone@^0.5.45:
+  version "0.5.48"
+  resolved "https://registry.yarnpkg.com/moment-timezone/-/moment-timezone-0.5.48.tgz#111727bb274734a518ae154b5ca589283f058967"
+  integrity sha512-f22b8LV1gbTO2ms2j2z13MuPogNoh5UzxL3nzNAYKGraILnbGc9NEE6dyiiiLv46DGRb8A4kg8UKWLjPthxBHw==
+  dependencies:
+    moment "^2.29.4"
+
+moment@^2.29.4:
+  version "2.30.1"
+  resolved "https://registry.yarnpkg.com/moment/-/moment-2.30.1.tgz#f8c91c07b7a786e30c59926df530b4eac96974ae"
+  integrity sha512-uEmtNhbDOrWPFS+hdjFCBfy9f2YoyzRpwcl+DqpC6taX21FzsTLQVbMV/W7PzNSX6x/bhC1zA3c2UQ5NzH6how==
 
 monocle-ts@^2.3.11:
   version "2.3.13"
