@@ -1,9 +1,9 @@
+import { apply } from "@pagopa/io-app-email-templates/MessagePreview/index";
 import { MessageBodyMarkdown } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageBodyMarkdown";
 import { MessageSubject } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageSubject";
 import { CreatedMessageEventSenderMetadata } from "@pagopa/io-functions-commons/dist/src/models/created_message_sender_metadata";
 import defaultEmailTemplate from "@pagopa/io-functions-commons/dist/src/templates/html/default";
 import { markdownToHtml } from "@pagopa/io-functions-commons/dist/src/utils/markdown";
-import { OrganizationFiscalCode } from "@pagopa/ts-commons/lib/strings";
 import * as E from "fp-ts/Either";
 import * as TE from "fp-ts/TaskEither";
 import { Either, left, right } from "fp-ts/lib/Either";
@@ -12,7 +12,6 @@ import * as S from "fp-ts/string";
 import * as NodeMailer from "nodemailer";
 
 import { MessageContent } from "../generated/definitions/MessageContent";
-import * as message_reduced_template from "../generated/templates/messagepreview/index";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const removeMd = require("remove-markdown");
@@ -143,12 +142,9 @@ export const messageReducedToHtml =
       contentToHtml(processor),
       // strip leading zeroes
       TE.map((bodyHtml) =>
-        message_reduced_template.apply(content.subject, bodyHtml, {
-          ...senderMetadata,
-          organizationFiscalCode: senderMetadata.organizationFiscalCode.replace(
-            /^0+/,
-            ""
-          ) as OrganizationFiscalCode
+        apply(bodyHtml, content.subject, {
+          serviceName: senderMetadata.serviceName,
+          organizationName: senderMetadata.organizationName
         })
       )
     );
