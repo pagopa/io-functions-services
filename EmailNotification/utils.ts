@@ -1,3 +1,4 @@
+import { apply } from "@pagopa/io-app-email-templates/MessagePreview/index";
 import { MessageBodyMarkdown } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageBodyMarkdown";
 import { MessageSubject } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageSubject";
 import { CreatedMessageEventSenderMetadata } from "@pagopa/io-functions-commons/dist/src/models/created_message_sender_metadata";
@@ -11,7 +12,6 @@ import * as S from "fp-ts/string";
 import * as NodeMailer from "nodemailer";
 
 import { MessageContent } from "../generated/definitions/MessageContent";
-import { apply } from "@pagopa/io-app-email-templates/MessagePreview/index";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const removeMd = require("remove-markdown");
