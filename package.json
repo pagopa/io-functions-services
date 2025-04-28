@@ -68,7 +68,7 @@
   "dependencies": {
     "@azure/cosmos": "^4.0.0",
     "@pagopa/express-azure-functions": "^4.0.1",
-    "@pagopa/io-app-email-templates": "^0.5.0",
+    "@pagopa/io-app-email-templates": "^0.5.1",
     "@pagopa/io-backend-notifications-sdk": "x",
     "@pagopa/io-functions-admin-sdk": "x",
     "@pagopa/io-functions-commons": "^29.3.0",
