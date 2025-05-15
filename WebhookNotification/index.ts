@@ -2,10 +2,6 @@ import {
   NOTIFICATION_COLLECTION_NAME,
   NotificationModel
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
-import {
-  PROFILE_COLLECTION_NAME,
-  ProfileModel
-} from "@pagopa/io-functions-commons/dist/src/models/profile";
 import { agent } from "@pagopa/ts-commons";
 import {
   AbortableFetch,
@@ -15,7 +11,6 @@ import {
 import { Millisecond } from "@pagopa/ts-commons/lib/units";
 import { createBlobService } from "azure-storage";
 
-import { getUserProfileReader } from "../readers/user-profile";
 import { getConfigOrThrow } from "../utils/config";
 import { cosmosdbInstance } from "../utils/cosmosdb";
 import { CommonMessageData } from "../utils/events/message";
@@ -50,14 +45,8 @@ const retrieveProcessingMessageData = makeRetrieveExpandedDataFromBlob(
   config.PROCESSING_MESSAGE_CONTAINER_NAME
 );
 
-const profileModel = new ProfileModel(
-  cosmosdbInstance.container(PROFILE_COLLECTION_NAME)
-);
-
 export default getWebhookNotificationHandler(
   notificationModel,
   notifyApiCall,
-  retrieveProcessingMessageData,
-  getUserProfileReader(profileModel),
-  config.FF_DISABLE_WEBHOOK_MESSAGE_CONTENT
+  retrieveProcessingMessageData
 );
