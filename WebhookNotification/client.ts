@@ -1,3 +1,4 @@
+import { UserGroup } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
 import {
   TypeofApiCall,
   createFetchRequestForApi
@@ -9,7 +10,7 @@ import {
   IResponseSuccessNoContent,
   ProblemJson
 } from "@pagopa/ts-commons/lib/responses";
-import { UserGroup } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
+
 import { notifyDefaultDecoder } from "../generated/notify/requestTypes";
 
 export type WebhookNotifyT = r.IPostApiRequestType<
