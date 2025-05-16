@@ -6,11 +6,7 @@
  * which in turns delivers the message to the mobile App.
  */
 
-import { Notification } from "@pagopa/io-backend-notifications-sdk/Notification";
 import { HttpsUrl } from "@pagopa/io-functions-commons/dist/generated/definitions/HttpsUrl";
-import { MessageContent } from "@pagopa/io-functions-commons/dist/generated/definitions/MessageContent";
-import { SenderMetadata } from "@pagopa/io-functions-commons/dist/generated/definitions/SenderMetadata";
-import { CreatedMessageEventSenderMetadata } from "@pagopa/io-functions-commons/dist/src/models/created_message_sender_metadata";
 import {
   ActiveMessage,
   NewMessageWithoutContent
@@ -67,37 +63,6 @@ export const WebhookNotificationResult = t.taggedUnion("kind", [
 export type WebhookNotificationResult = t.TypeOf<
   typeof WebhookNotificationResult
 >;
-
-/**
- * Convert the internal representation of the message
- * to the one of the public NotificationAPI
- */
-export function newMessageToPublic(
-  newMessage: NewMessageWithoutContent,
-  content?: MessageContent
-): Notification["message"] {
-  const message = {
-    created_at: newMessage.createdAt,
-    fiscal_code: newMessage.fiscalCode,
-    id: newMessage.id,
-    sender_service_id: newMessage.senderServiceId
-  };
-  return content ? { ...message, content } : message;
-}
-
-/**
- * Convert the internal representation of sender metadata
- * to the one of the public API
- */
-export function senderMetadataToPublic(
-  senderMetadata: CreatedMessageEventSenderMetadata
-): SenderMetadata {
-  return {
-    department_name: senderMetadata.departmentName,
-    organization_name: senderMetadata.organizationName,
-    service_name: senderMetadata.serviceName
-  };
-}
 
 /**
  * Post data to the API proxy webhook endpoint.
