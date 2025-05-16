@@ -10,6 +10,7 @@ import {
   ProblemJson
 } from "@pagopa/ts-commons/lib/responses";
 import { UserGroup } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/azure_api_auth";
+import { notifyDefaultDecoder } from "../generated/notify/requestTypes";
 
 export type WebhookNotifyT = r.IPostApiRequestType<
   {
@@ -39,7 +40,7 @@ export const getNotifyClient = (
       }),
       method: "post",
       query: () => ({}),
-      response_decoder: r.constantResponseDecoder(204, undefined),
+      response_decoder: notifyDefaultDecoder(),
       url: (params) => `${params.webhookEndpoint}`
     } as WebhookNotifyT,
     { fetchApi }
