@@ -5,6 +5,7 @@
  * The configuration is evaluate eagerly at the first access to the module. The module exposes convenient methods to access such value.
  */
 
+import { HttpsUrl } from "@pagopa/io-functions-commons/dist/generated/definitions/HttpsUrl";
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { MailerConfig } from "@pagopa/io-functions-commons/dist/src/mailer";
 import { DateFromTimestamp } from "@pagopa/ts-commons/lib/dates";
@@ -90,6 +91,8 @@ export const IConfig = t.intersection([
     PAGOPA_ECOMMERCE_BASE_URL: NonEmptyString,
 
     SANDBOX_FISCAL_CODE: NonEmptyString,
+    SENDING_FUNC_API_KEY: NonEmptyString,
+    SENDING_FUNC_API_URL: HttpsUrl,
 
     WEBHOOK_CHANNEL_URL: NonEmptyString,
 

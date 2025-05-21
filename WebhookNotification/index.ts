@@ -1,11 +1,8 @@
+import { HttpsUrl } from "@pagopa/io-functions-commons/dist/generated/definitions/HttpsUrl";
 import {
   NOTIFICATION_COLLECTION_NAME,
   NotificationModel
 } from "@pagopa/io-functions-commons/dist/src/models/notification";
-import {
-  PROFILE_COLLECTION_NAME,
-  ProfileModel
-} from "@pagopa/io-functions-commons/dist/src/models/profile";
 import { agent } from "@pagopa/ts-commons";
 import {
   AbortableFetch,
@@ -15,7 +12,6 @@ import {
 import { Millisecond } from "@pagopa/ts-commons/lib/units";
 import { createBlobService } from "azure-storage";
 
-import { getUserProfileReader } from "../readers/user-profile";
 import { getConfigOrThrow } from "../utils/config";
 import { cosmosdbInstance } from "../utils/cosmosdb";
 import { CommonMessageData } from "../utils/events/message";
@@ -38,7 +34,10 @@ const fetchWithTimeout = setFetchTimeout(
   DEFAULT_NOTIFY_REQUEST_TIMEOUT_MS as Millisecond,
   abortableFetch
 );
-const notifyApiCall = getNotifyClient(toFetch(fetchWithTimeout));
+const notifyApiCall = getNotifyClient(
+  toFetch(fetchWithTimeout),
+  config.SENDING_FUNC_API_KEY
+);
 
 const blobService = createBlobService(
   config.INTERNAL_STORAGE_CONNECTION_STRING
@@ -50,14 +49,9 @@ const retrieveProcessingMessageData = makeRetrieveExpandedDataFromBlob(
   config.PROCESSING_MESSAGE_CONTAINER_NAME
 );
 
-const profileModel = new ProfileModel(
-  cosmosdbInstance.container(PROFILE_COLLECTION_NAME)
-);
-
 export default getWebhookNotificationHandler(
   notificationModel,
   notifyApiCall,
   retrieveProcessingMessageData,
-  getUserProfileReader(profileModel),
-  config.FF_DISABLE_WEBHOOK_MESSAGE_CONTENT
+  `${config.SENDING_FUNC_API_URL}/api/v1/notify` as HttpsUrl
 );
