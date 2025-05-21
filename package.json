@@ -1,6 +1,6 @@
 {
   "name": "@pagopa/io-functions-services",
-  "version": "3.43.2",
+  "version": "3.43.3",
   "license": "MIT",
   "engines": {
     "node": "20.17.0"
