@@ -126,7 +126,8 @@ export const sendToWebhook = (
 export const getWebhookNotificationHandler = (
   lNotificationModel: NotificationModel,
   notifyApiCall: TypeofApiCall<WebhookNotifyT>,
-  retrieveProcessingMessageData: DataFetcher<CommonMessageData>
+  retrieveProcessingMessageData: DataFetcher<CommonMessageData>,
+  sendingUrl: HttpsUrl
 ) =>
   withJsonInput(
     withDecodedInput(
@@ -188,12 +189,9 @@ export const getWebhookNotificationHandler = (
             });
           }
 
-          const webhookNotification =
-            errorOrWebhookNotification.right.channels.WEBHOOK;
-
           const sendResult = await sendToWebhook(
             notifyApiCall,
-            "https://io-p-itn-msgs-sending-func-01.azurewebsites.net/api/v1/Notify" as HttpsUrl,
+            sendingUrl,
             message
           )();
           if (E.isLeft(sendResult)) {

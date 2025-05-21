@@ -20,7 +20,7 @@ export type WebhookNotifyT = r.IPostApiRequestType<
     message_id: string;
     webhookEndpoint: string;
   },
-  "x-user-groups",
+  "x-user-groups" | "x-functions-key",
   never,
   | r.IResponseType<204, IResponseSuccessNoContent>
   | r.IResponseType<400, ProblemJson>
@@ -31,13 +31,15 @@ export type WebhookNotifyT = r.IPostApiRequestType<
 >;
 
 export const getNotifyClient = (
-  fetchApi: typeof fetch
+  fetchApi: typeof fetch,
+  funcApiKey: string
 ): TypeofApiCall<WebhookNotifyT> =>
   createFetchRequestForApi(
     {
       body: (params) => JSON.stringify(params),
-      headers: (): r.RequestHeaders<"x-user-groups"> => ({
-        "x-user-groups": UserGroup.ApiNewMessageNotify
+      headers: (): r.RequestHeaders<"x-user-groups" | "x-functions-key"> => ({
+        "x-user-groups": UserGroup.ApiNewMessageNotify,
+        "x-functions-key": funcApiKey
       }),
       method: "post",
       query: () => ({}),

@@ -133,7 +133,7 @@ describe("sendToWebhook", () => {
   it("should succeded with right parameters, with message content", async () => {
     const expectedResponse = {};
     const fetchApi = mockFetch(204, expectedResponse);
-    const notifyApiCall = getNotifyClient(fetchApi as any);
+    const notifyApiCall = getNotifyClient(fetchApi as any, "aValidApiKey");
     const ret = await sendToWebhook(
       notifyApiCall,
       "http://localhost/test" as HttpsUrl,
@@ -152,7 +152,10 @@ describe("sendToWebhook", () => {
   it("should return a transient error in case of timeout", async () => {
     const abortableFetch = AbortableFetch(agent.getHttpsFetch(process.env));
     const fetchWithTimeout = setFetchTimeout(1 as Millisecond, abortableFetch);
-    const notifyApiCall = getNotifyClient(toFetch(fetchWithTimeout));
+    const notifyApiCall = getNotifyClient(
+      toFetch(fetchWithTimeout),
+      "aValidApiKey"
+    );
     const ret = await sendToWebhook(
       notifyApiCall,
       "http://localhost/test" as HttpsUrl,
@@ -166,7 +169,7 @@ describe("sendToWebhook", () => {
 
   it("should return a transient error in case the webhook returns HTTP status 5xx", async () => {
     const fetchApi = mockFetch(500, { status: 500 });
-    const notifyApiCall = getNotifyClient(fetchApi as any);
+    const notifyApiCall = getNotifyClient(fetchApi as any, "aValidApiKey");
     const ret = await sendToWebhook(notifyApiCall, {} as any, {} as any)();
     expect(fetchApi).toHaveBeenCalledTimes(1);
     expect(E.isLeft(ret)).toBeTruthy();
@@ -177,7 +180,7 @@ describe("sendToWebhook", () => {
 
   it("should return a permanent error in case the webhook returns HTTP status 4xx", async () => {
     const fetchApi = mockFetch(401, { status: 401 });
-    const notifyApiCall = getNotifyClient(fetchApi as any);
+    const notifyApiCall = getNotifyClient(fetchApi as any, "aValidApiKey");
     const ret = await sendToWebhook(notifyApiCall, {} as any, {} as any)();
     expect(fetchApi).toHaveBeenCalledTimes(1);
     expect(E.isLeft(ret)).toBeTruthy();
@@ -200,7 +203,8 @@ describe("handler", () => {
       getWebhookNotificationHandler(
         notificationModelMock as any,
         {} as any,
-        mockRetrieveProcessingMessageData
+        mockRetrieveProcessingMessageData,
+        "https://example.com" as HttpsUrl
       )(mockContext, JSON.stringify(aNotificationEvent))
     ).rejects.toThrow();
   });
@@ -214,7 +218,8 @@ describe("handler", () => {
       getWebhookNotificationHandler(
         notificationModelMock as any,
         {} as any,
-        mockRetrieveProcessingMessageData
+        mockRetrieveProcessingMessageData,
+        "https://example.com" as HttpsUrl
       )(mockContext, JSON.stringify(aNotificationEvent))
     ).rejects.toThrow();
   });
@@ -228,7 +233,8 @@ describe("handler", () => {
       getWebhookNotificationHandler(
         notificationModelMock as any,
         {} as any,
-        mockRetrieveProcessingMessageData
+        mockRetrieveProcessingMessageData,
+        "https://example.com" as HttpsUrl
       )(mockContext, JSON.stringify(aNotificationEvent))
     ).resolves.toEqual({ kind: "FAILURE", reason: "DECODE_ERROR" });
   });
@@ -250,7 +256,8 @@ describe("handler", () => {
     const result = await getWebhookNotificationHandler(
       notificationModelMock as any,
       notifyCallApiMock as any,
-      mockRetrieveProcessingMessageData
+      mockRetrieveProcessingMessageData,
+      "https://example.com" as HttpsUrl
     )(mockContext, JSON.stringify(aNotificationEvent));
 
     expect(result).toEqual({
@@ -283,7 +290,8 @@ describe("handler", () => {
     const result = await getWebhookNotificationHandler(
       notificationModelMock as any,
       notifyCallApiMock,
-      mockRetrieveProcessingMessageData
+      mockRetrieveProcessingMessageData,
+      "https://example.com" as HttpsUrl
     )(mockContext, JSON.stringify(aNotificationEvent));
 
     expect(result).toEqual({
@@ -310,7 +318,8 @@ describe("handler", () => {
       getWebhookNotificationHandler(
         notificationModelMock as any,
         notifyCallApiMock,
-        mockRetrieveProcessingMessageData
+        mockRetrieveProcessingMessageData,
+        "https://example.com" as HttpsUrl
       )(mockContext, JSON.stringify(aNotificationEvent))
     ).resolves.toEqual({ kind: "FAILURE", reason: "SEND_TO_WEBHOOK_FAILED" });
 
@@ -337,7 +346,8 @@ describe("handler", () => {
     const ret = await getWebhookNotificationHandler(
       notificationModelMock as any,
       {} as any,
-      mockRetrieveProcessingMessageData
+      mockRetrieveProcessingMessageData,
+      "https://example.com" as HttpsUrl
     )(mockContext, JSON.stringify(aNotificationEvent));
 
     expect(ret).toEqual({ kind: "SUCCESS", result: "EXPIRED" });
