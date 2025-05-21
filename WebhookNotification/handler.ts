@@ -193,7 +193,7 @@ export const getWebhookNotificationHandler = (
 
           const sendResult = await sendToWebhook(
             notifyApiCall,
-            webhookNotification.url,
+            "https://io-p-itn-msgs-sending-func-01.azurewebsites.net/api/v1/Notify" as HttpsUrl,
             message
           )();
           if (E.isLeft(sendResult)) {
