@@ -1,3 +1,4 @@
+import { HttpsUrl } from "@pagopa/io-functions-commons/dist/generated/definitions/HttpsUrl";
 import {
   NOTIFICATION_COLLECTION_NAME,
   NotificationModel
@@ -52,5 +53,5 @@ export default getWebhookNotificationHandler(
   notificationModel,
   notifyApiCall,
   retrieveProcessingMessageData,
-  config.SENDING_FUNC_API_URL
+  `${config.SENDING_FUNC_API_URL}/api/v1/Notify` as HttpsUrl
 );
