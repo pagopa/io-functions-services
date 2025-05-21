@@ -53,5 +53,5 @@ export default getWebhookNotificationHandler(
   notificationModel,
   notifyApiCall,
   retrieveProcessingMessageData,
-  `${config.SENDING_FUNC_API_URL}/api/v1/Notify` as HttpsUrl
+  `${config.SENDING_FUNC_API_URL}/api/v1/notify` as HttpsUrl
 );
