@@ -1135,10 +1135,10 @@
   resolved "https://registry.yarnpkg.com/@pagopa/express-azure-functions/-/express-azure-functions-4.0.1.tgz#0c584ab57773f2bcfda511b996f5e6ccdb89defb"
   integrity sha512-2gSMQ6nCz5z5RdSgE0P5uoVBoxQqUeZr8bUUVyXjEqA/Z1PVDofbDbYJG6aPnDhfHO8aEXLDJOG8eUqjYB4Qsg==
 
-"@pagopa/io-app-email-templates@^0.5.0":
-  version "0.5.0"
-  resolved "https://registry.yarnpkg.com/@pagopa/io-app-email-templates/-/io-app-email-templates-0.5.0.tgz#cb40d1e034ad9ff4fbff21a88b4957ebef7fc9a9"
-  integrity sha512-madnXsk1B4bwnaybxcsKCWcbFI1ZRMhsaZzMq7s8ATMRdh7SbgcI90lBxMbUE9BqR7gMlpcHhuloD4/1n+JjIA==
+"@pagopa/io-app-email-templates@^0.5.1":
+  version "0.5.1"
+  resolved "https://registry.yarnpkg.com/@pagopa/io-app-email-templates/-/io-app-email-templates-0.5.1.tgz#6d6b7366b8ba72cdb5e250e3ff745b89dd8ee787"
+  integrity sha512-PWPxeLKLMzbYPnfnbaxNh9KE6FdJv+ZrIR5PvzPIB2eDQy1nGNxGFBscej5woTlvMk67Ami7vFnfmax2wVVGuA==
   dependencies:
     "@pagopa/ts-commons" "^13.0.0"
     fp-ts "^2.16.5"
