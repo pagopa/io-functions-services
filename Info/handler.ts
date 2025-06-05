@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 import * as healthcheck from "@pagopa/io-functions-commons/dist/src/utils/healthcheck";
+import { toHealthProblems } from "@pagopa/io-functions-commons/dist/src/utils/healthcheck";
 import { wrapRequestHandler } from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
 import {
   IResponseErrorInternal,
@@ -13,7 +14,6 @@ import { pipe } from "fp-ts/lib/function";
 
 import * as packageJson from "../package.json";
 import { IConfig, envConfig } from "../utils/config";
-import { toHealthProblems } from "@pagopa/io-functions-commons/dist/src/utils/healthcheck";
 
 interface IInfo {
   readonly name: string;
@@ -71,7 +71,7 @@ export function Info(): express.RequestHandler {
             () => fetch(`${c.SENDING_FUNC_API_URL}/api/v1/info`),
             toHealthProblems("Url")
           ),
-          TE.map((_) => true)
+          TE.map(() => true)
         )
     ])
   );
