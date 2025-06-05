@@ -64,8 +64,7 @@ export function Info(): express.RequestHandler {
         healthcheck.checkAzureStorageHealth(
           c.INTERNAL_STORAGE_CONNECTION_STRING
         ),
-      (c) =>
-        healthcheck.checkUrlHealth(`${c.SENDING_FUNC_API_URL}/api/v1/notify`)
+      (c) => healthcheck.checkUrlHealth(`${c.SENDING_FUNC_API_URL}/api/v1/info`)
     ])
   );
 
