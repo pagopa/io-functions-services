@@ -13,6 +13,7 @@ import { pipe } from "fp-ts/lib/function";
 
 import * as packageJson from "../package.json";
 import { IConfig, envConfig } from "../utils/config";
+import { toHealthProblems } from "@pagopa/io-functions-commons/dist/src/utils/healthcheck";
 
 interface IInfo {
   readonly name: string;
@@ -64,7 +65,14 @@ export function Info(): express.RequestHandler {
         healthcheck.checkAzureStorageHealth(
           c.INTERNAL_STORAGE_CONNECTION_STRING
         ),
-      (c) => healthcheck.checkUrlHealth(`${c.SENDING_FUNC_API_URL}/api/v1/info`)
+      (c) =>
+        pipe(
+          TE.tryCatch(
+            () => fetch(`${c.SENDING_FUNC_API_URL}/api/v1/info`),
+            toHealthProblems("Url")
+          ),
+          TE.map((_) => true)
+        )
     ])
   );
 
