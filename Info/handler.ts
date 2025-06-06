@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 import * as healthcheck from "@pagopa/io-functions-commons/dist/src/utils/healthcheck";
+import { toHealthProblems } from "@pagopa/io-functions-commons/dist/src/utils/healthcheck";
 import { wrapRequestHandler } from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
 import {
   IResponseErrorInternal,
@@ -64,7 +65,14 @@ export function Info(): express.RequestHandler {
         healthcheck.checkAzureStorageHealth(
           c.INTERNAL_STORAGE_CONNECTION_STRING
         ),
-      (c) => healthcheck.checkUrlHealth(c.WEBHOOK_CHANNEL_URL)
+      (c) =>
+        pipe(
+          TE.tryCatch(
+            () => fetch(`${c.SENDING_FUNC_API_URL}/api/v1/info`),
+            toHealthProblems("Url")
+          ),
+          TE.map(() => true)
+        )
     ])
   );
 
