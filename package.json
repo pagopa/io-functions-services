@@ -72,7 +72,7 @@
     "@pagopa/io-app-email-templates": "^0.5.1",
     "@pagopa/io-backend-notifications-sdk": "x",
     "@pagopa/io-functions-admin-sdk": "x",
-    "@pagopa/io-functions-commons": "^29.3.0",
+    "@pagopa/io-functions-commons": "^29.3.1",
     "@pagopa/ts-commons": "^13.1.2",
     "applicationinsights": "^2.9.5",
     "azure-storage": "^2.10.4",
