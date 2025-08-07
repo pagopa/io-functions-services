@@ -58,3 +58,11 @@ yarn-error.log
 
 # integration tests
 !docker/fixtures/*.js
+
+# terraform
+**/.tfsec/*
+**/.terraform/*
+*.tfstate
+override.tf
+override.tf.json
+**/_modules/**/.terraform.lock.hcl
