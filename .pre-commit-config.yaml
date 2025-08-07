@@ -1,0 +1,42 @@
+repos:
+  - repo: https://github.com/pagopa/dx
+    rev: pre_commit_scripts@0.1.0
+    hooks:
+      - id: lock_modules
+        exclude: ^.*/(_modules|modules|\.terraform)(/.*)?$
+        files: infra/(resources/prod|repository)
+
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.97.0
+    hooks:
+      - id: terraform_tflint
+        args:
+          - --args=--disable-rule terraform_required_version
+          - --args=--disable-rule terraform_required_providers
+          - --args=--disable-rule terraform_unused_declarations
+          - --args=--disable-rule terraform_deprecated_interpolation
+          - --args=--disable-rule terraform_deprecated_index
+          - --args=--disable-rule terraform_typed_variables
+          - --args=--disable-rule terraform_map_duplicate_keys
+          - --args=--disable-rule terraform_module_pinned_source
+          - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
+      - id: terraform_fmt
+      - id: terraform_docs
+        name: terraform_docs on resources
+        args:
+          - --hook-config=--create-file-if-not-exist=true
+        exclude: |
+          (?x)^(
+            src\/(?:.*\/)?(?:_?modules)\/.*
+          )$
+      - id: terraform_validate
+        exclude: '(\/_?modules\/.*)'
+        args:
+          - --args=-json
+          - --args=-no-color
+          - --hook-config=--retry-once-with-cleanup=true
+      - id: terraform_trivy
+        files: ^src/
+        args:
+          - --args=--skip-dirs="**/.terraform"
+          - --args=--ignorefile=__GIT_WORKING_DIR__/.trivyignore
