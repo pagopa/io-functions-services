@@ -10,7 +10,7 @@ on:
       - ready_for_review
     paths:
       - ".github/workflows/infra-**.yaml"
-      - "infra/bootstrapper/prod/**"
+      - "infra/bootstrapper/**"
 
 jobs:
   infra_review:
@@ -19,5 +19,5 @@ jobs:
     secrets: inherit
     with:
       environment: prod
-      base_path: infra/bootstrapper/prod
+      base_path: infra/bootstrapper
       use_private_agent: false
