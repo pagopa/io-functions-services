@@ -1,0 +1,17 @@
+name: Azure Deploy - PROD
+
+on:
+  workflow_dispatch:
+      
+jobs:
+  deploy_on_prod:
+    uses: pagopa/dx/.github/workflows/legacy_deploy_pipelines.yaml@main
+    name: Deploy on PROD
+    secrets: inherit
+    with:
+      environment: 'prod'
+      resource_group_name: 'io-p-itn-funcsvc-rg-01'
+      app_name: 'io-p-itn-funcsvc-func-01'
+      use_staging_slot: true
+      use_private_agent: true
+      health_check_path: '/info'

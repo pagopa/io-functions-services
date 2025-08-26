@@ -1,0 +1,23 @@
+name: PR Infrastructure Plan
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+    paths:
+      - ".github/workflows/infra-**.yaml"
+      - "infra/bootstrapper/prod/**"
+
+jobs:
+  infra_review:
+    uses: pagopa/dx/.github/workflows/infra_plan.yaml@main
+    name: PR Infrastructure
+    secrets: inherit
+    with:
+      environment: prod
+      base_path: infra/bootstrapper/prod
+      use_private_agent: false
