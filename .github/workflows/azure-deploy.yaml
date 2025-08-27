@@ -9,7 +9,7 @@ jobs:
     name: Deploy on PROD
     secrets: inherit
     with:
-      environment: 'prod'
+      environment: 'app-prod'
       resource_group_name: 'io-p-itn-funcsvc-rg-01'
       app_name: 'io-p-itn-funcsvc-func-01'
       use_staging_slot: true
