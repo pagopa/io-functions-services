@@ -14,4 +14,4 @@ jobs:
       app_name: 'io-p-itn-funcsvc-func-01'
       use_staging_slot: true
       use_private_agent: true
-      health_check_path: '/info'
+      health_check_path: 'api/info'
