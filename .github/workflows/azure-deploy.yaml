@@ -10,8 +10,8 @@ jobs:
     secrets: inherit
     with:
       environment: 'app-prod'
-      resource_group_name: 'io-p-itn-funcsvc-rg-01'
-      app_name: 'io-p-itn-funcsvc-func-01'
+      resource_group_name: 'io-p-itn-platform-services-rg-01'
+      app_name: 'io-p-itn-services-func-01'
       use_staging_slot: true
       use_private_agent: true
       health_check_path: '/api/info'
