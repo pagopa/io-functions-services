@@ -1,0 +1,16 @@
+name: Code Review
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - "*"
+      - "!infra/*"
+      - "!.github/*"
+
+jobs:
+  deploy_on_prod:
+    uses: pagopa/dx/.github/workflows/legacy_code_review.yaml@main
+    name: Code Review
+    secrets: inherit
