@@ -2,7 +2,7 @@ locals {
   prefix          = "io"
   env_short       = "p"
   location        = "italynorth"
-  domain          = "funcsvc"
+  domain          = "services"
   instance_number = "01"
   project         = "${local.prefix}-${local.env_short}-itn"
 
