@@ -10,6 +10,8 @@ module "bootstrapper" {
     instance_number = local.instance_number
   }
 
+  additional_resource_group_ids = [data.azurerm_resource_group.platform_services_fn.id]
+
   subscription_id = data.azurerm_subscription.current.id
   tenant_id       = data.azurerm_client_config.current.tenant_id
 

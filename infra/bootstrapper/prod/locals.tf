@@ -2,7 +2,7 @@ locals {
   prefix          = "io"
   env_short       = "p"
   location        = "italynorth"
-  domain          = "services"
+  domain          = "funcsvc"
   instance_number = "01"
   project         = "${local.prefix}-${local.env_short}-itn"
 
@@ -28,6 +28,10 @@ locals {
   common = {
     weu_resource_group_name = "${local.prefix}-${local.env_short}-rg-common"
     itn_resource_group_name = "${local.project}-common-rg-01"
+  }
+
+  functions = {
+    itn_platform_services_rg_name = "${local.project}-platform-services-rg-01"
   }
 
   tf_storage_account = {
