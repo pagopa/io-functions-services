@@ -30,6 +30,10 @@ locals {
     itn_resource_group_name = "${local.project}-common-rg-01"
   }
 
+  functions = {
+    itn_platform_services_rg_name = "${local.project}-platform-services-rg-01"
+  }
+
   tf_storage_account = {
     name                = "iopitntfst001"
     resource_group_name = "terraform-state-rg"

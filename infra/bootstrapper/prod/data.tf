@@ -19,6 +19,10 @@ data "azurerm_resource_group" "dashboards" {
   name = "dashboards"
 }
 
+data "azurerm_resource_group" "platform_services_fn" {
+  name = local.functions.itn_platform_services_rg_name
+}
+
 data "azurerm_virtual_network" "common" {
   name                = local.vnet.name
   resource_group_name = data.azurerm_resource_group.common.name
