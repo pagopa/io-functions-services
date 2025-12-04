@@ -6,13 +6,21 @@ edge
 Publish
 **/.DS_Store
 
+.turbo
+
+**/.yarn/*
+!**/.yarn/patches
+!**/.yarn/plugins
+!**/.yarn/releases
+!**/.yarn/sdks
+!**/.yarn/versions
+
 *.user
 *.suo
 *.cscfg
 *.Cache
 project.lock.json
 
-/packages
 /TestResults
 
 /tools/NuGet.exe
