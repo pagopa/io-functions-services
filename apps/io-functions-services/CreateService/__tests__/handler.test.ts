@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { ServicePayload } from "@pagopa/io-functions-admin-sdk/ServicePayload";
 import { Subscription } from "@pagopa/io-functions-admin-sdk/Subscription";
 import { UserInfo } from "@pagopa/io-functions-admin-sdk/UserInfo";
 import { MaxAllowedPaymentAmount } from "@pagopa/io-functions-commons/dist/generated/definitions/MaxAllowedPaymentAmount";
@@ -27,7 +28,6 @@ import * as E from "fp-ts/lib/Either";
 import { isSome } from "fp-ts/lib/Option";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ServicePayload } from "../../generated/definitions/ServicePayload";
 import {
   CreateServiceHandler,
   getAuthorizedRecipientsFromPayload

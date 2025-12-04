@@ -36,6 +36,7 @@ const mockTelemetryClient = {
 
 import { SpecialServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/SpecialServiceCategory";
 import { ActivationStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ActivationStatus";
+import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { ServiceScopeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceScope";
 import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
 import {
@@ -55,7 +56,6 @@ import { none, some } from "fp-ts/lib/Option";
 import * as TE from "fp-ts/lib/TaskEither";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ServiceId } from "../../generated/definitions/ServiceId";
 import { initTelemetryClient } from "../appinsights";
 import { canSendMessageOnActivationWithGrace } from "../services";
 
