@@ -41,9 +41,9 @@ import { Task } from "fp-ts/lib/Task";
 import * as TE from "fp-ts/lib/TaskEither";
 import { TaskEither } from "fp-ts/lib/TaskEither";
 
-import { canWriteMessage } from "../CreateMessage/handler";
 import { FiscalCodePayload } from "../generated/definitions/FiscalCodePayload";
 import { initTelemetryClient } from "./appinsights";
+import { canWriteMessage } from "./can-write-message";
 import { toHash } from "./crypto";
 import { CanSendMessageOnActivation } from "./services";
 
