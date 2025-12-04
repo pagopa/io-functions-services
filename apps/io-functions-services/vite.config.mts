@@ -7,7 +7,7 @@ export default defineConfig({
   test: {
     coverage: {
       exclude: ["dist", "**/__mocks__/**", "*.js"],
-      provider: "istanbul",
+      provider: "v8",
       reporter: ["lcov", "text"]
     },
     exclude: [
