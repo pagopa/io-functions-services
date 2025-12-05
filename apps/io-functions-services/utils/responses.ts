@@ -31,8 +31,7 @@ export type ErrorResponses =
 /**
  * Interface for unauthorized error response.
  */
-export interface IResponseErrorUnauthorized
-  extends IResponse<"IResponseErrorUnauthorized"> {
+export interface IResponseErrorUnauthorized extends IResponse<"IResponseErrorUnauthorized"> {
   readonly detail: string;
 }
 
