@@ -6,8 +6,15 @@ export default defineConfig({
   },
   test: {
     coverage: {
-      exclude: ["dist", "**/__mocks__/**", "*.js"],
-      provider: "v8",
+      exclude: [
+        "dist",
+        "**/__mocks__/**",
+        "/node_modules",
+        "**/__integrations__",
+        "*.js",
+        "generated",
+        "eslint.config.mjs"
+      ],
       reporter: ["lcov", "text"]
     },
     exclude: [

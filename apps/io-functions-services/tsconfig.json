@@ -18,6 +18,7 @@
     "**/__tests__",
     "__mocks__/**",
     "__integrations__/**",
-    "docker/**"
+    "docker/**",
+    "vite.config.mts"
   ]
 }
