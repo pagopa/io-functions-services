@@ -19,10 +19,6 @@ data "azurerm_resource_group" "dashboards" {
   name = "dashboards"
 }
 
-data "azurerm_resource_group" "platform_services_fn" {
-  name = local.functions.itn_platform_services_rg_name
-}
-
 data "azurerm_resource_group" "platform_services_fn_02" {
   name = local.functions.itn_platform_services_02_rg_name
 }
