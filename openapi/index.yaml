@@ -1,0 +1,2756 @@
+swagger: "2.0"
+info:
+  version: 4.0.0
+  title: IO API for Public Administration Services
+  contact:
+    name: PagoPA S.p.A.
+    url: https://docs.pagopa.it/io-guida-tecnica/
+  x-logo:
+    url: https://io.italia.it/assets/img/io-logo-blue.svg
+  description: >
+    # Warning
+
+    **This is an experimental API that is (most probably) going to change as we
+    evolve the IO platform.**
+
+    # Introduction
+
+    This is the documentation of the IO API for 3rd party services. This API
+    enables Public Administration services to integrate with the IO platform. IO
+    enables services to communicate with Italian citizens via the [IO
+    app](https://io.italia.it/).
+
+    # How to get an API key
+
+    To get access to this API, you'll need to register on the [IO Developer
+    Portal](https://developer.io.italia.it/).
+
+    After the registration step, you have to click on the button that says
+    `subscribe to the digital citizenship api` to receive the API key that you
+    will use to authenticate the API calls.
+
+    You will also receive an email with further instructions, including a fake
+    Fiscal Code that you will be able to use to send test messages. Messages
+    sent to the fake Fiscal Code will be notified to the email address used
+    during the registration process on the developer portal.
+
+    # Messages
+
+    ## What is a message
+
+    Messages are the primary form of communication enabled by the IO APIs.
+    Messages are **personal** communications directed to a **specific citizen**.
+    You will not be able to use this API to broadcast a message to a group of
+    citizens, you will have to create and send a specific, personalized message
+    to each citizen you want to communicate to.
+
+    The recipient of the message (i.e. a citizen) is identified trough his
+    [Fiscal Code](https://it.wikipedia.org/wiki/Codice_fiscale).
+
+    ## Message format
+
+    A message is conceptually very similar to an email and, in its simplest
+    form, is composed of the following attributes:
+
+      * A required `subject`: a short description of the topic.
+      * A required `markdown` body: a Markdown representation of the body (see
+        below on what Markdown tags are allowed).
+      * An optional `payment_data`: in case the message is a payment request,
+        the _payment data_ will enable the recipient to pay the requested amount
+        via [PagoPA](https://www.agid.gov.it/it/piattaforme/pagopa).
+      * An optional `due_date`: a _due date_ that let the recipient
+        add a reminder when receiving the message. The format for all
+        dates is [ISO8601](https://it.wikipedia.org/wiki/ISO_8601) with time
+        information and UTC timezone (ie. "2018-10-13T00:00:00.000Z").
+      * An optional `feature_level_type`: the kind of the submitted message.
+
+        It can be:
+        - `STANDARD` for normal messages;
+        - `ADVANCED` to enable premium features.
+
+        Default is `STANDARD`.
+
+    ## Allowed Markdown formatting
+
+    Not all Markdown formatting is currently available. Currently you can use
+    the following formatting:
+
+      * Headings
+      * Text stylings (bold, italic, etc...)
+      * Lists (bullet and numbered)
+
+    ## Sending a message to a citizen
+
+    Not every citizen will be interested in what you have to say and not every
+    citizen you want to communicate to will be registered on IO. For this
+    reason, before sending a message you need to check whether the recipient is
+    registered on the platform and that he has not yet opted out from receiving
+    messages from you.
+
+    The process for sending a message is made of 3 steps:
+
+      1. Call [getProfile](#operation/getProfile): if the profile does not exist
+         (i.e. you get a 404 response) or if the recipient has opted-out from
+         your service (the response contains `sender_allowed: false`), you
+         cannot send the message and you must stop here.
+      1. Call [submitMessageforUser](#operation/submitMessageforUser) to submit
+         a new message.
+      1. (optional) Call [getMessage](#operation/getMessage) to check whether
+         the message has been notified to the recipient.
+host: api.io.pagopa.it
+basePath: /api/v1
+schemes:
+  - https
+paths:
+  /messages:
+    post:
+      operationId: submitMessageforUserWithFiscalCodeInBody
+      summary: Submit a Message passing the user fiscal_code in the request body
+      description: >-
+        Submits a message to a user with STANDARD or ADVANCED features based on
+        `feature_level_type` value.
+
+        On error, the reason is returned in the response payload.
+
+        In order to call `submitMessageforUser`, before sending any message,
+
+        the sender MUST call `getProfile` and check that the profile exists
+
+        (for the specified fiscal code) and that the `sender_allowed` field
+
+        of the user's profile it set to `true`.
+      security:
+        - SubscriptionKey: []
+      parameters:
+        - name: message
+          in: body
+          schema:
+            $ref: "#/definitions/NewMessage"
+          x-examples:
+            application/json:
+              time_to_live: 3600
+              content:
+                subject: ipsum labore deserunt fugiat
+                markdown: >-
+                  Nullam dapibus metus sed elementum efficitur. Curabitur
+                  facilisis sagittis risus nec sodales.
+
+                  Vestibulum in eros sapien. Donec ac odio sit amet dui semper
+                  ornare eget nec odio. Pellentesque habitant
+
+                  morbi tristique senectus et netus et malesuada fames ac turpis
+                  egestas. Praesent nibh ex, mattis sit amet
+
+                  felis id, sodales euismod velit. Lorem ipsum dolor sit amet,
+                  consectetur adipiscing elit.
+      responses:
+        "201":
+          description: Message created.
+          schema:
+            $ref: "#/definitions/CreatedMessage"
+          headers:
+            Location:
+              type: string
+              description: >-
+                Location (URL) of created message resource.
+
+                A GET request to this URL returns the message status and
+                details.
+          examples:
+            application/json:
+              id: 01BX9NSMKVXXS5PSP2FATZMYYY
+        "400":
+          description: Invalid payload.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+          examples: {}
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden.
+        "429":
+          description: Too many requests
+        "500":
+          description: The message cannot be delivered.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+  /messages/{fiscal_code}:
+    post:
+      operationId: submitMessageforUser
+      summary: Submit a Message passing the user fiscal_code as path parameter
+      description: |-
+        Submits a message to a user.
+        On error, the reason is returned in the response payload.
+        In order to call `submitMessageforUser`, before sending any message,
+        the sender MUST call `getProfile` and check that the profile exists
+        (for the specified fiscal code) and that the `sender_allowed` field
+        of the user's profile it set to `true`.
+      security:
+        - SubscriptionKey: []
+      parameters:
+        - $ref: "#/parameters/FiscalCode"
+        - name: message
+          in: body
+          schema:
+            $ref: "#/definitions/NewMessage"
+          x-examples:
+            application/json:
+              time_to_live: 3600
+              content:
+                subject: ipsum labore deserunt fugiat
+                markdown: >-
+                  Nullam dapibus metus sed elementum efficitur. Curabitur
+                  facilisis sagittis risus nec sodales.
+
+                  Vestibulum in eros sapien. Donec ac odio sit amet dui semper
+                  ornare eget nec odio. Pellentesque habitant
+
+                  morbi tristique senectus et netus et malesuada fames ac turpis
+                  egestas. Praesent nibh ex, mattis sit amet
+
+                  felis id, sodales euismod velit. Lorem ipsum dolor sit amet,
+                  consectetur adipiscing elit.
+      responses:
+        "201":
+          description: Message created.
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                description: The identifier of the created message.
+          headers:
+            Location:
+              type: string
+              description: >-
+                Location (URL) of created message resource.
+
+                A GET request to this URL returns the message status and
+                details.
+          examples:
+            application/json:
+              id: 01BX9NSMKVXXS5PSP2FATZMYYY
+        "400":
+          description: Invalid payload.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+          examples: {}
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden.
+        "429":
+          description: Too many requests
+        "500":
+          description: The message cannot be delivered.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+  /messages/{fiscal_code}/{id}:
+    get:
+      operationId: getMessage
+      summary: Get Message
+      description: |-
+        The previously created message with the provided message ID is
+        returned. With right permission and `ADVANCED` feature level type
+        related to the previously submitted message, also read and payment
+        status infos (when applicable) are returned.
+      security:
+        - SubscriptionKey: []
+      parameters:
+        - $ref: "#/parameters/FiscalCode"
+        - name: id
+          in: path
+          type: string
+          required: true
+          description: The ID of the message.
+      responses:
+        "200":
+          description: Message found.
+          schema:
+            $ref: "#/definitions/ExternalMessageResponseWithContent"
+          examples:
+            application/json:
+              status: PROCESSED
+              message:
+                id: 01BX9NSMKAAAS5PSP2FATZM6BQ
+                fiscal_code: QXJNTX9RCRVD6V4O
+                time_to_live: 3600
+                content:
+                  subject: message subject, aliquip sint nulla in estinut
+                  markdown: >-
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                    Maecenas et mollis felis.
+
+                    Vivamus orci nisl, commodo ut sodales ut, eleifend a libero.
+                    Donec dapibus, turpis in mattis tempor,
+
+                    risus nunc malesuada ex, non aliquet metus nunc a lacus.
+                    Aenean in arcu vitae nisl porta
+
+                    fermentum nec non nibh. Phasellus tortor tellus, semper in
+                    metus eget, eleifend
+
+                    laoreet nibh. Aenean feugiat lectus ut nisl eleifend
+                    gravida.
+                sender_service_id: 01BX9NSMKVXXS5PSP2FATZM6QX
+              notification:
+                email: QUEUED
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden.
+        "404":
+          description: No message found for the provided ID.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+        "429":
+          description: Too many requests
+  /profiles:
+    post:
+      operationId: getProfileByPOST
+      summary: Get a User Profile using POST
+      description: >-
+        Returns the preferences for the user identified by the
+
+        fiscal code provided in the request body. The field `sender_allowed` is
+        set fo `false` in case
+
+        the service which is calling the API has been disabled by the user.
+      security:
+        - SubscriptionKey: []
+      responses:
+        "200":
+          description: Found.
+          schema:
+            $ref: "#/definitions/LimitedProfile"
+          examples:
+            application/json:
+              email: foobar@example.com
+              version: 1
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden.
+        "404":
+          description: No user found for the provided fiscal code.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+        "429":
+          description: Too many requests
+      parameters:
+        - name: payload
+          in: body
+          schema:
+            $ref: "#/definitions/FiscalCodePayload"
+  /profiles/{fiscal_code}:
+    get:
+      operationId: getProfile
+      summary: Get a User Profile
+      description: |-
+        Returns the preferences for the user identified by the provided
+        fiscal code. The field `sender_allowed` is set fo `false` in case
+        the service which is calling the API has been disabled by the user.
+      security:
+        - SubscriptionKey: []
+      responses:
+        "200":
+          description: Found.
+          schema:
+            $ref: "#/definitions/LimitedProfile"
+          examples:
+            application/json:
+              email: foobar@example.com
+              version: 1
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden.
+        "404":
+          description: No user found for the provided fiscal code.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+        "429":
+          description: Too many requests
+      parameters:
+        - $ref: "#/parameters/FiscalCode"
+  /subscriptions-feed/{date}:
+    get:
+      operationId: getSubscriptionsFeedForDate
+      summary: Get Subscriptions Feed
+      description: >-
+        Returns the **hashed fiscal codes** of users that **subscribed to** or
+
+        **unsubscribed from** your service **on the provided date** (UTC).
+
+
+        By querying this feed everyday, you will be able to retrieve the
+
+        "delta" of users that subscribed and unsubscribed from your service.
+
+        You will have to keep a list of users somewhere in your infrastructure
+
+        that you will keep updated at all times by adding the subscribed users
+        and
+
+        removing the unsubscribed users.
+
+
+        You will then be able to query this local list to know which users you
+
+        can send messages, to without having to query `getProfile` for each
+        message.
+
+
+        To avoid sharing the citizens fiscal codes, the API will
+
+        provide the hex encoding of the SHA256 hash of the upper case fiscal
+        code.
+
+        In pseudo code `CF_HASH = LOWERCASE(HEX(SHA256(UPPERCASE(CF))))`.
+
+
+        Access to this feed is subject to case-by-case authorization, and it is
+
+        primarily intended for large-scale services, such as those pertaining
+
+        to organizations that have an extensive user base (including
+        geographically),
+
+        and/or need to send very high volumes of messages per day.
+
+
+        This feed serves the purpose of minimizing data processing activities
+
+        while preserving optimization of API calls and data accuracy.
+
+        Organizations allowed are required to query this feed everyday.
+      security:
+        - SubscriptionKey: []
+      responses:
+        "200":
+          description: Found.
+          schema:
+            $ref: "#/definitions/SubscriptionsFeed"
+          examples:
+            application/json:
+              dateUTC: "2019-09-03"
+              subscriptions:
+                - >-
+                  e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+              unsubscriptions: []
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden.
+        "404":
+          description: Subscriptions feed not available yet.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+        "429":
+          description: Too many requests
+      parameters:
+        - $ref: "#/parameters/DateUTC"
+  /organizations/{organization_fiscal_code}/logo:
+    parameters:
+      - $ref: "#/parameters/OrganizationFiscalCode"
+    put:
+      summary: Upload organization logo.
+      description: |
+        Upsert a logo for an Organization.
+      operationId: uploadOrganizationLogo
+      security:
+        - SubscriptionKey: []
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: "#/definitions/Logo"
+          description: A base64 string representation of the organization logo PNG image.
+      responses:
+        "202":
+          description: Logo uploaded.
+        "400":
+          description: Invalid payload.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+        "401":
+          description: Unauthorized.
+        "403":
+          description: Forbidden.
+        "429":
+          description: Too many requests.
+        "500":
+          description: The organization logo cannot be uploaded.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+  /activations/:
+    post:
+      operationId: getServiceActivationByPOST
+      summary: Get a Service Activation for a User
+      description: Returns the current Activation for a couple Service/User
+      security:
+        - SubscriptionKey: []
+      responses:
+        "200":
+          description: Found.
+          schema:
+            $ref: "#/definitions/Activation"
+          examples:
+            application/json:
+              serviceId: AAAAAAAAAAAAAAA
+              fiscalCode: AAAAAA00B00C000D
+              status: ACTIVE
+              version: 1
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden.
+        "404":
+          description: No user activation found for the provided fiscal code.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+        "429":
+          description: Too many requests
+        "500":
+          description: Internal server error retrieving the Activation
+          schema:
+            $ref: "#/definitions/ProblemJson"
+      parameters:
+        - name: payload
+          in: body
+          schema:
+            $ref: "#/definitions/FiscalCodePayload"
+    put:
+      operationId: upsertServiceActivation
+      summary: Upsert a Service Activation for a User
+      description: Create or update an Activation for a couple Service/User
+      security:
+        - SubscriptionKey: []
+      responses:
+        "200":
+          description: Found.
+          schema:
+            $ref: "#/definitions/Activation"
+          examples:
+            application/json:
+              serviceId: AAAAAAAAAAAAAAA
+              fiscalCode: AAAAAA00B00C000D
+              status: ACTIVE
+              version: 1
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden.
+        "404":
+          description: No user activation found for the provided fiscal code.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+        "429":
+          description: Too many requests
+        "500":
+          description: The activation cannot be created or updated
+          schema:
+            $ref: "#/definitions/ProblemJson"
+      parameters:
+        - name: payload
+          in: body
+          schema:
+            $ref: "#/definitions/ActivationPayload"
+  /manage/services:
+    post:
+      tags:
+        - manage
+      summary: Create a new service
+      description: Create a new Service with the attributes provided in the request payload
+      operationId: cmsCreateService
+      security:
+        - ManageSubscriptionKey: []
+      parameters:
+        - in: body
+          name: body
+          description: A service body payload
+          required: true
+          schema:
+            $ref: "#/definitions/CmsServicePayload"
+      responses:
+        "201":
+          description: Service created successfully
+          schema:
+            $ref: "#/definitions/CmsServiceLifecycle"
+        "400":
+          description: Invalid payload.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "429":
+          description: Too many requests
+        "500":
+          description: Internal server error
+          schema:
+            $ref: "#/definitions/ProblemJson"
+    get:
+      tags:
+        - manage
+      summary: Retrieve all services
+      description: Retrieve all services owned by the calling user
+      operationId: cmsGetServices
+      security:
+        - ManageSubscriptionKey: []
+      parameters:
+        - name: limit
+          in: query
+          description: The number of services to return
+          required: false
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+        - name: offset
+          in: query
+          description: >-
+            The number of services to skip before starting to collect the result
+            set
+          required: false
+          type: integer
+          minimum: 0
+          default: 0
+      responses:
+        "200":
+          description: Services fetched successfully
+          schema:
+            $ref: "#/definitions/CmsServicePagination"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "429":
+          description: Too many requests
+        "500":
+          description: Internal server error
+          schema:
+            $ref: "#/definitions/ProblemJson"
+  /manage/services/topics:
+    get:
+      tags:
+        - service-topics
+      summary: Retrieve all service topics
+      description: Retrieve all service topics
+      operationId: getServiceTopics
+      security:
+        - SubscriptionKey: []
+      responses:
+        "200":
+          description: Service topics fetched successfully
+          schema:
+            $ref: "#/definitions/CmsServiceTopicList"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "429":
+          description: Too many requests
+        "500":
+          description: Internal server error
+  /manage/services/{serviceId}:
+    get:
+      tags:
+        - manage
+      summary: Retrieve service
+      description: Retrieve a service by ID
+      operationId: cmsGetService
+      security:
+        - ManageSubscriptionKey: []
+      parameters:
+        - name: serviceId
+          in: path
+          description: ID of the service
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Service fetched successfully
+          schema:
+            $ref: "#/definitions/CmsServiceLifecycle"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "429":
+          description: Too many requests
+        "500":
+          description: Internal server error
+          schema:
+            $ref: "#/definitions/ProblemJson"
+    put:
+      tags:
+        - manage
+      summary: Update service
+      description: Update an existing service by ID
+      operationId: cmsUpdateService
+      security:
+        - ManageSubscriptionKey: []
+      parameters:
+        - name: serviceId
+          in: path
+          description: ID of the service
+          required: true
+          type: string
+        - in: body
+          name: body
+          description: Updated service payload
+          required: true
+          schema:
+            $ref: "#/definitions/CmsServicePayload"
+      responses:
+        "200":
+          description: Service updated successfully
+          schema:
+            $ref: "#/definitions/CmsServiceLifecycle"
+        "400":
+          description: Invalid payload.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "409":
+          description: Service status is incompatible with update action
+        "429":
+          description: Too many requests
+        "500":
+          description: Internal server error
+          schema:
+            $ref: "#/definitions/ProblemJson"
+    delete:
+      tags:
+        - manage
+      summary: Delete service
+      description: Delete a service by ID
+      operationId: cmsDeleteService
+      security:
+        - ManageSubscriptionKey: []
+      parameters:
+        - name: serviceId
+          in: path
+          description: ID of the service
+          required: true
+          type: string
+      responses:
+        "204":
+          description: Service deleted successfully
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "429":
+          description: Too many requests
+        "500":
+          description: Internal server error
+          schema:
+            $ref: "#/definitions/ProblemJson"
+  /manage/services/{serviceId}/logo:
+    put:
+      tags:
+        - manage
+      summary: Upload service logo
+      description: Upload service logo by service ID
+      operationId: cmsUpdateServiceLogo
+      security:
+        - ManageSubscriptionKey: []
+      parameters:
+        - name: serviceId
+          in: path
+          description: ID of the service
+          required: true
+          type: string
+        - in: body
+          name: body
+          description: Updated service payload
+          required: true
+          schema:
+            $ref: "#/definitions/Logo"
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        "204":
+          description: Service logo updated successfully
+        "400":
+          description: Invalid payload.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "429":
+          description: Too many requests
+        "500":
+          description: Internal server error
+          schema:
+            $ref: "#/definitions/ProblemJson"
+  /manage/services/{serviceId}/history:
+    get:
+      tags:
+        - manage
+      summary: Retrieve service history
+      description: Retrieve service history by service ID
+      operationId: cmsGetServiceHistory
+      parameters:
+        - name: serviceId
+          in: path
+          description: ID of the service
+          required: true
+          type: string
+        - name: order
+          in: query
+          description: Order direction
+          required: false
+          type: string
+          enum:
+            - ASC
+            - DESC
+          default: DESC
+        - name: limit
+          in: query
+          description: The number of services to return
+          required: false
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+        - name: continuationToken
+          in: query
+          description: Token to retrieve the next page of results
+          required: false
+          type: string
+      responses:
+        "200":
+          description: Service history retrieved successfully
+          schema:
+            $ref: "#/definitions/CmsServiceHistory"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "429":
+          description: Too many requests
+        "500":
+          description: Internal server error
+          schema:
+            $ref: "#/definitions/ProblemJson"
+  /manage/services/{serviceId}/keys:
+    get:
+      tags:
+        - manage-authorization
+      summary: Retrieve service keys
+      description: Retrieve service keys by service ID
+      operationId: cmsGetServiceKeys
+      security:
+        - ManageSubscriptionKey: []
+      parameters:
+        - name: serviceId
+          in: path
+          description: ID of the service
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Service keys fetched successfully
+          schema:
+            $ref: "#/definitions/CmsSubscriptionKeys"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "429":
+          description: Too many requests
+        "500":
+          description: Internal server error
+          schema:
+            $ref: "#/definitions/ProblemJson"
+  /manage/services/{serviceId}/keys/{keyType}:
+    put:
+      tags:
+        - manage-authorization
+      summary: Regenerate service key
+      description: Regenerate service key by service ID and key type
+      operationId: cmsRegenerateServiceKey
+      security:
+        - ManageSubscriptionKey: []
+      parameters:
+        - name: serviceId
+          in: path
+          description: ID of the service
+          required: true
+          type: string
+        - $ref: "#/parameters/CmsSubscriptionKeyType"
+      responses:
+        "200":
+          description: Service key regenerated successfully
+          schema:
+            $ref: "#/definitions/CmsSubscriptionKeys"
+        "400":
+          description: Invalid payload.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "429":
+          description: Too many requests
+        "500":
+          description: Internal server error
+          schema:
+            $ref: "#/definitions/ProblemJson"
+  /manage/services/{serviceId}/review:
+    put:
+      tags:
+        - manage-review
+      summary: Send service to review
+      description: Send service to review by service ID
+      operationId: cmsReviewService
+      security:
+        - ManageSubscriptionKey: []
+      parameters:
+        - name: serviceId
+          in: path
+          description: ID of the service
+          required: true
+          type: string
+        - in: body
+          name: body
+          schema:
+            $ref: "#/definitions/CmsReviewRequest"
+      responses:
+        "204":
+          description: Service revirew taken in charge
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "409":
+          description: Service status is incompatible with review action request
+        "429":
+          description: Too many requests
+        "500":
+          description: Internal server error
+          schema:
+            $ref: "#/definitions/ProblemJson"
+  /manage/services/{serviceId}/release:
+    post:
+      tags:
+        - manage-release
+      summary: Publish service on IO
+      description: Publish service by ID on __IO Platform__
+      operationId: cmsReleaseService
+      security:
+        - ManageSubscriptionKey: []
+      parameters:
+        - name: serviceId
+          in: path
+          description: ID of the service
+          required: true
+          type: string
+      responses:
+        "204":
+          description: Service published successfully
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "409":
+          description: Service status is incompatible with publish action request
+        "429":
+          description: Too many requests
+        "500":
+          description: Internal server error
+          schema:
+            $ref: "#/definitions/ProblemJson"
+    get:
+      tags:
+        - manage-release
+      summary: Retrieve last published version of service
+      description: Retrieve last version of service published on __IO Platform__
+      operationId: cmsGetPublishedService
+      security:
+        - ManageSubscriptionKey: []
+      parameters:
+        - name: serviceId
+          in: path
+          description: ID of the service
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Fetched published service
+          schema:
+            $ref: "#/definitions/CmsServicePublication"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "429":
+          description: Too many requests
+        "500":
+          description: Internal server error
+          schema:
+            $ref: "#/definitions/ProblemJson"
+    delete:
+      tags:
+        - manage-release
+      summary: Unpublish service from IO
+      description: Unpublish service by ID from __IO Platform__
+      operationId: cmsUnpublishService
+      security:
+        - ManageSubscriptionKey: []
+      parameters:
+        - name: serviceId
+          in: path
+          description: ID of the service
+          required: true
+          type: string
+      responses:
+        "204":
+          description: Service unpublished successfully
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "429":
+          description: Too many requests
+        "500":
+          description: Internal server error
+          schema:
+            $ref: "#/definitions/ProblemJson"
+  /messages-sending/remote-contents/configurations:
+    post:
+      tags:
+        - remote-content
+      operationId: createRCConfiguration
+      security:
+        - ManageSubscriptionKey: []
+      summary: Create a new remote-content configuration
+      description: Create a new remote-content configuration using the provided payload
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/NewRCConfigurationPublic"
+          x-examples:
+            text/json: |
+              "name": "Descriptive congiguration name",
+              "description": "Configuration description",
+              "has_precondition": "NEVER",
+              "disable_lollipop_for": [
+                "DIXDPZ44E08F367A"
+              ],
+              "is_lollipop_enabled": false,
+              "test_environment": {
+                "base_url": "string",
+                "details_authentication": {
+                  "header_key_name": "string",
+                  "key": "string",
+                  "type": "API-KEY"
+                },
+                "test_users": [
+                  "DIXDPZ44E08F367A"
+                ]
+              },
+              "prod_environment": {
+                "base_url": "string",
+                "details_authentication": {
+                  "header_key_name": "string",
+                  "key": "string",
+                  "type": "API-KEY",
+                }
+              }
+      responses:
+        "201":
+          description: Configuration created
+          schema:
+            $ref: "#/definitions/RCConfigurationPublic"
+          examples:
+            text/json: |
+              "configuration_id": "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+              "name": "Configuration name",
+              "description": "Configuration description",
+              "has_precondition": "NEVER",
+              "disable_lollipop_for": [
+                "DIXDPZ44E08F367A"
+              ],
+              "is_lollipop_enabled": false,
+              "test_environment": {
+                "base_url": "string",
+                "details_authentication": {
+                  "header_key_name": "string",
+                  "key": "string",
+                  "type": "API-KEY"
+                },
+                "test_users": [
+                  "DIXDPZ44E08F367A"
+                ]
+              },
+              "prod_environment": {
+                "base_url": "string",
+                "details_authentication": {
+                  "header_key_name": "string",
+                  "key": "string",
+                  "type": "API-KEY",
+                }
+              }
+        "400":
+          description: Bad request
+          schema:
+            $ref: "#/definitions/ProblemJson"
+        "500":
+          description: There was an error creating the configuration.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+      consumes:
+        - application/json
+      produces:
+        - application/json
+    get:
+      tags:
+        - remote-content
+      operationId: listRCConfiguration
+      security:
+        - ManageSubscriptionKey: []
+      summary: Get all the owned remote-content configurations
+      description: Get all the owned remote-content configurations
+      responses:
+        "200":
+          description: Return the configurations
+          schema:
+            $ref: "#/definitions/RCConfigurationListResponse"
+          examples:
+            text/json: |
+              rcConfigList: [
+                {
+                  "configuration_id": "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+                  "name": "Configuration name",
+                  "description": "Configuration description",
+                  "has_precondition": "NEVER",
+                  "disable_lollipop_for": [
+                    "DIXDPZ44E08F367A"
+                  ],
+                  "is_lollipop_enabled": false,
+                  "test_environment": {
+                    "base_url": "string",
+                    "details_authentication": {
+                      "header_key_name": "string",
+                      "key": "string",
+                      "type": "API-KEY"
+                    },
+                    "test_users": [
+                      "DIXDPZ44E08F367A"
+                    ]
+                  },
+                  "prod_environment": {
+                    "base_url": "string",
+                    "details_authentication": {
+                      "header_key_name": "string",
+                      "key": "string",
+                      "type": "API-KEY",
+                    }
+                  }
+                }
+              ]
+        "400":
+          description: Bad request
+          schema:
+            $ref: "#/definitions/ProblemJson"
+        "403":
+          description: Request not authorized.
+        "404":
+          description: Resource not found.
+        "500":
+          description: There was an error trying to get the configurations.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+      consumes:
+        - application/json
+      produces:
+        - application/json
+  /messages-sending/remote-contents/configurations/{configurationId}:
+    get:
+      tags:
+        - remote-content
+      operationId: getRCConfiguration
+      security:
+        - ManageSubscriptionKey: []
+      summary: Get the remote-content configuration identified by the configurationId
+      description: >-
+        Get the remote-content configuration using the provided configurationId
+        passed as path param
+      parameters:
+        - in: path
+          name: configurationId
+          required: true
+          type: string
+          description: Ulid string.
+          format: Ulid
+          x-import: "@pagopa/ts-commons/lib/strings"
+      responses:
+        "200":
+          description: Return the configuration
+          schema:
+            $ref: "#/definitions/RCConfigurationResponse"
+          examples:
+            text/json: |
+              "configuration_id": "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+              "name": "Configuration name",
+              "description": "Configuration description",
+              "has_precondition": "NEVER",
+              "disable_lollipop_for": [
+                "DIXDPZ44E08F367A"
+              ],
+              "is_lollipop_enabled": false,
+              "test_environment": {
+                "base_url": "string",
+                "details_authentication": {
+                  "header_key_name": "string",
+                  "key": "string",
+                  "type": "API-KEY"
+                },
+                "test_users": [
+                  "DIXDPZ44E08F367A"
+                ]
+              },
+              "prod_environment": {
+                "base_url": "string",
+                "details_authentication": {
+                  "header_key_name": "string",
+                  "key": "string",
+                  "type": "API-KEY",
+                }
+              }
+        "400":
+          description: Bad request
+          schema:
+            $ref: "#/definitions/ProblemJson"
+        "403":
+          description: Request not authorized.
+        "404":
+          description: Resource not found.
+        "500":
+          description: There was an error trying to get the configuration.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+      consumes:
+        - application/json
+      produces:
+        - application/json
+    put:
+      tags:
+        - remote-content
+      operationId: updateRCConfiguration
+      security:
+        - ManageSubscriptionKey: []
+      summary: Update an existing remote-content configuration
+      description: >-
+        Update an existing remote-content configuration using the provided
+        payload
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/NewRCConfigurationPublic"
+          x-examples:
+            text/json: |
+              "name": "Descriptive congiguration name",
+              "description": "Configuration description",
+              "has_precondition": "NEVER",
+              "disable_lollipop_for": [
+                "DIXDPZ44E08F367A"
+              ],
+              "is_lollipop_enabled": false,
+              "test_environment": {
+                "base_url": "string",
+                "details_authentication": {
+                  "header_key_name": "string",
+                  "key": "string",
+                  "type": "API-KEY"
+                },
+                "test_users": [
+                  "DIXDPZ44E08F367A"
+                ]
+              },
+              "prod_environment": {
+                "base_url": "string",
+                "details_authentication": {
+                  "header_key_name": "string",
+                  "key": "string",
+                  "type": "API-KEY",
+                }
+              }
+        - in: path
+          name: configurationId
+          required: true
+          type: string
+          description: Ulid string.
+          format: Ulid
+          x-import: "@pagopa/ts-commons/lib/strings"
+      responses:
+        "204":
+          description: Configuration updated
+        "400":
+          description: Bad request
+          schema:
+            $ref: "#/definitions/ProblemJson"
+        "403":
+          description: Request not authorized.
+        "404":
+          description: Resource not found.
+        "500":
+          description: There was an error updating the configuration.
+          schema:
+            $ref: "#/definitions/ProblemJson"
+      consumes:
+        - application/json
+      produces:
+        - application/json
+definitions:
+  ExternalMessageResponseWithContent:
+    type: object
+    properties:
+      message:
+        $ref: "#/definitions/ExternalCreatedMessageWithContent"
+      notification:
+        $ref: "#/definitions/MessageResponseNotificationStatus"
+      status:
+        $ref: "#/definitions/MessageStatusValue"
+      read_status:
+        $ref: "#/definitions/ReadStatus"
+        description: >-
+          Describes whether a user has read the message or not
+
+          NOTE  : This value is only available for ADVANCED messages
+
+          NOTE 2: `UNAVAILABLE` will be returned if user revoked the permission
+          to access to read status
+      payment_status:
+        $ref: "#/definitions/PaymentStatus"
+        description: |-
+          Describes the state of the related payment notice
+          NOTE: This value is only available for ADVANCED payment messages
+    required:
+      - message
+  ExternalCreatedMessageWithContent:
+    allOf:
+      - $ref: "#/definitions/CreatedMessageWithContent"
+      - type: object
+        properties:
+          feature_level_type:
+            $ref: "#/definitions/FeatureLevelType"
+        required:
+          - feature_level_type
+  CreatedMessageWithContent:
+    type: object
+    properties:
+      id:
+        type: string
+      fiscal_code:
+        $ref: "#/definitions/FiscalCode"
+      time_to_live:
+        $ref: "#/definitions/TimeToLiveSeconds"
+      created_at:
+        $ref: "#/definitions/Timestamp"
+      content:
+        $ref: "#/definitions/NewMessageContent"
+      sender_service_id:
+        $ref: "#/definitions/ServiceId"
+    required:
+      - id
+      - fiscal_code
+      - created_at
+      - sender_service_id
+  ActivationStatus:
+    type: string
+    x-extensible-enum:
+      - ACTIVE
+      - INACTIVE
+      - PENDING
+  Activation:
+    type: object
+    properties:
+      service_id:
+        $ref: "#/definitions/ServiceId"
+      fiscal_code:
+        $ref: "#/definitions/FiscalCode"
+      status:
+        $ref: "#/definitions/ActivationStatus"
+      version:
+        type: integer
+        minimum: 0
+    required:
+      - service_id
+      - fiscal_code
+      - status
+      - version
+  ActivationPayload:
+    type: object
+    properties:
+      fiscal_code:
+        $ref: "#/definitions/FiscalCode"
+      status:
+        $ref: "#/definitions/ActivationStatus"
+    required:
+      - fiscal_code
+      - status
+  FiscalCodePayload:
+    type: object
+    properties:
+      fiscal_code:
+        $ref: "#/definitions/FiscalCode"
+    required:
+      - fiscal_code
+  SubscriptionsFeed:
+    type: object
+    properties:
+      dateUTC:
+        $ref: "#/definitions/DateUTC"
+      subscriptions:
+        $ref: "#/definitions/SubscriptionsList"
+      unsubscriptions:
+        $ref: "#/definitions/SubscriptionsList"
+    required:
+      - dateUTC
+      - subscriptions
+      - unsubscriptions
+  SubscriptionsList:
+    type: array
+    items:
+      $ref: "#/definitions/FiscalCodeHash"
+  FiscalCodeHash:
+    type: string
+    maxLength: 16
+    minLength: 16
+    description: |-
+      To avoid sharing the citizens fiscal codes, the API will
+      provide the hex encoding of the SHA256 hash of the upper case fiscal code.
+    pattern: "[0-9a-f]{64}"
+    x-example: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  DateUTC:
+    type: string
+    maxLength: 10
+    minLength: 10
+    description: A date in the format YYYY-MM-DD.
+    pattern: "[0-9]{4}-[0-9]{2}-[0-9]{2}"
+    x-example: "2019-09-15"
+  ProblemJson:
+    type: object
+    properties:
+      type:
+        type: string
+        format: uri
+        description: |-
+          An absolute URI that identifies the problem type. When dereferenced,
+          it SHOULD provide human-readable documentation for the problem type
+          (e.g., using HTML).
+        default: about:blank
+        example: https://example.com/problem/constraint-violation
+      title:
+        type: string
+        description: |-
+          A short, summary of the problem type. Written in english and readable
+          for engineers (usually not suited for non technical stakeholders and
+          not localized); example: Service Unavailable
+      status:
+        type: integer
+        format: int32
+        description: >-
+          The HTTP status code generated by the origin server for this
+          occurrence of the problem.
+        minimum: 100
+        maximum: 600
+        exclusiveMaximum: true
+        example: 200
+      detail:
+        type: string
+        description: |-
+          A human readable explanation specific to this occurrence of the
+          problem.
+        example: There was an error processing the request
+      instance:
+        type: string
+        format: uri
+        description: >-
+          An absolute URI that identifies the specific occurrence of the
+          problem.
+
+          It may or may not yield further information if dereferenced.
+  NotificationChannelStatusValue:
+    type: string
+    description: >-
+      The status of a notification (one for each channel).
+
+      "SENT": the notification was succesfully sent to the channel (ie. email or
+      push notification)
+
+      "THROTTLED": a temporary failure caused a retry during the notification
+      processing;
+        the notification associated with this channel will be delayed for a maximum of 7 days or until the message expires
+      "EXPIRED": the message expired before the notification could be sent;
+        this means that the maximum message time to live was reached; no notification will be sent to this channel
+      "FAILED": a permanent failure caused the process to exit with an error, no
+      notification will be sent to this channel
+    x-extensible-enum:
+      - SENT
+      - THROTTLED
+      - EXPIRED
+      - FAILED
+    example: SENT
+  MessageResponseWithContent:
+    type: object
+    properties:
+      message:
+        type: object
+        properties:
+          id:
+            type: string
+          fiscal_code:
+            $ref: "#/definitions/FiscalCode"
+          time_to_live:
+            $ref: "#/definitions/TimeToLiveSeconds"
+          created_at:
+            $ref: "#/definitions/Timestamp"
+          content:
+            $ref: "#/definitions/NewMessageContent"
+          sender_service_id:
+            $ref: "#/definitions/ServiceId"
+        required:
+          - id
+          - fiscal_code
+          - created_at
+          - content
+          - sender_service_id
+      notification:
+        $ref: "#/definitions/MessageResponseNotificationStatus"
+      status:
+        $ref: "#/definitions/MessageStatusValue"
+    required:
+      - message
+  MessageResponseNotificationStatus:
+    type: object
+    properties:
+      email:
+        $ref: "#/definitions/NotificationChannelStatusValue"
+      webhook:
+        $ref: "#/definitions/NotificationChannelStatusValue"
+  RejectedMessageStatusValue:
+    type: string
+    x-extensible-enum:
+      - REJECTED
+  NotRejectedMessageStatusValue:
+    type: string
+    x-extensible-enum:
+      - ACCEPTED
+      - THROTTLED
+      - FAILED
+      - PROCESSED
+  MessageStatusValue:
+    x-one-of: true
+    allOf:
+      - $ref: "#/definitions/RejectedMessageStatusValue"
+      - $ref: "#/definitions/NotRejectedMessageStatusValue"
+    description: >-
+      The processing status of a message.
+
+      "ACCEPTED": the message has been accepted and will be processed for
+      delivery;
+        we'll try to store its content in the user's inbox and notify him on his preferred channels
+      "THROTTLED": a temporary failure caused a retry during the message
+      processing;
+        any notification associated with this message will be delayed for a maximum of 7 days
+      "FAILED": a permanent failure caused the process to exit with an error, no
+      notification will be sent for this message
+
+      "PROCESSED": the message was succesfully processed and is now stored in
+      the user's inbox;
+        we'll try to send a notification for each of the selected channels
+      "REJECTED": either the recipient does not exist, or the sender has been
+      blocked
+  EUCovidCert:
+    type: object
+    description: Paylod with access token to retrieve a EU Covid Certificate
+    properties:
+      auth_code:
+        type: string
+    required:
+      - auth_code
+  ThirdPartyData:
+    type: object
+    description: >-
+      Payload containing all information needed to retrieve and visualize third
+      party message details
+    properties:
+      id:
+        type: string
+        description: >-
+          Unique id for retrieving third party enriched information about the
+          message
+        minLength: 1
+      original_sender:
+        type: string
+        description: Either a ServiceId or a simple string representing the sender name
+        minLength: 1
+      original_receipt_date:
+        $ref: "#/definitions/Timestamp"
+      has_attachments:
+        type: boolean
+        default: false
+      has_remote_content:
+        type: boolean
+        default: false
+      has_precondition:
+        $ref: "#/definitions/HasPrecondition"
+      summary:
+        type: string
+        minLength: 1
+      configuration_id:
+        type: string
+        description: Ulid string.
+        format: Ulid
+        x-import: "@pagopa/ts-commons/lib/strings"
+        example: 01ARZ3NDEKTSV4RRFFQ69G5FAV
+    required:
+      - id
+  OrganizationFiscalCode:
+    type: string
+    description: Organization fiscal code.
+    format: OrganizationFiscalCode
+    x-import: "@pagopa/ts-commons/lib/strings"
+    example: "12345678901"
+  FiscalCode:
+    type: string
+    description: User's fiscal code.
+    format: FiscalCode
+    x-import: "@pagopa/ts-commons/lib/strings"
+    example: SPNDNL80R13C555X
+  LimitedProfile:
+    description: |-
+      Describes the citizen's profile, mostly interesting for preferences
+      attributes.
+    type: object
+    properties:
+      sender_allowed:
+        type: boolean
+        description: |-
+          True in case the service that made the request can send
+          messages to the user identified by this profile (false otherwise).
+      preferred_languages:
+        type: array
+        items:
+          type: string
+          x-extensible-enum:
+            - it_IT
+            - en_GB
+            - es_ES
+            - de_DE
+            - fr_FR
+          example: it_IT
+        description: >-
+          Indicates the User's preferred written or spoken languages in order
+
+          of preference. Generally used for selecting a localized User
+          interface. Valid
+
+          values are concatenation of the ISO 639-1 two letter language code, an
+          underscore,
+
+          and the ISO 3166-1 2 letter country code; e.g., 'en_US' specifies the
+          language
+
+          English and country US.
+    required:
+      - sender_allowed
+  Timestamp:
+    type: string
+    format: UTCISODateFromString
+    description: A date-time field in ISO-8601 format and UTC timezone.
+    x-import: "@pagopa/ts-commons/lib/dates"
+    example: "2018-10-13T00:00:00.000Z"
+  TimeToLiveSeconds:
+    type: integer
+    default: 3600
+    minimum: 3600
+    maximum: 604800
+    description: |-
+      This parameter specifies for how long (in seconds) the system will
+      try to deliver the message to the channels configured by the user.
+    example: 3600
+  PrescriptionData:
+    type: object
+    description: Metadata needed to process medical prescriptions.
+    properties:
+      nre:
+        $ref: "#/definitions/PrescriptionNRE"
+      iup:
+        $ref: "#/definitions/PrescriptionIUP"
+      prescriber_fiscal_code:
+        $ref: "#/definitions/PrescriberFiscalCode"
+    required:
+      - nre
+  PrescriptionNRE:
+    description: >-
+      The field *Numero ricetta elettronica* identifies the medical prescription
+      at national level.
+    type: string
+    minLength: 15
+    maxLength: 15
+  PrescriptionIUP:
+    description: >-
+      The field *Identificativo Unico di Prescrizione* identifies the medical
+      prescription at regional level.
+    type: string
+    minLength: 1
+    maxLength: 16
+  PrescriberFiscalCode:
+    type: string
+    description: Fiscal code of the Doctor that made the prescription.
+    format: FiscalCode
+    x-import: "@pagopa/ts-commons/lib/strings"
+    example: TCNZRO80R13C555Y
+  MessageContentBase:
+    type: object
+    properties:
+      subject:
+        type: string
+        description: >-
+          The subject of the message - note that only some notification
+
+          channels support the display of a subject. When a subject is not
+          provided,
+
+          one gets generated from the client attributes.
+        minLength: 10
+        maxLength: 120
+        example: Welcome new user !
+      markdown:
+        type: string
+        description: >-
+          The full version of the message, in plain text or Markdown format. The
+
+          content of this field will be delivered to channels that don't have
+          any
+
+          limit in terms of content size (e.g. email, etc...).
+        minLength: 80
+        maxLength: 10000
+        example: |-
+          # This is a markdown header
+
+          to show how easily markdown can be converted to **HTML**
+
+          Remember: this has to be a long text.
+      require_secure_channels:
+        type: boolean
+        description: When true, messages won't trigger email notifications (only push).
+    required:
+      - subject
+      - markdown
+  MessageContent:
+    allOf:
+      - $ref: "#/definitions/MessageContentBase"
+      - type: object
+        properties:
+          payment_data:
+            $ref: "#/definitions/PaymentData"
+          prescription_data:
+            $ref: "#/definitions/PrescriptionData"
+          legal_data:
+            $ref: "#/definitions/LegalData"
+          eu_covid_cert:
+            $ref: "#/definitions/EUCovidCert"
+          third_party_data:
+            $ref: "#/definitions/ThirdPartyData"
+          due_date:
+            $ref: "#/definitions/Timestamp"
+  NewMessageContent:
+    allOf:
+      - $ref: "#/definitions/MessageContentBase"
+      - type: object
+        properties:
+          payment_data:
+            $ref: "#/definitions/PaymentDataWithRequiredPayee"
+          due_date:
+            $ref: "#/definitions/Timestamp"
+          prescription_data:
+            $ref: "#/definitions/PrescriptionData"
+          eu_covid_cert:
+            $ref: "#/definitions/EUCovidCert"
+          third_party_data:
+            $ref: "#/definitions/ThirdPartyData"
+          legal_data:
+            $ref: "#/definitions/LegalData"
+  NewMessage:
+    type: object
+    properties:
+      time_to_live:
+        $ref: "#/definitions/TimeToLiveSeconds"
+      content:
+        $ref: "#/definitions/MessageContent"
+      default_addresses:
+        type: object
+        description: |-
+          Default addresses for notifying the recipient of the message in case
+          no address for the related channel is set in his profile.
+        properties:
+          email:
+            type: string
+            format: email
+            example: foobar@example.com
+      fiscal_code:
+        $ref: "#/definitions/FiscalCode"
+      feature_level_type:
+        $ref: "#/definitions/FeatureLevelType"
+    required:
+      - content
+  FeatureLevelType:
+    type: string
+    default: STANDARD
+    x-extensible-enum:
+      - STANDARD
+      - ADVANCED
+    example: STANDARD
+  HasPrecondition:
+    type: string
+    x-extensible-enum:
+      - ALWAYS
+      - ONCE
+      - NEVER
+  ReadStatus:
+    type: string
+    x-extensible-enum:
+      - UNAVAILABLE
+      - UNREAD
+      - READ
+    example: UNREAD
+    description: Api definition of read status enumeration
+  PaymentStatus:
+    type: string
+    description: Payment status enumeration
+    x-extensible-enum:
+      - PAID
+      - NOT_PAID
+    example: NOT_PAID
+  CIDR:
+    type: string
+    description: Describes a single IP or a range of IPs.
+    pattern: ^([0-9]{1,3}[.]){3}[0-9]{1,3}(/([0-9]|[1-2][0-9]|3[0-2]))?$
+  ServicePayload:
+    description: A payload used to create/update a service for a user.
+    x-one-of: true
+    allOf:
+      - $ref: "#/definitions/VisibleServicePayload"
+      - $ref: "#/definitions/HiddenServicePayload"
+  HiddenServicePayload:
+    description: A payload used to create/update a service that is hidden.
+    allOf:
+      - $ref: "#/definitions/CommonServicePayload"
+      - type: object
+        properties:
+          is_visible:
+            type: boolean
+            default: false
+            enum:
+              - false
+            description: It indicates that service is hidden
+          service_metadata:
+            description: >-
+              That service can't handle some ServiceMetadata fields (es.
+              category)
+            $ref: "#/definitions/CommonServiceMetadata"
+  VisibleServicePayload:
+    description: >-
+      A payload used to create/update a service that appears in the service
+      list.
+    allOf:
+      - $ref: "#/definitions/CommonServicePayload"
+      - type: object
+        properties:
+          is_visible:
+            type: boolean
+            enum:
+              - true
+            description: It indicates that service appears in the service list
+          service_metadata:
+            description: >-
+              That service can't handle some ServiceMetadata fields (es.
+              category)
+            $ref: "#/definitions/CommonServiceMetadata"
+        required:
+          - is_visible
+          - service_metadata
+  ExtendedServicePayload:
+    allOf:
+      - $ref: "#/definitions/ServicePayload"
+      - type: object
+        properties:
+          service_metadata:
+            $ref: "#/definitions/ServiceMetadata"
+  CommonServicePayload:
+    description: Common properties for a ServicePayload
+    type: object
+    properties:
+      service_name:
+        $ref: "#/definitions/ServiceName"
+      department_name:
+        $ref: "#/definitions/DepartmentName"
+      organization_name:
+        $ref: "#/definitions/OrganizationName"
+      organization_fiscal_code:
+        $ref: "#/definitions/OrganizationFiscalCode"
+      authorized_cidrs:
+        description: >-
+          Allowed source IPs or CIDRs for this service.
+
+          When empty, every IP address it's authorized to call the IO API on
+          behalf of the service.
+        type: array
+        items:
+          $ref: "#/definitions/CIDR"
+      version:
+        type: integer
+      require_secure_channels:
+        type: boolean
+        default: false
+        description: |
+          When true:
+          * Messages won't trigger email notifications;
+          * Push notifications will be anonymous.
+    required:
+      - service_name
+      - department_name
+      - organization_name
+      - organization_fiscal_code
+      - authorized_cidrs
+  Service:
+    description: A service tied to user's subscription.
+    allOf:
+      - $ref: "#/definitions/ExtendedServicePayload"
+      - type: object
+        properties:
+          id:
+            type: string
+          service_id:
+            $ref: "#/definitions/ServiceId"
+          authorized_recipients:
+            description: |-
+              If non empty, the service will be able
+              to send messages only to these fiscal codes.
+            type: array
+            items:
+              $ref: "#/definitions/FiscalCode"
+          max_allowed_payment_amount:
+            description: >-
+              Maximum amount in euro cents that a service is allowed to charge
+              to a user.
+            type: integer
+            minimum: 0
+            maximum: 9999999999
+            default: 0
+        required:
+          - service_id
+          - authorized_recipients
+  ServiceMetadata:
+    x-one-of: true
+    allOf:
+      - $ref: "#/definitions/StandardServiceMetadata"
+      - $ref: "#/definitions/SpecialServiceMetadata"
+      - $ref: "#/definitions/CommonServiceMetadata"
+  StandardServiceMetadata:
+    allOf:
+      - $ref: "#/definitions/CommonServiceMetadata"
+      - type: object
+        properties:
+          category:
+            type: string
+            x-extensible-enum:
+              - STANDARD
+        required:
+          - category
+  SpecialServiceMetadata:
+    allOf:
+      - $ref: "#/definitions/CommonServiceMetadata"
+      - type: object
+        properties:
+          category:
+            type: string
+            x-extensible-enum:
+              - SPECIAL
+          custom_special_flow:
+            type: string
+            minLength: 1
+        required:
+          - category
+  CommonServiceMetadata:
+    type: object
+    description: A set of metadata properties related to this service.
+    properties:
+      description:
+        type: string
+        minLength: 1
+      web_url:
+        type: string
+        minLength: 1
+      app_ios:
+        type: string
+        minLength: 1
+      app_android:
+        type: string
+        minLength: 1
+      tos_url:
+        type: string
+        minLength: 1
+      privacy_url:
+        type: string
+        minLength: 1
+      address:
+        type: string
+        minLength: 1
+      phone:
+        type: string
+        minLength: 1
+      email:
+        type: string
+        minLength: 1
+      pec:
+        type: string
+        minLength: 1
+      cta:
+        type: string
+        minLength: 1
+      token_name:
+        type: string
+        minLength: 1
+        description: >-
+          This field is deprecated and it will be removed soon. See
+          https://developer.pagopa.it/app-io/guides/io-guida-tecnica/funzionalita/pubblicare-un-servizio/dati-obbligatori/service-metadata#token_name
+          for more details on the removal date
+      support_url:
+        type: string
+        minLength: 1
+      scope:
+        $ref: "#/definitions/ServiceScope"
+    required:
+      - scope
+  ServiceScope:
+    type: string
+    x-extensible-enum:
+      - NATIONAL
+      - LOCAL
+  ServiceId:
+    type: string
+    description: |-
+      The ID of the Service. Equals the subscriptionId of a registered
+      API user.
+    minLength: 1
+  ServiceName:
+    type: string
+    description: The name of the service. Will be added to the content of sent messages.
+    minLength: 1
+  OrganizationName:
+    type: string
+    description: |-
+      The organization that runs the service. Will be added to the content
+      of sent messages to identify the sender.
+    minLength: 1
+  DepartmentName:
+    type: string
+    description: |-
+      The department inside the organization that runs the service. Will
+      be added to the content of sent messages.
+    minLength: 1
+  PaymentDataBase:
+    type: object
+    description: Metadata needed to process pagoPA payments.
+    properties:
+      amount:
+        description: >-
+          Amount of payment in euro cent. PagoPA accepts up to 9999999999 euro
+          cents.
+        type: integer
+        minimum: 1
+        maximum: 9999999999
+      notice_number:
+        description: >-
+          The field "Numero Avviso" of pagoPa, needed to identify the payment. 
+          Format is `<aux digit(1n)>[<application code> (2n)]<codice IUV
+          (15|17n)>`. See [pagoPa
+          specs](https://docs.pagopa.it/saci/specifiche-attuative-dei-codici-identificativi-di-versamento-riversamento-e-rendicontazione/premessa)
+          for more info on this field and the IUV.
+        type: string
+        pattern: ^[0123][0-9]{17}$
+      invalid_after_due_date:
+        type: boolean
+        default: false
+    required:
+      - amount
+      - notice_number
+  PaymentData:
+    allOf:
+      - $ref: "#/definitions/PaymentDataBase"
+      - type: object
+        properties:
+          payee:
+            $ref: "#/definitions/Payee"
+  Payee:
+    type: object
+    description: Metadata needed to explicit payment's payee.
+    properties:
+      fiscal_code:
+        $ref: "#/definitions/OrganizationFiscalCode"
+    required:
+      - fiscal_code
+  PaymentDataWithRequiredPayee:
+    allOf:
+      - $ref: "#/definitions/PaymentDataBase"
+      - type: object
+        properties:
+          payee:
+            $ref: "#/definitions/Payee"
+        required:
+          - payee
+  LegalData:
+    type: object
+    properties:
+      sender_mail_from:
+        type: string
+        minLength: 1
+      has_attachment:
+        type: boolean
+        default: false
+      message_unique_id:
+        type: string
+        minLength: 1
+      original_message_url:
+        type: string
+        minLength: 1
+      pec_server_service_id:
+        $ref: "#/definitions/ServiceId"
+    required:
+      - sender_mail_from
+      - has_attachment
+      - message_unique_id
+  SubscriptionKeys:
+    type: object
+    properties:
+      primary_key:
+        type: string
+      secondary_key:
+        type: string
+    required:
+      - primary_key
+      - secondary_key
+  ServiceWithSubscriptionKeys:
+    allOf:
+      - $ref: "#/definitions/Service"
+      - $ref: "#/definitions/SubscriptionKeys"
+  ServiceIdCollection:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/definitions/ServiceId"
+    required:
+      - items
+  Logo:
+    type: object
+    properties:
+      logo:
+        type: string
+        format: byte
+        minLength: 1
+    required:
+      - logo
+  SubscriptionKeyTypePayload:
+    type: object
+    properties:
+      key_type:
+        $ref: "#/definitions/SubscriptionKeyType"
+    required:
+      - key_type
+  SubscriptionKeyType:
+    type: string
+    x-extensible-enum:
+      - PRIMARY_KEY
+      - SECONDARY_KEY
+  CreatedMessage:
+    type: object
+    properties:
+      id:
+        type: string
+        description: The identifier of the created message.
+  CmsServiceLifecycle:
+    description: Service Lifecycle model data
+    allOf:
+      - type: object
+        properties:
+          id:
+            type: string
+          status:
+            $ref: "#/definitions/CmsServiceLifecycleStatus"
+          last_update:
+            $ref: "#/definitions/Timestamp"
+          metadata:
+            $ref: "#/definitions/CmsServiceMetadata"
+      - $ref: "#/definitions/CmsServiceData"
+    required:
+      - id
+      - status
+      - last_update
+  CmsServicePublication:
+    description: Service Publication model data
+    allOf:
+      - type: object
+        properties:
+          id:
+            type: string
+          status:
+            $ref: "#/definitions/CmsServicePublicationStatusType"
+          last_update:
+            $ref: "#/definitions/Timestamp"
+          metadata:
+            $ref: "#/definitions/CmsServiceMetadata"
+      - $ref: "#/definitions/CmsServiceData"
+    required:
+      - id
+      - status
+      - last_update
+  CmsServicePayload:
+    description: A payload used to create or update a service.
+    allOf:
+      - type: object
+        properties:
+          metadata:
+            $ref: "#/definitions/CmsServicePayloadMetadata"
+        required:
+          - metadata
+      - $ref: "#/definitions/CmsServiceData"
+  CmsServiceData:
+    type: object
+    description: Service basic data
+    properties:
+      name:
+        type: string
+        minLength: 1
+      description:
+        type: string
+        minLength: 1
+      organization:
+        $ref: "#/definitions/CmsOrganization"
+      require_secure_channel:
+        type: boolean
+      authorized_recipients:
+        type: array
+        items:
+          $ref: "#/definitions/FiscalCode"
+      authorized_cidrs:
+        description: >-
+          Allowed source IPs or CIDRs for this service.
+
+          When empty, every IP address it's authorized to call the IO API on
+          behalf of the service.
+        type: array
+        items:
+          $ref: "#/definitions/CIDR"
+      max_allowed_payment_amount:
+        type: integer
+        format: int32
+        minimum: 0
+        maximum: 9999999999
+        default: 0
+    required:
+      - name
+      - description
+      - organization
+  CmsServiceBaseMetadata:
+    type: object
+    description: A set of service metadata properties
+    properties:
+      web_url:
+        type: string
+        minLength: 1
+      app_ios:
+        type: string
+        minLength: 1
+      app_android:
+        type: string
+        minLength: 1
+      tos_url:
+        type: string
+        minLength: 1
+      privacy_url:
+        type: string
+        minLength: 1
+      address:
+        type: string
+        minLength: 1
+      phone:
+        type: string
+        minLength: 1
+      email:
+        type: string
+        minLength: 1
+      pec:
+        type: string
+        minLength: 1
+      cta:
+        type: string
+        minLength: 1
+      token_name:
+        type: string
+        minLength: 1
+        description: >-
+          This field is deprecated and it will be removed soon. See
+          https://developer.pagopa.it/app-io/guides/io-guida-tecnica/funzionalita/pubblicare-un-servizio/dati-obbligatori/service-metadata#token_name
+          for more details on the removal date
+      support_url:
+        type: string
+        minLength: 1
+      scope:
+        type: string
+        enum:
+          - LOCAL
+          - NATIONAL
+    required:
+      - scope
+  CmsServiceMetadata:
+    description: A set of service metadata properties
+    allOf:
+      - $ref: "#/definitions/CmsServiceBaseMetadata"
+      - type: object
+        properties:
+          topic:
+            $ref: "#/definitions/CmsServiceTopic"
+  CmsServicePayloadMetadata:
+    description: A set of service metadata properties on request payload
+    allOf:
+      - $ref: "#/definitions/CmsServiceBaseMetadata"
+      - type: object
+        properties:
+          topic_id:
+            type: number
+            description: The topic id
+            example: 3
+        required:
+          - topic_id
+  CmsServiceLifecycleStatus:
+    type: object
+    properties:
+      value:
+        $ref: "#/definitions/CmsServiceLifecycleStatusType"
+      reason:
+        description: Reason for status value
+        type: string
+    required:
+      - value
+  CmsServiceLifecycleStatusType:
+    description: >
+      Service lifecycle status<br>
+
+      - _draft_: A new draft of the service has been created, filled in
+      completely or partially and saved by the system.
+
+      - _submitted_: The draft has been sent for internal validation to PagoPA
+      and the response is awaited. In this state, the service is
+
+      immutable and is frozen in the shipped version.
+
+      - _approved_: The service has been approved by the _PagoPA S.p.A._
+      internal validation process, it is correct and suitable for publication.
+
+      - _rejected_: The service goes back to the draft but cannot be resubmitted
+      for validation unless it is modified by the institution in
+
+      at least one of its fields.
+
+      - _deleted_: The service is permanently deleted from the Back-Office.
+    type: string
+    enum:
+      - draft
+      - submitted
+      - approved
+      - rejected
+      - deleted
+  CmsServicePublicationStatusType:
+    description: >
+      Service publication status<br>
+
+      - _published_: The service is visible in _IO App_ to users
+
+      - _unpublished_: The service is no longer visible in _IO App_ to users,
+      but remains in the institution's Back-Office, which can
+
+      later choose to publish it again.
+    type: string
+    enum:
+      - published
+      - unpublished
+  CmsServicePagination:
+    type: object
+    properties:
+      value:
+        type: array
+        items:
+          $ref: "#/definitions/CmsServiceLifecycle"
+      pagination:
+        $ref: "#/definitions/CmsPaginationResultSet"
+  CmsPaginationResultSet:
+    type: object
+    properties:
+      offset:
+        type: number
+        description: result set offset
+      limit:
+        type: number
+        description: result set size
+      count:
+        type: number
+        description: total record count
+  CmsOrganization:
+    type: object
+    properties:
+      name:
+        type: string
+        minLength: 1
+      fiscal_code:
+        $ref: "#/definitions/OrganizationFiscalCode"
+      department_name:
+        type: string
+        minLength: 1
+    required:
+      - name
+      - fiscal_code
+  CmsSubscriptionKeys:
+    type: object
+    properties:
+      primary_key:
+        type: string
+      secondary_key:
+        type: string
+    required:
+      - primary_key
+      - secondary_key
+  CmsReviewRequest:
+    type: object
+    properties:
+      auto_publish:
+        type: boolean
+        description: Flag to request an automatic service publication on service approval.
+        example: true
+    required:
+      - auto_publish
+  CmsServiceTopicList:
+    type: object
+    properties:
+      topics:
+        type: array
+        items:
+          $ref: "#/definitions/CmsServiceTopic"
+  CmsServiceTopic:
+    type: object
+    properties:
+      id:
+        type: number
+        description: The topic id
+        example: 3
+      name:
+        type: string
+        description: The topic name
+        example: Benessere sociale
+    required:
+      - id
+      - name
+  CmsServiceHistory:
+    type: object
+    description: Service basic data
+    properties:
+      continuationToken:
+        type: string
+        description: Continuation token for pagination
+      items:
+        type: array
+        items:
+          $ref: "#/definitions/CmsServiceHistoryItem"
+  CmsServiceHistoryItem:
+    description: Service History model data
+    allOf:
+      - type: object
+        properties:
+          id:
+            type: string
+          status:
+            $ref: "#/definitions/CmsServiceHistoryItemStatus"
+          last_update:
+            $ref: "#/definitions/Timestamp"
+          metadata:
+            $ref: "#/definitions/CmsServiceMetadata"
+        required:
+          - id
+          - status
+          - last_update
+          - metadata
+      - $ref: "#/definitions/CmsServiceData"
+  CmsServiceHistoryItemStatus:
+    type: object
+    properties:
+      kind:
+        $ref: "#/definitions/CmsServiceHistoryStatusKind"
+      value:
+        $ref: "#/definitions/CmsServiceHistoryStatusType"
+      reason:
+        description: Reason for status value
+        type: string
+    required:
+      - value
+  CmsServiceHistoryStatusKind:
+    description: >
+      Status kind for Service History<br>
+
+      - publication: Indicates the status is related to a service-publication
+      event
+
+      - lifecycle: Indicates the status is related to a service-lifecycle event
+    type: string
+    enum:
+      - publication
+      - lifecycle
+  CmsServiceHistoryStatusType:
+    description: >
+      A Service History record contains either publication or lifecycle items,
+      so can have a combination of Service lifecycle status and publication
+      status<br>
+    type: string
+    enum:
+      - draft
+      - submitted
+      - approved
+      - rejected
+      - deleted
+      - published
+      - unpublished
+  RCConfigurationId:
+    type: string
+    description: Ulid string.
+    format: Ulid
+    x-import: "@pagopa/ts-commons/lib/strings"
+    example: 01ARZ3NDEKTSV4RRFFQ69G5FAV
+  RCConfigurationPublic:
+    allOf:
+      - $ref: "#/definitions/RCConfigurationBase"
+      - $ref: "#/definitions/RCConfigurationEnvironment"
+  NewRCConfigurationBase:
+    type: object
+    properties:
+      name:
+        type: string
+        minLength: 1
+        description: Configuration name.
+      description:
+        type: string
+        minLength: 1
+        description: Configuration description.
+      has_precondition:
+        $ref: "#/definitions/HasPrecondition"
+      disable_lollipop_for:
+        type: array
+        items:
+          type: string
+          description: User's fiscal code.
+          format: FiscalCode
+          x-import: "@pagopa/ts-commons/lib/strings"
+          example: SPNDNL80R13C555X
+      is_lollipop_enabled:
+        type: boolean
+        description: Flag to check if lollipop is enabled
+    required:
+      - name
+      - description
+      - has_precondition
+      - disable_lollipop_for
+      - is_lollipop_enabled
+  NewRCConfigurationPublic:
+    allOf:
+      - $ref: "#/definitions/NewRCConfigurationBase"
+      - $ref: "#/definitions/RCConfigurationEnvironment"
+  RCConfigurationBase:
+    allOf:
+      - $ref: "#/definitions/NewRCConfigurationBase"
+      - type: object
+        properties:
+          configuration_id:
+            type: string
+            description: Ulid string.
+            format: Ulid
+            x-import: "@pagopa/ts-commons/lib/strings"
+            example: 01ARZ3NDEKTSV4RRFFQ69G5FAV
+        required:
+          - configuration_id
+  RCConfigurationEnvironment:
+    type: object
+    properties:
+      test_environment:
+        $ref: "#/definitions/RCConfigurationTestEnvironment"
+      prod_environment:
+        $ref: "#/definitions/RCConfigurationProdEnvironment"
+  RCConfigurationProdEnvironment:
+    type: object
+    properties:
+      base_url:
+        type: string
+        minLength: 1
+        description: Base url of the server.
+      details_authentication:
+        $ref: "#/definitions/RCAuthenticationConfig"
+    required:
+      - base_url
+      - details_authentication
+  RCAuthenticationConfig:
+    type: object
+    properties:
+      header_key_name:
+        type: string
+        minLength: 1
+        description: header key name
+      key:
+        type: string
+        minLength: 1
+        description: authentication config key
+      type:
+        type: string
+        minLength: 1
+        description: authentication config type
+    required:
+      - header_key_name
+      - key
+      - type
+  RCConfigurationTestEnvironment:
+    allOf:
+      - $ref: "#/definitions/RCConfigurationProdEnvironment"
+      - type: object
+        properties:
+          test_users:
+            type: array
+            items:
+              $ref: "#/definitions/FiscalCode"
+        required:
+          - test_users
+  RCConfigurationListResponse:
+    type: object
+    properties:
+      rcConfigList:
+        type: array
+        items:
+          $ref: "#/definitions/RCConfigurationResponse"
+  RCConfigurationResponse:
+    allOf:
+      - $ref: "#/definitions/RCConfigurationPublic"
+      - type: object
+        properties:
+          user_id:
+            type: string
+            minLength: 1
+        required:
+          - user_id
+responses: {}
+parameters:
+  LegalMail:
+    name: legalmail
+    in: path
+    type: string
+    required: true
+    description: The legal mail related to a legal message' s sender.
+    format: EmailString
+    x-example: demo@pec.it
+    x-import: italia-ts-commons/lib/strings
+  FiscalCode:
+    name: fiscal_code
+    in: path
+    type: string
+    maxLength: 16
+    minLength: 16
+    required: true
+    description: The fiscal code of the user, all upper case.
+    pattern: >-
+      [A-Z]{6}[0-9LMNPQRSTUV]{2}[ABCDEHLMPRST][0-9LMNPQRSTUV]{2}[A-Z][0-9LMNPQRSTUV]{3}[A-Z]
+    x-example: SPNDNL80R13C555X
+  DateUTC:
+    name: date
+    in: path
+    type: string
+    maxLength: 10
+    minLength: 10
+    required: true
+    description: A date in the format YYYY-MM-DD.
+    pattern: "[0-9]{4}-[0-9]{2}-[0-9]{2}"
+    x-example: "2019-09-15"
+  OrganizationFiscalCode:
+    name: organization_fiscal_code
+    in: path
+    type: string
+    required: true
+    description: Organization fiscal code.
+    format: OrganizationFiscalCode
+    x-import: italia-ts-commons/lib/strings
+  CmsSubscriptionKeyType:
+    name: keyType
+    in: path
+    description: Key type
+    required: true
+    type: string
+    enum:
+      - primary
+      - secondary
+consumes:
+  - application/json
+produces:
+  - application/json
+securityDefinitions:
+  SubscriptionKey:
+    type: apiKey
+    name: Ocp-Apim-Subscription-Key
+    in: header
+    description: >-
+      The API key obtained through the Backoffice IO or both getService or
+      cmsGetServiceKeys operation.
+  ManageSubscriptionKey:
+    type: apiKey
+    name: Ocp-Apim-Subscription-Key
+    in: header
+    description: The `manage` API key obtained through the Backoffice IO.
