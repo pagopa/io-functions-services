@@ -1,5 +1,5 @@
 {
-  "name": "@pagopa/io-functions-services",
+  "name": "io-functions-services",
   "version": "4.0.0",
   "license": "MIT",
   "engines": {
