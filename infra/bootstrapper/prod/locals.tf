@@ -32,6 +32,7 @@ locals {
 
   functions = {
     itn_platform_services_rg_name = "${local.project}-platform-services-rg-01"
+    itn_platform_services_02_rg_name = "${local.project}-platform-services-rg-02"
   }
 
   tf_storage_account = {
