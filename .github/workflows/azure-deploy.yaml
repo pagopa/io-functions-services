@@ -22,4 +22,4 @@ jobs:
       workspace_name: io-functions-services
       environment: app-prod
       resource_group_name: io-p-itn-platform-services-rg-01
-      web_app_name: io-p-itn-services-func-01
+      web_app_name: io-p-itn-services-func-02
