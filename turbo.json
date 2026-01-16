@@ -1,0 +1,88 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build": {
+      "inputs": [
+        "**/*.ts",
+        "package.json",
+        "tsconfig.json"
+      ],
+      "outputs": [
+        "dist/**"
+      ],
+      "dependsOn": [
+        "^clean",
+        "clean",
+        "^generate",
+        "generate",
+        "^build"
+      ]
+    },
+    "typecheck": {
+      "inputs": [
+        "**/*.ts",
+        "package.json",
+        "tsconfig.json"
+      ],
+      "outputs": [],
+      "dependsOn": [
+        "^build",
+        "^typecheck"
+      ]
+    },
+    "format": {},
+    "format:check": {},
+    "lint": {
+      "inputs": [
+        "**/*.ts"
+      ]
+    },
+    "lint:check": {
+      "inputs": [
+        "**/*.ts"
+      ]
+    },
+    "test": {
+      "inputs": [
+        "**/*.ts",
+        "vite.config.mts"
+      ],
+      "dependsOn": [
+        "^build",
+        "^test"
+      ],
+      "outputLogs": "full"
+    },
+    "test:coverage": {
+      "inputs": [
+        "**/*.ts",
+        "**/vite.config.mts"
+      ],
+      "outputs": [
+        "coverage/**"
+      ],
+      "dependsOn": [
+        "build",  
+        "^build",
+        "^test"
+      ],
+      "outputLogs": "errors-only"
+    },
+    "generate": {
+      "inputs": [
+        "openapi/**/*.yaml",
+        "openapi/**/*.yaml.template"
+      ],
+      "outputs": [
+        "generated/**/*.ts"
+      ],
+      "outputLogs": "errors-only"
+    },
+    "clean": {
+      "inputs": [
+        "dist/**"
+      ],
+      "cache": false
+    }
+  }
+}

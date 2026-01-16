@@ -4,5 +4,6 @@
   "azureFunctions.projectRuntime": "~4",
   "debug.internalConsoleOptions": "neverOpen",
   "azureFunctions.preDeployTask": "yarn prune",
-  "editor.formatOnSave": true
+  "editor.formatOnSave": true,
+  "prettier.trailingComma": "none"
 }
