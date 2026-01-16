@@ -1,17 +1,25 @@
 name: Azure Deploy - PROD
 
 on:
-  workflow_dispatch:
-      
+  workflow_dispatch: {}
+  push:
+    branches:
+      - master
+    paths:
+      - "apps/io-functions-services/CHANGELOG.md"
+
+permissions:
+  attestations: write
+  id-token: write
+  contents: read
+
 jobs:
-  deploy_on_prod:
-    uses: pagopa/dx/.github/workflows/legacy_deploy_pipelines.yaml@main
-    name: Deploy on PROD
+  deploy:
+    name: Deploy
+    uses: pagopa/dx/.github/workflows/release-azure-appsvc-v1.yaml@main
     secrets: inherit
     with:
-      environment: 'app-prod'
-      resource_group_name: 'io-p-itn-platform-services-rg-01'
-      app_name: 'io-p-itn-services-func-01'
-      use_staging_slot: true
-      use_private_agent: true
-      health_check_path: '/api/info'
+      workspace_name: io-functions-services
+      environment: app-prod
+      resource_group_name: io-p-itn-platform-services-rg-02
+      web_app_name: io-p-itn-services-func-02
