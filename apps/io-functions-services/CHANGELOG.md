@@ -1,5 +1,11 @@
 ### Changelog
 
+## 4.0.1
+
+### Patch Changes
+
+- 34032fc: Fix package name
+
 ## 4.0.0
 
 ### Major Changes
