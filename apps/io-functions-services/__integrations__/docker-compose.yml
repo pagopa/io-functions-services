@@ -57,7 +57,7 @@ services:
       - fixtures
 
   testagent:
-    image: node:20-alpine
+    image: node:20-alpine@sha256:09e2b3d9726018aecf269bd35325f46bf75046a643a66d28360ec71132750ec8
     container_name: fn_services_testagent
     working_dir: /usr/src/app
     command: tail -f /dev/null # to keep it   up&running
