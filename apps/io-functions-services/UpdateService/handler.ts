@@ -1,4 +1,4 @@
-import { Context } from "@azure/functions";
+import { InvocationContext } from "@azure/functions";
 import { Service } from "@pagopa/io-functions-admin-sdk/Service";
 import { SpecialServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/SpecialServiceCategory";
 import { SpecialServiceMetadata } from "@pagopa/io-functions-admin-sdk/SpecialServiceMetadata";
@@ -7,6 +7,7 @@ import { SubscriptionKeys } from "@pagopa/io-functions-admin-sdk/SubscriptionKey
 import { UserInfo } from "@pagopa/io-functions-admin-sdk/UserInfo";
 import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
 import { SubscriptionCIDRsModel } from "@pagopa/io-functions-commons/dist/src/models/subscription_cidrs";
+import { wrapHandlerV4 } from "@pagopa/io-functions-commons/dist/src/utils/azure-functions-v4-express-adapter";
 import {
   AzureApiAuthMiddleware,
   IAzureApiAuthorization,
@@ -28,10 +29,6 @@ import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/m
 import { RequiredBodyPayloadMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_body_payload";
 import { RequiredParamMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_param";
 import {
-  withRequestMiddlewares,
-  wrapRequestHandler
-} from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
-import {
   checkSourceIpForHandler,
   clientIPAndCidrTuple as ipTuple
 } from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
@@ -47,7 +44,7 @@ import {
 } from "@pagopa/ts-commons/lib/responses";
 import { SequenceMiddleware } from "@pagopa/ts-commons/lib/sequence_middleware";
 import { EmailString, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
-import express from "express";
+// express is not required for v4 handlers
 import { pipe } from "fp-ts/lib/function";
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import * as TE from "fp-ts/lib/TaskEither";
@@ -70,7 +67,7 @@ import {
  * and returns updated service with subscription keys
  */
 type IUpdateServiceHandler = (
-  context: Context,
+  context: InvocationContext,
   auth: IAzureApiAuthorization,
   clientIp: ClientIp,
   attrs: IAzureUserAttributes | IAzureUserAttributesManage,
@@ -189,9 +186,9 @@ export function UpdateService(
   serviceModel: ServiceModel,
   client: APIClient,
   subscriptionCIDRsModel: SubscriptionCIDRsModel
-): express.RequestHandler {
+) {
   const handler = UpdateServiceHandler(telemetryClient, client);
-  const middlewaresWrap = withRequestMiddlewares(
+  const middlewares = [
     ContextMiddleware(),
     AzureApiAuthMiddleware(new Set([UserGroup.ApiServiceWrite])),
     ClientIpMiddleware,
@@ -201,14 +198,12 @@ export function UpdateService(
     ),
     RequiredParamMiddleware("service_id", NonEmptyString),
     RequiredBodyPayloadMiddleware(ServicePayload)
-  );
-  return wrapRequestHandler(
-    middlewaresWrap(
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      checkSourceIpForHandler(handler, (_, __, c, u, ___, ____) =>
-        ipTuple(c, u)
-      )
-    )
+  ] as const;
+
+  return wrapHandlerV4(
+    middlewares,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    checkSourceIpForHandler(handler, (_, __, c, u, ___, ____) => ipTuple(c, u))
   );
 }
 
