@@ -1,5 +1,5 @@
 /* eslint-disable vitest/no-mocks-import */
-import { Context } from "@azure/functions";
+import { InvocationContext } from "@azure/functions";
 import { ServiceScopeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceScope";
 import { SpecialServiceCategoryEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/SpecialServiceCategory";
 import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
@@ -8,7 +8,6 @@ import { toApiServiceActivation } from "@pagopa/io-functions-commons/dist/src/ut
 import { toCosmosErrorResponse } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
 import { ClientIp } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
 import { NonNegativeInteger } from "@pagopa/ts-commons/lib/numbers";
-import { Response } from "express";
 import * as O from "fp-ts/lib/Option";
 import * as TE from "fp-ts/lib/TaskEither";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -39,15 +38,12 @@ const aSpecialService: Service & { version: NonNegativeInteger } = {
 
 const mockContext = {
   // eslint-disable no-console
-  executionContext: {
-    functionName: "GetServiceActivation"
-  },
-  log: {
-    error: console.error
-  }
-} as Context;
+  functionName: "GetServiceActivation",
+  error: console.error
+} as unknown as InvocationContext;
 describe("GetServiceActivationHandler", () => {
-  const mockExpressResponse: Response = mockRes();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mockExpressResponse: any = mockRes();
 
   beforeEach(() => {
     vi.clearAllMocks();

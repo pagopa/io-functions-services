@@ -1,4 +1,4 @@
-import { Context } from "@azure/functions";
+import { InvocationContext } from "@azure/functions";
 import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
 import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
 import { toApiServiceActivation } from "@pagopa/io-functions-commons/dist/src/utils/activations";
@@ -16,10 +16,7 @@ import {
   ClientIpMiddleware
 } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
-import {
-  withRequestMiddlewares,
-  wrapRequestHandler
-} from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
+import { wrapHandlerV4 } from "@pagopa/io-functions-commons/dist/src/utils/azure-functions-v4-express-adapter";
 import {
   IResponseErrorQuery,
   ResponseErrorQuery
@@ -36,7 +33,6 @@ import {
   ResponseErrorNotFound,
   ResponseSuccessJson
 } from "@pagopa/ts-commons/lib/responses";
-import express from "express";
 import { flow, pipe } from "fp-ts/lib/function";
 import * as TE from "fp-ts/lib/TaskEither";
 
@@ -61,7 +57,7 @@ export type IGetActivationResponses =
  * GetServiceActivation expects a FiscalCode as input (in the body) and returns an Activation or a NotFound error.
  */
 type IGetActivationByPOSTHandler = (
-  context: Context,
+  context: InvocationContext,
   apiAuthorization: IAzureApiAuthorization,
   clientIp: ClientIp,
   userAttributes: IAzureUserAttributes,
@@ -74,22 +70,21 @@ type IGetActivationByPOSTHandler = (
 export function GetServiceActivation(
   serviceModel: ServiceModel,
   activationModel: ActivationModel
-): express.RequestHandler {
+) {
   const handler = GetServiceActivationHandler(activationModel);
 
-  const middlewaresWrap = withRequestMiddlewares(
+  const middlewares = [
     ContextMiddleware(),
     AzureApiAuthMiddleware(new Set([UserGroup.ApiMessageWrite])),
     ClientIpMiddleware,
     AzureUserAttributesMiddleware(serviceModel),
     FiscalCodePayloadMiddleware
-  );
+  ] as const;
 
-  return wrapRequestHandler(
-    middlewaresWrap(
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      checkSourceIpForHandler(handler, (_, __, c, u, ___) => ipTuple(c, u))
-    )
+  return wrapHandlerV4(
+    middlewares,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    checkSourceIpForHandler(handler, (_, __, c, u, ___) => ipTuple(c, u))
   );
 }
 
@@ -100,7 +95,7 @@ export function GetServiceActivationHandler(
   activationModel: ActivationModel
 ): IGetActivationByPOSTHandler {
   return async (context, _auth, __, userAttributes, { fiscal_code }) => {
-    const logPrefix = `${context.executionContext.functionName}|SERVICE_ID=${userAttributes.service.serviceId}`;
+    const logPrefix = `${context.functionName}|SERVICE_ID=${userAttributes.service.serviceId}`;
     const logger = getLogger(context, logPrefix, "GetServiceActivationHandler");
     return pipe(
       authorizedForSpecialServicesTask(userAttributes.service),

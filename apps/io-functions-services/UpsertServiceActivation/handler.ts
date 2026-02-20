@@ -1,4 +1,4 @@
-import { Context } from "@azure/functions";
+import { InvocationContext } from "@azure/functions";
 import {
   ActivationModel,
   NewActivation
@@ -20,10 +20,7 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { RequiredBodyPayloadMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_body_payload";
-import {
-  withRequestMiddlewares,
-  wrapRequestHandler
-} from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
+import { wrapHandlerV4 } from "@pagopa/io-functions-commons/dist/src/utils/azure-functions-v4-express-adapter";
 import {
   IResponseErrorQuery,
   ResponseErrorQuery
@@ -39,7 +36,6 @@ import {
   IResponseSuccessJson,
   ResponseSuccessJson
 } from "@pagopa/ts-commons/lib/responses";
-import express from "express";
 import { pipe } from "fp-ts/lib/function";
 import { flow } from "fp-ts/lib/function";
 import * as TE from "fp-ts/lib/TaskEither";
@@ -65,7 +61,7 @@ export type IUpsertActivationResponses =
  * GetServiceActivation expects a FiscalCode as input (in the body) and returns an Activation or a NotFound error.
  */
 type IUpsertActivationByPOSTHandler = (
-  context: Context,
+  context: InvocationContext,
   apiAuthorization: IAzureApiAuthorization,
   clientIp: ClientIp,
   userAttributes: IAzureUserAttributes,
@@ -88,22 +84,21 @@ const toModelServiceActivation = (
 export function UpsertServiceActivation(
   serviceModel: ServiceModel,
   activationModel: ActivationModel
-): express.RequestHandler {
+) {
   const handler = UpsertServiceActivationHandler(activationModel);
 
-  const middlewaresWrap = withRequestMiddlewares(
+  const middlewares = [
     ContextMiddleware(),
     AzureApiAuthMiddleware(new Set([UserGroup.ApiMessageWrite])),
     ClientIpMiddleware,
     AzureUserAttributesMiddleware(serviceModel),
     RequiredBodyPayloadMiddleware(ActivationPayload)
-  );
+  ] as const;
 
-  return wrapRequestHandler(
-    middlewaresWrap(
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      checkSourceIpForHandler(handler, (_, __, c, u, ___) => ipTuple(c, u))
-    )
+  return wrapHandlerV4(
+    middlewares,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    checkSourceIpForHandler(handler, (_, __, c, u, ___) => ipTuple(c, u))
   );
 }
 
@@ -114,7 +109,7 @@ export function UpsertServiceActivationHandler(
   activationModel: ActivationModel
 ): IUpsertActivationByPOSTHandler {
   return async (context, _auth, __, userAttributes, newActivation) => {
-    const logPrefix = `${context.executionContext.functionName}|SERVICE_ID=${userAttributes.service.serviceId}`;
+    const logPrefix = `${context.functionName}|SERVICE_ID=${userAttributes.service.serviceId}`;
     const logger = getLogger(
       context,
       logPrefix,
