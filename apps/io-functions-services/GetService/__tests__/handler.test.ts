@@ -17,15 +17,8 @@ import {
 import { left, right } from "fp-ts/lib/Either";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { mockContext } from "../../__mocks__/context.mock";
 import { GetServiceHandler } from "../handler";
-
-const mockContext = {
-  // eslint-disable no-console
-  log: {
-    error: console.error
-  }
-} as any;
-
 afterEach(() => {
   vi.resetAllMocks();
   vi.restoreAllMocks();
