@@ -35,7 +35,6 @@
   },
   "description": "",
   "devDependencies": {
-    "@azure/functions": "^3.2.0",
     "@eslint/js": "^9.39.1",
     "@pagopa/eslint-config": "^5.0.0",
     "@pagopa/openapi-codegen-ts": "^13.2.0",
@@ -71,11 +70,12 @@
   },
   "dependencies": {
     "@azure/cosmos": "^4.0.0",
+    "@azure/functions": "^4.0.0",
     "@pagopa/express-azure-functions": "^4.0.1",
     "@pagopa/io-app-email-templates": "^0.5.1",
     "@pagopa/io-backend-notifications-sdk": "x",
     "@pagopa/io-functions-admin-sdk": "x",
-    "@pagopa/io-functions-commons": "^29.3.1",
+    "@pagopa/io-functions-commons": "^30.0.0",
     "@pagopa/ts-commons": "^13.1.2",
     "applicationinsights": "^2.9.5",
     "azure-storage": "^2.10.4",
