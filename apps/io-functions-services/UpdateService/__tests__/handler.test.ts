@@ -28,9 +28,7 @@ import { UpdateServiceHandler } from "../handler";
 
 const mockContext = {
   // eslint-disable no-console
-  log: {
-    error: console.error
-  }
+  error: console.error
 } as any;
 
 afterEach(() => {
@@ -156,10 +154,10 @@ const aUserAuthenticationDeveloperWithManageKey: IAzureApiAuthorization = {
 };
 
 const aDifferentUserAuthenticationDeveloperWithManageKey: IAzureApiAuthorization =
-  {
-    ...aUserAuthenticationDeveloperWithManageKey,
-    userId: aDifferentUserId
-  };
+{
+  ...aUserAuthenticationDeveloperWithManageKey,
+  userId: aDifferentUserId
+};
 
 const aRetrievedServiceSubscription: SubscriptionWithoutKeys = {
   id: aServiceId,

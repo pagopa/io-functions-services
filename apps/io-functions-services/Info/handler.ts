@@ -1,13 +1,12 @@
 import * as healthcheck from "@pagopa/io-functions-commons/dist/src/utils/healthcheck";
 import { toHealthProblems } from "@pagopa/io-functions-commons/dist/src/utils/healthcheck";
-import { wrapRequestHandler } from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
+import { wrapHandlerV4 } from "@pagopa/io-functions-commons/dist/src/utils/azure-functions-v4-express-adapter";
 import {
   IResponseErrorInternal,
   IResponseSuccessJson,
   ResponseErrorInternal,
   ResponseSuccessJson
 } from "@pagopa/ts-commons/lib/responses";
-import express from "express";
 import { pipe } from "fp-ts/lib/function";
 import * as TE from "fp-ts/lib/TaskEither";
 
@@ -30,7 +29,7 @@ type InfoHandler = () => Promise<
   IResponseErrorInternal | IResponseSuccessJson<IInfo>
 >;
 
-export function Info(): express.RequestHandler {
+export function Info() {
   const handler = InfoHandler(
     healthcheck.checkApplicationHealth(IConfig, [
       c => healthcheck.checkAzureCosmosDbHealth(c.COSMOSDB_URI, c.COSMOSDB_KEY),
@@ -57,7 +56,7 @@ export function Info(): express.RequestHandler {
     ])
   );
 
-  return wrapRequestHandler(handler);
+  return wrapHandlerV4([] as const, handler);
 }
 
 export function InfoHandler(healthCheck: HealthChecker): InfoHandler {

@@ -1,4 +1,4 @@
-import { Context } from "@azure/functions";
+import { InvocationContext } from "@azure/functions";
 import { Service } from "@pagopa/io-functions-admin-sdk/Service";
 import { SpecialServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/SpecialServiceCategory";
 import { SpecialServiceMetadata } from "@pagopa/io-functions-admin-sdk/SpecialServiceMetadata";
@@ -27,10 +27,7 @@ import {
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { RequiredBodyPayloadMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_body_payload";
 import { RequiredParamMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_param";
-import {
-  withRequestMiddlewares,
-  wrapRequestHandler
-} from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
+import { wrapHandlerV4 } from "@pagopa/io-functions-commons/dist/src/utils/azure-functions-v4-express-adapter";
 import {
   checkSourceIpForHandler,
   clientIPAndCidrTuple as ipTuple
@@ -47,7 +44,6 @@ import {
 } from "@pagopa/ts-commons/lib/responses";
 import { SequenceMiddleware } from "@pagopa/ts-commons/lib/sequence_middleware";
 import { EmailString, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
-import express from "express";
 import { pipe } from "fp-ts/lib/function";
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import * as TE from "fp-ts/lib/TaskEither";
@@ -70,7 +66,7 @@ import {
  * and returns updated service with subscription keys
  */
 type IUpdateServiceHandler = (
-  context: Context,
+  context: InvocationContext,
   auth: IAzureApiAuthorization,
   clientIp: ClientIp,
   attrs: IAzureUserAttributes | IAzureUserAttributesManage,
@@ -162,17 +158,17 @@ const updateServiceTask = (
               retrievedService.service_metadata
             )
               ? {
-                  ...servicePayload.service_metadata,
-                  category: SpecialServiceCategoryEnum.SPECIAL,
-                  custom_special_flow:
-                    retrievedService.service_metadata.custom_special_flow,
-                  token_name: adb2cTokenName
-                }
+                ...servicePayload.service_metadata,
+                category: SpecialServiceCategoryEnum.SPECIAL,
+                custom_special_flow:
+                  retrievedService.service_metadata.custom_special_flow,
+                token_name: adb2cTokenName
+              }
               : {
-                  ...servicePayload.service_metadata,
-                  category: StandardServiceCategoryEnum.STANDARD,
-                  token_name: adb2cTokenName
-                }
+                ...servicePayload.service_metadata,
+                category: StandardServiceCategoryEnum.STANDARD,
+                token_name: adb2cTokenName
+              }
           } as Service,
           service_id: serviceId
         }),
@@ -182,16 +178,16 @@ const updateServiceTask = (
   );
 
 /**
- * Wraps a UpdateService handler inside an Express request handler.
+ * Wraps a UpdateService handler inside a v4 Azure Function handler.
  */
 export function UpdateService(
   telemetryClient: ReturnType<typeof initAppInsights>,
   serviceModel: ServiceModel,
   client: APIClient,
   subscriptionCIDRsModel: SubscriptionCIDRsModel
-): express.RequestHandler {
+) {
   const handler = UpdateServiceHandler(telemetryClient, client);
-  const middlewaresWrap = withRequestMiddlewares(
+  const middlewares = [
     ContextMiddleware(),
     AzureApiAuthMiddleware(new Set([UserGroup.ApiServiceWrite])),
     ClientIpMiddleware,
@@ -201,13 +197,12 @@ export function UpdateService(
     ),
     RequiredParamMiddleware("service_id", NonEmptyString),
     RequiredBodyPayloadMiddleware(ServicePayload)
-  );
-  return wrapRequestHandler(
-    middlewaresWrap(
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      checkSourceIpForHandler(handler, (_, __, c, u, ___, ____) =>
-        ipTuple(c, u)
-      )
+  ] as const;
+  return wrapHandlerV4(
+    middlewares,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    checkSourceIpForHandler(handler, (_, __, c, u, ___, ____) =>
+      ipTuple(c, u)
     )
   );
 }
