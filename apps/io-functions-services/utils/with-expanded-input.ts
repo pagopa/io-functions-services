@@ -1,4 +1,4 @@
-import { Context } from "@azure/functions";
+import { InvocationContext } from "@azure/functions";
 import { getBlobAsObject } from "@pagopa/io-functions-commons/dist/src/utils/azure_storage";
 import * as E from "fp-ts/lib/Either";
 import { flow, pipe } from "fp-ts/lib/function";
@@ -61,12 +61,12 @@ export const withExpandedInput =
     referenceKey: K,
     retrieveExpandedData: DataFetcher<E>,
     handler: (
-      context: Context,
+      context: InvocationContext,
       ...parsedInputs: readonly [E & I, ...(readonly Json[])]
     ) => Promise<T>
   ) =>
   async (
-    context: Context,
+    context: InvocationContext,
     input: I,
     ...otherInputs: readonly Json[]
   ): Promise<T> => {
@@ -74,8 +74,8 @@ export const withExpandedInput =
       input[referenceKey],
       retrieveExpandedData,
       TE.mapLeft(err => {
-        context.log.error(
-          `${context.executionContext.functionName}|error while retrieving expanded content|referenceKey=${input[referenceKey]}|${err.message}`
+        context.error(
+          `${context.functionName}|error while retrieving expanded content|referenceKey=${input[referenceKey]}|${err.message}`
         );
         return new Error(
           `Cannot retrieving expanded content for ${input[referenceKey]}: ${err.message}`
@@ -85,8 +85,8 @@ export const withExpandedInput =
         flow(
           O.fold(
             () => {
-              context.log.error(
-                `${context.executionContext.functionName}|ecannot find expanded content|referenceKey=${input[referenceKey]}`
+              context.error(
+                `${context.functionName}|ecannot find expanded content|referenceKey=${input[referenceKey]}`
               );
               return TE.left(
                 new Error(

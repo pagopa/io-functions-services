@@ -1,4 +1,4 @@
-import { Context } from "@azure/functions";
+import { InvocationContext } from "@azure/functions";
 import { readableReport } from "@pagopa/ts-commons/lib/reporters";
 import * as E from "fp-ts/lib/Either";
 import { pipe } from "fp-ts/lib/function";
@@ -16,12 +16,12 @@ export const withDecodedInput =
   <O, E, T = unknown>(
     type: t.Type<E, O, unknown>,
     handler: (
-      context: Context,
+      context: InvocationContext,
       ...parsedInputs: readonly [E, ...(readonly Json[])]
     ) => Promise<T>
   ) =>
   async (
-    context: Context,
+    context: InvocationContext,
     input: Json,
     ...otherInputs: readonly Json[]
   ): Promise<T> =>
@@ -29,9 +29,9 @@ export const withDecodedInput =
       input,
       type.decode,
       E.getOrElseW(err => {
-        context.log.error(
+        context.error(
           `${
-            context.executionContext.functionName
+            context.functionName
           }|invalid shape for incoming queue item|${readableReport(err)}`
         );
         throw new Error(

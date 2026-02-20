@@ -1,4 +1,4 @@
-import { Context } from "@azure/functions";
+import { InvocationContext } from "@azure/functions";
 import { ServiceScopeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceScope";
 import { SpecialServiceCategoryEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/SpecialServiceCategory";
 import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
@@ -11,6 +11,7 @@ import { Response } from "express";
 import * as TE from "fp-ts/lib/TaskEither";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { mockContext } from "../../__mocks__/context.mock";
 // eslint-disable-next-line vitest/no-mocks-import
 import {
   aFiscalCode,
@@ -39,15 +40,6 @@ const aSpecialService: Service & { version: NonNegativeInteger } = {
   version: 1 as NonNegativeInteger
 };
 
-const mockContext = {
-  // eslint-disable no-console
-  executionContext: {
-    functionName: "UpsertServiceActivation"
-  },
-  log: {
-    error: console.error
-  }
-} as Context;
 describe("UpsertServiceActivationHandler", () => {
   const mockExpressResponse: Response = mockRes();
 

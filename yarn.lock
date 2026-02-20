@@ -246,6 +246,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@azure/functions-extensions-base@npm:0.2.0":
+  version: 0.2.0
+  resolution: "@azure/functions-extensions-base@npm:0.2.0"
+  checksum: 10c0/ad28de16bf39fc716ecbc79511cbdd11ff582284d3b3b2e188a6ea8bd9db5c671c21514abd5afd6dd94aa3959be39fc3356ce6766a6e0f3f1036a5039afaf444
+  languageName: node
+  linkType: hard
+
 "@azure/functions@npm:^1.2.3":
   version: 1.2.3
   resolution: "@azure/functions@npm:1.2.3"
@@ -253,14 +260,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@azure/functions@npm:^3.2.0":
-  version: 3.5.1
-  resolution: "@azure/functions@npm:3.5.1"
+"@azure/functions@npm:^4.0.0":
+  version: 4.11.2
+  resolution: "@azure/functions@npm:4.11.2"
   dependencies:
-    iconv-lite: "npm:^0.6.3"
-    long: "npm:^4.0.0"
-    uuid: "npm:^8.3.0"
-  checksum: 10c0/1fc0723304b7a1defa273ff1f897bacb9ea4395865fe8bf5ef738cce870749c6afb5e873a00e46f83503f0e8512b28435085ebf8b48ca448b3ce4671d95f5642
+    "@azure/functions-extensions-base": "npm:0.2.0"
+    cookie: "npm:^0.7.0"
+  checksum: 10c0/1f94ac974ebceabb6e27a1e6ba88a254126fb94da46f73908f3fa13d80249a530a656cfd6ca16a52215211753e05d5d4ede4fba1c1f20b76b4bfb0ba43267290
   languageName: node
   linkType: hard
 
@@ -1464,13 +1470,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@pagopa/io-functions-commons@npm:^29.3.1":
-  version: 29.4.0
-  resolution: "@pagopa/io-functions-commons@npm:29.4.0"
+"@pagopa/io-functions-commons@npm:^30.0.0":
+  version: 30.0.0
+  resolution: "@pagopa/io-functions-commons@npm:30.0.0"
   dependencies:
     "@azure/cosmos": "npm:^4.0.0"
     "@azure/data-tables": "npm:^13.2.2"
-    "@pagopa/ts-commons": "npm:^13.1.1"
     applicationinsights: "npm:^2.9.5"
     azure-storage: "npm:^2.10.5"
     cidr-matcher: "npm:^2.1.1"
@@ -1489,11 +1494,12 @@ __metadata:
     unified: "npm:^9.2.2"
     winston: "npm:^3.1.0"
   peerDependencies:
-    "@azure/functions": ^3.2.0
+    "@azure/functions": ^4.11.2
+    "@pagopa/ts-commons": ^13.1.1
     express: ^4.15.3
     fp-ts: ^2.16.5
     io-ts: ^2.2.21
-  checksum: 10c0/f9477a7e4e539fc3e2254ba864e745ec1ecdbaf8febc99d2ab31749c305e9933f9b12bb41ac2bc1f8de0168900ae5430e096cad9f62488d730c3c2390f37db50
+  checksum: 10c0/2350b6bc7c5bd6028e96a51be60119d602df549cf1bac91c97c386e5cca4528a9174991f000dea0bbe53171c5cfe266d6ec085beee2713cc709e5108583bec9b
   languageName: node
   linkType: hard
 
@@ -1539,7 +1545,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@pagopa/ts-commons@npm:^13.0.0, @pagopa/ts-commons@npm:^13.1.1, @pagopa/ts-commons@npm:^13.1.2":
+"@pagopa/ts-commons@npm:^13.0.0, @pagopa/ts-commons@npm:^13.1.2":
   version: 13.1.2
   resolution: "@pagopa/ts-commons@npm:13.1.2"
   dependencies:
@@ -3491,6 +3497,13 @@ __metadata:
   version: 0.7.1
   resolution: "cookie@npm:0.7.1"
   checksum: 10c0/5de60c67a410e7c8dc8a46a4b72eb0fe925871d057c9a5d2c0e8145c4270a4f81076de83410c4d397179744b478e33cd80ccbcc457abf40a9409ad27dcd21dde
+  languageName: node
+  linkType: hard
+
+"cookie@npm:^0.7.0":
+  version: 0.7.2
+  resolution: "cookie@npm:0.7.2"
+  checksum: 10c0/9596e8ccdbf1a3a88ae02cf5ee80c1c50959423e1022e4e60b91dd87c622af1da309253d8abdb258fb5e3eacb4f08e579dc58b4897b8087574eee0fd35dfa5d2
   languageName: node
   linkType: hard
 
@@ -5521,7 +5534,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"iconv-lite@npm:^0.6.2, iconv-lite@npm:^0.6.3":
+"iconv-lite@npm:^0.6.2":
   version: 0.6.3
   resolution: "iconv-lite@npm:0.6.3"
   dependencies:
@@ -5664,14 +5677,14 @@ __metadata:
   resolution: "io-functions-services@workspace:apps/io-functions-services"
   dependencies:
     "@azure/cosmos": "npm:^4.0.0"
-    "@azure/functions": "npm:^3.2.0"
+    "@azure/functions": "npm:^4.0.0"
     "@eslint/js": "npm:^9.39.1"
     "@pagopa/eslint-config": "npm:^5.0.0"
     "@pagopa/express-azure-functions": "npm:^4.0.1"
     "@pagopa/io-app-email-templates": "npm:^0.5.1"
     "@pagopa/io-backend-notifications-sdk": "npm:x"
     "@pagopa/io-functions-admin-sdk": "npm:x"
-    "@pagopa/io-functions-commons": "npm:^29.3.1"
+    "@pagopa/io-functions-commons": "npm:^30.0.0"
     "@pagopa/openapi-codegen-ts": "npm:^13.2.0"
     "@pagopa/ts-commons": "npm:^13.1.2"
     "@pagopa/typescript-config-node": "npm:*"
@@ -6757,13 +6770,6 @@ __metadata:
   dependencies:
     "@sinonjs/commons": "npm:^1.7.0"
   checksum: 10c0/4a99a39024c61e8d08a3dff20d5f144a578cea48703f1d165d1a60a70a34810fcb1954d793e92eb0d67c24496e9941a9f91065cde2196aaeb4d72c9fd6c9672e
-  languageName: node
-  linkType: hard
-
-"long@npm:^4.0.0":
-  version: 4.0.0
-  resolution: "long@npm:4.0.0"
-  checksum: 10c0/50a6417d15b06104dbe4e3d4a667c39b137f130a9108ea8752b352a4cfae047531a3ac351c181792f3f8768fe17cca6b0f406674a541a86fb638aaac560d83ed
   languageName: node
   linkType: hard
 
@@ -10052,15 +10058,6 @@ __metadata:
   bin:
     uuid: ./bin/uuid
   checksum: 10c0/1c13950df865c4f506ebfe0a24023571fa80edf2e62364297a537c80af09c618299797bbf2dbac6b1f8ae5ad182ba474b89db61e0e85839683991f7e08795347
-  languageName: node
-  linkType: hard
-
-"uuid@npm:^8.3.0":
-  version: 8.3.2
-  resolution: "uuid@npm:8.3.2"
-  bin:
-    uuid: dist/bin/uuid
-  checksum: 10c0/bcbb807a917d374a49f475fae2e87fdca7da5e5530820ef53f65ba1d12131bd81a92ecf259cc7ce317cbe0f289e7d79fdfebcef9bfa3087c8c8a2fa304c9be54
   languageName: node
   linkType: hard
 

@@ -27,19 +27,12 @@ import * as E from "fp-ts/lib/Either";
 import { isSome } from "fp-ts/lib/Option";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { mockContext } from "../../__mocks__/context.mock";
 import { ServicePayload } from "../../generated/definitions/ServicePayload";
 import {
   CreateServiceHandler,
   getAuthorizedRecipientsFromPayload
 } from "../handler";
-
-const mockContext = {
-  // eslint-disable no-console
-  log: {
-    error: console.error,
-    info: console.log
-  }
-} as any;
 
 const anOrganizationFiscalCode = "01234567890" as OrganizationFiscalCode;
 const anEmail = "test@example.com" as EmailString;
