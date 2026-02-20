@@ -41,8 +41,8 @@ const aSpecialService: Service & { version: NonNegativeInteger } = {
 
 const mockContext = {
   // eslint-disable no-console
-  functionName: "UpsertServiceActivation",
-  error: console.error
+  error: console.error,
+  functionName: "UpsertServiceActivation"
 } as unknown as InvocationContext;
 describe("UpsertServiceActivationHandler", () => {
   const mockExpressResponse: Response = mockRes();

@@ -3,6 +3,7 @@ import {
   ServiceModel,
   ValidService
 } from "@pagopa/io-functions-commons/dist/src/models/service";
+import { wrapHandlerV4 } from "@pagopa/io-functions-commons/dist/src/utils/azure-functions-v4-express-adapter";
 import {
   AzureApiAuthMiddleware,
   IAzureApiAuthorization,
@@ -17,7 +18,6 @@ import {
   ClientIpMiddleware
 } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
 import { RequiredParamMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_param";
-import { wrapHandlerV4 } from "@pagopa/io-functions-commons/dist/src/utils/azure-functions-v4-express-adapter";
 import { IResponseErrorQuery } from "@pagopa/io-functions-commons/dist/src/utils/response";
 import {
   checkSourceIpForHandler,

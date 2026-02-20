@@ -75,21 +75,19 @@ const tableService = createTableService(
 // Register HTTP triggers
 
 app.http("CreateService", {
-  methods: ["POST"],
   authLevel: "function",
-  route: "v1/services",
   handler: CreateService(telemetryClient, apiClient)(
     config.DEFAULT_SUBSCRIPTION_PRODUCT_NAME,
     config.SANDBOX_FISCAL_CODE,
     serviceModel,
     subscriptionCIDRsModel
-  )
+  ),
+  methods: ["POST"],
+  route: "v1/services"
 });
 
 app.http("GetLimitedProfile", {
-  methods: ["GET"],
   authLevel: "function",
-  route: "v1/profiles/{fiscalCode}",
   handler: GetLimitedProfile(
     serviceModel,
     profileModel,
@@ -101,13 +99,13 @@ app.http("GetLimitedProfile", {
       config.PENDING_ACTIVATION_GRACE_PERIOD_SECONDS as Second
     ),
     telemetryClient
-  )
+  ),
+  methods: ["GET"],
+  route: "v1/profiles/{fiscalCode}"
 });
 
 app.http("GetLimitedProfileByPOST", {
-  methods: ["POST"],
   authLevel: "function",
-  route: "v1/profiles",
   handler: GetLimitedProfileByPOST(
     serviceModel,
     profileModel,
@@ -119,86 +117,92 @@ app.http("GetLimitedProfileByPOST", {
       config.PENDING_ACTIVATION_GRACE_PERIOD_SECONDS as Second
     ),
     telemetryClient
-  )
+  ),
+  methods: ["POST"],
+  route: "v1/profiles"
 });
 
 app.http("GetService", {
-  methods: ["GET"],
   authLevel: "function",
-  route: "v1/services/{service_id}",
-  handler: GetService(serviceModel, apiClient)
+  handler: GetService(serviceModel, apiClient),
+  methods: ["GET"],
+  route: "v1/services/{service_id}"
 });
 
 app.http("GetServiceActivation", {
-  methods: ["POST"],
   authLevel: "function",
-  route: "v1/activations",
-  handler: GetServiceActivation(serviceModel, activationModel)
+  handler: GetServiceActivation(serviceModel, activationModel),
+  methods: ["POST"],
+  route: "v1/activations"
 });
 
 app.http("GetSubscriptionsFeed", {
-  methods: ["GET"],
   authLevel: "function",
-  route: "v1/subscriptions-feed/{date}",
   handler: GetSubscriptionsFeed(
     serviceModel,
     tableService,
     config.SUBSCRIPTIONS_FEED_TABLE,
     config.FF_DISABLE_INCOMPLETE_SERVICES,
     config.FF_INCOMPLETE_SERVICE_WHITELIST
-  )
+  ),
+  methods: ["GET"],
+  route: "v1/subscriptions-feed/{date}"
 });
 
 app.http("GetUserServices", {
-  methods: ["GET"],
   authLevel: "function",
-  route: "v1/services",
-  handler: GetUserServices(serviceModel, apiClient)
+  handler: GetUserServices(serviceModel, apiClient),
+  methods: ["GET"],
+  route: "v1/services"
 });
 
 app.http("Info", {
-  methods: ["GET"],
   authLevel: "anonymous",
-  route: "info",
-  handler: Info()
+  handler: Info(),
+  methods: ["GET"],
+  route: "info"
 });
 
 app.http("RegenerateServiceKey", {
-  methods: ["PUT"],
   authLevel: "function",
-  route: "v1/services/{service_id}/keys",
-  handler: RegenerateServiceKey(serviceModel, apiClient, subscriptionCIDRsModel)
+  handler: RegenerateServiceKey(
+    serviceModel,
+    apiClient,
+    subscriptionCIDRsModel
+  ),
+  methods: ["PUT"],
+  route: "v1/services/{service_id}/keys"
 });
 
 app.http("UpdateService", {
-  methods: ["PUT"],
   authLevel: "function",
-  route: "v1/services/{service_id}",
   handler: UpdateService(
     telemetryClient,
     serviceModel,
     apiClient,
     subscriptionCIDRsModel
-  )
+  ),
+  methods: ["PUT"],
+  route: "v1/services/{service_id}"
 });
 
 app.http("UploadOrganizationLogo", {
-  methods: ["PUT"],
   authLevel: "function",
-  route: "v1/organizations/{organization_fiscal_code}/logo",
-  handler: UploadOrganizationLogo(serviceModel, apiClient)
+  handler: UploadOrganizationLogo(serviceModel, apiClient),
+  methods: ["PUT"],
+  route: "v1/organizations/{organization_fiscal_code}/logo"
 });
 
 app.http("UploadServiceLogo", {
-  methods: ["PUT"],
   authLevel: "function",
-  route: "v1/services/{service_id}/logo",
-  handler: UploadServiceLogo(serviceModel, apiClient, subscriptionCIDRsModel)
+  handler: UploadServiceLogo(serviceModel, apiClient, subscriptionCIDRsModel),
+  methods: ["PUT"],
+  route: "v1/services/{service_id}/logo"
 });
 
 app.http("UpsertServiceActivation", {
-  methods: ["PUT"],
   authLevel: "function",
-  route: "v1/activations",
-  handler: UpsertServiceActivation(serviceModel, activationModel)
+  handler: UpsertServiceActivation(serviceModel, activationModel),
+  methods: ["PUT"],
+  route: "v1/activations"
 });

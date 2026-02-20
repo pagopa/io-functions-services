@@ -5,6 +5,7 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/models/activation";
 import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
 import { toApiServiceActivation } from "@pagopa/io-functions-commons/dist/src/utils/activations";
+import { wrapHandlerV4 } from "@pagopa/io-functions-commons/dist/src/utils/azure-functions-v4-express-adapter";
 import {
   AzureApiAuthMiddleware,
   IAzureApiAuthorization,
@@ -20,7 +21,6 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { RequiredBodyPayloadMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_body_payload";
-import { wrapHandlerV4 } from "@pagopa/io-functions-commons/dist/src/utils/azure-functions-v4-express-adapter";
 import {
   IResponseErrorQuery,
   ResponseErrorQuery

@@ -1,6 +1,6 @@
+import { wrapHandlerV4 } from "@pagopa/io-functions-commons/dist/src/utils/azure-functions-v4-express-adapter";
 import * as healthcheck from "@pagopa/io-functions-commons/dist/src/utils/healthcheck";
 import { toHealthProblems } from "@pagopa/io-functions-commons/dist/src/utils/healthcheck";
-import { wrapHandlerV4 } from "@pagopa/io-functions-commons/dist/src/utils/azure-functions-v4-express-adapter";
 import {
   IResponseErrorInternal,
   IResponseSuccessJson,

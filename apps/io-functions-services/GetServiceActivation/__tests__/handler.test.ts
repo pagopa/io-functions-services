@@ -39,8 +39,8 @@ const aSpecialService: Service & { version: NonNegativeInteger } = {
 
 const mockContext = {
   // eslint-disable no-console
-  functionName: "GetServiceActivation",
-  error: console.error
+  error: console.error,
+  functionName: "GetServiceActivation"
 } as unknown as InvocationContext;
 describe("GetServiceActivationHandler", () => {
   const mockExpressResponse: Response = mockRes();

@@ -2,6 +2,7 @@ import { InvocationContext } from "@azure/functions";
 import { Service } from "@pagopa/io-functions-admin-sdk/Service";
 import { SubscriptionKeys } from "@pagopa/io-functions-admin-sdk/SubscriptionKeys";
 import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
+import { wrapHandlerV4 } from "@pagopa/io-functions-commons/dist/src/utils/azure-functions-v4-express-adapter";
 import {
   AzureApiAuthMiddleware,
   IAzureApiAuthorization,
@@ -17,7 +18,6 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { RequiredParamMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_param";
-import { wrapHandlerV4 } from "@pagopa/io-functions-commons/dist/src/utils/azure-functions-v4-express-adapter";
 import {
   checkSourceIpForHandler,
   clientIPAndCidrTuple as ipTuple

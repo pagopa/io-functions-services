@@ -5,6 +5,7 @@ import { Subscription } from "@pagopa/io-functions-admin-sdk/Subscription";
 import { UserInfo } from "@pagopa/io-functions-admin-sdk/UserInfo";
 import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
 import { SubscriptionCIDRsModel } from "@pagopa/io-functions-commons/dist/src/models/subscription_cidrs";
+import { wrapHandlerV4 } from "@pagopa/io-functions-commons/dist/src/utils/azure-functions-v4-express-adapter";
 import {
   AzureApiAuthMiddleware,
   IAzureApiAuthorization,
@@ -24,7 +25,6 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { RequiredBodyPayloadMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_body_payload";
-import { wrapHandlerV4 } from "@pagopa/io-functions-commons/dist/src/utils/azure-functions-v4-express-adapter";
 import {
   checkSourceIpForHandler,
   clientIPAndCidrTuple as ipTuple
