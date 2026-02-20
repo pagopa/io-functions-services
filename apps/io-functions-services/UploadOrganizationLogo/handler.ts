@@ -1,5 +1,6 @@
-import { Context } from "@azure/functions";
+import { InvocationContext } from "@azure/functions";
 import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
+import { wrapHandlerV4 } from "@pagopa/io-functions-commons/dist/src/utils/azure-functions-v4-express-adapter";
 import {
   AzureApiAuthMiddleware,
   IAzureApiAuthorization,
@@ -17,10 +18,6 @@ import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/m
 import { RequiredBodyPayloadMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_body_payload";
 import { RequiredParamMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_param";
 import {
-  withRequestMiddlewares,
-  wrapRequestHandler
-} from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
-import {
   checkSourceIpForHandler,
   clientIPAndCidrTuple as ipTuple
 } from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
@@ -32,7 +29,7 @@ import {
   ResponseSuccessAccepted
 } from "@pagopa/ts-commons/lib/responses";
 import { OrganizationFiscalCode } from "@pagopa/ts-commons/lib/strings";
-import express from "express";
+// express is not required for v4 handlers
 import { pipe } from "fp-ts/lib/function";
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import * as TE from "fp-ts/lib/TaskEither";
@@ -64,7 +61,7 @@ const logPrefix = "UploadOrganizationLogoHandler";
  * and returns informations about upload outcome
  */
 type IUploadOrganizationLogoHandler = (
-  context: Context,
+  context: InvocationContext,
   auth: IAzureApiAuthorization,
   clientIp: ClientIp,
   attrs: IAzureUserAttributes,
@@ -97,9 +94,9 @@ const uploadOrganizationLogoTask = (
 export function UploadOrganizationLogo(
   serviceModel: ServiceModel,
   client: APIClient
-): express.RequestHandler {
+) {
   const handler = UploadOrganizationLogoHandler(client);
-  const middlewaresWrap = withRequestMiddlewares(
+  const middlewares = [
     ContextMiddleware(),
     AzureApiAuthMiddleware(new Set([UserGroup.ApiServiceWrite])),
     ClientIpMiddleware,
@@ -107,14 +104,12 @@ export function UploadOrganizationLogo(
     RequiredParamMiddleware("organization_fiscal_code", OrganizationFiscalCode),
     // Added t.exact following the replacement of @pagopa/io-functions-admin-sdk/Logo with generated/definitions/Logo
     RequiredBodyPayloadMiddleware(t.exact(Logo))
-  );
-  return wrapRequestHandler(
-    middlewaresWrap(
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      checkSourceIpForHandler(handler, (_, __, c, u, ___, ____) =>
-        ipTuple(c, u)
-      )
-    )
+  ] as const;
+
+  return wrapHandlerV4(
+    middlewares,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    checkSourceIpForHandler(handler, (_, __, c, u, ___, ____) => ipTuple(c, u))
   );
 }
 
