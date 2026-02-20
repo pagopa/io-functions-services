@@ -24,9 +24,7 @@ export const getLogger = (
       `${logPrefix}|${name}|ERROR=${errorsToReadableMessages(errs)}`
     ),
   logUnknown: (errs: unknown): void =>
-    context.error(
-      `${logPrefix}|${name}|UNKNOWN_ERROR=${JSON.stringify(errs)}`
-    )
+    context.error(`${logPrefix}|${name}|UNKNOWN_ERROR=${JSON.stringify(errs)}`)
 });
 
 export type ILogger = ReturnType<typeof getLogger>;

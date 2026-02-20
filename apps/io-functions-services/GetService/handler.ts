@@ -94,10 +94,7 @@ const getSubscriptionKeysTask = (
 /**
  * Wraps a GetService handler inside an Express request handler.
  */
-export function GetService(
-  serviceModel: ServiceModel,
-  client: APIClient
-) {
+export function GetService(serviceModel: ServiceModel, client: APIClient) {
   const handler = GetServiceHandler(client);
   const middlewares = [
     ContextMiddleware(),

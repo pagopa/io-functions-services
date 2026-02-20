@@ -201,9 +201,7 @@ export function UpdateService(
   return wrapHandlerV4(
     middlewares,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    checkSourceIpForHandler(handler, (_, __, c, u, ___, ____) =>
-      ipTuple(c, u)
-    )
+    checkSourceIpForHandler(handler, (_, __, c, u, ___, ____) => ipTuple(c, u))
   );
 }
 

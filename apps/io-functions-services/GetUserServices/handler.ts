@@ -70,10 +70,7 @@ const getUserTask = (
 /**
  * Wraps a GetUserServices handler inside an Express request handler.
  */
-export function GetUserServices(
-  serviceModel: ServiceModel,
-  client: APIClient
-) {
+export function GetUserServices(serviceModel: ServiceModel, client: APIClient) {
   const handler = GetUserServicesHandler(client);
   const middlewares = [
     ContextMiddleware(),

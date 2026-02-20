@@ -15,7 +15,10 @@ import { Json, JsonFromString } from "io-ts-types";
  */
 export const withJsonInput =
   <T = unknown>(
-    handler: (context: InvocationContext, ...parsedInputs: readonly Json[]) => Promise<T>
+    handler: (
+      context: InvocationContext,
+      ...parsedInputs: readonly Json[]
+    ) => Promise<T>
   ) =>
   (context: InvocationContext, ...inputs: readonly unknown[]): Promise<T> =>
     pipe(
