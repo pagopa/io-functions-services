@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Context } from "@azure/functions";
+import { InvocationContext } from "@azure/functions";
 import { fail } from "assert";
 import * as O from "fp-ts/lib/Option";
 import * as TE from "fp-ts/lib/TaskEither";
