@@ -35,10 +35,8 @@ import {
 
 const mockContext = {
   // eslint-disable no-console
-  log: {
-    error: console.error,
-    info: console.log
-  }
+  error: console.error,
+  info: console.log
 } as any;
 
 const anOrganizationFiscalCode = "01234567890" as OrganizationFiscalCode;

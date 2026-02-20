@@ -16,16 +16,11 @@ import {
   ClientIp,
   ClientIpMiddleware
 } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
-import {
-  withRequestMiddlewares,
-  wrapRequestHandler
-} from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
+import { wrapHandlerV4 } from "@pagopa/io-functions-commons/dist/src/utils/azure-functions-v4-express-adapter";
 import {
   checkSourceIpForHandler,
   clientIPAndCidrTuple as ipTuple
 } from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
-import express from "express";
-
 import { FiscalCodePayload } from "../generated/definitions/FiscalCodePayload";
 import { initTelemetryClient } from "../utils/appinsights";
 import {
@@ -59,7 +54,7 @@ export function GetLimitedProfileByPOST(
   serviceActivationModel: ActivationModel,
   canSendMessageOnActivation: CanSendMessageOnActivation,
   telemetryClient: ReturnType<typeof initTelemetryClient>
-): express.RequestHandler {
+) {
   const handler = GetLimitedProfileByPOSTHandler(
     profileModel,
     disableIncompleteServices,
@@ -70,18 +65,17 @@ export function GetLimitedProfileByPOST(
     telemetryClient
   );
 
-  const middlewaresWrap = withRequestMiddlewares(
+  const middlewares = [
     AzureApiAuthMiddleware(new Set([UserGroup.ApiLimitedProfileRead])),
     ClientIpMiddleware,
     AzureUserAttributesMiddleware(serviceModel),
     FiscalCodePayloadMiddleware
-  );
+  ] as const;
 
-  return wrapRequestHandler(
-    middlewaresWrap(
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      checkSourceIpForHandler(handler, (_, c, u, __) => ipTuple(c, u))
-    )
+  return wrapHandlerV4(
+    middlewares,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    checkSourceIpForHandler(handler, (_, c, u, __) => ipTuple(c, u))
   );
 }
 

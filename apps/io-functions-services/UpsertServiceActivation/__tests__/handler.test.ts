@@ -1,4 +1,4 @@
-import { Context } from "@azure/functions";
+import { InvocationContext } from "@azure/functions";
 import { ServiceScopeEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceScope";
 import { SpecialServiceCategoryEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/SpecialServiceCategory";
 import { ActivationModel } from "@pagopa/io-functions-commons/dist/src/models/activation";
@@ -41,13 +41,9 @@ const aSpecialService: Service & { version: NonNegativeInteger } = {
 
 const mockContext = {
   // eslint-disable no-console
-  executionContext: {
-    functionName: "UpsertServiceActivation"
-  },
-  log: {
-    error: console.error
-  }
-} as Context;
+  functionName: "UpsertServiceActivation",
+  error: console.error
+} as unknown as InvocationContext;
 describe("UpsertServiceActivationHandler", () => {
   const mockExpressResponse: Response = mockRes();
 

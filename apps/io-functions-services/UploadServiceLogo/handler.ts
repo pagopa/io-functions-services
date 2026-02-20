@@ -1,4 +1,4 @@
-import { Context } from "@azure/functions";
+import { InvocationContext } from "@azure/functions";
 import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
 import { SubscriptionCIDRsModel } from "@pagopa/io-functions-commons/dist/src/models/subscription_cidrs";
 import {
@@ -21,10 +21,7 @@ import {
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { RequiredBodyPayloadMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_body_payload";
 import { RequiredParamMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_param";
-import {
-  withRequestMiddlewares,
-  wrapRequestHandler
-} from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
+import { wrapHandlerV4 } from "@pagopa/io-functions-commons/dist/src/utils/azure-functions-v4-express-adapter";
 import {
   checkSourceIpForHandler,
   clientIPAndCidrTuple as ipTuple
@@ -40,7 +37,6 @@ import {
 } from "@pagopa/ts-commons/lib/responses";
 import { SequenceMiddleware } from "@pagopa/ts-commons/lib/sequence_middleware";
 import { NonEmptyString } from "@pagopa/ts-commons/lib/strings";
-import express from "express";
 import { pipe } from "fp-ts/lib/function";
 import { TaskEither } from "fp-ts/lib/TaskEither";
 import * as TE from "fp-ts/lib/TaskEither";
@@ -73,7 +69,7 @@ const logPrefix = "UploadServiceLogoHandler";
  * and returns informations about upload outcome
  */
 type IUploadServiceLogoHandler = (
-  context: Context,
+  context: InvocationContext,
   auth: IAzureApiAuthorization,
   clientIp: ClientIp,
   attrs: IAzureUserAttributes | IAzureUserAttributesManage,
@@ -107,9 +103,9 @@ export function UploadServiceLogo(
   serviceModel: ServiceModel,
   client: APIClient,
   subscriptionCIDRsModel: SubscriptionCIDRsModel
-): express.RequestHandler {
+) {
   const handler = UploadServiceLogoHandler(client);
-  const middlewaresWrap = withRequestMiddlewares(
+  const middlewares = [
     ContextMiddleware(),
     AzureApiAuthMiddleware(new Set([UserGroup.ApiServiceWrite])),
     ClientIpMiddleware,
@@ -120,13 +116,12 @@ export function UploadServiceLogo(
     RequiredParamMiddleware("service_id", NonEmptyString),
     // Added t.exact following the replacement of @pagopa/io-functions-admin-sdk/Logo with generated/definitions/Logo
     RequiredBodyPayloadMiddleware(t.exact(Logo))
-  );
-  return wrapRequestHandler(
-    middlewaresWrap(
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      checkSourceIpForHandler(handler, (_, __, c, u, ___, ____) =>
-        ipTuple(c, u)
-      )
+  ] as const;
+  return wrapHandlerV4(
+    middlewares,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    checkSourceIpForHandler(handler, (_, __, c, u, ___, ____) =>
+      ipTuple(c, u)
     )
   );
 }

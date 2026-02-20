@@ -23,9 +23,7 @@ import { UploadServiceLogoHandler } from "../handler";
 
 const mockContext = {
   // eslint-disable no-console
-  log: {
-    error: console.error
-  }
+  error: console.error
 } as any;
 
 afterEach(() => {

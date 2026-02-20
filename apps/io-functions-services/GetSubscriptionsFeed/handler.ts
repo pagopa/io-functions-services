@@ -17,10 +17,7 @@ import {
   ClientIpMiddleware
 } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
 import { RequiredParamMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_param";
-import {
-  withRequestMiddlewares,
-  wrapRequestHandler
-} from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
+import { wrapHandlerV4 } from "@pagopa/io-functions-commons/dist/src/utils/azure-functions-v4-express-adapter";
 import { IResponseErrorQuery } from "@pagopa/io-functions-commons/dist/src/utils/response";
 import {
   checkSourceIpForHandler,
@@ -38,7 +35,6 @@ import {
 } from "@pagopa/ts-commons/lib/responses";
 import { PatternString } from "@pagopa/ts-commons/lib/strings";
 import { TableService } from "azure-storage";
-import express from "express";
 import * as t from "io-ts";
 
 import { DateUTC } from "../generated/definitions/DateUTC";
@@ -209,23 +205,22 @@ export function GetSubscriptionsFeed(
   subscriptionsFeedTable: string,
   disableIncompleteServices: boolean,
   incompleteServiceWhitelist: readonly ServiceId[]
-): express.RequestHandler {
+) {
   const handler = GetSubscriptionsFeedHandler(
     tableService,
     subscriptionsFeedTable,
     disableIncompleteServices,
     incompleteServiceWhitelist
   );
-  const middlewaresWrap = withRequestMiddlewares(
+  const middlewares = [
     AzureApiAuthMiddleware(new Set([UserGroup.ApiSubscriptionsFeedRead])),
     ClientIpMiddleware,
     AzureUserAttributesMiddleware(serviceModel),
     RequiredParamMiddleware("date", ShortDateString)
-  );
-  return wrapRequestHandler(
-    middlewaresWrap(
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      checkSourceIpForHandler(handler, (_, c, u, __) => ipTuple(c, u))
-    )
+  ] as const;
+  return wrapHandlerV4(
+    middlewares,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    checkSourceIpForHandler(handler, (_, c, u, __) => ipTuple(c, u))
   );
 }

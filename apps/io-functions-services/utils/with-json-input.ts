@@ -1,4 +1,4 @@
-import { Context } from "@azure/functions";
+import { InvocationContext } from "@azure/functions";
 import { readableReport } from "@pagopa/ts-commons/lib/reporters";
 import * as E from "fp-ts/lib/Either";
 import { pipe } from "fp-ts/lib/function";
@@ -15,9 +15,9 @@ import { Json, JsonFromString } from "io-ts-types";
  */
 export const withJsonInput =
   <T = unknown>(
-    handler: (context: Context, ...parsedInputs: readonly Json[]) => Promise<T>
+    handler: (context: InvocationContext, ...parsedInputs: readonly Json[]) => Promise<T>
   ) =>
-  (context: Context, ...inputs: readonly unknown[]): Promise<T> =>
+  (context: InvocationContext, ...inputs: readonly unknown[]): Promise<T> =>
     pipe(
       inputs,
       RA.map(input =>
@@ -30,10 +30,8 @@ export const withJsonInput =
       ),
       RA.sequence(E.Applicative),
       E.getOrElseW(err => {
-        context.log.error(
-          `${
-            context.executionContext.functionName
-          }|invalid incoming queue item|${readableReport(err)}`
+        context.error(
+          `${context.functionName}|invalid incoming queue item|${readableReport(err)}`
         );
         throw new Error(
           `Cannot parse incoming queue item into JSON object: ${readableReport(
