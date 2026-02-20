@@ -1,10 +1,12 @@
-import { Context } from "@azure/functions";
+import type { InvocationContext } from "@azure/functions";
+
 import { Service } from "@pagopa/io-functions-admin-sdk/Service";
 import { StandardServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/StandardServiceCategory";
 import { Subscription } from "@pagopa/io-functions-admin-sdk/Subscription";
 import { UserInfo } from "@pagopa/io-functions-admin-sdk/UserInfo";
 import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
 import { SubscriptionCIDRsModel } from "@pagopa/io-functions-commons/dist/src/models/subscription_cidrs";
+import { wrapHandlerV4 } from "@pagopa/io-functions-commons/dist/src/utils/azure-functions-v4-express-adapter";
 import {
   AzureApiAuthMiddleware,
   IAzureApiAuthorization,
@@ -24,10 +26,6 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import { RequiredBodyPayloadMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/required_body_payload";
-import {
-  withRequestMiddlewares,
-  wrapRequestHandler
-} from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
 import {
   checkSourceIpForHandler,
   clientIPAndCidrTuple as ipTuple
@@ -53,7 +51,6 @@ import {
   FiscalCode,
   NonEmptyString
 } from "@pagopa/ts-commons/lib/strings";
-import express from "express";
 import { sequenceS } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
 import * as O from "fp-ts/lib/Option";
@@ -85,7 +82,7 @@ const logPrefix = "CreateServiceHandler";
  * and returns service with subscription keys
  */
 type ICreateServiceHandler = (
-  context: Context,
+  context: InvocationContext,
   auth: IAzureApiAuthorization,
   clientIp: ClientIp,
   attrs: IAzureUserAttributes | IAzureUserAttributesManage,
@@ -237,7 +234,7 @@ export function CreateServiceHandler(
 ): ICreateServiceHandler {
   return (context, __, ___, userAttributes, servicePayload) => {
     const subscriptionId = generateObjectId();
-    context.log.info(
+    context.info(
       `${logPrefix}| Creating new service with subscriptionId=${subscriptionId}`
     );
     return pipe(
@@ -303,7 +300,7 @@ export const CreateService =
     sandboxFiscalCode: NonEmptyString,
     serviceModel: ServiceModel,
     subscriptionCIDRsModel: SubscriptionCIDRsModel
-  ): express.RequestHandler => {
+  ) => {
     const handler = CreateServiceHandler(
       telemetryClient,
       client,
@@ -311,7 +308,7 @@ export const CreateService =
       productName,
       sandboxFiscalCode
     );
-    const middlewaresWrap = withRequestMiddlewares(
+    const middlewares = [
       ContextMiddleware(),
       AzureApiAuthMiddleware(new Set([UserGroup.ApiServiceWrite])),
       ClientIpMiddleware,
@@ -320,11 +317,9 @@ export const CreateService =
         AzureUserAttributesManageMiddleware(subscriptionCIDRsModel)
       ),
       RequiredBodyPayloadMiddleware(ServicePayload)
-    );
-    return wrapRequestHandler(
-      middlewaresWrap(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        checkSourceIpForHandler(handler, (_, __, c, u, ___) => ipTuple(c, u))
-      )
+    ] as const;
+    return wrapHandlerV4(
+      middlewares,
+      checkSourceIpForHandler(handler, (_, __, c, u, ___) => ipTuple(c, u))
     );
   };
