@@ -70,15 +70,45 @@ const subscriptionCIDRsModel = new SubscriptionCIDRsModel(
   cosmosdbInstance.container(SUBSCRIPTION_CIDRS_COLLECTION_NAME)
 );
 
+const subFeedTableService = createTableService(
+  config.SUBSCRIPTION_FEED_STORAGE_CONNECTION_STRING
+);
+
 // -----------------------------------------------------------------
 // HANDLERS MOUNTING
 // -----------------------------------------------------------------
+
+app.http("Info", {
+  authLevel: "anonymous",
+  handler: Info(),
+  methods: ["GET"],
+  route: "info"
+});
 
 app.http("GetUserServices", {
   authLevel: "function",
   handler: GetUserServices(serviceModel, apiClient),
   methods: ["GET"],
   route: "v1/services"
+});
+
+app.http("CreateService", {
+  authLevel: "function",
+  handler: CreateService(telemetryClient, apiClient)(
+    config.DEFAULT_SUBSCRIPTION_PRODUCT_NAME,
+    config.SANDBOX_FISCAL_CODE,
+    serviceModel,
+    subscriptionCIDRsModel
+  ),
+  methods: ["POST"],
+  route: "v1/services"
+});
+
+app.http("GetService", {
+  authLevel: "function",
+  handler: GetService(serviceModel, apiClient),
+  methods: ["GET"],
+  route: "v1/services/{service_id}"
 });
 
 app.http("UpdateService", {
@@ -136,19 +166,6 @@ app.http("GetLimitedProfile", {
   route: "v1/profiles/{fiscalCode}"
 });
 
-app.http("GetSubscriptionsFeed", {
-  authLevel: "function",
-  handler: GetSubscriptionsFeed(
-    serviceModel,
-    createTableService(config.SUBSCRIPTION_FEED_STORAGE_CONNECTION_STRING),
-    config.SUBSCRIPTIONS_FEED_TABLE,
-    config.FF_DISABLE_INCOMPLETE_SERVICES,
-    config.FF_INCOMPLETE_SERVICE_WHITELIST
-  ),
-  methods: ["GET"],
-  route: "v1/subscriptions-feed/{date}"
-});
-
 app.http("GetLimitedProfileByPOST", {
   authLevel: "function",
   handler: GetLimitedProfileByPOST(
@@ -156,44 +173,15 @@ app.http("GetLimitedProfileByPOST", {
     profileModel,
     config.FF_DISABLE_INCOMPLETE_SERVICES,
     config.FF_INCOMPLETE_SERVICE_WHITELIST,
-    new ServicesPreferencesModel(
-      cosmosdbInstance.container(SERVICE_PREFERENCES_COLLECTION_NAME),
-      SERVICE_PREFERENCES_COLLECTION_NAME
-    ),
-    new ActivationModel(cosmosdbInstance.container(ACTIVATION_COLLECTION_NAME)),
+    servicesPreferencesModel,
+    serviceActivationModel,
     canSendMessageOnActivationWithGrace(
       config.PENDING_ACTIVATION_GRACE_PERIOD_SECONDS as Second
     ),
-    initTelemetryClient(config.APPINSIGHTS_INSTRUMENTATIONKEY)
+    telemetryClient
   ),
   methods: ["POST"],
   route: "v1/profiles"
-});
-
-app.http("Info", {
-  authLevel: "anonymous",
-  handler: Info(),
-  methods: ["GET"],
-  route: "info"
-});
-
-app.http("CreateService", {
-  authLevel: "function",
-  handler: CreateService(telemetryClient, apiClient)(
-    config.DEFAULT_SUBSCRIPTION_PRODUCT_NAME,
-    config.SANDBOX_FISCAL_CODE,
-    serviceModel,
-    subscriptionCIDRsModel
-  ),
-  methods: ["POST"],
-  route: "v1/services"
-});
-
-app.http("GetService", {
-  authLevel: "function",
-  handler: GetService(serviceModel, apiClient),
-  methods: ["GET"],
-  route: "v1/services/{service_id}"
 });
 
 app.http("GetServiceActivation", {
@@ -208,4 +196,17 @@ app.http("UpsertServiceActivation", {
   handler: UpsertServiceActivation(serviceModel, serviceActivationModel),
   methods: ["PUT"],
   route: "v1/activations"
+});
+
+app.http("GetSubscriptionsFeed", {
+  authLevel: "function",
+  handler: GetSubscriptionsFeed(
+    serviceModel,
+    subFeedTableService,
+    config.SUBSCRIPTIONS_FEED_TABLE,
+    config.FF_DISABLE_INCOMPLETE_SERVICES,
+    config.FF_INCOMPLETE_SERVICE_WHITELIST
+  ),
+  methods: ["GET"],
+  route: "v1/subscriptions-feed/{date}"
 });
