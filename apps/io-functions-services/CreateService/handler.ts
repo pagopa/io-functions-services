@@ -1,5 +1,4 @@
-import type { InvocationContext } from "@azure/functions";
-
+import { InvocationContext } from "@azure/functions";
 import { Service } from "@pagopa/io-functions-admin-sdk/Service";
 import { StandardServiceCategoryEnum } from "@pagopa/io-functions-admin-sdk/StandardServiceCategory";
 import { Subscription } from "@pagopa/io-functions-admin-sdk/Subscription";

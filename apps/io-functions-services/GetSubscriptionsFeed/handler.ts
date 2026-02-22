@@ -35,7 +35,6 @@ import {
 } from "@pagopa/ts-commons/lib/responses";
 import { PatternString } from "@pagopa/ts-commons/lib/strings";
 import { TableService } from "azure-storage";
-// express is not required for v4 handlers
 import * as t from "io-ts";
 
 import { DateUTC } from "../generated/definitions/DateUTC";
