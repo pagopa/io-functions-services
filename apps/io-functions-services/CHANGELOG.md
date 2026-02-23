@@ -1,5 +1,11 @@
 ### Changelog
 
+## 4.1.1
+
+### Patch Changes
+
+- b777fa9: Fix Fiscal Code path param
+
 ## 4.1.0
 
 ### Minor Changes
