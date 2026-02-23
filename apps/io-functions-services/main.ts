@@ -163,7 +163,7 @@ app.http("GetLimitedProfile", {
     telemetryClient
   ),
   methods: ["GET"],
-  route: "v1/profiles/{fiscalCode}"
+  route: "v1/profiles/{fiscalcode}"
 });
 
 app.http("GetLimitedProfileByPOST", {
