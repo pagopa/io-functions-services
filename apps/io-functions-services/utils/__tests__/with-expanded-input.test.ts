@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Context } from "@azure/functions";
+import { InvocationContext } from "@azure/functions";
 import { fail } from "assert";
 import * as O from "fp-ts/lib/Option";
 import * as TE from "fp-ts/lib/TaskEither";
@@ -28,7 +28,7 @@ const aThrowingDataFetcher: DataFetcher<AnExpandedType> = _ => {
 
 const aFinalResult = "anyvalue";
 const aHandler = vi.fn(
-  async (_: Context, __: AnExpandedType & AType) => aFinalResult
+  async (_: InvocationContext, __: AnExpandedType & AType) => aFinalResult
 );
 
 const createContext = () =>
@@ -36,7 +36,7 @@ const createContext = () =>
     bindings: {},
     executionContext: { functionName: "funcname" },
     log: { ...console, verbose: console.log }
-  }) as unknown as Context;
+  }) as unknown as InvocationContext;
 
 describe("withExpandedInput", () => {
   beforeEach(() => {

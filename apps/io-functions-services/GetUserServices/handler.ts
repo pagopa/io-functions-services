@@ -1,7 +1,8 @@
-import { Context } from "@azure/functions";
+import { InvocationContext } from "@azure/functions";
 import { UserInfoAndSubscriptions } from "@pagopa/io-functions-admin-sdk/UserInfoAndSubscriptions";
 import { ServiceId } from "@pagopa/io-functions-commons/dist/generated/definitions/ServiceId";
 import { ServiceModel } from "@pagopa/io-functions-commons/dist/src/models/service";
+import { wrapHandlerV4 } from "@pagopa/io-functions-commons/dist/src/utils/azure-functions-v4-express-adapter";
 import {
   AzureApiAuthMiddleware,
   IAzureApiAuthorization,
@@ -17,10 +18,6 @@ import {
 } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
 import { ContextMiddleware } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/context_middleware";
 import {
-  withRequestMiddlewares,
-  wrapRequestHandler
-} from "@pagopa/io-functions-commons/dist/src/utils/request_middleware";
-import {
   checkSourceIpForHandler,
   clientIPAndCidrTuple as ipTuple
 } from "@pagopa/io-functions-commons/dist/src/utils/source_ip_check";
@@ -29,7 +26,6 @@ import {
   ResponseSuccessJson
 } from "@pagopa/ts-commons/lib/responses";
 import { EmailString, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
-import express from "express";
 import { pipe } from "fp-ts/lib/function";
 import * as TE from "fp-ts/lib/TaskEither";
 import { TaskEither } from "fp-ts/lib/TaskEither";
@@ -46,7 +42,7 @@ import { ErrorResponses } from "../utils/responses";
  * GetUserServices returns a list of ServiceId as output.
  */
 type IGetUserServicesHandler = (
-  context: Context,
+  context: InvocationContext,
   auth: IAzureApiAuthorization,
   clientIp: ClientIp,
   attrs: IAzureUserAttributes
@@ -74,21 +70,18 @@ const getUserTask = (
 /**
  * Wraps a GetUserServices handler inside an Express request handler.
  */
-export function GetUserServices(
-  serviceModel: ServiceModel,
-  client: APIClient
-): express.RequestHandler {
+export function GetUserServices(serviceModel: ServiceModel, client: APIClient) {
   const handler = GetUserServicesHandler(client);
-  const middlewaresWrap = withRequestMiddlewares(
+  const middlewares = [
     ContextMiddleware(),
     AzureApiAuthMiddleware(new Set([UserGroup.ApiServiceRead])),
     ClientIpMiddleware,
     AzureUserAttributesMiddleware(serviceModel)
-  );
-  return wrapRequestHandler(
-    middlewaresWrap(
-      checkSourceIpForHandler(handler, (_, __, c, u) => ipTuple(c, u))
-    )
+  ] as const;
+
+  return wrapHandlerV4(
+    middlewares,
+    checkSourceIpForHandler(handler, (_, __, c, u) => ipTuple(c, u))
   );
 }
 
