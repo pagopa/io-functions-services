@@ -7,7 +7,6 @@ import { toApiServiceActivation } from "@pagopa/io-functions-commons/dist/src/ut
 import { toCosmosErrorResponse } from "@pagopa/io-functions-commons/dist/src/utils/cosmosdb_model";
 import { ClientIp } from "@pagopa/io-functions-commons/dist/src/utils/middlewares/client_ip_middleware";
 import { NonNegativeInteger } from "@pagopa/ts-commons/lib/numbers";
-import { Response } from "express";
 import * as O from "fp-ts/lib/Option";
 import * as TE from "fp-ts/lib/TaskEither";
 import { beforeEach, describe, expect, it, vi } from "vitest";

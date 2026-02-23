@@ -18,6 +18,7 @@ import {
 import { left, right } from "fp-ts/lib/Either";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+// eslint-disable-next-line vitest/no-mocks-import
 import { mockContext } from "../../__mocks__/context.mock";
 import { UploadOrganizationLogoHandler } from "../handler";
 

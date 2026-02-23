@@ -27,6 +27,7 @@ import * as E from "fp-ts/lib/Either";
 import { isSome } from "fp-ts/lib/Option";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+// eslint-disable-next-line vitest/no-mocks-import
 import { mockContext } from "../../__mocks__/context.mock";
 import { ServicePayload } from "../../generated/definitions/ServicePayload";
 import {

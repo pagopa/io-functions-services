@@ -319,6 +319,6 @@ export const CreateService =
     ] as const;
     return wrapHandlerV4(
       middlewares,
-      checkSourceIpForHandler(handler, (_, __, c, u, ___) => ipTuple(c, u))
+      checkSourceIpForHandler(handler, (_, __, c, u) => ipTuple(c, u))
     );
   };

@@ -119,7 +119,7 @@ export function UploadServiceLogo(
 
   return wrapHandlerV4(
     middlewares,
-    checkSourceIpForHandler(handler, (_, __, c, u, ___, ____) => ipTuple(c, u))
+    checkSourceIpForHandler(handler, (_, __, c, u) => ipTuple(c, u))
   );
 }
 
