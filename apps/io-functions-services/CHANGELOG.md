@@ -1,5 +1,11 @@
 ### Changelog
 
+## 4.1.0
+
+### Minor Changes
+
+- 2827dfb: Migrate to Azure Functions V4
+
 ## 4.0.1
 
 ### Patch Changes
