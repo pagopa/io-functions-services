@@ -15,14 +15,14 @@ jobs:
     env:
       JIRA_COMMENT_REGEX: "^.*Jira.*"
     steps:
-      - uses: Slashgear/action-check-pr-title@v4.3.0
+      - uses: Slashgear/action-check-pr-title@860e8dc639f8e60335a6f5e8936ba67ed2536890 # v4.3.0
         id: lint
         with:
           regexp: "\\[(#?[A-Z]*-[0-9]*( |, )?){1,}\\]" # Regex the title should match.
         continue-on-error: true
 
       - name: Find Jira Comment
-        uses: peter-evans/find-comment@v2
+        uses: peter-evans/find-comment@a54c31d7fa095754bfef525c0c8e5e5674c4b4b1 # v2
         id: fc
         with:
           issue-number: ${{ github.event.pull_request.number }}
@@ -56,7 +56,7 @@ jobs:
       
       - name: Create Jira Link comment
         if: steps.lint.outcome == 'success'
-        uses: peter-evans/create-or-update-comment@v2
+        uses: peter-evans/create-or-update-comment@67dcc547d311b736a8e6c5c236542148a47adc3d # v2
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
@@ -66,7 +66,7 @@ jobs:
           edit-mode: replace
       - name: Create Empty Jira Link comment
         if: steps.lint.outcome != 'success'
-        uses: peter-evans/create-or-update-comment@v2
+        uses: peter-evans/create-or-update-comment@67dcc547d311b736a8e6c5c236542148a47adc3d # v2
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
