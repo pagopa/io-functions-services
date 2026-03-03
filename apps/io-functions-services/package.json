@@ -3,7 +3,7 @@
   "version": "4.1.1",
   "license": "MIT",
   "engines": {
-    "node": "20.17.0"
+    "node": "22.22.0"
   },
   "main": "dist/main.js",
   "scripts": {
@@ -45,7 +45,7 @@
     "@types/html-to-text": "^1.4.31",
     "@types/jest": "^24.0.15",
     "@types/lolex": "^5.1.2",
-    "@types/node": "^20.17.0",
+    "@types/node": "^22.19.11",
     "@types/node-fetch": "2",
     "@types/nodemailer": "^4.6.2",
     "@types/remove-markdown": "^0.3.1",

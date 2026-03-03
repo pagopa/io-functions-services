@@ -1980,12 +1980,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:^20.17.0":
-  version: 20.19.25
-  resolution: "@types/node@npm:20.19.25"
+"@types/node@npm:^22.19.11":
+  version: 22.19.13
+  resolution: "@types/node@npm:22.19.13"
   dependencies:
     undici-types: "npm:~6.21.0"
-  checksum: 10c0/992f18cb03264e8dc2fd3cb64f428ee4997cb6d928dad68bf4b752eacac73062697ce7ce6a0e71a6d15af510814397a20597a72332dfec638e02fb3a382ad014
+  checksum: 10c0/ad8a0b6a69dd8ef663701573eca94ef6d20ce093f54f05bed823c826374eb1ea8b06e6f2c5d7f6cfc203b82dfd60293296bf80ea987ddb77775840bc2ef9f803
   languageName: node
   linkType: hard
 
@@ -5369,7 +5369,7 @@ __metadata:
     "@types/html-to-text": "npm:^1.4.31"
     "@types/jest": "npm:^24.0.15"
     "@types/lolex": "npm:^5.1.2"
-    "@types/node": "npm:^20.17.0"
+    "@types/node": "npm:^22.19.11"
     "@types/node-fetch": "npm:2"
     "@types/nodemailer": "npm:^4.6.2"
     "@types/remove-markdown": "npm:^0.3.1"

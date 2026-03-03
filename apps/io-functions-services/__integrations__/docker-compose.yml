@@ -1,12 +1,11 @@
 version: "3.2"
 
 services:
-
-  functions-node-20:
-    image: functions-node-20
+  functions-node-22:
+    image: functions-node-22
     build:
       context: ..
-      dockerfile: ./docker/functions-node-20/Dockerfile
+      dockerfile: ./docker/functions-node-22/Dockerfile
     command: /bin/true
 
   cosmosdb:
@@ -28,7 +27,7 @@ services:
       - 10000:10000
       - 10001:10001
       - 10002:10002
-  
+
   fixtures:
     image: fixtures
     env_file:
@@ -53,11 +52,11 @@ services:
       - cosmosdb
       - storage-account
     depends_on:
-      - functions-node-20
+      - functions-node-22
       - fixtures
 
   testagent:
-    image: node:20-alpine
+    image: node:22-alpine
     container_name: fn_services_testagent
     working_dir: /usr/src/app
     command: tail -f /dev/null # to keep it   up&running
