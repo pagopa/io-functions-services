@@ -1,11 +1,9 @@
-version: "3.2"
-
 services:
   functions-node-22:
     image: functions-node-22
     build:
-      context: ..
-      dockerfile: ./docker/functions-node-22/Dockerfile
+      context: ../docker/functions-node-22
+      dockerfile: ./Dockerfile
     command: /bin/true
 
   cosmosdb:
@@ -16,7 +14,7 @@ services:
       context: ../docker/cosmosdb
       dockerfile: ./Dockerfile
     ports:
-      - ${COSMOSDB_PORT}:3000
+      - "${COSMOSDB_PORT:-3000}:3000"
 
   storage-account:
     image: azurite
@@ -44,10 +42,10 @@ services:
     env_file:
       - ./environments/generated/env.io-functions-services
     build:
-      context: ..
-      dockerfile: ./docker/functions/Dockerfile
+      context: ../../..
+      dockerfile: apps/io-functions-services/docker/functions/Dockerfile
     ports:
-      - ${FUNCTIONS_SERVICES_PORT}:7071
+      - "${FUNCTIONS_SERVICES_PORT:-7071}:7071"
     links:
       - cosmosdb
       - storage-account
@@ -63,7 +61,7 @@ services:
     env_file:
       - environments/generated/env.integration-tests
     ports:
-      - ${APIM_PORT}:${APIM_PORT}
+      - "${APIM_PORT:-3443}:${APIM_PORT:-3443}"
     volumes:
       - "./:/usr/src/app"
       - "../__mocks__:/usr/src/__mocks__"

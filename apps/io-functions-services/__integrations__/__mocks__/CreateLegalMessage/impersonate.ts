@@ -33,5 +33,9 @@ export const getImpersonatedService = (
         user_email: "demo@legal.it",
         user_groups: "ApiMessageRead"
       });
+    default:
+      return TE.left(
+        ResponseErrorNotFound("Not Found", "Service Id not found")
+      );
   }
 };
