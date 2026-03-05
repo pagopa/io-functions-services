@@ -53,22 +53,22 @@ const makeHeaders = (serviceId: string = anEnabledServiceId) => ({
   "x-user-note": "unused"
 });
 
-const apiFetch = (
-  serviceId: string = anEnabledServiceId
-): typeof fetch => async (input, init) => {
-  const headers = { ...(init?.headers ?? {}), ...makeHeaders(serviceId) };
-  if (SHOW_LOGS) {
-    console.log("Sending request", input, headers);
-  }
-  const res = await ((nodeFetch as unknown) as typeof fetch)(input, {
-    ...init,
-    headers
-  });
-  if (SHOW_LOGS) {
-    console.log("Result:", res.status);
-  }
-  return res;
-};
+const apiFetch =
+  (serviceId: string = anEnabledServiceId): typeof fetch =>
+  async (input, init) => {
+    const headers = { ...(init?.headers ?? {}), ...makeHeaders(serviceId) };
+    if (SHOW_LOGS) {
+      console.log("Sending request", input, headers);
+    }
+    const res = await (nodeFetch as unknown as typeof fetch)(input, {
+      ...init,
+      headers
+    });
+    if (SHOW_LOGS) {
+      console.log("Result:", res.status);
+    }
+    return res;
+  };
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -89,9 +89,9 @@ const getProfileByPOST = (
   serviceId = anEnabledServiceId
 ): Promise<Response> =>
   apiFetch(serviceId)(`${baseUrl}/api/v1/profiles`, {
-    method: "POST",
+    body: JSON.stringify({ fiscal_code: fiscalCode }),
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ fiscal_code: fiscalCode })
+    method: "POST"
   });
 
 // ---------------------------------------------------------------------------
@@ -228,9 +228,9 @@ describe("GetLimitedProfileByPOST — POST /api/v1/profiles", () => {
 
   it("returns 400 when the request body is missing the fiscal_code field", async () => {
     const res = await apiFetch()(`${baseUrl}/api/v1/profiles`, {
-      method: "POST",
+      body: JSON.stringify({}),
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({})
+      method: "POST"
     });
     expect(res.status).toBe(400);
   });
