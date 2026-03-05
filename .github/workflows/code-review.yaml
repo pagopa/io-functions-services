@@ -35,6 +35,11 @@ jobs:
       - name: Enable Corepack
         run: corepack enable
 
+      - name: Configure the monorepo for integration testing
+        run: |
+          yarn install --frozen-lockfile
+          yarn build
+
       - name: Install integration test dependencies
         working-directory: apps/io-functions-services/__integrations__
         run: |
