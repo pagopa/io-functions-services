@@ -7,7 +7,6 @@ COPY .yarn ./.yarn
 COPY .yarnrc.yml yarn.lock package.json turbo.json ./
 COPY packages/ ./packages/
 COPY apps/io-functions-services/ ./apps/io-functions-services/
-COPY apps/io-functions-services/__integrations__/__mocks__/ ./apps/io-functions-services/
 
 RUN yarn install --frozen-lockfile
 
