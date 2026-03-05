@@ -31,6 +31,7 @@ Integration tests live in `apps/io-functions-services/__integrations__/` and run
 cd apps/io-functions-services/__integrations__
 cp environments/env.base environments/.env
 yarn install
+yarn generate:models:services   # generates TypeScript models from OpenAPI specs; required before running tests
 yarn start   # build Docker images + start all containers (CosmosDB, Azurite, fixtures, function app)
 yarn test    # generate models, codegen, then run Vitest
 yarn stop    # tear down all containers

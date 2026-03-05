@@ -40,6 +40,7 @@ jobs:
         run: |
           cp environments/env.base environments/.env
           yarn install
+          yarn generate:models:services
 
       - name: Start integration stack
         working-directory: apps/io-functions-services/__integrations__

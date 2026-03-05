@@ -74,9 +74,10 @@ The server should reload automatically when the code changes.
 ```bash
 cd __integrations__
 cp environments/env.base environments/.env
-yarn install          # only needed the first time
-yarn start            # builds Docker images and starts all containers
-yarn test             # runs the Vitest integration test suite
+yarn install                    # only needed the first time
+yarn generate:models:services   # generates TypeScript models from OpenAPI specs; required before running tests
+yarn start                      # builds Docker images and starts all containers
+yarn test                       # runs the Vitest integration test suite
 ```
 
 To stop and remove all containers:
