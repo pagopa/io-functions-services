@@ -21,6 +21,28 @@ This file gives concise, actionable guidance for AI agents working in this repos
 - Run the functions app locally: `cd apps/io-functions-services && yarn start` (see the app README for local.settings.json).
 - Tests and lint: `yarn test`, `yarn lint` (run from root via Yarn; per-package example: `yarn workspace io-functions-services test`).
 
+## Integration Tests
+
+Integration tests live in `apps/io-functions-services/__integrations__/` and run against a fully local stack (CosmosDB emulator + Azurite + the Azure Functions app) orchestrated via Docker Compose.
+
+### Setup and run
+
+```bash
+cd apps/io-functions-services/__integrations__
+cp environments/env.base environments/.env
+yarn install
+yarn start   # build Docker images + start all containers (CosmosDB, Azurite, fixtures, function app)
+yarn test    # generate models, codegen, then run Vitest
+yarn stop    # tear down all containers
+```
+
+### Notes
+
+- No real secrets are required — `env.base` contains dummy keys for the local emulators.
+- The test runner polls `GET /api/info` until the function app is healthy before starting tests.
+- Currently covers: `GetLimitedProfile` (GET `/api/v1/profiles/{fiscalcode}`) and `GetLimitedProfileByPOST` (POST `/api/v1/profiles`).
+- To add integration tests for new functions, add scenarios in `__integrations__/index.test.ts`.
+
 ## Project Conventions
 
 - Generated artifacts: `generated/definitions` and OpenAPI files are authoritative; regenerate rather than edit in place.

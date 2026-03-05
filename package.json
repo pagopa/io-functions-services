@@ -25,6 +25,7 @@
   "packageManager": "yarn@4.1.1",
   "workspaces": [
     "apps/*",
+    "apps/io-functions-services/__integrations__",
     "packages/*"
   ]
 }

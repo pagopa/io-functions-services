@@ -5,19 +5,23 @@ The implementation is based on the Azure Functions v2 runtime.
 
 ## Architecture
 
-The project is structured as follows:
+The project exposes the following Azure Functions:
 
-* `CreateMessage`: handles the `createMessage` API, creates a `Message` document and forks the `CreatedMessageOrchestrator` durable function:
-  * `CreatedMessageOrchestrator`: handles all the asynchronous activities involving the creation of a message, it calls the following activities:
-    * `StoreMessageContentActivity`: stores the content of the message in a blob
-    * `MessageStatusUpdaterActivity`: upsates the status of the `Message` document after the content of the message has been successfully stored
-    * `CreateNotificationActivity`: creates a `Notification` document
-    * `EmailNotificationActivity`: sends an email notification if needed
-    * `WebhookNotificationActivity`: triggers a webhook call if needed
-    * `NotificationStatusUpdaterActivity`: updates the `Notification` document with the results of the email or webhook notifications.
-* `GetMessage`: handles the `getMessage` API for services
-* `GetLimitedProfile`: handles the `getProfile` API for services
-* `GetSubscriptionsFeed`: handles the `getSubscriptionsFeedForDay` API for services
+| Function                 | Method | Route                                              | Description                                                                                       |
+|--------------------------|--------|----------------------------------------------------|---------------------------------------------------------------------------------------------------|
+| **Info**                 | GET    | `/api/info`                                        | Health-check endpoint; probes CosmosDB, three Azure Storage connections, and the downstream sending function API. Returns app name + version. |
+| **CreateService**        | POST   | `/api/v1/services`                                 | Creates a new service: validates subscription ownership, provisions it via the Admin API, writes a `Service` document to CosmosDB and a `SubscriptionCIDRs` entry. |
+| **GetService**           | GET    | `/api/v1/services/{service_id}`                    | Returns a service document from CosmosDB merged with its subscription keys from the Admin API. Enforces service-owner check. |
+| **UpdateService**        | PUT    | `/api/v1/services/{service_id}`                    | Updates a service document. Supports standard and special service categories. Owner + manage-key checks. |
+| **GetUserServices**      | GET    | `/api/v1/services`                                 | Lists all service IDs owned by the calling user, delegating to the Admin API for the subscription list. |
+| **GetLimitedProfile**    | GET    | `/api/v1/profiles/{fiscalcode}`                    | Returns a `LimitedProfile` (with `sender_allowed` flag) for a citizen fiscal code. Applies service-preference mode (LEGACY / AUTO / MANUAL) and special-service activation grace-period logic. |
+| **GetLimitedProfileByPOST** | POST | `/api/v1/profiles`                               | Identical logic to `GetLimitedProfile` but accepts the fiscal code in the request body (`FiscalCodePayload`). |
+| **GetServiceActivation** | POST   | `/api/v1/activations`                              | Returns the current `Activation` document for a special service, given a fiscal code in the body. Restricted to special-service callers. |
+| **UpsertServiceActivation** | PUT | `/api/v1/activations`                             | Creates or updates a special-service `Activation` record for a citizen. Restricted to special-service callers. |
+| **GetSubscriptionsFeed** | GET    | `/api/v1/subscriptions-feed/{date}`                | Returns the daily subscriptions/unsubscriptions feed for a service from Azure Table Storage. |
+| **RegenerateServiceKey** | PUT    | `/api/v1/services/{service_id}/keys`               | Regenerates the primary or secondary subscription key for a service via the Admin API. Owner + manage-key checks. |
+| **UploadServiceLogo**    | PUT    | `/api/v1/services/{service_id}/logo`               | Uploads a base64-encoded logo for a service via the Admin API. Owner + manage-key checks. |
+| **UploadOrganizationLogo** | PUT  | `/api/v1/organizations/{organization_fiscal_code}/logo` | Uploads a base64-encoded logo for an organization via the Admin API. |
 
 ## Contributing
 
@@ -67,18 +71,16 @@ The server should reload automatically when the code changes.
 
 ## Run Integration Tests locally
 
-To start itegration tests:
-
 ```bash
 cd __integrations__
 cp environments/env.base environments/.env
-yarn start 
-docker exec integrations__-testagent_1 yarn test
+yarn install          # only needed the first time
+yarn start            # builds Docker images and starts all containers
+yarn test             # runs the Vitest integration test suite
 ```
 
-To stop docker containers:
+To stop and remove all containers:
 
 ```bash
-cd __integrations__
 yarn stop
 ```
