@@ -1,0 +1,8 @@
+**/node_modules
+**/coverage
+**/.turbo
+apps/io-functions-services/__integrations__/environments/generated
+apps/io-functions-services/__integrations__/generated
+infra/
+.git
+*.md

@@ -1,28 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { CosmosClient } from "@azure/cosmos";
-import { ReadStatusEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/ReadStatus";
-import { RejectionReasonEnum } from "@pagopa/io-functions-commons/dist/generated/definitions/RejectionReason";
-import {
-  MESSAGE_COLLECTION_NAME,
-  MessageModel
-} from "@pagopa/io-functions-commons/dist/src/models/message";
-import { NewMessageWithoutContent } from "@pagopa/io-functions-commons/dist/src/models/message";
-import {
-  MESSAGE_STATUS_COLLECTION_NAME,
-  MessageStatusModel
-} from "@pagopa/io-functions-commons/dist/src/models/message_status";
-import { ulidGenerator } from "@pagopa/io-functions-commons/dist/src/utils/strings";
-import { ProblemJson } from "@pagopa/ts-commons/lib/responses";
-import { FiscalCode, NonEmptyString } from "@pagopa/ts-commons/lib/strings";
-import { fail } from "assert";
-import { createBlobService } from "azure-storage";
-import * as E from "fp-ts/Either";
-import { sequenceS } from "fp-ts/lib/Apply";
-import { pipe } from "fp-ts/lib/function";
-import * as O from "fp-ts/Option";
-import * as TE from "fp-ts/TaskEither";
-import { Server, ServerResponse } from "http";
+import { FiscalCode } from "@pagopa/ts-commons/lib/strings";
 import nodeFetch from "node-fetch";
 import { exit } from "process";
 import {
@@ -35,1189 +11,232 @@ import {
   vi
 } from "vitest";
 
-import { aRCConfigurationResponse } from "../__mocks__/remote-content";
-import { RCConfigurationResponse } from "../generated/messages-services-api/RCConfigurationResponse";
-import {
-  closeServer,
-  startServer
-} from "./__mocks__/server/io-functions-service-messages.mock";
-import {
-  APIM_PORT,
-  COSMOSDB_KEY,
-  COSMOSDB_NAME,
-  COSMOSDB_URI,
-  QueueStorageConnection,
-  SHOW_LOGS,
-  WAIT_MS
-} from "./env";
-import { CreatedMessage } from "./generated/fn-services/CreatedMessage";
-import { ExternalMessageResponseWithContent } from "./generated/fn-services/ExternalMessageResponseWithContent";
-import { FeatureLevelTypeEnum } from "./generated/fn-services/FeatureLevelType";
-import { MessageContent } from "./generated/fn-services/MessageContent";
-import { NotRejectedMessageStatusValueEnum } from "./generated/fn-services/NotRejectedMessageStatusValue";
-import { PaymentStatusEnum } from "./generated/fn-services/PaymentStatus";
-import { RejectedMessageStatusValueEnum } from "./generated/fn-services/RejectedMessageStatusValue";
-import { TimeToLiveSeconds } from "./generated/fn-services/TimeToLiveSeconds";
+import { SHOW_LOGS, WAIT_MS } from "./env";
+import { LimitedProfile } from "./generated/fn-services/LimitedProfile";
 
 const MAX_ATTEMPT = 50;
 vi.setConfig({ testTimeout: WAIT_MS * MAX_ATTEMPT });
 
-const baseUrl = "http://function:7071";
+const baseUrl = "http://localhost:7071";
 
-console.log("ENV: ", COSMOSDB_URI, WAIT_MS, SHOW_LOGS);
+// ---------------------------------------------------------------------------
+// Fixture constants — must match docker/fixtures/src/data/data.ts
+// ---------------------------------------------------------------------------
 
-const blobService = createBlobService(QueueStorageConnection);
-
-const cosmosDB = new CosmosClient({
-  endpoint: COSMOSDB_URI as string,
-  key: COSMOSDB_KEY
-}).database(COSMOSDB_NAME as string);
-
-const messageContainer = cosmosDB.container(MESSAGE_COLLECTION_NAME);
-const messageModel = new MessageModel(
-  messageContainer,
-  MESSAGE_COLLECTION_NAME as NonEmptyString
-);
-const messageStatusContainer = cosmosDB.container(
-  MESSAGE_STATUS_COLLECTION_NAME
-);
-const messageStatusModel = new MessageStatusModel(messageStatusContainer);
-
-// ----------------
-
+/** Legacy mode, inbox enabled; aDisabledServiceId is inbox-blocked */
 const aLegacyInboxEnabledFiscalCode = "AAABBB01C02D345L" as FiscalCode;
+/** Legacy mode, inbox enabled; no service explicitly blocked */
+const aLegacyInboxDisabledFiscalCode = "AAABBB01C02D345I" as FiscalCode;
+/** AUTO service-preference mode; anEnabledServiceId enabled, aDisabledServiceId disabled */
 const anAutoFiscalCode = "AAABBB01C02D345A" as FiscalCode;
+/** MANUAL service-preference mode; anEnabledServiceId explicitly enabled */
 const aManualFiscalCode = "AAABBB01C02D345M" as FiscalCode;
+/** Fiscal code not present in any fixture */
+const aNonExistingFiscalCode = "AAABBB01C02D345N" as FiscalCode;
 
-const anEnabledServiceId = "anEnabledServiceId" as NonEmptyString;
-const aDisabledServiceId = "aDisabledServiceId" as NonEmptyString;
-const aNonExistingServiceId = "aNonExistingServiceId" as NonEmptyString;
-const aValidServiceId = "aValidServiceId" as NonEmptyString;
+const anEnabledServiceId = "anEnabledServiceId";
+const aDisabledServiceId = "aDisabledServiceId";
 
-// ----------------
+// ---------------------------------------------------------------------------
+// HTTP helpers
+// ---------------------------------------------------------------------------
 
-export const aMessageBodyMarkdown = "test".repeat(80);
-export const aMessageContent: MessageContent = {
-  markdown: aMessageBodyMarkdown,
-  subject: "test".repeat(10)
-};
-
-export const anInvalidMessageContent: MessageContent = {
-  markdown: aMessageBodyMarkdown,
-  subject: "invalid"
-};
-
-const aValidThirdPartyData = {
-  configuration_id: aRCConfigurationResponse.configuration_id,
-  has_attachments: false,
-  id: "ID"
-};
-
-const aValidEuCovidCertMessageContent = {
-  auth_code: "auth_code"
-};
-
-const aValidPaymentDataMessageContent = {
-  amount: 1,
-  notice_number: "177777777777777777",
-  payee: {
-    fiscal_code: "01234567890"
-  }
-};
-
-// Must correspond to an existing serviceId within "services" colletion
-const aSubscriptionKey = "aSubscriptionKey";
-
-const customHeaders = {
-  "Ocp-Apim-Subscription-Key": aSubscriptionKey,
+const makeHeaders = (serviceId: string = anEnabledServiceId) => ({
+  "Ocp-Apim-Subscription-Key": "aSubscriptionKey",
   "x-forwarded-for": "0.0.0.0",
   "x-functions-key": "unused",
-  "x-subscription-id": anEnabledServiceId,
+  "x-subscription-id": serviceId,
   "x-user-email": "unused@example.com",
   "x-user-groups":
-    "ApiUserAdmin,ApiLimitedProfileRead,ApiFullProfileRead,ApiProfileWrite,ApiDevelopmentProfileWrite,ApiServiceRead,ApiServiceList,ApiServiceWrite,ApiPublicServiceRead,ApiPublicServiceList,ApiServiceByRecipientQuery,ApiMessageRead,ApiMessageWrite,ApiMessageWriteDefaultAddress,ApiMessageList,ApiSubscriptionsFeedRead,ApiInfoRead,ApiDebugRead,ApiMessageWriteEUCovidCert,ApiMessageWriteWithLegalData",
+    "ApiUserAdmin,ApiLimitedProfileRead,ApiFullProfileRead,ApiProfileWrite,ApiDevelopmentProfileWrite,ApiServiceRead,ApiServiceList,ApiServiceWrite,ApiPublicServiceRead,ApiPublicServiceList,ApiServiceByRecipientQuery,ApiMessageRead,ApiMessageWrite,ApiMessageWriteDefaultAddress,ApiMessageList,ApiSubscriptionsFeedRead,ApiInfoRead,ApiDebugRead",
   "x-user-id": "unused",
   "x-user-note": "unused"
-};
+});
 
-const getNodeFetch =
-  (headers: Partial<typeof customHeaders> = customHeaders): typeof fetch =>
+const apiFetch =
+  (serviceId: string = anEnabledServiceId): typeof fetch =>
   async (input, init) => {
-    const headersToAdd = {
-      ...(init?.headers ?? {}),
-      ...customHeaders,
-      ...headers
-    };
-
+    const headers = { ...(init?.headers ?? {}), ...makeHeaders(serviceId) };
     if (SHOW_LOGS) {
-      console.log("Sending request");
-      console.log(input);
-      console.log(headersToAdd);
+      console.log("Sending request", input, headers);
     }
-
     const res = await (nodeFetch as unknown as typeof fetch)(input, {
       ...init,
-      headers: headersToAdd
+      headers
     });
-
     if (SHOW_LOGS) {
-      console.log("Result: ");
-      console.log(res);
+      console.log("Result:", res.status);
     }
-
     return res;
   };
 
-const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-let ioFunctionsServiceMessages: Server;
-const mockGetRCConfiguration = vi.fn();
-mockGetRCConfiguration.mockImplementation((response: ServerResponse) => {
-  sendRCConfiguration(response, aRCConfigurationResponse);
-});
+// ---------------------------------------------------------------------------
+// Helpers for the two profile endpoints
+// ---------------------------------------------------------------------------
 
-function sendRCConfiguration(
-  response: ServerResponse,
-  mockedResponse: RCConfigurationResponse
-) {
-  response.writeHead(200, { "Content-Type": "application/json" });
-  const r = JSON.stringify(mockedResponse);
-  console.log(
-    `Sending configuration with id: ${mockedResponse.configuration_id} owned by user id: ${mockedResponse.user_id}.`
-  );
-  console.log(`${r}`);
-  response.end(r);
-}
-
-const fullPathUserIdFromAPIM = `/full/path/userid/${aRCConfigurationResponse.user_id}`;
-
-const notExistingRCConfigurationId = "01HQRD0YCVDXF1XDW634N87XCF";
-const notMatchingRCConfigurationId = "01HQRD0YCVDXF1XDW634N87XCE";
-
-// Wait some time
-beforeAll(async () => {
-  let i = 0;
-  while (i < MAX_ATTEMPT) {
-    console.log("Waiting the function to setup..");
-    try {
-      const response = await nodeFetch("http://function:7071/api/info");
-      break;
-    } catch (e) {
-      await delay(WAIT_MS);
-      i++;
-    }
-  }
-  if (i >= MAX_ATTEMPT) {
-    console.log("Function unable to setup in time");
-    exit(1);
-  }
-
-  // Setup mock io-functions-service-messages server
-  ioFunctionsServiceMessages = await startServer(
-    APIM_PORT,
-    mockGetRCConfiguration
-  );
-});
-
-afterAll(async () => await closeServer(ioFunctionsServiceMessages));
-
-beforeEach(() => vi.clearAllMocks());
-
-// eslint-disable-next-line max-lines-per-function
-describe("Create Message |> Middleware errors", () => {
-  it("should return 403 when creating a message from a non existing Service", async () => {
-    const nodeFetch = getNodeFetch({
-      "x-subscription-id": aNonExistingServiceId
-    });
-
-    const body = {
-      message: {
-        content: aMessageContent,
-        fiscal_code: aLegacyInboxEnabledFiscalCode
-      }
-    };
-
-    const response = await postCreateMessage(nodeFetch)(body);
-
-    expect(response.status).toEqual(403);
+const getProfile = (
+  fiscalCode: string,
+  serviceId = anEnabledServiceId
+): Promise<Response> =>
+  apiFetch(serviceId)(`${baseUrl}/api/v1/profiles/${fiscalCode}`, {
+    method: "GET"
   });
 
-  it("should return 403 when creating a third party message without right permission", async () => {
-    const nodeFetch = getNodeFetch({
-      "x-user-groups": "ApiMessageWrite"
-    });
-
-    const body = {
-      message: {
-        content: {
-          ...aMessageContent,
-          third_party_data: aValidThirdPartyData
-        },
-        fiscal_code: anAutoFiscalCode
-      }
-    };
-
-    const response = await postCreateMessage(nodeFetch)(body);
-
-    expect(response.status).toEqual(403);
-
-    const problemJson = (await response.json()) as ProblemJson;
-
-    expect(problemJson).toMatchObject({
-      detail:
-        "You do not have enough permissions to send a third party message",
-      title: "You are not allowed here"
-    });
-  });
-
-  it("should return 403 when creating a no ADVANCED third party message with wrong permission", async () => {
-    const nodeFetch = getNodeFetch({
-      "x-user-groups":
-        customHeaders["x-user-groups"] + ",ApiMessageWriteAdvanced"
-    });
-
-    const body = {
-      message: {
-        content: {
-          ...aMessageContent,
-          third_party_data: aValidThirdPartyData
-        },
-        fiscal_code: anAutoFiscalCode
-      }
-    };
-
-    const response = await postCreateMessage(nodeFetch)(body);
-
-    expect(response.status).toEqual(403);
-
-    const problemJson = (await response.json()) as ProblemJson;
-
-    expect(problemJson).toMatchObject({
-      detail:
-        "You do not have enough permissions to send a third party message",
-      title: "You are not allowed here"
-    });
-  });
-
-  it("should return 403 when creating an EUCovidCert message without right permission", async () => {
-    const nodeFetch = getNodeFetch({
-      "x-user-groups": "ApiMessageWrite"
-    });
-
-    const body = {
-      message: {
-        content: {
-          ...aMessageContent,
-          eu_covid_cert: aValidEuCovidCertMessageContent
-        },
-        fiscal_code: anAutoFiscalCode
-      }
-    };
-
-    const response = await postCreateMessage(nodeFetch)(body);
-
-    expect(response.status).toEqual(403);
-
-    const problemJson = (await response.json()) as ProblemJson;
-
-    expect(problemJson).toMatchObject({
-      detail:
-        "You do not have enough permissions to send an EUCovidCert message",
-      title: "You are not allowed here"
-    });
-  });
-
-  it("should return 403 when creating a payment message without right permission", async () => {
-    const nodeFetch = getNodeFetch({
-      "x-user-groups": "ApiMessageWrite"
-    });
-
-    const body = {
-      message: {
-        content: {
-          ...aMessageContent,
-          payment_data: aValidPaymentDataMessageContent
-        },
-        fiscal_code: anAutoFiscalCode
-      }
-    };
-
-    const response = await postCreateMessage(nodeFetch)(body);
-
-    expect(response.status).toEqual(403);
-
-    const problemJson = (await response.json()) as ProblemJson;
-
-    expect(problemJson).toMatchObject({
-      detail:
-        "You do not have enough permissions to send a payment message with payee",
-      title: "You are not allowed here"
-    });
-  });
-
-  it("should return 403 when creating an advanced message without right permission", async () => {
-    const nodeFetch = getNodeFetch({
-      "x-user-groups": "ApiMessageWrite"
-    });
-
-    const body = {
-      message: {
-        content: aMessageContent,
-        feature_level_type: "ADVANCED",
-        fiscal_code: anAutoFiscalCode
-      }
-    };
-
-    const response = await postCreateMessage(nodeFetch)(body);
-
-    expect(response.status).toEqual(403);
-
-    const problemJson = (await response.json()) as ProblemJson;
-
-    expect(problemJson).toMatchObject({
-      detail: "You do not have enough permissions to send a Premium message",
-      title: "You are not allowed here"
-    });
-  });
-
-  it("should return 403 when creating a Remote Content message and configuration is not of the user", async () => {
-    const nodeFetch = getNodeFetch({
-      "x-user-groups":
-        customHeaders["x-user-groups"] + ",ApiMessageWriteAdvanced",
-      "x-user-id": fullPathUserIdFromAPIM + "/anotheruserid"
-    });
-
-    const body = {
-      message: {
-        content: {
-          ...aMessageContent,
-          third_party_data: aValidThirdPartyData
-        },
-        feature_level_type: "ADVANCED",
-        fiscal_code: anAutoFiscalCode
-      }
-    };
-
-    const response = await postCreateMessage(nodeFetch)(body);
-
-    expect(mockGetRCConfiguration).toHaveBeenCalledTimes(1);
-    expect(response.status).toEqual(403);
-
-    const problemJson = (await response.json()) as ProblemJson;
-    expect(problemJson).toMatchObject({
-      detail:
-        "You're not the owner of the configuration related to the given configuration_id",
-      title: "Not your configuration"
-    });
-  });
-
-  it("should return 404 when creating a Remote Content message and the given configuration_id cannot be found", async () => {
-    const nodeFetch = getNodeFetch({
-      "x-user-groups":
-        customHeaders["x-user-groups"] + ",ApiMessageWriteAdvanced",
-      "x-user-id": fullPathUserIdFromAPIM
-    });
-
-    const body = {
-      message: {
-        content: {
-          ...aMessageContent,
-          third_party_data: {
-            ...aValidThirdPartyData,
-            configuration_id: notExistingRCConfigurationId
-          }
-        },
-        feature_level_type: "ADVANCED",
-        fiscal_code: anAutoFiscalCode
-      }
-    };
-
-    const response = await postCreateMessage(nodeFetch)(body);
-
-    expect(mockGetRCConfiguration).not.toHaveBeenCalled(); // 404 and 500 do not call the mock
-    expect(response.status).toEqual(404);
-  });
-
-  it("should return 500 when creating a Remote Content message and there is an error in retrieving the configuration", async () => {
-    const nodeFetch = getNodeFetch({
-      "x-user-groups":
-        customHeaders["x-user-groups"] + ",ApiMessageWriteAdvanced",
-      "x-user-id": fullPathUserIdFromAPIM
-    });
-
-    const body = {
-      message: {
-        content: {
-          ...aMessageContent,
-          third_party_data: {
-            ...aValidThirdPartyData,
-            configuration_id: notMatchingRCConfigurationId
-          }
-        },
-        feature_level_type: "ADVANCED",
-        fiscal_code: anAutoFiscalCode
-      }
-    };
-
-    const response = await postCreateMessage(nodeFetch)(body);
-
-    expect(mockGetRCConfiguration).not.toHaveBeenCalled(); // 404 and 500 do not call the mock
-    expect(response.status).toEqual(500);
-  });
-
-  it("should return 201 when no middleware fails", async () => {
-    const body = {
-      message: {
-        content: aMessageContent,
-        fiscal_code: aLegacyInboxEnabledFiscalCode
-      }
-    };
-
-    const response = await postCreateMessage(getNodeFetch())(body);
-    expect(response.status).toEqual(201);
-  });
-
-  it("should return 201 when creating an ADVANCED third party message with right permission", async () => {
-    const nodeFetch = getNodeFetch({
-      "x-user-groups":
-        customHeaders["x-user-groups"] + ",ApiMessageWriteAdvanced",
-      "x-user-id": fullPathUserIdFromAPIM
-    });
-
-    const body = {
-      message: {
-        content: {
-          ...aMessageContent,
-          third_party_data: aValidThirdPartyData
-        },
-        feature_level_type: "ADVANCED",
-        fiscal_code: anAutoFiscalCode
-      }
-    };
-
-    const response = await postCreateMessage(nodeFetch)(body);
-
-    expect(mockGetRCConfiguration).toHaveBeenCalledTimes(1);
-    expect(response.status).toEqual(201);
-  });
-
-  it("should return 201 when creating a third party message with right permission", async () => {
-    const nodeFetch = getNodeFetch({
-      "x-user-groups":
-        customHeaders["x-user-groups"] + ",ApiThirdPartyMessageWrite",
-      "x-user-id": fullPathUserIdFromAPIM
-    });
-
-    const body = {
-      message: {
-        content: {
-          ...aMessageContent,
-          third_party_data: aValidThirdPartyData
-        },
-        feature_level_type: "STANDARD",
-        fiscal_code: anAutoFiscalCode
-      }
-    };
-
-    const response = await postCreateMessage(nodeFetch)(body);
-
-    expect(mockGetRCConfiguration).toHaveBeenCalledTimes(1);
-    expect(response.status).toEqual(201);
-  });
-
-  it("should return 400 with simplified validation error when MessagePayloadMiddleware fails", async () => {
-    const body = {
-      message: {
-        content: anInvalidMessageContent,
-        fiscal_code: aLegacyInboxEnabledFiscalCode
-      }
-    };
-
-    const response = await postCreateMessage(getNodeFetch())(body);
-
-    const problemJson = await response.json();
-
-    expect(problemJson).toMatchObject({
-      detail:
-        'value "invalid" at root.content.subject is not a valid [string of length >= 10 and < 121]',
-      status: 400
-    });
-  });
-});
-
-// eslint-disable-next-line max-lines-per-function
-describe("Create Message", () => {
-  it.each`
-    profileType         | fiscalCode                       | serviceId
-    ${"LEGACY Profile"} | ${aLegacyInboxEnabledFiscalCode} | ${anEnabledServiceId}
-    ${"AUTO Profile"}   | ${anAutoFiscalCode}              | ${anEnabledServiceId}
-    ${"MANUAL Profile"} | ${aManualFiscalCode}             | ${anEnabledServiceId}
-  `(
-    "$profileType |> should return the message in PROCESSED status when service is allowed to send",
-    async ({ fiscalCode, serviceId }) => {
-      const body = {
-        message: { content: aMessageContent, fiscal_code: fiscalCode }
-      };
-
-      const nodeFetch = getNodeFetch({ "x-subscription-id": serviceId });
-
-      const result = await postCreateMessage(nodeFetch)(body);
-      const createdMessage = (await result.json()) as CreatedMessage;
-      expect(createdMessage).not.toHaveProperty("ttl");
-
-      expect(result.status).toEqual(201);
-
-      const messageId = createdMessage.id;
-      expect(messageId).not.toBeUndefined();
-
-      // Wait the process to complete
-      await delay(WAIT_MS);
-
-      const resultGet = await getSentMessage(nodeFetch)(fiscalCode, messageId!);
-
-      expect(resultGet.status).toEqual(200);
-      const detail =
-        (await resultGet.json()) as ExternalMessageResponseWithContent;
-
-      await pipe(
-        {
-          message: messageModel.find([messageId as NonEmptyString, fiscalCode]),
-          status: messageStatusModel.findLastVersionByModelId([
-            messageId as NonEmptyString
-          ])
-        },
-        sequenceS(TE.ApplicativePar),
-        TE.bindW("content", _ =>
-          pipe(
-            messageModel.getContentFromBlob(
-              blobService,
-              messageId as NonEmptyString
-            ),
-            TE.orElseW(_ => TE.of(O.none as O.Option<MessageContent>))
-          )
-        ),
-        TE.mapLeft(_ => fail(`Error retrieving message data from Cosmos.`)),
-        TE.map(({ content, message, status }) => {
-          expect(O.isSome(message)).toBeTruthy();
-          expect(O.isSome(status)).toBeTruthy();
-          expect(O.isSome(content)).toBeFalsy();
-          expect(O.getOrElseW(() => undefined)(status)).not.toHaveProperty(
-            "ttl"
-          );
-          expect(O.getOrElseW(() => undefined)(message)).not.toHaveProperty(
-            "ttl"
-          );
-        })
-      )();
-
-      expect(detail).toEqual(
-        expect.objectContaining({
-          message: expect.objectContaining({
-            ...body.message,
-            feature_level_type: FeatureLevelTypeEnum.STANDARD,
-            id: messageId
-          }),
-          status: NotRejectedMessageStatusValueEnum.PROCESSED
-        })
-      );
-    }
-  );
-
-  it.each`
-    profileType         | fiscalCode                       | serviceId
-    ${"LEGACY Profile"} | ${aLegacyInboxEnabledFiscalCode} | ${aDisabledServiceId}
-    ${"AUTO Profile"}   | ${anAutoFiscalCode}              | ${aDisabledServiceId}
-    ${"MANUAL Profile"} | ${aManualFiscalCode}             | ${aDisabledServiceId}
-  `(
-    "$profileType |> return 500 Error when service is NOT allowed to send",
-    async ({ fiscalCode, serviceId }) => {
-      const nodeFetch = getNodeFetch({
-        "x-subscription-id": serviceId
-      });
-
-      const body = {
-        message: { content: aMessageContent, fiscal_code: fiscalCode }
-      };
-
-      const result = await postCreateMessage(nodeFetch)(body);
-
-      expect(result.status).toEqual(201);
-
-      const messageId = ((await result.json()) as CreatedMessage).id;
-      expect(messageId).not.toBeUndefined();
-
-      // Wait the process to complete
-      await delay(WAIT_MS);
-
-      await pipe(
-        {
-          message: messageModel.find([messageId as NonEmptyString, fiscalCode]),
-          status: messageStatusModel.findLastVersionByModelId([
-            messageId as NonEmptyString
-          ])
-        },
-        sequenceS(TE.ApplicativePar),
-        TE.bindW("content", _ =>
-          pipe(
-            messageModel.getContentFromBlob(
-              blobService,
-              messageId as NonEmptyString
-            ),
-            TE.orElseW(_ => TE.of(O.none as O.Option<MessageContent>))
-          )
-        ),
-        TE.mapLeft(_ => fail(`Error retrieving message data from Cosmos.`)),
-        TE.map(({ content, message, status }) => {
-          expect(O.isSome(message)).toBeTruthy();
-          expect(O.isSome(status)).toBeTruthy();
-          expect(O.isSome(content)).toBeFalsy();
-
-          expect(status).toEqual(
-            O.some(
-              expect.objectContaining({
-                rejection_reason: RejectionReasonEnum.SERVICE_NOT_ALLOWED,
-                status: RejectedMessageStatusValueEnum.REJECTED
-              })
-            )
-          );
-        })
-      )();
-
-      // TODO: Fix when getMessage will return the message status
-      // const resultGet = await getSentMessage(nodeFetch)(fiscalCode, messageId);
-      // const detail = await resultGet.json();
-
-      // expect(resultGet.status).toEqual(500);
-      // expect(detail).toEqual({
-      //   detail: "Error: Cannot get stored message content from blob",
-      //   status: 500,
-      //   title: "Internal server error"
-      // });
-    }
-  );
-
-  it.skip("should Reject message when user does not exist", async () => {
-    const nodeFetch = getNodeFetch({
-      "x-subscription-id": aValidServiceId
-    });
-    const aNonExistingFiscalCode = "XXXBBB01C02D345M" as FiscalCode;
-
-    const body = {
-      message: { content: aMessageContent, fiscal_code: aNonExistingFiscalCode }
-    };
-
-    const result = await postCreateMessage(nodeFetch)(body);
-
-    expect(result.status).toEqual(201);
-
-    const messageId = ((await result.json()) as CreatedMessage).id;
-    expect(messageId).not.toBeUndefined();
-
-    // Wait the process to complete
-    await delay(WAIT_MS);
-
-    await pipe(
-      {
-        message: messageModel.find([
-          messageId as NonEmptyString,
-          aNonExistingFiscalCode
-        ]),
-        status: messageStatusModel.findLastVersionByModelId([
-          messageId as NonEmptyString
-        ])
-      },
-      sequenceS(TE.ApplicativePar),
-      TE.bindW("content", _ =>
-        pipe(
-          messageModel.getContentFromBlob(
-            blobService,
-            messageId as NonEmptyString
-          ),
-          TE.orElseW(_ => TE.of(O.none as O.Option<MessageContent>))
-        )
-      ),
-      TE.mapLeft(_ => fail(`Error retrieving message data from Cosmos.`)),
-      TE.map(({ content, message, status }) => {
-        expect(O.isSome(message)).toBeTruthy();
-        expect(O.isSome(status)).toBeTruthy();
-        expect(O.isSome(content)).toBeFalsy();
-
-        expect(status).toEqual(
-          O.some(
-            expect.objectContaining({
-              rejection_reason: RejectionReasonEnum.USER_NOT_FOUND,
-              status: RejectedMessageStatusValueEnum.REJECTED
-            })
-          )
-        );
-      })
-    )();
-
-    // TODO: Fix when getMessage will return the message status
-    // const resultGet = await getSentMessage(nodeFetch)(fiscalCode, messageId);
-    // const detail = await resultGet.json();
-
-    // expect(resultGet.status).toEqual(500);
-    // expect(detail).toEqual({
-    //   detail: "Error: Cannot get stored message content from blob",
-    //   status: 500,
-    //   title: "Internal server error"
-    // });
-  });
-});
-
-describe("Create Third Party Message", () => {
-  it.each`
-    profileType         | fiscalCode                       | serviceId
-    ${"AUTO Profile"}   | ${anAutoFiscalCode}              | ${anEnabledServiceId}
-    ${"LEGACY Profile"} | ${aLegacyInboxEnabledFiscalCode} | ${anEnabledServiceId}
-    ${"MANUAL Profile"} | ${aManualFiscalCode}             | ${anEnabledServiceId}
-  `(
-    "$profileType |> should return the message in PROCESSED status when service is allowed to send",
-    async ({ fiscalCode, serviceId }) => {
-      const body = {
-        message: {
-          content: {
-            ...aMessageContent,
-            third_party_data: aValidThirdPartyData
-          },
-          fiscal_code: fiscalCode
-        }
-      };
-
-      const nodeFetch = getNodeFetch({
-        "x-subscription-id": serviceId,
-        "x-user-groups":
-          customHeaders["x-user-groups"] + ",ApiThirdPartyMessageWrite",
-        "x-user-id": fullPathUserIdFromAPIM
-      });
-
-      const result = await postCreateMessage(nodeFetch)(body);
-      const createdMessage = (await result.json()) as CreatedMessage;
-
-      expect(mockGetRCConfiguration).toHaveBeenCalledTimes(1);
-      expect(createdMessage).not.toHaveProperty("ttl");
-      expect(result.status).toEqual(201);
-
-      const messageId = createdMessage.id;
-      expect(messageId).not.toBeUndefined();
-
-      // Wait the process to complete
-      await delay(WAIT_MS);
-
-      const resultGet = await getSentMessage(nodeFetch)(fiscalCode, messageId!);
-
-      expect(resultGet.status).toEqual(200);
-      const detail =
-        (await resultGet.json()) as ExternalMessageResponseWithContent;
-
-      await pipe(
-        {
-          message: messageModel.find([messageId as NonEmptyString, fiscalCode]),
-          status: messageStatusModel.findLastVersionByModelId([
-            messageId as NonEmptyString
-          ])
-        },
-        sequenceS(TE.ApplicativePar),
-        TE.bindW("content", _ =>
-          pipe(
-            messageModel.getContentFromBlob(
-              blobService,
-              messageId as NonEmptyString
-            ),
-            TE.orElseW(_ => TE.of(O.none as O.Option<MessageContent>))
-          )
-        ),
-        TE.mapLeft(_ => fail(`Error retrieving message data from Cosmos.`)),
-        TE.map(({ content, message, status }) => {
-          expect(O.isSome(message)).toBeTruthy();
-          expect(O.isSome(status)).toBeTruthy();
-          expect(O.isSome(content)).toBeFalsy();
-          expect(O.getOrElseW(() => undefined)(status)).not.toHaveProperty(
-            "ttl"
-          );
-          expect(O.getOrElseW(() => undefined)(message)).not.toHaveProperty(
-            "ttl"
-          );
-        })
-      )();
-
-      expect(detail).toEqual(
-        expect.objectContaining({
-          message: expect.objectContaining({
-            ...body.message,
-            content: {
-              ...body.message.content,
-              third_party_data: {
-                ...body.message.content.third_party_data,
-                has_attachments: false,
-                has_remote_content: false
-              }
-            },
-            feature_level_type: FeatureLevelTypeEnum.STANDARD
-          }),
-          status: NotRejectedMessageStatusValueEnum.PROCESSED
-        })
-      );
-    }
-  );
-});
-
-// eslint-disable-next-line max-lines-per-function
-describe("Create Advanced Message", () => {
-  it.each`
-    profileType         | fiscalCode                       | serviceId
-    ${"LEGACY Profile"} | ${aLegacyInboxEnabledFiscalCode} | ${anEnabledServiceId}
-    ${"AUTO Profile"}   | ${anAutoFiscalCode}              | ${anEnabledServiceId}
-    ${"MANUAL Profile"} | ${aManualFiscalCode}             | ${anEnabledServiceId}
-  `(
-    "$profileType |> should return the message in PROCESSED status when service is allowed to send",
-    async ({ fiscalCode, serviceId }) => {
-      const body = {
-        message: {
-          content: aMessageContent,
-          feature_level_type: "ADVANCED",
-          fiscal_code: fiscalCode
-        }
-      };
-
-      const nodeFetchWithoutPermission = getNodeFetch({
-        "x-subscription-id": serviceId
-      });
-      const nodeFetch = getNodeFetch({
-        "x-subscription-id": serviceId,
-        "x-user-groups":
-          customHeaders["x-user-groups"] +
-          ",ApiMessageWriteAdvanced,ApiMessageReadAdvanced"
-      });
-
-      const result = await postCreateMessage(nodeFetch)(body);
-      const createdMessage = (await result.json()) as CreatedMessage;
-      expect(createdMessage).not.toHaveProperty("ttl");
-
-      expect(result.status).toEqual(201);
-
-      const messageId = createdMessage.id;
-      expect(messageId).not.toBeUndefined();
-
-      // Wait the process to complete
-      await delay(WAIT_MS);
-
-      // Check response having `ApiMessageReadAdvanced` authorization
-
-      const resultGet = await getSentMessage(nodeFetch)(fiscalCode, messageId!);
-
-      expect(resultGet.status).toEqual(200);
-      const detail =
-        (await resultGet.json()) as ExternalMessageResponseWithContent;
-
-      await pipe(
-        {
-          message: messageModel.find([messageId as NonEmptyString, fiscalCode]),
-          status: messageStatusModel.findLastVersionByModelId([
-            messageId as NonEmptyString
-          ])
-        },
-        sequenceS(TE.ApplicativePar),
-        TE.bindW("content", _ =>
-          pipe(
-            messageModel.getContentFromBlob(
-              blobService,
-              messageId as NonEmptyString
-            ),
-            TE.orElseW(_ => TE.of(O.none as O.Option<MessageContent>))
-          )
-        ),
-        TE.mapLeft(_ => fail(`Error retrieving message data from Cosmos.`)),
-        TE.map(({ content, message, status }) => {
-          expect(O.isSome(message)).toBeTruthy();
-          expect(O.isSome(status)).toBeTruthy();
-          expect(O.isSome(content)).toBeFalsy();
-          expect(O.getOrElseW(() => undefined)(status)).not.toHaveProperty(
-            "ttl"
-          );
-          expect(O.getOrElseW(() => undefined)(message)).not.toHaveProperty(
-            "ttl"
-          );
-        })
-      )();
-
-      expect(detail).toMatchObject(
-        expect.objectContaining({
-          message: expect.objectContaining({
-            ...body.message,
-            feature_level_type: FeatureLevelTypeEnum.ADVANCED,
-            id: messageId
-          }),
-          read_status:
-            fiscalCode === aLegacyInboxEnabledFiscalCode
-              ? ReadStatusEnum.UNAVAILABLE
-              : ReadStatusEnum.UNREAD,
-          status: NotRejectedMessageStatusValueEnum.PROCESSED
-        })
-      );
-
-      expect(detail).not.toHaveProperty("payment_status");
-
-      // Check response without having `ApiMessageReadAdvanced` authorization
-
-      const resultGetWithoutPermission = await getSentMessage(
-        nodeFetchWithoutPermission
-      )(fiscalCode, messageId!);
-
-      expect(resultGetWithoutPermission.status).toEqual(200);
-      const detailWithoutPermission =
-        (await resultGetWithoutPermission.json()) as ExternalMessageResponseWithContent;
-
-      expect(detailWithoutPermission).toMatchObject(
-        expect.objectContaining({
-          message: expect.objectContaining({
-            ...body.message,
-            id: messageId
-          }),
-          status: NotRejectedMessageStatusValueEnum.PROCESSED
-        })
-      );
-
-      expect(detailWithoutPermission).not.toHaveProperty("payment_status");
-      expect(detailWithoutPermission).not.toHaveProperty("read_status");
-    }
-  );
-
-  // This code is testing the case in which user explicitly disabled a service
-  // servicePreference in DENY state is defined in fixtures project
-  it("should return the message WITHOUT Read status, if user is NOT allowed to read it", async () => {
-    const fiscalCode = anAutoFiscalCode;
-    const serviceId = aValidServiceId;
-
-    const body = {
-      message: {
-        content: aMessageContent,
-        feature_level_type: "ADVANCED",
-        fiscal_code: fiscalCode
-      }
-    };
-
-    const nodeFetchWithoutPermission = getNodeFetch({
-      "x-subscription-id": serviceId
-    });
-    const nodeFetch = getNodeFetch({
-      "x-subscription-id": serviceId,
-      "x-user-groups":
-        customHeaders["x-user-groups"] +
-        ",ApiMessageWriteAdvanced,ApiMessageReadAdvanced"
-    });
-
-    const result = await postCreateMessage(nodeFetch)(body);
-    const createdMessage = (await result.json()) as CreatedMessage;
-    expect(createdMessage).not.toHaveProperty("ttl");
-
-    expect(result.status).toEqual(201);
-
-    const messageId = createdMessage.id;
-    expect(messageId).not.toBeUndefined();
-
-    // Wait the process to complete
-    await delay(WAIT_MS);
-
-    // Check response having `ApiMessageReadAdvanced` authorization
-    const resultGet = await getSentMessage(nodeFetch)(fiscalCode, messageId!);
-
-    expect(resultGet.status).toEqual(200);
-    const detail =
-      (await resultGet.json()) as ExternalMessageResponseWithContent;
-
-    await pipe(
-      {
-        message: messageModel.find([messageId as NonEmptyString, fiscalCode]),
-        status: messageStatusModel.findLastVersionByModelId([
-          messageId as NonEmptyString
-        ])
-      },
-      sequenceS(TE.ApplicativePar),
-      TE.bindW("content", _ =>
-        pipe(
-          messageModel.getContentFromBlob(
-            blobService,
-            messageId as NonEmptyString
-          ),
-          TE.orElseW(_ => TE.of(O.none as O.Option<MessageContent>))
-        )
-      ),
-      TE.mapLeft(_ => fail(`Error retrieving message data from Cosmos.`)),
-      TE.map(({ content, message, status }) => {
-        expect(O.isSome(message)).toBeTruthy();
-        expect(O.isSome(status)).toBeTruthy();
-        expect(O.isSome(content)).toBeFalsy();
-        expect(O.getOrElseW(() => undefined)(status)).not.toHaveProperty("ttl");
-        expect(O.getOrElseW(() => undefined)(status)).not.toHaveProperty("ttl");
-      })
-    )();
-
-    expect(detail).toMatchObject(
-      expect.objectContaining({
-        message: expect.objectContaining({
-          ...body.message,
-          id: messageId
-        }),
-        read_status: ReadStatusEnum.UNAVAILABLE,
-        status: NotRejectedMessageStatusValueEnum.PROCESSED
-      })
-    );
-
-    // Check response without having `ApiMessageReadAdvanced` authorization
-
-    const resultGetWithoutPermission = await getSentMessage(
-      nodeFetchWithoutPermission
-    )(fiscalCode, messageId!);
-
-    expect(resultGetWithoutPermission.status).toEqual(200);
-    const detailWithoutPermission =
-      (await resultGetWithoutPermission.json()) as ExternalMessageResponseWithContent;
-
-    expect(detailWithoutPermission).toMatchObject(
-      expect.objectContaining({
-        message: expect.objectContaining({
-          ...body.message,
-          id: messageId
-        }),
-        status: NotRejectedMessageStatusValueEnum.PROCESSED
-      })
-    );
-
-    expect(detailWithoutPermission).not.toHaveProperty("payment_status");
-    expect(detailWithoutPermission).not.toHaveProperty("read_status");
-  });
-
-  // TODO: Enable when paymentStatus will be available
-  it.skip("should return the PAYMENT message with payment_status, if user is allowed to read it", async () => {
-    const fiscalCode = anAutoFiscalCode;
-    const serviceId = anEnabledServiceId;
-
-    const body = {
-      message: {
-        content: {
-          ...aMessageContent,
-          payment_data: {
-            amount: 70,
-            notice_number: "177777777777777777"
-          }
-        },
-        feature_level_type: "ADVANCED",
-        fiscal_code: fiscalCode
-      }
-    };
-
-    const nodeFetchWithoutPermission = getNodeFetch({
-      "x-subscription-id": serviceId
-    });
-    const nodeFetch = getNodeFetch({
-      "x-subscription-id": serviceId,
-      "x-user-groups":
-        customHeaders["x-user-groups"] +
-        ",ApiMessageWriteAdvanced,ApiMessageReadAdvanced"
-    });
-
-    const result = await postCreateMessage(nodeFetch)(body);
-
-    expect(result.status).toEqual(201);
-
-    const messageId = ((await result.json()) as CreatedMessage).id;
-    expect(messageId).not.toBeUndefined();
-
-    // Wait the process to complete
-    await delay(WAIT_MS);
-
-    // Check response having `ApiMessageReadAdvanced` authorization
-
-    const resultGet = await getSentMessage(nodeFetch)(fiscalCode, messageId!);
-
-    expect(resultGet.status).toEqual(200);
-    const detail =
-      (await resultGet.json()) as ExternalMessageResponseWithContent;
-
-    expect(detail).toMatchObject(
-      expect.objectContaining({
-        message: expect.objectContaining({
-          ...body.message,
-          id: messageId
-        }),
-        payment_status: PaymentStatusEnum.NOT_PAID,
-        read_status: ReadStatusEnum.UNAVAILABLE,
-        status: NotRejectedMessageStatusValueEnum.PROCESSED
-      })
-    );
-
-    // Check response without having `ApiMessageReadAdvanced` authorization
-
-    const resultGetWithoutPermission = await getSentMessage(
-      nodeFetchWithoutPermission
-    )(fiscalCode, messageId!);
-
-    expect(resultGetWithoutPermission.status).toEqual(200);
-    const detailWithoutPermission =
-      (await resultGetWithoutPermission.json()) as ExternalMessageResponseWithContent;
-
-    expect(detailWithoutPermission).toMatchObject(
-      expect.objectContaining({
-        message: expect.objectContaining({
-          ...body.message,
-          id: messageId
-        }),
-        status: NotRejectedMessageStatusValueEnum.PROCESSED
-      })
-    );
-
-    expect(detailWithoutPermission).not.toHaveProperty("payment_status");
-    expect(detailWithoutPermission).not.toHaveProperty("read_status");
-  });
-});
-
-const aMessageId = ulidGenerator();
-const aSerializedNewMessageWithoutContent = {
-  createdAt: new Date().toISOString(),
-  featureLevelType: FeatureLevelTypeEnum.STANDARD,
-  fiscalCode: anAutoFiscalCode,
-  id: aMessageId,
-  indexedId: aMessageId,
-  senderServiceId: aValidServiceId,
-  senderUserId: "u123" as NonEmptyString,
-  timeToLiveSeconds: 3600 as TimeToLiveSeconds
-};
-const aNewMessageWithoutContent: NewMessageWithoutContent = {
-  ...aSerializedNewMessageWithoutContent,
-  createdAt: new Date(),
-  kind: "INewMessageWithoutContent"
-};
-
-describe("Get Message", () => {
-  //ENABLE ME when Azurite will proper support the 404 error when retrieving a missing blob
-  it.skip("Get existing message without content in ACCEPTED state", async () => {
-    const createResult = await messageModel.create(aNewMessageWithoutContent)();
-    expect(E.isRight(createResult)).toBeTruthy();
-
-    const nodeFetch = getNodeFetch({ "x-subscription-id": aValidServiceId });
-    const result = await getSentMessage(nodeFetch)(
-      anAutoFiscalCode,
-      aMessageId
-    );
-    expect(result.status).toEqual(200);
-  });
-});
-
-// -----------
-// Utils
-// -----------
-
-const postCreateMessage = (nodeFetch: typeof fetch) => async body =>
-  await nodeFetch(`${baseUrl}/api/v1/messages`, {
-    body: JSON.stringify(body.message),
-    headers: {
-      "Content-Type": "application/json"
-    },
+const getProfileByPOST = (
+  fiscalCode: string,
+  serviceId = anEnabledServiceId
+): Promise<Response> =>
+  apiFetch(serviceId)(`${baseUrl}/api/v1/profiles`, {
+    body: JSON.stringify({ fiscal_code: fiscalCode }),
+    headers: { "Content-Type": "application/json" },
     method: "POST"
   });
 
-const getSentMessage =
-  (nodeFetch: typeof fetch) => async (fiscalCode, messageId: string) =>
-    nodeFetch(`${baseUrl}/api/v1/messages/${fiscalCode}/${messageId}`);
+// ---------------------------------------------------------------------------
+// Global setup / teardown
+// ---------------------------------------------------------------------------
+
+beforeAll(async () => {
+  for (let i = 0; i < MAX_ATTEMPT; i++) {
+    try {
+      await nodeFetch(`${baseUrl}/api/info`);
+      return;
+    } catch {
+      console.log(`Waiting for function host to start (attempt ${i + 1})…`);
+      await delay(WAIT_MS);
+    }
+  }
+  console.log("Function host failed to start in time");
+  exit(1);
+});
+
+afterAll(async () => {
+  /* nothing to tear down */
+});
+
+beforeEach(() => vi.clearAllMocks());
+
+// ---------------------------------------------------------------------------
+// GetLimitedProfile — GET /api/v1/profiles/:fiscalCode
+// ---------------------------------------------------------------------------
+
+describe("GetLimitedProfile — GET /api/v1/profiles/:fiscalCode", () => {
+  it("returns 200 with sender_allowed:true for a legacy profile when the calling service is enabled", async () => {
+    const res = await getProfile(
+      aLegacyInboxEnabledFiscalCode,
+      anEnabledServiceId
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as LimitedProfile;
+    expect(body.sender_allowed).toBe(true);
+  });
+
+  it("returns 200 with sender_allowed:false for a legacy profile when the calling service is blocked", async () => {
+    const res = await getProfile(
+      aLegacyInboxEnabledFiscalCode,
+      aDisabledServiceId
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as LimitedProfile;
+    expect(body.sender_allowed).toBe(false);
+  });
+
+  it("returns 200 for a legacy profile that has inbox disabled but no service blocked", async () => {
+    const res = await getProfile(
+      aLegacyInboxDisabledFiscalCode,
+      anEnabledServiceId
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as LimitedProfile;
+    expect(typeof body.sender_allowed).toBe("boolean");
+  });
+
+  it("returns 200 with sender_allowed:true for an AUTO profile with an explicitly enabled service preference", async () => {
+    const res = await getProfile(anAutoFiscalCode, anEnabledServiceId);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as LimitedProfile;
+    expect(body.sender_allowed).toBe(true);
+  });
+
+  it("returns 200 with sender_allowed:false for an AUTO profile with an explicitly disabled service preference", async () => {
+    const res = await getProfile(anAutoFiscalCode, aDisabledServiceId);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as LimitedProfile;
+    expect(body.sender_allowed).toBe(false);
+  });
+
+  it("returns 200 with sender_allowed:true for a MANUAL profile with an explicitly enabled service preference", async () => {
+    const res = await getProfile(aManualFiscalCode, anEnabledServiceId);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as LimitedProfile;
+    expect(body.sender_allowed).toBe(true);
+  });
+
+  it("returns 404 for a fiscal code not present in the system", async () => {
+    const res = await getProfile(aNonExistingFiscalCode);
+    expect(res.status).toBe(404);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// GetLimitedProfileByPOST — POST /api/v1/profiles
+// ---------------------------------------------------------------------------
+
+describe("GetLimitedProfileByPOST — POST /api/v1/profiles", () => {
+  it("returns 200 with sender_allowed:true for a legacy profile when the calling service is enabled", async () => {
+    const res = await getProfileByPOST(
+      aLegacyInboxEnabledFiscalCode,
+      anEnabledServiceId
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as LimitedProfile;
+    expect(body.sender_allowed).toBe(true);
+  });
+
+  it("returns 200 with sender_allowed:false for a legacy profile when the calling service is blocked", async () => {
+    const res = await getProfileByPOST(
+      aLegacyInboxEnabledFiscalCode,
+      aDisabledServiceId
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as LimitedProfile;
+    expect(body.sender_allowed).toBe(false);
+  });
+
+  it("returns 200 with sender_allowed:true for an AUTO profile with an explicitly enabled service preference", async () => {
+    const res = await getProfileByPOST(anAutoFiscalCode, anEnabledServiceId);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as LimitedProfile;
+    expect(body.sender_allowed).toBe(true);
+  });
+
+  it("returns 200 with sender_allowed:false for an AUTO profile with an explicitly disabled service preference", async () => {
+    const res = await getProfileByPOST(anAutoFiscalCode, aDisabledServiceId);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as LimitedProfile;
+    expect(body.sender_allowed).toBe(false);
+  });
+
+  it("returns 200 with sender_allowed:true for a MANUAL profile with an explicitly enabled service preference", async () => {
+    const res = await getProfileByPOST(aManualFiscalCode, anEnabledServiceId);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as LimitedProfile;
+    expect(body.sender_allowed).toBe(true);
+  });
+
+  it("returns 400 when the request body is missing the fiscal_code field", async () => {
+    const res = await apiFetch()(`${baseUrl}/api/v1/profiles`, {
+      body: JSON.stringify({}),
+      headers: { "Content-Type": "application/json" },
+      method: "POST"
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 404 for a fiscal code not present in the system", async () => {
+    const res = await getProfileByPOST(aNonExistingFiscalCode);
+    expect(res.status).toBe(404);
+  });
+});
