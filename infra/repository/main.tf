@@ -15,7 +15,6 @@ module "github_environment_bootstrap" {
 
     reviewers_teams = [
       "io-backend-contributors",
-      "engineering-team-cloud-eng",
       "io-backend-admin"
     ]
   }
