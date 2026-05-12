@@ -20,18 +20,13 @@ locals {
     }
   }
 
-  vnet = {
-    name                = "${local.project}-common-vnet-01"
-    resource_group_name = "${local.project}-common-rg-01"
-  }
-
   common = {
     weu_resource_group_name = "${local.prefix}-${local.env_short}-rg-common"
     itn_resource_group_name = "${local.project}-common-rg-01"
   }
 
   functions = {
-    itn_platform_services_rg_name = "${local.project}-platform-services-rg-01"
+    itn_platform_services_rg_name    = "${local.project}-platform-services-rg-01"
     itn_platform_services_02_rg_name = "${local.project}-platform-services-rg-02"
   }
 
