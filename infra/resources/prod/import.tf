@@ -68,17 +68,17 @@ import {
 }
 
 import {
-  to = module.function_app_services.module.function_services.azurerm_linux_function_app_slot.this["0"]
+  to = module.function_app_services.module.function_services.azurerm_linux_function_app_slot.this[0]
   id = "/subscriptions/ec285037-c673-4f58-b594-d7c480da4e8b/resourceGroups/io-p-itn-platform-services-rg-02/providers/Microsoft.Web/sites/io-p-itn-services-func-02/slots/staging"
 }
 
 import {
-  to = module.function_app_services.module.function_services.azurerm_monitor_metric_alert.function_app_health_check["0"]
+  to = module.function_app_services.module.function_services.azurerm_monitor_metric_alert.function_app_health_check[0]
   id = "/subscriptions/ec285037-c673-4f58-b594-d7c480da4e8b/resourceGroups/io-p-itn-platform-services-rg-02/providers/Microsoft.Insights/metricAlerts/[io-p-itn-services-func-02] Health Check Failed"
 }
 
 import {
-  to = module.function_app_services.module.function_services.azurerm_monitor_metric_alert.storage_account_health_check["0"]
+  to = module.function_app_services.module.function_services.azurerm_monitor_metric_alert.storage_account_health_check[0]
   id = "/subscriptions/ec285037-c673-4f58-b594-d7c480da4e8b/resourceGroups/io-p-itn-platform-services-rg-02/providers/Microsoft.Insights/metricAlerts/[iopitnservicesstfn02] Low Availability"
 }
 
@@ -103,7 +103,7 @@ import {
 }
 
 import {
-  to = module.function_app_services.module.function_services.azurerm_private_endpoint.staging_function_sites["0"]
+  to = module.function_app_services.module.function_services.azurerm_private_endpoint.staging_function_sites[0]
   id = "/subscriptions/ec285037-c673-4f58-b594-d7c480da4e8b/resourceGroups/io-p-itn-platform-services-rg-02/providers/Microsoft.Network/privateEndpoints/io-p-itn-services-staging-func-pep-02"
 }
 
@@ -123,22 +123,22 @@ import {
 }
 
 import {
-  to = module.function_app_services.module.function_services.azurerm_role_assignment.staging_function_storage_account_contributor["0"]
+  to = module.function_app_services.module.function_services.azurerm_role_assignment.staging_function_storage_account_contributor[0]
   id = "/subscriptions/ec285037-c673-4f58-b594-d7c480da4e8b/resourceGroups/io-p-itn-platform-services-rg-02/providers/Microsoft.Storage/storageAccounts/iopitnservicesstfn02/providers/Microsoft.Authorization/roleAssignments/c7beb22b-82af-c508-ebdd-7990f4a9796b"
 }
 
 import {
-  to = module.function_app_services.module.function_services.azurerm_role_assignment.staging_function_storage_blob_data_owner["0"]
+  to = module.function_app_services.module.function_services.azurerm_role_assignment.staging_function_storage_blob_data_owner[0]
   id = "/subscriptions/ec285037-c673-4f58-b594-d7c480da4e8b/resourceGroups/io-p-itn-platform-services-rg-02/providers/Microsoft.Storage/storageAccounts/iopitnservicesstfn02/providers/Microsoft.Authorization/roleAssignments/986915cd-75ab-d96e-1c27-03f3c65a4319"
 }
 
 import {
-  to = module.function_app_services.module.function_services.azurerm_role_assignment.staging_function_storage_queue_data_contributor["0"]
+  to = module.function_app_services.module.function_services.azurerm_role_assignment.staging_function_storage_queue_data_contributor[0]
   id = "/subscriptions/ec285037-c673-4f58-b594-d7c480da4e8b/resourceGroups/io-p-itn-platform-services-rg-02/providers/Microsoft.Storage/storageAccounts/iopitnservicesstfn02/providers/Microsoft.Authorization/roleAssignments/cc28cc42-8ae9-5cc0-fbe2-f37250740332"
 }
 
 import {
-  to = module.function_app_services.module.function_services.azurerm_service_plan.this["0"]
+  to = module.function_app_services.module.function_services.azurerm_service_plan.this[0]
   id = "/subscriptions/ec285037-c673-4f58-b594-d7c480da4e8b/resourceGroups/io-p-itn-platform-services-rg-02/providers/Microsoft.Web/serverFarms/io-p-itn-services-asp-02"
 }
 
@@ -153,7 +153,7 @@ import {
 }
 
 import {
-  to = module.function_app_services.module.function_services.azurerm_subnet.this["0"]
+  to = module.function_app_services.module.function_services.azurerm_subnet.this[0]
   id = "/subscriptions/ec285037-c673-4f58-b594-d7c480da4e8b/resourceGroups/io-p-itn-common-rg-01/providers/Microsoft.Network/virtualNetworks/io-p-itn-common-vnet-01/subnets/io-p-itn-services-func-snet-02"
 }
 
@@ -173,7 +173,7 @@ import {
 }
 
 import {
-  to = module.function_app_services.module.services_storage_account_01.azurerm_monitor_metric_alert.storage_account_health_check["0"]
+  to = module.function_app_services.module.services_storage_account_01.azurerm_monitor_metric_alert.storage_account_health_check[0]
   id = "/subscriptions/ec285037-c673-4f58-b594-d7c480da4e8b/resourceGroups/io-p-itn-platform-services-rg-02/providers/Microsoft.Insights/metricAlerts/[iopitnservicesst02] Low Availability"
 }
 
