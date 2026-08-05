@@ -13,7 +13,7 @@ import {
 }
 
 import {
-  to = module.function_app_services.azurerm_resource_group.function_services_rg
+  to = azurerm_resource_group.function_services_rg
   id = "/subscriptions/ec285037-c673-4f58-b594-d7c480da4e8b/resourceGroups/io-p-itn-platform-services-rg-02"
 }
 
