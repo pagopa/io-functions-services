@@ -8,6 +8,11 @@ import {
 }
 
 import {
+  to = module.containers_services_itn.module.db_subscription_cidrs_container.azurerm_cosmosdb_sql_container.this
+  id = "/subscriptions/ec285037-c673-4f58-b594-d7c480da4e8b/resourceGroups/io-p-rg-internal/providers/Microsoft.DocumentDB/databaseAccounts/io-p-cosmos-api/sqlDatabases/db/containers/subscription-cidrs"
+}
+
+import {
   to = module.function_app_services_itn.azurerm_key_vault_access_policy.function_services_itn_kv_common
   id = "/subscriptions/ec285037-c673-4f58-b594-d7c480da4e8b/resourceGroups/io-p-rg-common/providers/Microsoft.KeyVault/vaults/io-p-kv-common/objectId/c58f0476-d243-4555-9333-8eb745e1d070"
 }
