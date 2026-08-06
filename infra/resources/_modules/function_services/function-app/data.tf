@@ -13,10 +13,6 @@ data "azurerm_key_vault" "io_com" {
 ########################
 # COSMOS
 ########################
-data "azurerm_cosmosdb_account" "cosmos_api" {
-  name                = format("%s-cosmos-api", local.project)
-  resource_group_name = local.rg_internal_name
-}
 
 data "azurerm_storage_account" "storage_api" {
   name                = replace("${local.project}stapi", "-", "")
