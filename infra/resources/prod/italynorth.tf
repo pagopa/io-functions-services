@@ -4,7 +4,7 @@ resource "azurerm_resource_group" "function_services_rg" {
   tags     = local.tags
 }
 
-module "function_app_services" {
+module "function_app_services_itn" {
   source                              = "../_modules/function_services/function-app"
   prefix                              = local.prefix
   env_short                           = local.env_short
@@ -21,7 +21,7 @@ module "function_app_services" {
   tags                                = local.tags
 }
 
-module "containers_services" {
+module "containers_services_itn" {
   source              = "../_modules/function_services/containers"
   cosmos_db_name      = module.function_app_services.db_name
   resource_group_name = local.rg_internal_name
