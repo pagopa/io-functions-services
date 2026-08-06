@@ -23,7 +23,7 @@ module "function_app_services_itn" {
 
 module "containers_services_itn" {
   source              = "../_modules/function_services/containers"
-  cosmos_db_name      = module.function_app_services.db_name
+  cosmos_db_name      = module.function_app_services_itn.db_name
   resource_group_name = local.rg_internal_name
   legacy_project      = local.project_legacy
 }
