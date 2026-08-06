@@ -18,6 +18,7 @@ module "function_app_services_itn" {
   common_resource_group_name_itn      = local.common_resource_group_name_itn
   project_itn                         = local.project
   services_snet_cidr                  = local.cidr_subnet
+  cosmos_db_attributes                = local.platform_data_platform.cosmos_api.weu
   tags                                = local.tags
 }
 

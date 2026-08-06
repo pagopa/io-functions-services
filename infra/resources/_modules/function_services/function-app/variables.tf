@@ -135,3 +135,9 @@ variable "sku_size" {
   description = "Function App SKU Size"
   default     = "P1v3"
 }
+
+variable "cosmos_db_attributes" {
+  type        = map(any)
+  sensitive   = true
+  description = "Informations about the Cosmos DB, such as primary key and endpoint"
+}
