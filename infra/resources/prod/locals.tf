@@ -10,7 +10,8 @@ locals {
   project        = "${local.prefix}-${local.env_short}-${local.location_short}"
   project_legacy = "${local.prefix}-${local.env_short}"
 
-  platform_data_platform = data.terraform_remote_state.platform_data_platform.outputs
+  platform_data_platform  = data.terraform_remote_state.platform_data_platform.outputs
+  platform_obsvervability = data.terraform_remote_state.platform_observability.outputs
 
   tags = {
     CostCenter     = "TS310 - PAGAMENTI & SERVIZI"
