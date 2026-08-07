@@ -1,10 +1,7 @@
 locals {
   project          = "${var.prefix}-${var.env_short}"
-  vnet_common_name = format("%s-vnet-common", local.project)
   rg_common_name   = format("%s-rg-common", local.project)
   rg_internal_name = format("%s-rg-internal", local.project)
-
-  apim_itn_name = "${local.project}-${var.location_itn}-apim-01"
 }
 
 locals {
@@ -29,7 +26,7 @@ locals {
       SUBSCRIPTIONS_FEED_TABLE                = "SubscriptionsFeedByDay"
 
       INTERNAL_STORAGE_CONNECTION_STRING = module.services_storage_account_01.primary_connection_string
-      APPINSIGHTS_INSTRUMENTATIONKEY     = data.azurerm_application_insights.application_insights.instrumentation_key
+      APPINSIGHTS_INSTRUMENTATIONKEY     = var.application_insights_attributes.appi_instrumentation_key
 
       COSMOSDB_NAME = "db"
       COSMOSDB_URI  = var.cosmos_db_attributes.endpoint

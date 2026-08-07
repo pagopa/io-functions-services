@@ -63,7 +63,7 @@ module "function_services" {
     }
   )
 
-  action_group_ids = [data.azurerm_monitor_action_group.error_action_group.id]
+  action_group_ids = [var.application_insights_attributes.action_groups.error]
 
   tags = var.tags
 }
