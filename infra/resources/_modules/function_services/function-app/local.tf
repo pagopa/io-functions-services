@@ -26,7 +26,7 @@ locals {
       SUBSCRIPTIONS_FEED_TABLE                = "SubscriptionsFeedByDay"
 
       INTERNAL_STORAGE_CONNECTION_STRING = module.services_storage_account_01.primary_connection_string
-      APPINSIGHTS_INSTRUMENTATIONKEY     = var.application_insights_attributes.appi_instrumentation_key
+      APPINSIGHTS_INSTRUMENTATIONKEY     = var.application_insights_instrumentation_key
 
       COSMOSDB_NAME = "db"
       COSMOSDB_URI  = var.cosmos_db_attributes.endpoint

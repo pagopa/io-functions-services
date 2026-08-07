@@ -22,7 +22,7 @@ module "services_storage_account_01" {
     versioning = true
   }
 
-  action_group_id = var.application_insights_attributes.action_groups.error
+  action_group_id = var.application_insights_error_action_group_id
 
   tags = var.tags
 }

@@ -63,7 +63,7 @@ module "function_services" {
     }
   )
 
-  action_group_ids = [var.application_insights_attributes.action_groups.error]
+  action_group_ids = [var.application_insights_error_action_group_id]
 
   tags = var.tags
 }
