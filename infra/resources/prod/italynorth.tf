@@ -19,7 +19,7 @@ module "function_app_services_itn" {
   project_itn                         = local.project
   services_snet_cidr                  = local.cidr_subnet
   cosmos_db_attributes                = local.platform_data_platform.cosmos_api.weu
-  application_insights_attributes     = local.platform_obsvervability.monitoring_westeurope
+  application_insights_attributes     = local.platform_observability.monitoring_westeurope
   tags                                = local.tags
 }
 
