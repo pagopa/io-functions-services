@@ -22,7 +22,7 @@ module "services_storage_account_01" {
     versioning = true
   }
 
-  action_group_id = data.azurerm_monitor_action_group.error_action_group.id
+  action_group_id = var.application_insights_attributes.action_groups.error
 
   tags = var.tags
 }
