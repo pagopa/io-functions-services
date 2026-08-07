@@ -37,12 +37,6 @@ variable "project_itn" {
   type = string
 }
 
-variable "lock_enable" {
-  type        = bool
-  default     = false
-  description = "Apply locks to block accedentaly deletions."
-}
-
 variable "tags" {
   type = map(any)
   default = {
@@ -101,24 +95,6 @@ variable "ff_opt_in_email_enabled" {
   default     = "true"
 }
 
-variable "apim_hostname_api_internal" {
-  type        = string
-  description = "hostname api"
-  default     = "api-internal.io.italia.it"
-}
-
-variable "message_content_container_name" {
-  type        = string
-  description = "message content container name"
-  default     = "message-content"
-}
-
-variable "service_api_url" {
-  type        = string
-  description = "url service api"
-  default     = "https://api-app.internal.io.pagopa.it/"
-}
-
 variable "services_snet_cidr" {
   type        = string
   description = "Services Subnet CIDR"
@@ -140,4 +116,10 @@ variable "cosmos_db_attributes" {
   type        = map(any)
   sensitive   = true
   description = "Informations about the Cosmos DB, such as primary key and endpoint"
+}
+
+variable "application_insights_attributes" {
+  type        = map(any)
+  sensitive   = true
+  description = "Informations about the Application Insights, such as action group and instrumentation key"
 }
