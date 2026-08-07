@@ -120,6 +120,5 @@ variable "cosmos_db_attributes" {
 
 variable "application_insights_attributes" {
   type        = map(any)
-  sensitive   = true
   description = "Informations about the Application Insights, such as action group and instrumentation key"
 }
