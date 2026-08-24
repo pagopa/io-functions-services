@@ -5,8 +5,6 @@ locals {
   location       = "italynorth"
   location_short = "itn"
 
-  common_project = "${local.prefix}-${local.env_short}"
-
   project        = "${local.prefix}-${local.env_short}-${local.location_short}"
   project_legacy = "${local.prefix}-${local.env_short}"
 
@@ -34,13 +32,6 @@ locals {
   # Feature flag used to enable email opt-in with logic exposed by the previous variable usage
   ff_opt_in_email_enabled = "true"
 
-  apim_hostname_api_internal = "api-internal.io.italia.it"
-
-  # MESSAGES
-  message_content_container_name = "message-content"
-
-  service_api_url = "https://api-app.internal.io.pagopa.it/"
-
   cidr_subnet                         = "10.20.34.0/26"
   function_services_autoscale_minimum = 3
   function_services_autoscale_maximum = 30
@@ -48,8 +39,6 @@ locals {
 
   vnet_common_name_itn           = "${local.project}-common-vnet-01"
   common_resource_group_name_itn = "${local.project}-common-rg-01"
-
-  apim_itn_name = "${local.project}-apim-01"
 
   instance_number = "02"
 
