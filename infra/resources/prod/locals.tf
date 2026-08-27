@@ -17,7 +17,7 @@ locals {
     Environment    = "Prod"
     Owner          = "IO"
     ManagementTeam = "IO Platform"
-    Source         = "https://github.com/pagopa/io-functions-services/blob/main/infra/resources/prod"
+    Source         = "https://github.com/pagopa/io-functions-services/blob/master/infra/resources/prod"
   }
 
   rg_common_name   = format("%s-rg-common", local.project_legacy)
