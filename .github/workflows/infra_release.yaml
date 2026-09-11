@@ -10,7 +10,7 @@ on:
 
 jobs:
   infra_release:
-    uses: pagopa/dx/.github/workflows/infra_apply.yaml@main
+    uses: pagopa/dx/.github/workflows/infra_apply.yaml@625f02f382c33eb449cd94facb8e426bf7ae37ea # main
     name: Release Infrastructure
     secrets: inherit
     with:
