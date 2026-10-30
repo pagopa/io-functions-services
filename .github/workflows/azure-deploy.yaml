@@ -16,7 +16,7 @@ permissions:
 jobs:
   deploy:
     name: Deploy
-    uses: pagopa/dx/.github/workflows/release-azure-appsvc-v1.yaml@main
+    uses: pagopa/dx/.github/workflows/release-azure-appsvc-v1.yaml@a48a894c64c3f04404ebe274ce9a750c903c7d70 # main
     secrets: inherit
     with:
       workspace_name: io-functions-services
